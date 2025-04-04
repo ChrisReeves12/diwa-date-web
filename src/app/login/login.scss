@@ -1,0 +1,298 @@
+@use '@/styles/globals' as globals;
+@use "sass:color";
+
+.login-site-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: url('/images/login_background.jpg') no-repeat center center fixed;
+    background-size: cover;
+    padding: 2rem 0;
+    position: relative;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 450px;
+        margin: 0 auto;
+        padding: 0 1rem;
+        position: relative;
+        z-index: 2;
+
+        @include globals.media-min('screens.md') {
+            max-width: 550px;
+        }
+
+        @include globals.media-min('screens.lg') {
+            max-width: 650px;
+        }
+    }
+
+    .form-container {
+        background: rgba(255, 255, 255, 1);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+    }
+
+    .form-section {
+        padding: 3rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            img {
+                display: block;
+            }
+        }
+
+        h1 {
+            font-family: "Nunito Sans";
+            font-size: 25px;
+            margin-bottom: 0.5rem;
+            color: globals.$primary-blue;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        h4,
+        h5 {
+            font-family: "Nunito Sans", sans-serif;
+        }
+
+        h4 {
+            font-size: 16px;
+            color: #8c8c8c;
+            margin-bottom: 1rem;
+            margin-top: 0;
+            text-align: center;
+            font-weight: normal;
+        }
+
+        h5 {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-weight: normal;
+
+            a {
+                color: #007bff;
+                text-decoration: none;
+                font-weight: 600;
+
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+        }
+    }
+
+    .form-row {
+        margin-bottom: 1.5rem;
+    }
+
+    .input-container {
+        position: relative;
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-family: 'Nunito Sans', sans-serif;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.9);
+            box-sizing: border-box;
+
+            &:focus {
+                outline: none;
+                border-color: globals.$primary-blue;
+                background: #fff;
+            }
+
+            &.error {
+                border-color: #dc3545;
+            }
+        }
+
+        &.error {
+            label {
+                color: #dc3545;
+            }
+        }
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: -12px;
+        font-family: 'Nunito Sans', sans-serif;
+    }
+
+    .submit-button-wrapper {
+        margin-top: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .register-link {
+        text-align: center;
+        font-family: 'Nunito Sans', sans-serif;
+        font-size: 1rem;
+        color: #666;
+        padding-top: 10px;
+
+        a {
+            color: globals.$primary-blue;
+            text-decoration: none;
+            font-weight: 600;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+
+    .form-row-loader-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: globals.$primary-blue;
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 6px;
+        font-family: 'Nunito Sans', sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+        max-width: 300px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-transform: uppercase;
+
+        &:hover {
+            background: color.adjust(globals.$primary-blue, $lightness: -10%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        &:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        &:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+    }
+
+    .loader {
+        display: none;
+        position: absolute;
+        right: 1rem;
+        color: white;
+
+        &.is-loading {
+            display: block;
+            animation: spin 1s linear infinite;
+        }
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .password-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+
+        input {
+            padding-right: 35px; // Make room for the icon
+            width: 100%;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &:hover {
+                color: globals.$primary-blue;
+            }
+
+            i {
+                font-size: 24px;
+            }
+        }
+    }
+
+    .forgot-password-link {
+        text-align: right;
+        margin-bottom: 1.5rem;
+        font-family: 'Nunito Sans', sans-serif;
+        font-size: 14px;
+
+        a {
+            color: globals.$primary-blue;
+            text-decoration: none;
+            font-weight: 500;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+}

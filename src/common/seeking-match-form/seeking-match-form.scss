@@ -1,0 +1,122 @@
+@use '../../styles/globals' as globals;
+
+.seeking-match-form-container {
+    .radio-button-section {
+        margin-bottom: 20px;
+
+        .caption {
+            font-size: 15px;
+            font-weight: normal;
+            margin-bottom: 8px;
+            color: #333;
+
+            @include globals.dark-mode {
+                color: #e0e0e0;
+            }
+        }
+
+        .choice-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 16px;
+
+            &.error {
+                .radio-button-container {
+                    border-color: #ff3b30;
+                }
+            }
+        }
+
+        .radio-button-container {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            @include globals.dark-mode {
+                border-color: #444;
+            }
+
+            &:hover {
+                background-color: #f5f5f5;
+
+                @include globals.dark-mode {
+                    background-color: #333;
+                }
+            }
+
+            &.selected {
+                border-color: globals.$primary-blue;
+                background-color: rgba(globals.$primary-blue, 0.05);
+
+                @include globals.dark-mode {
+                    border-color: globals.$primary-blue-dark;
+                    background-color: rgba(globals.$primary-blue-dark, 0.1);
+                }
+
+                .radio-button {
+                    border-color: globals.$primary-blue;
+
+                    @include globals.dark-mode {
+                        border-color: globals.$primary-blue-dark;
+                    }
+
+                    &:after {
+                        transform: scale(1);
+                        background-color: globals.$primary-blue;
+
+                        @include globals.dark-mode {
+                            background-color: globals.$primary-blue-dark;
+                        }
+                    }
+                }
+            }
+        }
+
+        .radio-button {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #aaa;
+            position: relative;
+            margin-right: 10px;
+
+            @include globals.dark-mode {
+                border-color: #666;
+            }
+
+            &:after {
+                content: '';
+                position: absolute;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background-color: transparent;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) scale(0);
+                transition: transform 0.2s ease;
+            }
+        }
+
+        .label {
+            font-size: 15px;
+            font-weight: 400;
+            font-family: globals.$default-font;
+
+            @include globals.dark-mode {
+                color: #e0e0e0;
+            }
+        }
+    }
+
+    .submit-button-section {
+        button {
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+    }
+}

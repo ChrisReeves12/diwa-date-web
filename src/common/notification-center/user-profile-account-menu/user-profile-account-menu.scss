@@ -1,0 +1,158 @@
+@use '../../../styles/globals.scss' as globals;
+
+.user-profile-account-menu-container {
+  width: 280px;
+  padding: 15px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  @include globals.dark-mode {
+    background-color: globals.$dark-background-color;
+    border: 1px solid #eaeaea;
+  }
+
+  .profile-photo-name-section {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #eaeaea;
+
+    a {
+      margin-right: 12px;
+    }
+
+    .name-online-status-section {
+      h5 {
+        margin: 0 0 5px 0;
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .online-status {
+        display: flex;
+        align-items: center;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        font-size: 14px;
+
+        .online-lamp-section {
+          display: flex;
+          align-items: center;
+
+          .online-lamp {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+
+            &.online {
+              background-color: #4CAF50;
+            }
+
+            &.away {
+              background-color: #FFC107;
+            }
+
+            &.offline {
+              background-color: #9E9E9E;
+            }
+          }
+
+          .online-status-label {
+            color: #666;
+          }
+        }
+
+        .online-status-selector {
+          margin-left: 5px;
+
+          i {
+            font-size: 12px;
+            color: #999;
+          }
+        }
+      }
+    }
+  }
+
+  .profile-menu-section {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eaeaea;
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      padding: 3px 0;
+      color: #333;
+      text-decoration: none;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: globals.$primary-blue;
+      }
+
+      .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        margin-right: 12px;
+
+        img {
+          width: 24px;
+          height: 24px;
+        }
+      }
+
+      .label {
+        font-size: 16px;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .sign-out-button-section {
+    button {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      font-weight: bold;
+      color: globals.$primary-blue;
+      justify-content: center;
+      padding: 13px;
+      border: 1px solid #cccccc;
+      background: none;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 0.8;
+      }
+
+      .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        margin-right: 10px;
+
+        img {
+          width: 20px;
+          height: 20px;
+        }
+      }
+
+      .label {
+        font-size: 14px;
+        font-weight: bold;
+      }
+    }
+  }
+}
