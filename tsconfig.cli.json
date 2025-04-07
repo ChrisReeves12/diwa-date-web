@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "outDir": "dist",
+    "noEmit": false,
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
+  },
+  "include": [
+    "src/console/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

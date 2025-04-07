@@ -1,0 +1,19 @@
+@use '../../styles/globals' as globals;
+
+.age-range-select-container {
+  display: flex;
+  align-items: center;
+
+  .from-label {
+    margin-right: 0.8rem;
+  }
+
+  .to-label {
+    margin: 0 0.5rem;
+  }
+
+  select {
+    @include globals.underlined-select;
+    width: 3.5rem;
+  }
+}

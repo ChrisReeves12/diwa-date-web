@@ -11,6 +11,7 @@ import {
   rotateSession,
   deleteSession
 } from './session.helpers';
+import { indexUserForSearch } from "@/server-side-helpers/search.helpers";
 
 /**
  * Get a user by their ID
@@ -95,7 +96,7 @@ export async function authenticateUser(
 }
 
 /**
- * Get the currently logged in user based on the session ID in cookies
+ * Get the currently logged-in user based on the session ID in cookies
  * @param request Optional NextRequest object for server components
  * @param response Optional NextResponse to rotate the session if needed
  * @returns The current user without password or null if not authenticated
@@ -144,6 +145,8 @@ export async function getCurrentUser(
   const user = result as unknown as User;
   await refreshLastActive(user as unknown as User);
 
+  await indexUserForSearch(user);
+
   return prepareUser(user);
 }
 
@@ -154,12 +157,14 @@ export async function getCurrentUser(
  * @returns The complete URL to the image
  */
 export function appendMediaRootToImage(image: UserPhoto) {
-  image.path = appendMediaRootToImageUrl(image.path);
-  if (image.cropped_image_data?.cropped_image_path) {
-    image.cropped_image_data.cropped_image_path = appendMediaRootToImageUrl(image.cropped_image_data.cropped_image_path);
+  const lImage = _.cloneDeep(image);
+  lImage.path = appendMediaRootToImageUrl(lImage.path) || lImage.path;
+  if (lImage.cropped_image_data?.cropped_image_path) {
+    lImage.cropped_image_data.cropped_image_path = appendMediaRootToImageUrl(lImage.cropped_image_data.cropped_image_path)
+        || lImage.cropped_image_data.cropped_image_path;
   }
 
-  return image;
+  return lImage;
 }
 
 /**
@@ -168,7 +173,10 @@ export function appendMediaRootToImage(image: UserPhoto) {
  * @param imageUrl
  * @returns
  */
-export function appendMediaRootToImageUrl(imageUrl: string) {
+export function appendMediaRootToImageUrl(imageUrl?: string) {
+  if (!imageUrl)
+    return imageUrl;
+
   const mediaRoot = imageUrl.startsWith('random') ? process.env.FAKER_MEDIA_IMAGE_ROOT_URL : process.env.MEDIA_IMAGE_ROOT_URL;
 
   return `${mediaRoot}/${imageUrl}`;
@@ -247,13 +255,15 @@ export async function logoutUser(
  * @param { date_of_birth }
  * @returns number
  */
-export function calculateUserAge({ date_of_birth }: { date_of_birth: Date }) {
+export function calculateUserAge({ date_of_birth }: { date_of_birth: Date | string }) {
   const curDate = new Date();
-  let age = curDate.getFullYear() - date_of_birth.getFullYear();
+  const lDateOfBirth = typeof date_of_birth === 'string' ? moment(date_of_birth).toDate() : date_of_birth;
+
+  let age = curDate.getFullYear() - lDateOfBirth.getFullYear();
 
   // Adjust age if birthday hasn't occurred yet this year
-  const birthMonth = date_of_birth.getMonth();
-  const birthDay = date_of_birth.getDate();
+  const birthMonth = lDateOfBirth.getMonth();
+  const birthDay = lDateOfBirth.getDate();
   const currentMonth = curDate.getMonth();
   const currentDay = curDate.getDate();
 
@@ -269,13 +279,14 @@ export function calculateUserAge({ date_of_birth }: { date_of_birth: Date }) {
  * @param data
  * @returns
  */
-export function getMainCroppedImageData(data: { photos?: UserPhoto[], main_photo?: string | null }) {
+export function getMainCroppedImageData(data: Pick<User, 'photos' | 'main_photo'>) {
   if (!data.main_photo || !data.photos)
     return undefined;
 
   const mainPhotoCroppedImageData = data.photos.find(p => p.path === data.main_photo)?.cropped_image_data;
   if (mainPhotoCroppedImageData) {
-    mainPhotoCroppedImageData.cropped_image_path = appendMediaRootToImageUrl(mainPhotoCroppedImageData.cropped_image_path);
+    mainPhotoCroppedImageData.cropped_image_path =
+        appendMediaRootToImageUrl(mainPhotoCroppedImageData.cropped_image_path) || mainPhotoCroppedImageData.cropped_image_path;
   }
 
   return mainPhotoCroppedImageData;
@@ -285,10 +296,9 @@ export function getMainCroppedImageData(data: { photos?: UserPhoto[], main_photo
  * Prepare user for API access.
  *
  * @param user
- * @param isPublic
  * @returns
  */
-export function prepareUser(user: User, isPublic: boolean = false) {
+export function prepareUser(user: User) {
   user.password = ''
   user.age = calculateUserAge(user);
 

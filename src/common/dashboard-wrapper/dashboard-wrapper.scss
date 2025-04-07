@@ -1,0 +1,9 @@
+@use '../../styles/globals' as globals;
+
+.dashboard-wrapper-container {
+  .container {
+    .subscription-plan-display-container {
+      margin-bottom: 20px;
+    }
+  }
+}

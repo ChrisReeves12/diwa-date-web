@@ -44,7 +44,25 @@ $default-font: "Nunito Sans", sans-serif;
   }
 }
 
-// Dark mode mixin
+@mixin underlined-input {
+  outline-width: 0;
+  border: none;
+  background-color: transparent;
+  border-bottom: 1px solid #000000;
+  font-size: 16px;
+
+  @media (prefers-color-scheme: dark) {
+    border-bottom-color: #ffffff;
+  }
+}
+
+@mixin underlined-select {
+  @include underlined-input;
+  padding-bottom: 3px;
+  padding-right: 10px;
+  cursor: pointer;
+}
+
 @mixin dark-mode {
   @media (prefers-color-scheme: dark) {
     @content;

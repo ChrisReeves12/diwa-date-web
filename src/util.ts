@@ -1,9 +1,12 @@
 /**
  * Transforms BigInt values to strings in the given data.
  * @param data The data to transform.
- * @returns 
+ * @returns
  */
 export function transformBigInts<T>(data: any): T {
+    if (!data)
+        return data;
+
     return JSON.parse(
         JSON.stringify(data, (_, value) =>
             typeof value === 'bigint' ? value.toString() : value
@@ -16,18 +19,21 @@ export function transformBigInts<T>(data: any): T {
  * @param user The user object.
  * @returns The URL for the user's profile.
  */
-export function userProfileLink(user: { id: bigint | string }) {
+export function userProfileLink(user: { id: bigint | string | number }) {
     return `/profile/${user.id}`;
 }
 
 /**
  * Returns a human-readable difference between the given date and now.
  * Example outputs: "4 seconds ago", "5 minutes ago", "4 hours ago", "in 2 days"
- * 
+ *
  * @param date The date to compare with the current date.
  * @returns A string representing the time difference.
  */
-export function diffForHumans(date: Date): string {
+export function humanizeTimeDiff(date?: Date): string {
+    if (!date)
+        return 'N/A';
+
     const now = new Date();
     // Calculate difference in seconds
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);

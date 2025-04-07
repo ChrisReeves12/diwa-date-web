@@ -6,7 +6,7 @@ import UserProfileAccountMenu from './user-profile-account-menu/user-profile-acc
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { useCurrentUser } from '../context/current-user-context';
-import { authAPIRequest, diffForHumans, userProfileLink } from "@/util";
+import { authAPIRequest, humanizeTimeDiff, userProfileLink } from "@/util";
 import { NotificationResponse } from "@/types/notification-response.interface";
 import NotificationMenu from "@/common/notification-center/notification-menu/notification-menu";
 import _ from 'lodash';
@@ -143,7 +143,7 @@ export default function NotificationCenter() {
                         id: pendingMatch.id,
                         content: pendingMatch.sender.location_name,
                         senderUser: pendingMatch.sender,
-                        receivedAtMessage: `Received ${diffForHumans(new Date(pendingMatch.created_at))}`,
+                        receivedAtMessage: `Received ${humanizeTimeDiff(new Date(pendingMatch.created_at))}`,
                         infoSectionUrl: userProfileLink(pendingMatch.sender),
                         userPhotoUrl: userProfileLink(pendingMatch.sender),
                         onLike: () => { },
@@ -170,7 +170,7 @@ export default function NotificationCenter() {
                             main_photo_cropped_image_data: receivedMessage.main_photo_cropped_image_data,
                             age: receivedMessage.age
                         },
-                        receivedAtMessage: `Sent ${diffForHumans(new Date(receivedMessage.created_at))}`,
+                        receivedAtMessage: `Sent ${humanizeTimeDiff(new Date(receivedMessage.created_at))}`,
                         infoSectionUrl: `/user/messages/${receivedMessage.user_id}`,
                         userPhotoUrl: userProfileLink({ id: receivedMessage.user_id }),
                         numberOfMessages: receivedMessage.msg_count,

@@ -1,7 +1,8 @@
 import GuestHome from "@/app/guest-home/guest-home";
 import { getCurrentUser } from "@/server-side-helpers/user.helpers";
-import SearchHome from "@/app/search-home/search-home";
+import HomeSearch from "@/app/home-search/home-search";
 import { Metadata } from "next";
+import { Suspense } from "react";
 
 export async function generateMetadata(): Promise<Metadata | undefined> {
     const currentUser = await getCurrentUser();
@@ -16,6 +17,6 @@ export default async function Home() {
     const currentUser = await getCurrentUser();
 
     return (
-        currentUser ? <SearchHome currentUser={currentUser} /> : <GuestHome />
+        currentUser ? <HomeSearch currentUser={currentUser}/> : <GuestHome/>
     );
 }

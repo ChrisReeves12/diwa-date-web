@@ -2,9 +2,9 @@ import './notification-menu.scss';
 import Image from "next/image";
 import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
 import { HeartIcon, TimesIcon } from "react-line-awesome";
-import { CroppedImageData } from "@/types/cropped-image-data.interface";
 import Link from 'next/link';
 import { decodeHtmlEntities } from '@/util';
+import { User } from "@/types";
 
 type NotificationType = 'notifications' | 'likes' | 'messages';
 
@@ -15,13 +15,7 @@ interface NotificationMenuProps {
     listItems: NotificationListItemProps[]
 }
 
-interface NotificationUser {
-    main_photo_cropped_image_data?: CroppedImageData,
-    public_main_photo?: string,
-    display_name: string,
-    age: number,
-    gender: string
-}
+type NotificationUser = Pick<User, 'main_photo_cropped_image_data' | 'public_main_photo' | 'display_name' | 'age' | 'gender'>
 
 interface NotificationListItemProps {
     id: string,

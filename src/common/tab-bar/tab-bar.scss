@@ -1,0 +1,48 @@
+@use '../../styles/globals' as globals;
+
+.tab-bar-container {
+  display: flex;
+  border-bottom: 1px solid globals.$primary-blue;
+
+  @include globals.dark-mode() {
+    border-bottom-color: globals.$primary-blue-dark;
+  }
+
+  .tab {
+    padding-top: 14px;
+    padding-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-right: 40px;
+    gap: 8px;
+
+    .label, i {
+      color: #000000;
+
+      @include globals.dark-mode() {
+        color: #ffffff;
+      }
+    }
+
+    &.selected {
+      border-bottom: 3px solid globals.$primary-blue;
+
+      .label, i {
+        color: globals.$primary-blue;
+
+        @include globals.dark-mode() {
+          color: #ffffff;
+        }
+      }
+    }
+
+    .label {
+      font-size: 17px;
+    }
+
+    i {
+      font-size: 23px;
+    }
+  }
+}

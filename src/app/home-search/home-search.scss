@@ -1,0 +1,53 @@
+@use '../../styles/globals.scss' as globals;
+
+.home-search-container {
+  .search-filters-section {
+    border-bottom: 1px solid #bfbfbf;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    @include globals.dark-mode {
+      border-bottom-color: #ffffff;
+    }
+
+    .filter-section {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding-bottom: 0.8rem;
+      padding-top: 0.8rem;
+
+      .age-order-by-container {
+        display: flex;
+        gap: 1.8rem;
+
+        .filter {
+          label {
+            font-weight: bold;
+            padding-bottom: 0.4rem;
+            display: block;
+            font-size: 15px;
+          }
+
+          .input-container {
+            select {
+              @include globals.underlined-select;
+            }
+          }
+        }
+      }
+
+      .search-filters-button {
+        color: globals.$primary-blue;
+        font-weight: bold;
+        font-size: 14px;
+        width: 50px;
+
+        @include globals.dark-mode {
+          color: globals.$primary-blue-dark;
+        }
+      }
+    }
+  }
+}

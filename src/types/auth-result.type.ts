@@ -1,4 +1,4 @@
-import { User } from './user.type';
+import { User } from './user.interface';
 
 /**
  * Type for authentication result

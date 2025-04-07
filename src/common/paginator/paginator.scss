@@ -1,0 +1,34 @@
+@use '../../styles/globals' as globals;
+
+.paginator-container {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+
+  select.pages {
+    font-size: 13px;
+    border: 1px solid globals.$primary-blue;
+    border-radius: 7px;
+    padding: 6px 3px;
+    color: globals.$primary-blue;
+    outline-width: 0;
+    cursor: pointer;
+  }
+
+  .prev, .next {
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    border: 1px solid globals.$primary-blue;
+    color: globals.$primary-blue;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: inherit;
+    }
+  }
+}
