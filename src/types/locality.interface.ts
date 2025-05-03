@@ -7,5 +7,5 @@ export interface Locality {
     region?: string;
     country: string;
     viewport?: LocalityViewport;
-    coordinates: GeoCoordinates;
+    coordinates?: GeoCoordinates;
 }

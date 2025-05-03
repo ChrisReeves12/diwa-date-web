@@ -6,6 +6,8 @@ import UserSubscriptionPlanDisplay from "@/common/user-subscription-plan-display
 import { CurrentUserProvider } from "@/common/context/current-user-context";
 import SiteWrapper from "@/common/site-wrapper/site-wrapper";
 import TabBar from "@/common/tab-bar/tab-bar";
+import { useEffect } from "react";
+import { loadGoogleMapsScript } from "@/util";
 
 interface DashboardWrapperProps {
     currentUser: User,
@@ -20,20 +22,19 @@ export default function DashboardWrapper({ currentUser, activeTab, children }: D
         {label: 'Messages', url: '/messages', icon: 'las la-comments', isSelected: activeTab === 'messages' },
     ];
 
+    useEffect(() => {
+        loadGoogleMapsScript();
+    }, []);
+
     return (
         <CurrentUserProvider currentUser={currentUser}>
             <SiteWrapper>
                 <div className="dashboard-wrapper-container">
                     <div className="container">
                         <UserSubscriptionPlanDisplay />
-                        <div className="search-new-members-section">
-                            <div className="left-section">
-                                <TabBar tabs={tabs}/>
-                                {children}
-                            </div>
-                            <div className="right-section">
-
-                            </div>
+                        <div className="dashboard-content-section">
+                            <TabBar tabs={tabs}/>
+                            {children}
                         </div>
                     </div>
                 </div>

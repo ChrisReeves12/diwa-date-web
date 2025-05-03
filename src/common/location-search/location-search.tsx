@@ -4,8 +4,18 @@ import './location-search.scss';
 import SelectedMapLocation from "@/common/selected-map-location/selected-map-location";
 import React, { useEffect, useState } from "react";
 import { Locality } from "@/types/locality.interface";
+import { loadGoogleMapsScript } from "@/util";
 
-export default function LocationSearch({ onUpdate, error, initialLocality }: { onUpdate?: (locality?: Locality) => void, error?: string, initialLocality?: Locality }) {
+interface LocationSearchProps {
+    onUpdate?: (locality?: Locality) => void;
+    error?: string;
+    initialLocality?: Locality;
+    geoBounds?: google.maps.LatLngBounds;
+    showMap?: boolean;
+}
+
+
+export default function LocationSearch({ onUpdate, error, initialLocality, geoBounds, showMap = true }: LocationSearchProps) {
     const [locationSearchText, setLocationSearchText] = useState('');
     const [selectedLocation, setSelectedLocation] = useState<Locality | undefined>(initialLocality);
     const [locationSuggestions, setLocationSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
@@ -25,7 +35,9 @@ export default function LocationSearch({ onUpdate, error, initialLocality }: { o
                 const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
                 await google.maps.importLibrary("places");
 
-                const center = initialLocality ? { lat: initialLocality.coordinates.latitude, lng: initialLocality.coordinates.longitude } : { lat: 14.5995, lng: 120.9842 }; // Manila, Philippines as default
+                const center = initialLocality ?
+                    { lat: initialLocality.coordinates.latitude, lng: initialLocality.coordinates.longitude } :
+                    { lat: 14.5995, lng: 120.9842 }; // Manila, Philippines as default
 
                 // Create a new map instance
                 const mapInstance = new Map(document.getElementById("map") as HTMLElement, {
@@ -59,25 +71,12 @@ export default function LocationSearch({ onUpdate, error, initialLocality }: { o
             }
         };
 
-        // Load the Google Maps script
-        const loadGoogleMapsScript = () => {
-            const script = document.createElement("script");
-            script.innerHTML = `
-        (g => { var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window; b = b[c] || (b[c] = {}); var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () => h || (h = new Promise(async (f, n) => { await (a = m.createElement("script")); e.set("libraries", [...r] + ""); for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]); e.set("callback", c + ".maps." + q); a.src = \`https://maps.\${c}apis.com/maps/api/js?\` + e; d[q] = f; a.onerror = () => h = n(Error(p + " could not load.")); a.nonce = m.querySelector("script[nonce]")?.nonce || ""; m.head.append(a) })); d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n)) })({
-          key: "AIzaSyAeGvz0hKkuBNgvpq_D-p2qcfuVpIy3HPQ",
-          v: "quarterly",
-        });
-      `;
-
-            document.head.appendChild(script);
-
-            // Initialize map after script is loaded
-            window.setTimeout(() => {
-                initMap().then();
-            }, 500);
-        };
-
         loadGoogleMapsScript();
+
+        // Initialize map after script is loaded
+        window.setTimeout(() => {
+            initMap().then();
+        }, 500);
     }, []);
 
     const convertGeocoderResultToLocality = (geocoderResult: google.maps.GeocoderResult, description: string): Locality => {
@@ -112,19 +111,22 @@ export default function LocationSearch({ onUpdate, error, initialLocality }: { o
 
     const geoCodeLocation = async (location: google.maps.LatLng, description: string) => {
         return new Promise<google.maps.GeocoderResult>((resolve, reject) => {
-            const geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ location }, (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
-                if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
-                    const selectedLocality = convertGeocoderResultToLocality(results[0], description);
-                    setSelectedLocation(selectedLocality);
-                    if (onUpdate) {
-                        onUpdate(selectedLocality);
-                    }
+            google.maps.importLibrary("geocoding").then(library => {
+                // @ts-expect-error dynamically loaded library
+                const geocoder = new library.Geocoder();
+                geocoder.geocode({ location }, (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
+                    if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+                        const selectedLocality = convertGeocoderResultToLocality(results[0], description);
+                        setSelectedLocation(selectedLocality);
+                        if (onUpdate) {
+                            onUpdate(selectedLocality);
+                        }
 
-                    resolve(results[0]);
-                } else {
-                    reject(new Error('Geocoding failed'));
-                }
+                        resolve(results[0]);
+                    } else {
+                        reject(new Error('Geocoding failed'));
+                    }
+                });
             });
         })
     };
@@ -168,7 +170,11 @@ export default function LocationSearch({ onUpdate, error, initialLocality }: { o
         // Fetch location suggestions using Google Places Autocomplete
         if (autocompleteService) {
             autocompleteService.getPlacePredictions(
-                { input: value, types: ['locality', 'neighborhood', 'colloquial_area'] },
+                {
+                    input: value,
+                    types: ['locality', 'neighborhood', 'colloquial_area'],
+                    locationRestriction: geoBounds
+                },
                 (predictions: google.maps.places.AutocompletePrediction[] | null, status: google.maps.places.PlacesServiceStatus) => {
                     if (status === google.maps.places.PlacesServiceStatus.OK && predictions && predictions.length > 0) {
                         setLocationSuggestions(predictions);
@@ -229,7 +235,7 @@ export default function LocationSearch({ onUpdate, error, initialLocality }: { o
                     )}
                 </div>}
             </div>
-            <div style={{ display: selectedLocation ? 'block' : 'none' }} className="form-row">
+            <div style={{ display: selectedLocation && showMap ? 'block' : 'none' }} className="form-row">
                 <div style={{ width: "100%", height: "480px", backgroundColor: "#f4f4f4", marginBottom: "40px" }} id="map"></div>
             </div>
         </div>

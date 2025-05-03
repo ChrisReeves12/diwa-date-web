@@ -165,11 +165,12 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'location_viewp
 
     // Handle geo-bounding box queries
     if ((seeking_distance_origin === SearchFromOrigin.CurrentLocation && currentUser.location_viewport) ||
-        seeking_distance_origin === SearchFromOrigin.SingleLocation && search_from_location?.viewport) {
-        let viewport = seeking_distance_origin === SearchFromOrigin.CurrentLocation ? currentUser.location_viewport : search_from_location?.viewport;
+        seeking_distance_origin === SearchFromOrigin.SingleLocation) {
+        let viewport = seeking_distance_origin === SearchFromOrigin.CurrentLocation ?
+            currentUser.location_viewport : search_from_location?.selected_location?.viewport;
 
         const country = seeking_distance_origin === SearchFromOrigin.CurrentLocation ?
-            currentUser.country : _.first(search_from_location?.search_countries || []);
+            currentUser.country : search_from_location?.selected_country;
 
         if (viewport) {
             viewport = expandViewport(viewport, seeking_max_distance || currentUser.seeking_max_distance);
@@ -187,20 +188,20 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'location_viewp
                     }
                 }
             };
+        }
 
-            if (country) {
-                countrySearchClause = {
-                    term: { country }
-                };
-            }
+        if (country) {
+            countrySearchClause = {
+                term: { country }
+            };
         }
     }
 
     // Handle multiple countries search
-    if (seeking_distance_origin === SearchFromOrigin.MultipleCountries && search_from_location?.search_countries) {
+    if (seeking_distance_origin === SearchFromOrigin.MultipleCountries && params.seeking_countries?.length) {
         countrySearchClause = {
             terms: {
-                country: search_from_location.search_countries
+                country: params.seeking_countries
             }
         }
     }
@@ -309,7 +310,7 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'location_viewp
 
     // Fill in other terms queries
     for (const termsQueryLabel of termsQueryLabels) {
-        const value = _.get(currentUser, termsQueryLabel);
+        const value = _.get(params, termsQueryLabel) ?? _.get(currentUser, termsQueryLabel);
         if (Array.isArray(value) && value.length > 0) {
             filterClauses.push({
                 terms: {
@@ -376,7 +377,7 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'location_viewp
         const content = response.data;
         const totalCount: number = _.get(content, ['hits', 'total', 'value'], 0);
         const searchResults: UserPreview[] = _.get(content, ['hits', 'hits'], [])
-            .map((hit: {_source: UserSearchDoc}) => translateToUserPreview(hit._source));
+            .map((hit: { _source: UserSearchDoc }) => translateToUserPreview(hit._source));
 
         // Hydrate results with match and blocked user data
         const currentUserId = Number(currentUser.id);
@@ -431,10 +432,10 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'location_viewp
             }
         }
 
-        return { searchResults, totalCount, pageCount: Math.ceil(totalCount / pageSize) };
+        return { hasError: false, searchResults, totalCount, pageCount: Math.ceil(totalCount / pageSize) };
     } catch (err: any) {
         logError(err);
-        return undefined;
+        return { hasError: true, searchResults: [], totalCount: 0, pageCount: 1 }
     }
 }
 
@@ -466,17 +467,17 @@ export async function createUserSearchIndex() {
             },
             mappings: {
                 properties: {
-                    id: {type: 'integer'},
-                    display_name: {type: 'text', index: false},
-                    first_name: {type: 'text', index: false},
-                    last_name: {type: 'text', index: false},
-                    main_photo: {type: 'keyword', index: false},
+                    id: { type: 'integer' },
+                    display_name: { type: 'text', index: false },
+                    first_name: { type: 'text', index: false },
+                    last_name: { type: 'text', index: false },
+                    main_photo: { type: 'keyword', index: false },
                     photos: {
                         properties: {
-                            path: {type: 'keyword', index: false},
-                            is_hidden: {type: 'boolean'},
-                            caption: {type: 'text', index: false},
-                            sort_order: {type: 'integer'},
+                            path: { type: 'keyword', index: false },
+                            is_hidden: { type: 'boolean' },
+                            caption: { type: 'text', index: false },
+                            sort_order: { type: 'integer' },
                             uploaded_at: {
                                 type: 'text',
                                 fields: {
@@ -490,69 +491,69 @@ export async function createUserSearchIndex() {
                                 properties: {
                                     crop_position: {
                                         properties: {
-                                            x1: {type: 'float', store: true},
-                                            x2: {type: 'float', store: true},
-                                            y1: {type: 'float', store: true},
-                                            y2: {type: 'float', store: true}
+                                            x1: { type: 'float', store: true },
+                                            x2: { type: 'float', store: true },
+                                            y1: { type: 'float', store: true },
+                                            y2: { type: 'float', store: true }
                                         }
                                     },
-                                    cropped_image_path: {type: 'keyword', store: true},
-                                    height: {type: 'integer', store: true},
-                                    width: {type: 'integer', store: true},
+                                    cropped_image_path: { type: 'keyword', store: true },
+                                    height: { type: 'integer', store: true },
+                                    width: { type: 'integer', store: true },
                                     image_position: {
                                         properties: {
-                                            x1: {type: 'integer', store: true},
-                                            x2: {type: 'integer', store: true},
-                                            y1: {type: 'integer', store: true},
-                                            y2: {type: 'integer', store: true}
+                                            x1: { type: 'integer', store: true },
+                                            x2: { type: 'integer', store: true },
+                                            y1: { type: 'integer', store: true },
+                                            y2: { type: 'integer', store: true }
                                         }
                                     }
                                 }
                             }
                         }
                     },
-                    num_of_photos: {type: 'integer'},
-                    height: {type: 'integer'},
-                    last_active_at: {type: 'date'},
-                    created_at: {type: 'date'},
-                    suspended_at: {type: 'date'},
-                    email_verified_at: {type: 'date'},
-                    date_of_birth: {type: 'date'},
-                    marital_status: {type: 'keyword'},
-                    body_type: {type: 'keyword'},
-                    seeking_num_of_photos: {type: 'integer'},
-                    seeking_min_height: {type: 'integer'},
-                    seeking_max_height: {type: 'integer'},
-                    seeking_min_age: {type: 'integer'},
-                    seeking_max_age: {type: 'integer'},
-                    seeking_max_distance: {type: 'integer'},
-                    ethnicities: {type: 'keyword'},
-                    religions: {type: 'keyword', store: true},
-                    languages: {type: 'keyword', store: true},
-                    interests: {type: 'keyword', store: true},
-                    blocked_user_ids: {type: 'integer', store: true},
-                    ethnic_preferences: {type: 'keyword'},
-                    religious_preferences: {type: 'keyword'},
-                    education_preferences: {type: 'keyword'},
-                    body_type_preferences: {type: 'keyword'},
-                    has_children_preferences: {type: 'keyword'},
-                    wants_children_preferences: {type: 'keyword'},
-                    interest_preferences: {type: 'keyword'},
-                    language_preferences: {type: 'keyword'},
-                    seeking_countries: {type: 'keyword'},
-                    marital_status_preferences: {type: 'keyword'},
-                    drinking_preferences: {type: 'keyword'},
-                    smoking_preferences: {type: 'keyword'},
-                    seeking_genders: {type: 'keyword'},
-                    gender: {type: 'keyword'},
-                    smoking: {type: 'keyword'},
-                    drinking: {type: 'keyword'},
-                    wants_children: {type: 'keyword'},
-                    education: {type: 'keyword'},
-                    has_children: {type: 'keyword'},
-                    location_coordinates: {type: 'geo_point'},
-                    country: {type: 'keyword'},
-                    location_name: {type: 'text', index: false}
+                    num_of_photos: { type: 'integer' },
+                    height: { type: 'integer' },
+                    last_active_at: { type: 'date' },
+                    created_at: { type: 'date' },
+                    suspended_at: { type: 'date' },
+                    email_verified_at: { type: 'date' },
+                    date_of_birth: { type: 'date' },
+                    marital_status: { type: 'keyword' },
+                    body_type: { type: 'keyword' },
+                    seeking_num_of_photos: { type: 'integer' },
+                    seeking_min_height: { type: 'integer' },
+                    seeking_max_height: { type: 'integer' },
+                    seeking_min_age: { type: 'integer' },
+                    seeking_max_age: { type: 'integer' },
+                    seeking_max_distance: { type: 'integer' },
+                    ethnicities: { type: 'keyword' },
+                    religions: { type: 'keyword', store: true },
+                    languages: { type: 'keyword', store: true },
+                    interests: { type: 'keyword', store: true },
+                    blocked_user_ids: { type: 'integer', store: true },
+                    ethnic_preferences: { type: 'keyword' },
+                    religious_preferences: { type: 'keyword' },
+                    education_preferences: { type: 'keyword' },
+                    body_type_preferences: { type: 'keyword' },
+                    has_children_preferences: { type: 'keyword' },
+                    wants_children_preferences: { type: 'keyword' },
+                    interest_preferences: { type: 'keyword' },
+                    language_preferences: { type: 'keyword' },
+                    seeking_countries: { type: 'keyword' },
+                    marital_status_preferences: { type: 'keyword' },
+                    drinking_preferences: { type: 'keyword' },
+                    smoking_preferences: { type: 'keyword' },
+                    seeking_genders: { type: 'keyword' },
+                    gender: { type: 'keyword' },
+                    smoking: { type: 'keyword' },
+                    drinking: { type: 'keyword' },
+                    wants_children: { type: 'keyword' },
+                    education: { type: 'keyword' },
+                    has_children: { type: 'keyword' },
+                    location_coordinates: { type: 'geo_point' },
+                    country: { type: 'keyword' },
+                    location_name: { type: 'text', index: false }
                 }
             }
         },
@@ -634,4 +635,3 @@ function translateToUserPreview(source: UserSearchDoc): UserPreview {
         ..._.pick(source, ['id', 'display_name', 'main_photo', 'gender', 'location_name', 'country'])
     }
 }
-

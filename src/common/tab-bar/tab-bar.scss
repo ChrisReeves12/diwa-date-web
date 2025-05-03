@@ -3,14 +3,15 @@
 .tab-bar-container {
   display: flex;
   border-bottom: 1px solid globals.$primary-blue;
+  background-color: red;
 
   @include globals.dark-mode() {
     border-bottom-color: globals.$primary-blue-dark;
   }
 
   .tab {
-    padding-top: 14px;
-    padding-bottom: 14px;
+    padding-top: 24px;
+    padding-bottom: 24px;
     display: flex;
     align-items: center;
     justify-content: flex-start;

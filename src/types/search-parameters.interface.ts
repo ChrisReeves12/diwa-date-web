@@ -1,11 +1,11 @@
 import { SearchFromOrigin } from "@/types/user.interface";
-import { LocalityViewport } from "@/types/locality-viewport.interface";
+import { SingleSearchLocation } from "@/types/single-search-location.type";
 
 export enum SearchSortBy {
     Newest = 'newest',
     Age = 'age',
-    NumberOfPhotos = 'num_of_photos',
-    LastActive = 'last_active'
+    NumberOfPhotos = 'numOfPhotos',
+    LastActive = 'lastActive'
 }
 
 export interface SearchParameters {
@@ -31,8 +31,5 @@ export interface SearchParameters {
     seeking_max_distance?: number;
     seeking_genders: string[];
     sort_by: SearchSortBy,
-    search_from_location?: {
-        viewport?: LocalityViewport,
-        search_countries?: string[]
-    }
+    search_from_location?: SingleSearchLocation
 }

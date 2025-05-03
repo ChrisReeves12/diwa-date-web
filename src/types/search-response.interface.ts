@@ -4,4 +4,5 @@ export interface SearchResponse {
     searchResults: UserPreview[];
     totalCount: number;
     pageCount: number;
+    hasError: boolean;
 }

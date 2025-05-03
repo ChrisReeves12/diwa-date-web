@@ -1,0 +1,179 @@
+import './single-location-dialog.scss';
+import { Autocomplete, Box, TextField } from "@mui/material";
+import { countries } from "@/config/countries";
+import LocationSearch from "@/common/location-search/location-search";
+import { useState } from "react";
+import { TimesIcon } from "react-line-awesome";
+import _ from "lodash";
+import { businessConfig } from "@/config/business";
+import { SingleSearchLocation } from "@/types";
+import SelectedSingleLocationDisplay
+    from "@/app/home-search/search-filters-dialog/selected-single-location-display/selected-single-location-display";
+
+interface SingleLocationDialogProps {
+    onClose: () => void,
+    onUpdate: (singleSearchLocation?: SingleSearchLocation) => void,
+    defaultSingleSearchLocation?: SingleSearchLocation
+}
+
+export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleSearchLocation }: SingleLocationDialogProps) {
+    const [singleLocationDistance, setSingleLocationDistance] = useState<number>(100);
+    const [singleLocationCountry, setSingleLocationCountry] = useState<string | null>(null);
+    const [singleSearchLocation, setSingleSearchLocation] = useState<SingleSearchLocation | undefined>(defaultSingleSearchLocation);
+    const [countryBounds, setCountryBounds] = useState<google.maps.LatLngBounds | undefined>();
+
+    const getGeoBoundsForCountry = async (country: { name: string, code: string }) => {
+        const geoCodeResult = await new Promise<google.maps.GeocoderResult>((resolve, reject) => {
+            google.maps.importLibrary("geocoding").then((library) => {
+                // @ts-expect-error dynamically loaded library
+                const geocoder = new library.Geocoder();
+                geocoder.geocode({
+                    address: country.name,
+                    region: country.code
+                }, (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
+                    if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+                        resolve(results[0]);
+                    } else {
+                        reject(new Error('Geocoding failed'));
+                    }
+                });
+            });
+        });
+
+        setCountryBounds(geoCodeResult.geometry.viewport);
+    }
+
+    return (
+        <Box sx={{
+            position: 'absolute',
+            top: '25%',
+            left: '50%',
+            transform: 'translate(-50%)',
+            width: '40vw',
+            maxWidth: 600,
+            bgcolor: 'white',
+            outlineWidth: 0,
+            borderRadius: 1.5,
+            boxShadow: 24
+        }}>
+            <div className="search-from-location-container-modal">
+                <div className="title-section">
+                    <h2>Search From Location</h2>
+                    <div className="close-button-container">
+                        <button onClick={() => onClose()}>
+                            <TimesIcon />
+                        </button>
+                    </div>
+                </div>
+                <div className="body-section">
+                    <div className="form-section">
+                        {!singleSearchLocation && <div className="input-container country">
+                            <label>Country</label>
+                            <Autocomplete
+                                disablePortal
+                                options={countries.map(country => country.name)}
+                                sx={{ width: '100%' }}
+                                value={singleLocationCountry}
+                                onChange={async (_, newValue) => {
+                                    setSingleLocationCountry(newValue);
+                                    const countryObj = countries.find(country => country.name === newValue);
+
+                                    if (newValue && countryObj) {
+                                        await getGeoBoundsForCountry(countryObj);
+                                    }
+                                }}
+                                renderInput={(params) => <TextField {...params} placeholder="Select Country" />}
+                            />
+                        </div>}
+                        {countryBounds && !singleSearchLocation &&
+                            <div className="inline-form-container">
+                                <LocationSearch geoBounds={countryBounds}
+                                    onUpdate={(locality) => {
+                                        if (locality) {
+                                            setSingleSearchLocation((prevState) => {
+                                                return ({
+                                                    max_distance: prevState?.max_distance || _.toPairs(businessConfig.options.distance)[0][0].toString(),
+                                                    selected_location: locality,
+                                                    selected_country: locality.country,
+                                                    region_viewport: {
+                                                        high: {
+                                                            latitude: countryBounds!.getNorthEast().lat(),
+                                                            longitude: countryBounds!.getNorthEast().lng()
+                                                        },
+                                                        low: {
+                                                            latitude: countryBounds!.getSouthWest().lat(),
+                                                            longitude: countryBounds!.getSouthWest().lng()
+                                                        }
+                                                    }
+                                                });
+                                            });
+                                        }
+                                    }}
+                                    showMap={false} />
+                                {!singleSearchLocation && singleLocationCountry &&
+                                    <button onClick={() => {
+                                        setSingleSearchLocation((prevState) => {
+                                            return ({
+                                                max_distance: prevState?.max_distance || _.toPairs(businessConfig.options.distance)[0][0].toString(),
+                                                selected_location: {
+                                                    name: 'All Localities',
+                                                    country: singleLocationCountry
+                                                },
+                                                selected_country: singleLocationCountry,
+                                                region_viewport: {
+                                                    high: {
+                                                        latitude: countryBounds!.getNorthEast().lat(),
+                                                        longitude: countryBounds!.getNorthEast().lng()
+                                                    },
+                                                    low: {
+                                                        latitude: countryBounds!.getSouthWest().lat(),
+                                                        longitude: countryBounds!.getSouthWest().lng()
+                                                    }
+                                                }
+                                            });
+                                        });
+                                    }} className="all-localities">All Localities</button>}
+                            </div>}
+                        {singleSearchLocation &&
+                            <SelectedSingleLocationDisplay
+                                singleSearchLocation={singleSearchLocation}
+                                onRemove={() => setSingleSearchLocation(undefined)}
+                            />}
+                        {singleSearchLocation && singleSearchLocation.selected_location.name !== 'All Localities' &&
+                            <div className="input-container max-distance-container">
+                                <label>Maximum Distance From Location</label>
+                                <select onChange={(e) => {
+                                    setSingleLocationDistance(parseInt(e.target.value));
+                                    if (singleSearchLocation) {
+                                        setSingleSearchLocation({
+                                            ...singleSearchLocation,
+                                            ...{ max_distance: e.target.value.toString() }
+                                        });
+                                    }
+                                }} value={singleLocationDistance} className="location-distance">
+                                    {_.toPairs(businessConfig.options.distance).map(distance =>
+                                        <option key={distance[0].toString()}
+                                            value={distance[0]}>{distance[1]}</option>)}
+                                </select>
+                            </div>}
+                        <div className="input-container">
+                            <button
+                                className="confirm-button"
+                                type="button"
+                                onClick={() => {
+                                    // @ts-expect-error ad-hoc object composition
+                                    onUpdate({
+                                        ...(singleSearchLocation || {}),
+                                        ...{ max_distance: singleLocationDistance }
+                                    });
+                                    onClose();
+                                }}
+                                disabled={!singleSearchLocation}>Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Box>
+    );
+}

@@ -1,0 +1,40 @@
+@use '../../../../styles/globals.scss' as globals;
+
+.selected-single-location-display-container {
+  max-width: 24rem;
+  border: 1px solid #ededed;
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: -2px 3px 6px rgba(0, 0, 0, 0.2);
+
+  .location-info {
+    .location-name {
+      font-weight: bold;
+      color: globals.$primary-blue;
+    }
+
+    .location-country {
+      font-size: 14px;
+      color: #7f7f7f;
+    }
+
+    .location-distance {
+      font-size: 14px;
+      padding-top: 5px;
+    }
+  }
+
+  .remove-button-container {
+    button {
+      i {
+        font-size: 24px;
+        color: #9b9b9b;
+      }
+    }
+  }
+}

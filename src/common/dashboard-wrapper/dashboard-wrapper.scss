@@ -5,5 +5,18 @@
     .subscription-plan-display-container {
       margin-bottom: 20px;
     }
+
+    .dashboard-content-section {
+      .tab-bar-container {
+        position: sticky;
+        top: 70px;
+        background-color: white;
+        z-index: 10;
+
+        @include globals.dark-mode() {
+          background-color: globals.$dark-background-color;
+        }
+      }
+    }
   }
 }
