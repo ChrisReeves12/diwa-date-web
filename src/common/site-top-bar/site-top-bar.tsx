@@ -6,12 +6,14 @@ import { usePathname } from 'next/navigation';
 import './site-top-bar.scss';
 import NotificationCenter from "@/common/notification-center/notification-center";
 import { useCurrentUser } from '../context/current-user-context';
+import { NotificationResponse } from '@/types/notification-response.interface';
 
 interface SiteTopBarProps {
     isLoginPage?: boolean;
+    notificationsPromise?: Promise<NotificationResponse>;
 }
 
-export default function SiteTopBar({ isLoginPage = false }: SiteTopBarProps) {
+export default function SiteTopBar({ isLoginPage = false, notificationsPromise }: SiteTopBarProps) {
     const currentUser = useCurrentUser();
     const pathname = usePathname();
 
@@ -43,7 +45,7 @@ export default function SiteTopBar({ isLoginPage = false }: SiteTopBarProps) {
                     </span>
                 </Link>
             </div>
-            {currentUser && <NotificationCenter />}
+            {currentUser && <NotificationCenter notificationsPromise={notificationsPromise} />}
             {!currentUser &&
                 <div className="top-button-container">
 

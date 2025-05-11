@@ -4,14 +4,18 @@ import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
 import { Popover } from '@mui/material';
 import UserProfileAccountMenu from './user-profile-account-menu/user-profile-account-menu';
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, use } from 'react';
 import { useCurrentUser } from '../context/current-user-context';
-import { authAPIRequest, humanizeTimeDiff, userProfileLink } from "@/util";
+import { humanizeTimeDiff, userProfileLink } from "@/util";
 import { NotificationResponse } from "@/types/notification-response.interface";
 import NotificationMenu from "@/common/notification-center/notification-menu/notification-menu";
 import _ from 'lodash';
 
-export default function NotificationCenter() {
+interface NotificationCenterProps {
+    notificationsPromise?: Promise<NotificationResponse>;
+}
+
+function NotificationCenterContent({ notificationsData }: { notificationsData: NotificationResponse }) {
     const [profileUserEl, setProfileUserEl] = useState<HTMLElement | null>(null);
     const [likesEl, setLikesEl] = useState<HTMLElement | null>(null);
     const [messagesEl, setMessagesEl] = useState<HTMLElement | null>(null);
@@ -20,14 +24,8 @@ export default function NotificationCenter() {
     const [isLikesPopoverOpen, setIsLikesPopoverOpen] = useState<boolean>(false);
     const [isMessagesPopoverOpen, setIsMessagesPopoverOpen] = useState<boolean>(false);
     const [isNotificationsPopoverOpen, setIsNotificationsPopoverOpen] = useState<boolean>(false);
-    const [notifications, setNotifications] = useState<NotificationResponse | null>(null);
 
     const currentUser = useCurrentUser();
-
-    // Load initial data
-    useEffect(() => {
-        loadPendingMatches().then();
-    }, []);
 
     if (!currentUser) {
         return null;
@@ -53,15 +51,6 @@ export default function NotificationCenter() {
         setIsNotificationsPopoverOpen(true);
     }
 
-    const loadPendingMatches = async () => {
-        const response =
-            await authAPIRequest<NotificationResponse>('GET', '/api/user/notifications', window);
-
-        if (response?.success && response.body) {
-            setNotifications(response.body);
-        }
-    }
-
     return (
         <>
             <div className="notification-center-container">
@@ -76,8 +65,8 @@ export default function NotificationCenter() {
                                     <Image width={45} height={45} title="Matches" alt="Matches" src="/images/heart-dark.svg" />
                                 </span>
                             </span>
-                            {notifications?.pendingMatchesCount && notifications.pendingMatchesCount > 0 &&
-                                <div className='notification-count-bubble'>{notifications.pendingMatchesCount > 99 ? '99+' : notifications.pendingMatchesCount}</div>}
+                            {notificationsData?.pendingMatchesCount && notificationsData.pendingMatchesCount > 0 &&
+                                <div className='notification-count-bubble'>{notificationsData.pendingMatchesCount > 99 ? '99+' : notificationsData.pendingMatchesCount}</div>}
                         </button>
                     </div>
                     <div className="notification-icon-container">
@@ -90,8 +79,8 @@ export default function NotificationCenter() {
                                     <Image width={45} height={45} title="Messages" alt="Messages" src="/images/messages-dark.svg" />
                                 </span>
                             </span>
-                            {notifications?.receivedMessagesCount && notifications.receivedMessagesCount > 0 &&
-                                <div className="notification-count-bubble">{notifications.receivedMessagesCount > 99 ? '99+' : notifications.receivedMessagesCount}</div>}
+                            {notificationsData?.receivedMessagesCount && notificationsData.receivedMessagesCount > 0 &&
+                                <div className="notification-count-bubble">{notificationsData.receivedMessagesCount > 99 ? '99+' : notificationsData.receivedMessagesCount}</div>}
                         </button>
                     </div>
                     <div className="notification-icon-container">
@@ -104,9 +93,9 @@ export default function NotificationCenter() {
                                     <Image width={45} height={45} title="Notifications" alt="Notifications" src="/images/bell-dark.svg" />
                                 </span>
                             </span>
-                            {notifications?.notificationCount && notifications.notificationCount > 0 &&
+                            {notificationsData?.notificationCount && notificationsData.notificationCount > 0 &&
                                 <div className="notification-count-bubble">
-                                    {notifications.notificationCount > 99 ? '99+' : notifications.notificationCount}
+                                    {notificationsData.notificationCount > 99 ? '99+' : notificationsData.notificationCount}
                                 </div>}
                         </button>
                     </div>
@@ -139,7 +128,7 @@ export default function NotificationCenter() {
                     titleIcon="/images/blue-heart.svg"
                     titleIconDark="/images/white-heart.svg"
                     title="Likes"
-                    listItems={(notifications?.pendingMatches || []).map(pendingMatch => ({
+                    listItems={(notificationsData?.pendingMatches || []).map(pendingMatch => ({
                         id: pendingMatch.id,
                         content: pendingMatch.sender.location_name,
                         senderUser: pendingMatch.sender,
@@ -160,7 +149,7 @@ export default function NotificationCenter() {
                     titleIcon="/images/blue-messages.svg"
                     titleIconDark="/images/white-messages.svg"
                     title="Messages"
-                    listItems={(notifications?.receivedMessages || []).map(receivedMessage => ({
+                    listItems={(notificationsData?.receivedMessages || []).map(receivedMessage => ({
                         id: receivedMessage.id,
                         content: _.truncate(receivedMessage.content),
                         senderUser: {
@@ -187,7 +176,7 @@ export default function NotificationCenter() {
                     titleIcon="/images/blue-bell.svg"
                     titleIconDark="/images/white-bell.svg"
                     title="Notifications"
-                    listItems={(notifications?.receivedNotifications || []).map(notification => ({
+                    listItems={(notificationsData?.receivedNotifications || []).map(notification => ({
                         id: notification.id,
                         content: "",
                         senderUser: notification.sender,
@@ -195,8 +184,32 @@ export default function NotificationCenter() {
                         infoSectionUrl: "",
                         userPhotoUrl: "",
                         type: "notifications"
-                }))}/>
+                    }))} />
             </Popover>
         </>
     );
+}
+
+export default function NotificationCenter({ notificationsPromise }: NotificationCenterProps) {
+    const currentUser = useCurrentUser();
+
+    if (!currentUser) {
+        return null;
+    }
+
+    if (!notificationsPromise) {
+        return null;
+    }
+
+    return (
+        <Suspense fallback={<div>Please wait...</div>}>
+            <NotificationCenterWithData notificationsPromise={notificationsPromise} />
+        </Suspense>
+    );
+}
+
+function NotificationCenterWithData({ notificationsPromise }: { notificationsPromise: Promise<NotificationResponse> }) {
+    const notificationsData = use(notificationsPromise);
+
+    return <NotificationCenterContent notificationsData={notificationsData} />;
 }

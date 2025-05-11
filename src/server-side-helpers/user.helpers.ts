@@ -12,13 +12,17 @@ import {
   deleteSession
 } from './session.helpers';
 import { indexUserForSearch } from "@/server-side-helpers/search.helpers";
+import mySqlDbPool from "@/lib/mysql";
+import { businessConfig } from "@/config/business";
+import { capitalizeFirstLetter, transformBigInts } from "@/util";
+import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 
 /**
  * Get a user by their ID
  * @param id The user's ID
  * @returns The user object without the password or null if not found
  */
-export async function getUser(id: number): Promise<Omit<User, 'password'> | null> {
+export async function getUser(id: number): Promise<User | null> {
   const user = await prisma.users.findUnique({
     where: {
       id: BigInt(id)
@@ -29,10 +33,55 @@ export async function getUser(id: number): Promise<Omit<User, 'password'> | null
     return null;
   }
 
-  // Create a new object without the password field
-  const userWithoutPassword = { ...user } as Omit<typeof user, 'password'>;
-  delete (userWithoutPassword as Record<string, unknown>).password;
-  return userWithoutPassword as unknown as Omit<User, 'password'>;
+  return prepareUser(user as unknown as User);
+}
+
+/**
+ * Block a user
+ * @param userId The ID of the user doing the blocking
+ * @param blockedUserId The ID of the user being blocked
+ * @returns True if the operation was successful
+ */
+export async function blockUser(userId: number, blockedUserId: number) {
+  // Check if already blocked
+  const existingBlock = await prisma.blocked_users.findFirst({
+    where: {
+      user_id: BigInt(userId),
+      blocked_user_id: BigInt(blockedUserId)
+    }
+  });
+
+  if (existingBlock) {
+    return true; // Already blocked
+  }
+
+  // Create new block record
+  await prisma.blocked_users.create({
+    data: {
+      user_id: BigInt(userId),
+      blocked_user_id: BigInt(blockedUserId)
+    }
+  });
+
+  return true;
+}
+
+/**
+ * Unblock a user
+ * @param userId The ID of the user doing the unblocking
+ * @param blockedUserId The ID of the user being unblocked
+ * @returns True if the operation was successful
+ */
+export async function unBlockUser(userId: number, blockedUserId: number) {
+  // Delete block record if exists
+  await prisma.blocked_users.deleteMany({
+    where: {
+      user_id: BigInt(userId),
+      blocked_user_id: BigInt(blockedUserId)
+    }
+  });
+
+  return true;
 }
 
 /**
@@ -44,6 +93,80 @@ async function refreshLastActive(user: User) {
     where: { id: user.id },
     data: { last_active_at: new Date() }
   });
+}
+
+/**
+ * Get user profile detail.
+ * @param currentUserId
+ * @param user
+ */
+export async function getUserProfileDetail(currentUserId: number | bigint, user: Omit<User, "password">) {
+  const [profileDetailResults] = await mySqlDbPool.query<any[]>(`
+    WITH TheyBlockedMeIds AS (
+      SELECT BU.user_id FROM blocked_users BU WHERE blocked_user_id = ?
+    ),
+    IBlockedThemIds AS (
+      SELECT BU.blocked_user_id FROM blocked_users BU WHERE user_id = ?
+    ),
+    IMutedThemIds AS (
+      SELECT MU.recipient_id FROM muted_users MU WHERE MU.user_id = ?
+    ),
+    MyMatches AS (
+      SELECT M.* FROM user_matches M WHERE (M.recipient_id = ? OR M.user_id = ?) AND
+                                             M.recipient_id NOT IN (SELECT user_id FROM TheyBlockedMeIds) AND
+                                             M.user_id NOT IN (SELECT recipient_id FROM IMutedThemIds)
+    )
+
+    SELECT
+      EXISTS(SELECT 1 FROM TheyBlockedMeIds WHERE user_id = ?) AS they_blocked_me,
+      EXISTS(SELECT 1 FROM IBlockedThemIds WHERE blocked_user_id = ?) AS blocked_them,
+      (SELECT status FROM MyMatches WHERE recipient_id = ? OR user_id = ?) AS match_status,
+      (SELECT id FROM MyMatches WHERE recipient_id = ? OR user_id = ?) AS match_id,
+      EXISTS(SELECT 1 FROM MyMatches WHERE user_id = ?) AS match_is_towards_me`, [currentUserId, currentUserId, currentUserId,
+    currentUserId, currentUserId, user.id, user.id, user.id, user.id, user.id, user.id, user.id]);
+
+  const additionalProfileDetails = _.first(profileDetailResults) as
+    { they_blocked_me: boolean, blocked_them: boolean, match_status?: string, match_id?: number, match_is_towards_me: boolean };
+
+  return {
+    user,
+    seeking_label: createGenderLabels(user.seeking_genders),
+    marital_status_label: user.marital_status ?
+      businessConfig.options.maritalStatuses[user.marital_status as keyof typeof businessConfig.options.maritalStatuses] : 'No Answer',
+    interest_labels: (user.interests || [])
+      .map((interest) => businessConfig.options.interests[interest as keyof typeof businessConfig.options.interests]),
+    wants_children_label: user.wants_children ?
+      businessConfig.options.wantsChildrenStatuses[user.wants_children as keyof typeof businessConfig.options.wantsChildrenStatuses] : 'No Answer',
+    has_children_label: user.has_children ?
+      businessConfig.options.hasChildrenStatuses[user.has_children as keyof typeof businessConfig.options.hasChildrenStatuses] : 'No Answer',
+    education_label: user.education ?
+      businessConfig.options.educationLevels[user.education as keyof typeof businessConfig.options.educationLevels] : 'No Answer',
+    smoking_label: user.smoking ?
+      businessConfig.options.smokingStatuses[user.smoking as keyof typeof businessConfig.options.smokingStatuses] : 'No Answer',
+    drinking_label: user.drinking ?
+      businessConfig.options.drinkingStatuses[user.drinking as keyof typeof businessConfig.options.drinkingStatuses] : 'No Answer',
+    religion_label: (user.religions || []).map((religion) => businessConfig.options.religions[religion as keyof typeof businessConfig.options.religions]).join(', '),
+    body_type_label: user.body_type ?
+      businessConfig.options.bodyTypes[user.body_type as keyof typeof businessConfig.options.bodyTypes] : 'No Answer',
+    height_label: user.height ? businessConfig.options.height[user.height as keyof typeof businessConfig.options.height] : 'No Answer',
+    ethnicity_label: (user.ethnicities || []).map(ethnicity =>
+      businessConfig.options.ethnicities[ethnicity as keyof typeof businessConfig.options.ethnicities] || ethnicity).join(', '),
+    match_accepted_at: '',
+    ...additionalProfileDetails
+  };
+}
+
+/**
+ * Create appropriate gender seeking label.
+ * @param genders
+ * @returns string
+ */
+function createGenderLabels(genders: string[]) {
+  if (genders.length === 2) {
+    return 'Men and Women';
+  }
+
+  return genders[0] === 'male' ? 'Men' : 'Women';
 }
 
 /**
@@ -96,16 +219,11 @@ export async function authenticateUser(
 }
 
 /**
- * Get the currently logged-in user based on the session ID in cookies
- * @param request Optional NextRequest object for server components
- * @param response Optional NextResponse to rotate the session if needed
- * @returns The current user without password or null if not authenticated
+ * Returns the currently logged-in user.
+ * @param cookieStore
  */
-export async function getCurrentUser(
-  request?: NextRequest,
-  response?: NextResponse
-): Promise<User | undefined> {
-  const sessionId = await getSessionId(request);
+export async function getCurrentUser(cookieStore: ReadonlyRequestCookies) {
+  const sessionId = await getSessionId(cookieStore);
 
   if (!sessionId) {
     return undefined;
@@ -118,10 +236,18 @@ export async function getCurrentUser(
     return undefined;
   }
 
-  // Rotate session if needed and if response object is provided
-  if (response) {
-    await rotateSession(sessionId, response);
-  }
+  // const newSessionId = await rotateSession(sessionId, cookieStore);
+  // if (newSessionId) {
+  //   cookieStore.set({
+  //     name: SESSION_COOKIE_NAME,
+  //     value: newSessionId,
+  //     httpOnly: true,
+  //     secure: process.env.NODE_ENV === 'production',
+  //     sameSite: 'strict',
+  //     maxAge: SESSION_EXPIRY,
+  //     path: '/'
+  //   });
+  // }
 
   // Get the user from the database
   const result = await prisma.users.findUnique({
@@ -144,7 +270,6 @@ export async function getCurrentUser(
 
   const user = result as unknown as User;
   await refreshLastActive(user as unknown as User);
-
   await indexUserForSearch(user);
 
   return prepareUser(user);
@@ -161,7 +286,7 @@ export function appendMediaRootToImage(image: UserPhoto) {
   lImage.path = appendMediaRootToImageUrl(lImage.path) || lImage.path;
   if (lImage.cropped_image_data?.cropped_image_path) {
     lImage.cropped_image_data.cropped_image_path = appendMediaRootToImageUrl(lImage.cropped_image_data.cropped_image_path)
-        || lImage.cropped_image_data.cropped_image_path;
+      || lImage.cropped_image_data.cropped_image_path;
   }
 
   return lImage;
@@ -188,7 +313,7 @@ export function appendMediaRootToImageUrl(imageUrl?: string) {
  * @param {User} user - The user object whose subscription status is being checked.
  * @return {boolean} Returns true if the user's subscription is active, false otherwise.
  */
-export function checkSubscriptionActive(user: User): boolean {
+export function checkSubscriptionActive(user: Omit<User, 'password'> & Partial<Pick<User, 'password'>>): boolean {
   const subscription = _.first(user.subscription_plan_enrollments);
   if (!subscription) {
     return false;
@@ -233,21 +358,17 @@ export async function comparePasswords(clearTextPassword: string, passwordHash: 
 
 /**
  * Log out a user by deleting their session
- * @param request Optional NextRequest object to get the session ID from
- * @param response Optional NextResponse to clear the session cookie
+ * @param cookieStore
  * @returns True if logout was successful, false otherwise
  */
-export async function logoutUser(
-  request?: NextRequest,
-  response?: NextResponse
-): Promise<void> {
+export async function logoutUser(cookieStore: ReadonlyRequestCookies): Promise<void> {
 
-  const sessionId = await getSessionId(request);
+  const sessionId = await getSessionId(cookieStore);
   if (!sessionId) {
     return;
   }
 
-  await deleteSession(sessionId, response);
+  await deleteSession(sessionId);
 }
 
 /**
@@ -286,7 +407,7 @@ export function getMainCroppedImageData(data: Pick<User, 'photos' | 'main_photo'
   const mainPhotoCroppedImageData = data.photos.find(p => p.path === data.main_photo)?.cropped_image_data;
   if (mainPhotoCroppedImageData) {
     mainPhotoCroppedImageData.cropped_image_path =
-        appendMediaRootToImageUrl(mainPhotoCroppedImageData.cropped_image_path) || mainPhotoCroppedImageData.cropped_image_path;
+      appendMediaRootToImageUrl(mainPhotoCroppedImageData.cropped_image_path) || mainPhotoCroppedImageData.cropped_image_path;
   }
 
   return mainPhotoCroppedImageData;
@@ -299,7 +420,10 @@ export function getMainCroppedImageData(data: Pick<User, 'photos' | 'main_photo'
  * @returns
  */
 export function prepareUser(user: User) {
-  user.password = ''
+  if (user.password) {
+    user.password = ''
+  }
+
   user.age = calculateUserAge(user);
 
   user.is_subscription_active = checkSubscriptionActive(user);
@@ -313,5 +437,146 @@ export function prepareUser(user: User) {
     user.public_photos = user.photos.map(p => appendMediaRootToImage(p));
   }
 
-  return user;
+  return transformBigInts(user) as User;
 }
+
+/**
+ * Send a match request from one user to another
+ * @param userId The ID of the user sending the match request
+ * @param recipientUserId The ID of the user receiving the match request
+ * @returns The status of the match after the operation ('pending' or 'matched')
+ */
+export async function sendUserMatchRequest(userId: number, recipientUserId: number): Promise<'pending' | 'matched'> {
+  // Check if a match already exists
+  const existingMatch = await prisma.user_matches.findFirst({
+    where: {
+      OR: [
+        {
+          user_id: BigInt(userId),
+          recipient_id: BigInt(recipientUserId)
+        },
+        {
+          user_id: BigInt(recipientUserId),
+          recipient_id: BigInt(userId)
+        }
+      ]
+    }
+  });
+
+  // If there's an existing match where the current user is the recipient,
+  // this means the other user already liked them, so we should confirm the match
+  if (existingMatch && existingMatch.recipient_id === BigInt(userId) && existingMatch.status === 'pending') {
+    // Update the match status to matched
+    await prisma.user_matches.update({
+      where: {
+        id: existingMatch.id
+      },
+      data: {
+        status: 'matched',
+        updated_at_timestamp: BigInt(Date.now()),
+        updated_at: new Date()
+      }
+    });
+    return 'matched';
+  }
+
+  // If there's an existing match where the current user is the sender,
+  // or if the match is already confirmed, just return the current status
+  if (existingMatch) {
+    return existingMatch.status as 'pending' | 'matched';
+  }
+
+  // Create a new match with pending status
+  await prisma.user_matches.create({
+    data: {
+      user_id: BigInt(userId),
+      recipient_id: BigInt(recipientUserId),
+      status: 'pending',
+      updated_at_timestamp: BigInt(Date.now()),
+      created_at: new Date(),
+      updated_at: new Date()
+    }
+  });
+
+  await prisma.muted_users.deleteMany({
+    where: {
+      user_id: BigInt(recipientUserId),
+      recipient_id: BigInt(userId)
+    }
+  });
+
+  return 'pending';
+}
+
+/**
+ * Remove a match request between two users
+ * @param userId The ID of the user removing the match
+ * @param recipientUserId The ID of the other user in the match
+ */
+export async function removeUserMatchRequest(userId: number, recipientUserId: number): Promise<void> {
+  // Delete any match between these users
+  await prisma.user_matches.deleteMany({
+    where: {
+      OR: [
+        {
+          user_id: BigInt(userId),
+          recipient_id: BigInt(recipientUserId)
+        },
+        {
+          user_id: BigInt(recipientUserId),
+          recipient_id: BigInt(userId)
+        }
+      ]
+    }
+  });
+}
+
+/**
+ * Mutes a user by ID.
+ * @param userId
+ * @param recipientUserId
+ * @returns True if the operation was successful
+ */
+export async function muteUserById(userId: number, recipientUserId: number): Promise<boolean> {
+  // Check if there is a muted_user record by user_id and muted_user_id
+  const existingMuted = await prisma.muted_users.findFirst({
+    where: {
+      user_id: BigInt(userId),
+      recipient_id: BigInt(recipientUserId)
+    }
+  });
+
+  // If there is no record, insert one
+  if (!existingMuted) {
+    await prisma.muted_users.create({
+      data: {
+        user_id: BigInt(userId),
+        recipient_id: BigInt(recipientUserId),
+        created_at: new Date(),
+        updated_at: new Date()
+      }
+    });
+  }
+
+  return true;
+}
+
+/**
+ * Unmute a user by ID.
+ * @param userId
+ * @param recipientUserId
+ * @returns True if the operation was successful
+ */
+export async function unMuteUserById(userId: number, recipientUserId: number): Promise<boolean> {
+  // Delete the muted_user record by user_id and muted_user_id.
+  await prisma.muted_users.deleteMany({
+    where: {
+      user_id: BigInt(userId),
+      recipient_id: BigInt(recipientUserId)
+    }
+  });
+
+  return true;
+}
+
+

@@ -1,11 +1,11 @@
 'use client';
 
 import './login.scss';
-import React, { useState, FormEvent } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { loginTitle, loginSubtitle } from '@/content/login-content';
-import { AuthResponse } from '@/types/auth-response.interface';
+import { loginAction } from './login.actions';
 
 export default function LoginForm() {
     const router = useRouter();
@@ -15,42 +15,26 @@ export default function LoginForm() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (formData: FormData) => {
         setErrors({});
         setIsLoading(true);
-
+        
         try {
-            const response = await fetch('/api/user/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email, password })
-            });
-
-            const data: AuthResponse = await response.json();
-
-            if (!response.ok) {
-                if (response.status === 422) {
-                    // Validation errors
-                    setErrors({
-                        form: data.message || 'Please check your input'
-                    });
-                } else if (response.status === 401) {
-                    // Authentication failed
-                    setErrors({
-                        form: data.message || 'Invalid email or password'
-                    });
-                } else {
-                    // Other errors
-                    setErrors({
-                        form: data.message || 'An error occurred during login'
-                    });
-                }
+            // Add email and password to the form data
+            formData.set('email', email);
+            formData.set('password', password);
+            
+            // Call the server action
+            const result = await loginAction(formData);
+            
+            if (!result.success) {
+                // Authentication failed
+                setErrors({
+                    form: result.message || 'Invalid email or password'
+                });
                 return;
             }
-
+            
             // Login successful
             router.push('/');
             router.refresh();
@@ -84,7 +68,7 @@ export default function LoginForm() {
                         </div>
                         <h1>{loginTitle}</h1>
                         <h4>{loginSubtitle}</h4>
-                        <form onSubmit={handleSubmit}>
+                        <form action={handleSubmit}>
                             <div className="form-row">
                                 <div className={`input-container ${errors.email ? 'error' : ''}`}>
                                     <label htmlFor="email">Email</label>

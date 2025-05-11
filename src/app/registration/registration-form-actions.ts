@@ -1,29 +1,49 @@
-import { NextRequest, NextResponse } from 'next/server';
+'use server';
+
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { checkUserExists, hashPassword } from '@/server-side-helpers/user.helpers';
-import { UserRegistrationData, ValidationErrors, User } from '../../../../types';
+import { UserRegistrationData, ValidationErrors, User } from '@/types';
 import prisma from '@/lib/prisma';
 import { createSession } from '@/server-side-helpers/session.helpers';
 import { businessConfig } from "@/config/business";
 import { logError } from '@/server-side-helpers/logging.helpers';
 
-export async function POST(request: NextRequest) {
+interface RegistrationResult {
+  success: boolean;
+  message?: string;
+  errors?: ValidationErrors;
+}
+
+/**
+ * Server action to handle user registration
+ */
+export async function registerAction(formData: FormData): Promise<RegistrationResult> {
   try {
-    // Parse the JSON body from the request
-    const userData: UserRegistrationData = await request.json();
+    // Extract user data from form data
+    const userData: UserRegistrationData = {
+      firstName: formData.get('firstName') as string,
+      lastName: formData.get('lastName') as string,
+      email: formData.get('email') as string,
+      password: formData.get('password') as string,
+      dateOfBirth: formData.get('dateOfBirth') as string,
+      location: JSON.parse(formData.get('location') as string),
+      userGender: formData.get('userGender') as string,
+      seekingGender: formData.get('seekingGender') as string,
+      termsAccepted: formData.get('termsAccepted') === 'true',
+      timezone: formData.get('timezone') as string
+    };
 
     // Validate user data
     const errors = await validateUserData(userData);
 
     // If there are validation errors, return them
     if (Object.keys(errors).length > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Validation failed',
-          errors
-        },
-        { status: 422 }
-      );
+      return {
+        success: false,
+        message: 'Validation failed',
+        errors
+      };
     }
 
     // Prepare user data for database storage
@@ -57,34 +77,38 @@ export async function POST(request: NextRequest) {
     };
 
     // Store user in database
-
     const newUser = await prisma.users.create({
       data: createData as never
     });
 
     // Create a session for the user
-    const response = NextResponse.json(
-      {
-        success: true,
-        message: 'Registration successful'
-      },
-      { status: 201 }
-    );
+    const sessionId = await createSession(newUser as unknown as User);
 
-    // Create a session for the user
-    await createSession(newUser as unknown as User, response);
+    // Set the session cookie
+    if (sessionId) {
+      const cookieStore = await cookies();
+      cookieStore.set({
+        name: process.env.SESSION_COOKIE_NAME as string,
+        value: sessionId,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: parseInt(process.env.SESSION_EXPIRY_MIN || '1440') * 60,
+        path: '/'
+      });
+    }
 
-    return response;
+    return {
+      success: true,
+      message: 'Registration successful'
+    };
   } catch (error: any) {
     logError(error, 'Registration failed');
 
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Registration failed. Please try again later.'
-      },
-      { status: 500 }
-    );
+    return {
+      success: false,
+      message: 'Registration failed. Please try again later.'
+    };
   }
 }
 
@@ -166,7 +190,7 @@ async function validateUserData(data: UserRegistrationData): Promise<ValidationE
 
   // Validate location
   if (!data.location) {
-    errors.location = 'Please search and select your location'
+    errors.location = 'Please search and select your location';
   }
 
   // Validate terms acceptance

@@ -17,6 +17,7 @@ import {
     calculateUserAge,
     getMainCroppedImageData
 } from "@/server-side-helpers/user.helpers";
+import mySqlDbPool from "@/lib/mysql";
 
 const httpsAgent = new https.Agent({
     rejectUnauthorized: false,
@@ -383,18 +384,19 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'location_viewp
         const currentUserId = Number(currentUser.id);
         if (searchResults.length > 0) {
             const userIds = searchResults.map(r => r.id).join(',');
-            const allMatchBlockedUsers = transformBigInts<any[]>(await prisma.$queryRaw`
-                 WITH cte_matches AS (
+            const [allMatchBlockedUsers] = await mySqlDbPool.query<any>(`
+                WITH cte_matches AS (
                 SELECT IF(user_id = ${currentUserId}, recipient_id, user_id) as user_id,
                        M.status as match_status,
                        M.accepted_at as match_accepted_at,
                        M.id as match_id,
                        NULL as blocked_them,
                        NULL as they_blocked_me,
+                       M.user_id IN (${userIds}) AND M.recipient_id = ${currentUserId} AND M.status = 'pending' as they_liked_me,
                        'match' as type
                 FROM user_matches M
                 WHERE (M.user_id = ${currentUserId} AND M.recipient_id IN (${userIds}))
-                   OR (M.user_id IN (${userIds}) AND M.recipient_id = ${currentUserId} AND M.status != 'pending')
+                   OR (M.user_id IN (${userIds}) AND M.recipient_id = ${currentUserId})
             ),
             cte_blocked_users AS (
                 SELECT IF(user_id = ${currentUserId}, blocked_user_id, user_id) as user_id,
@@ -403,6 +405,7 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'location_viewp
                        NULL as match_id,
                        user_id = ${currentUserId} as blocked_them,
                        user_id != ${currentUserId} as they_blocked_me,
+                       NULL as they_liked_me,
                        'block' as type
                 FROM blocked_users BU
                 WHERE (user_id IN (${userIds}) OR user_id = ${currentUserId})
@@ -415,7 +418,7 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'location_viewp
             if (allMatchBlockedUsers) {
                 for (let i = 0; i < searchResults.length; i++) {
                     const searchResult = searchResults[i];
-                    const selectedMatchBlockedUsers = allMatchBlockedUsers.filter(q => Number(q.user_id) === searchResult.id);
+                    const selectedMatchBlockedUsers = allMatchBlockedUsers.filter((q: any) => Number(q.user_id) === searchResult.id);
                     if (selectedMatchBlockedUsers.length > 0) {
                         for (const selectedMatchBlockedUser of selectedMatchBlockedUsers) {
                             if (selectedMatchBlockedUser.type === 'block') {
@@ -425,6 +428,7 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'location_viewp
                                 searchResult.match_id = +selectedMatchBlockedUser.match_id;
                                 searchResult.match_status = selectedMatchBlockedUser.match_status;
                                 searchResult.match_accepted_at = selectedMatchBlockedUser.match_accepted_at;
+                                searchResult.they_liked_me = Boolean(selectedMatchBlockedUser.they_liked_me);
                             }
                         }
                     }
@@ -632,6 +636,7 @@ function translateToUserPreview(source: UserSearchDoc): UserPreview {
         longitude: source.location_coordinates.lon,
         last_active_at: source.last_active_at ? new Date(source.last_active_at) : undefined,
         created_at: source.created_at ? new Date(source.created_at) : undefined,
+        they_liked_me: false,
         ..._.pick(source, ['id', 'display_name', 'main_photo', 'gender', 'location_name', 'country'])
     }
 }

@@ -5,11 +5,19 @@ import redis from '@/lib/redis';
 import { User, SessionData } from '../types';
 import { getRedisKey } from './cache.helpers';
 import crypto from "crypto";
+import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 
 // Session constants
 const SESSION_ROTATION_TIME = parseInt(process.env.SESSION_ROTATION_TIME_MIN || '2') * 60;
 const SESSION_EXPIRY = parseInt(process.env.SESSION_EXPIRY_MIN || '1440') * 60;
 const SESSION_COOKIE_NAME = process.env.SESSION_COOKIE_NAME || 'session_id';
+
+/**
+ * Create a randomized cookie string.
+ */
+function createSessionCookieString() {
+  return crypto.randomBytes(40).toString('hex');
+}
 
 /**
  * Create a new session for a user
@@ -21,7 +29,7 @@ export async function createSession(
   user: User,
   response?: NextResponse
 ): Promise<string> {
-  const sessionId = crypto.randomBytes(40).toString('hex');
+  const sessionId = createSessionCookieString();
 
   // Store user data in Redis with the session ID as the key
   await redis.set(
@@ -68,29 +76,27 @@ export async function getSessionData(sessionId: string): Promise<SessionData | n
 
 /**
  * Rotate the session ID to prevent session hijacking
- * @param currentSessionId The current session ID
- * @param response NextResponse to set the new cookie on
+ * @param currentSessionId
+ * @param cookieStore
  * @returns The new session ID
  */
 export async function rotateSession(
   currentSessionId: string,
-  response: NextResponse
+  cookieStore: ReadonlyRequestCookies
 ): Promise<string | null> {
-  // Get current session data
   const sessionData = await getSessionData(currentSessionId);
 
   if (!sessionData) {
     return null;
   }
 
-  // Check if rotation is needed (session older than SESSION_ROTATION_TIME)
+  // Check if rotation is needed
   const sessionAge = (Date.now() - sessionData.createdAt) / 1000;
   if (sessionAge < SESSION_ROTATION_TIME) {
-    return currentSessionId; // No need to rotate yet
+    return currentSessionId;
   }
 
-  // Create new session with updated timestamp
-  const newSessionId = uuidv4();
+  const newSessionId = createSessionCookieString();
 
   // Store updated session data with new ID
   await redis.set(
@@ -103,19 +109,6 @@ export async function rotateSession(
     SESSION_EXPIRY
   );
 
-  // Set the new session cookie
-  response.cookies.set({
-    name: SESSION_COOKIE_NAME,
-    value: newSessionId,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: SESSION_EXPIRY,
-    path: '/'
-  });
-
-  // Delete the old session after a short delay to ensure the new one is being used
-  // This prevents logout if there's any delay in cookie processing
   setTimeout(async () => {
     await redis.del(getRedisKey(`session:${currentSessionId}`));
   }, 5000);
@@ -125,41 +118,19 @@ export async function rotateSession(
 
 /**
  * Get the session ID from cookies or request
- * @param request Optional NextRequest object
+ * @param cookieStore
  * @returns The session ID or undefined if not found
  */
-export async function getSessionId(request?: NextRequest): Promise<string | undefined> {
-  if (request) {
-    return request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  }
-
-  const cookieStore = await cookies();
-
+export async function getSessionId(cookieStore: ReadonlyRequestCookies): Promise<string | undefined> {
   return cookieStore.get?.(SESSION_COOKIE_NAME)?.value;
 }
 
 /**
  * Delete a session (logout)
  * @param sessionId The session ID to delete
- * @param response Optional NextResponse to clear the cookie
  */
 export async function deleteSession(
-  sessionId: string,
-  response?: NextResponse
+  sessionId: string
 ): Promise<void> {
-  // Delete session from Redis
   await redis.del(getRedisKey(`session:${sessionId}`));
-
-  // Clear the cookie if response is provided
-  if (response) {
-    response.cookies.set({
-      name: SESSION_COOKIE_NAME,
-      value: '',
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 0,
-      path: '/'
-    });
-  }
 }

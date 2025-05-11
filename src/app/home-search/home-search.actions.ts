@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { SearchParameters } from "@/types/search-parameters.interface";
 import { logError } from "@/server-side-helpers/logging.helpers";
+import { cookies } from "next/headers";
 
 /**
  * Updates user's search preferences
@@ -12,7 +13,7 @@ import { logError } from "@/server-side-helpers/logging.helpers";
  */
 export async function updateUserSearchPreferences(searchPrefs: Partial<SearchParameters>) {
     try {
-        const currentUser = await getCurrentUser();
+        const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
             redirect('/');
         }

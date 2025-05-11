@@ -1,30 +1,27 @@
 import GuestHome from "@/app/guest-home/guest-home";
 import { getCurrentUser } from "@/server-side-helpers/user.helpers";
 import HomeSearch from "@/app/home-search/home-search";
-import { Metadata } from "next";
 import { searchUsers } from "@/server-side-helpers/search.helpers";
 import { businessConfig } from "@/config/business";
 import { SearchFromOrigin, User } from "@/types";
 import { SearchSortBy } from "@/types/search-parameters.interface";
-
-export async function generateMetadata(): Promise<Metadata | undefined> {
-    const currentUser = await getCurrentUser();
-    if (currentUser) {
-        return {
-            title: `${process.env.APP_NAME} | Search`,
-        };
-    }
-}
+import { createNotificationCenterDataPromise } from "@/server-side-helpers/notification.helper";
+import { cookies } from "next/headers";
 
 export default async function Home({ searchParams }: { searchParams: Promise<any> }) {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getCurrentUser(await cookies());
 
     return (
-        currentUser ? <HomeSearch searchPromise={createSearchPromise(currentUser, await searchParams)} currentUser={currentUser}/> : <GuestHome/>
+        currentUser ?
+            <HomeSearch
+                searchPromise={createSearchPromise(currentUser, await searchParams)}
+                notificationsPromise={createNotificationCenterDataPromise(currentUser)}
+                currentUser={currentUser}
+            /> : <GuestHome />
     );
 }
 
-function createSearchPromise(currentUser: User, searchParams: any) {
+async function createSearchPromise(currentUser: User, searchParams: any) {
     return searchUsers(currentUser, {
         page: Number(searchParams?.page || 1),
         seeking_min_age: currentUser.seeking_min_age || businessConfig.defaults.minAge,

@@ -12,10 +12,11 @@ import { loadGoogleMapsScript } from "@/util";
 interface DashboardWrapperProps {
     currentUser: User,
     activeTab: 'search'|'likes'|'messages',
-    children: React.ReactNode
+    children: React.ReactNode,
+    notificationsPromise?: Promise<any>
 }
 
-export default function DashboardWrapper({ currentUser, activeTab, children }: DashboardWrapperProps) {
+export default function DashboardWrapper({ currentUser, activeTab, children, notificationsPromise }: DashboardWrapperProps) {
     const tabs = [
         {label: 'Search', url: '/', icon: 'las la-search', isSelected: activeTab === 'search' },
         {label: 'Likes', url: '/likes', icon: 'las la-heart', isSelected: activeTab === 'likes' },
@@ -28,7 +29,7 @@ export default function DashboardWrapper({ currentUser, activeTab, children }: D
 
     return (
         <CurrentUserProvider currentUser={currentUser}>
-            <SiteWrapper>
+            <SiteWrapper notificationsPromise={notificationsPromise}>
                 <div className="dashboard-wrapper-container">
                     <div className="container">
                         <UserSubscriptionPlanDisplay />

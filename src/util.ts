@@ -22,7 +22,7 @@ export function transformBigInts<T>(data: any): T {
  * @returns The URL for the user's profile.
  */
 export function userProfileLink(user: { id: bigint | string | number }) {
-    return `/profile/${user.id}`;
+    return `/user/${user.id}`;
 }
 
 /**
@@ -103,40 +103,15 @@ export function humanizeTimeDiff(date?: Date | string): string {
 }
 
 /**
- * Perform an AJAX request that recognizes authentication.
- * @param method
- * @param url
- * @param window
- * @param body
- * @param criticalErrMsg
+ * Capitalizes the first letter of a string.
+ * @param str The string to capitalize.
+ * @returns The string with its first letter capitalized.
  */
-export async function authAPIRequest<T>(method: string, url: string,
-    window: Window,
-    body?: object,
-    criticalErrMsg?: string) {
-    try {
-        const response = await fetch(url, { method, headers: { 'content-type': 'application/json' } });
-        if (response.ok) {
-            return ({ response, body: (await response.json()) as T, success: true });
-        }
-
-        if (response.status === 401) {
-            // Unauthorized
-            window.location.href = '/';
-            return;
-        }
-
-        return ({
-            response,
-            success: false,
-            body: undefined,
-            errorData: await response.json()
-        });
-    } catch (err) {
-        window.alert(criticalErrMsg || 'An error occurred while making request.');
-        console.error(err);
-    }
+export function capitalizeFirstLetter(str?: string): string {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
 
 /**
  * Decodes HTML entities in a given string.

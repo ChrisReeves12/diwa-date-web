@@ -5,6 +5,7 @@ import UserPhotoDisplay from '@/common/user-photo-display/user-photo-display';
 import { useCurrentUser } from '@/common/context/current-user-context';
 import Link from 'next/link';
 import Image from 'next/image';
+import { logoutAction } from '@/common/server-actions/logout.actions';
 import './user-profile-account-menu.scss';
 
 interface UserProfileAccountMenuProps {
@@ -23,28 +24,19 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
 
   const handleSignOut = async () => {
     try {
-      const response = await fetch('/api/user/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const result = await logoutAction();
 
-      if (response.ok) {
-        // Redirect to home page after successful logout
+      if (result.success) {
         window.location.href = '/';
       } else {
-        // Handle error
         window.alert('An error occurred while signing out.');
-        console.error('Logout failed');
+        console.error('Logout failed:', result.message);
       }
     } catch (error) {
       window.alert('An error occurred while signing out.');
       console.error('Error during logout:', error);
     }
   };
-
-  // We don't need to handle the main photo logic here as UserPhotoDisplay handles it
 
   if (!currentUser) return null;
 

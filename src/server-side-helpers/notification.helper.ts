@@ -10,6 +10,7 @@ import {
 import _ from 'lodash';
 import { NotificationPendingMatch, NotificationReceivedMessage, Notification } from '@/types/notification-response.interface';
 import { transformBigInts } from '@/util';
+import { NotificationCenterData } from "@/types/notification-center-data.interface";
 
 /**
  * Get pending matches for a user
@@ -17,7 +18,6 @@ import { transformBigInts } from '@/util';
  * @returns
  */
 export async function getPendingMatches(user: User): Promise<NotificationPendingMatch[]> {
-
     // Get pending matches where the current user is the recipient
     const pendingMatches = await prisma.user_matches.findMany({
         where: {
@@ -85,6 +85,30 @@ export async function getPendingMatches(user: User): Promise<NotificationPending
         delete (pm.sender as any).date_of_birth;
         delete (pm.sender as any).password;
         return transformBigInts(pm);
+    });
+}
+
+/**
+ * Creates a promise to fetch notification center data.
+ * @param currentUser
+ */
+export async function createNotificationCenterDataPromise(currentUser: User): Promise<NotificationCenterData> {
+    return Promise.all([
+        getPendingMatches(currentUser),
+        getReceivedMessages(currentUser),
+        getPendingNotifications(currentUser),
+        countAllPendingMatches(currentUser),
+        countAllMessages(currentUser),
+        countAllNotifications(currentUser)
+    ]).then(([pendingMatches, receivedMessages, receivedNotifications, pendingMatchesCount, receivedMessagesCount, notificationCount]) => {
+        return {
+            pendingMatches,
+            receivedMessages,
+            pendingMatchesCount,
+            receivedMessagesCount,
+            receivedNotifications,
+            notificationCount
+        };
     });
 }
 

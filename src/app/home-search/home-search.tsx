@@ -16,6 +16,7 @@ import { Pagination } from "@mui/material";
 import Modal from '@mui/material/Modal';
 import { Box } from "@mui/system";
 import SearchFiltersDialog from "@/app/home-search/search-filters-dialog/search-filters-dialog";
+import { NotificationCenterData } from "@/types/notification-center-data.interface";
 
 function SearchErrorDisplay() {
     return (
@@ -146,12 +147,17 @@ function SearchResultsView({ currentUser, searchPromise }: {
     );
 }
 
-export default function HomeSearch({ currentUser, searchPromise }: {
+export default function HomeSearch({ currentUser, searchPromise, notificationsPromise }: {
     currentUser: User,
-    searchPromise: Promise<SearchResponse>
+    searchPromise: Promise<SearchResponse>,
+    notificationsPromise: Promise<NotificationCenterData>
 }) {
     return (
-        <DashboardWrapper activeTab="search" currentUser={currentUser}>
+        <DashboardWrapper
+            activeTab="search"
+            currentUser={currentUser}
+            notificationsPromise={notificationsPromise}
+        >
             <Suspense fallback={<CenterScreenLoader />}>
                 <SearchResultsView currentUser={currentUser} searchPromise={searchPromise} />
             </Suspense>

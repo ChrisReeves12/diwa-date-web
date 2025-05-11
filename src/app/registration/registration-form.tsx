@@ -1,13 +1,13 @@
 'use client';
 
 import './registration.scss';
-import React, { useState, FormEvent, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import SeekingMatchForm from '@/common/seeking-match-form/seeking-match-form';
 import { registrationTitle, registrationSubtitle, registrationPasswordHint } from '@/content/registration-content';
-import { UserRegistrationData } from "../../types";
 import { Locality } from "@/types/locality.interface";
 import LocationSearch from "@/common/location-search/location-search";
+import { registerAction } from './registration-form-actions';
 
 export default function RegistrationForm() {
   const router = useRouter();
@@ -112,8 +112,7 @@ export default function RegistrationForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (formData: FormData) => {
     setFormSubmitted(true);
 
     // Return early if terms aren't accepted
@@ -129,36 +128,28 @@ export default function RegistrationForm() {
     setIsLoading(true);
 
     try {
-      const payload = {
-        firstName,
-        lastName,
-        email,
-        password,
-        dateOfBirth,
-        location: selectedLocation,
-        userGender,
-        seekingGender,
-        termsAccepted,
-        timezone
-      } as UserRegistrationData;
+      // Add form data fields
+      formData.set('firstName', firstName);
+      formData.set('lastName', lastName);
+      formData.set('email', email);
+      formData.set('password', password);
+      formData.set('dateOfBirth', dateOfBirth);
+      formData.set('location', JSON.stringify(selectedLocation));
+      formData.set('userGender', userGender);
+      formData.set('seekingGender', seekingGender);
+      formData.set('termsAccepted', termsAccepted.toString());
+      formData.set('timezone', timezone);
 
-      const response = await fetch('/api/user/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
+      // Call the server action
+      const result = await registerAction(formData);
 
-      if (response.ok) {
+      if (result.success) {
         router.push('/');
       } else {
-        const data = await response.json();
-
-        if (response.status === 422 && data.errors) {
-          setErrors(data.errors);
+        if (result.errors) {
+          setErrors(result.errors);
         } else {
-          setErrors({ form: data.message || 'Registration failed' });
+          setErrors({ form: result.message || 'Registration failed' });
         }
       }
     } catch (error) {
@@ -179,7 +170,7 @@ export default function RegistrationForm() {
             <h5>
               Already have an account? <a href="/login">Login</a>
             </h5>
-            <form onSubmit={handleSubmit}>
+            <form action={handleSubmit}>
               <div className="registration-seeking-container">
                 <div className="input-container">
                   <SeekingMatchForm
