@@ -9,7 +9,14 @@ import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
 import { UserPhoto } from "@/types/user-photo.type";
 import Link from 'next/link';
 import { humanizeTimeDiff } from '@/util';
-import { AngleLeftIcon, AngleRightIcon } from "react-line-awesome";
+import {
+    AngleLeftIcon,
+    AngleRightIcon, BanIcon,
+    CheckCircleIcon,
+    CommentsIcon, ExclamationTriangleIcon,
+    EyeSlashIcon, HeartBrokenIcon,
+    HeartIcon, ImageIcon, MapMarkerIcon, StarIcon, UnlockIcon, UserCircleIcon
+} from "react-line-awesome";
 import _ from 'lodash';
 import { UserProfileDetail } from "@/types/user-profile-detail.interface";
 import UserSubscriptionPlanDisplay from '@/common/user-subscription-plan-display/user-subscription-plan-display';
@@ -143,12 +150,15 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
         e.preventDefault();
         setIsUpdatingMatch(true);
         try {
-            await removeUserMatch(Number(userProfile.user.id));
+            // Only mute the user without removing the match
             await muteUser(Number(userProfile.user.id));
+
+            // Keep the match status intact but update the UI to indicate rejection
             setUserProfile(prev => ({
                 ...prev,
-                match_status: undefined,
-                match_is_towards_me: false
+                // We're keeping the match_status and match_is_towards_me as is
+                // but we could add a custom property to track muted status if needed
+                // For now, the backend will handle this distinction
             }));
         } catch (error) {
             console.error('Error rejecting match request:', error);
@@ -235,7 +245,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                             <div className="online-status-label">Online</div>
                                         </div>
                                         <div className="location-section">
-                                            <i className="las la-map-marker"></i>
+                                            <MapMarkerIcon />
                                             <div className="location-name">{userProfile.user.location_name}</div>
                                         </div>
                                     </div>
@@ -298,7 +308,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                                     disabled={isUpdatingMatch}
                                                     onClick={onCancelMatchClick}
                                                     className="request-match">
-                                                    <i className="las la-heart-broken"></i>
+                                                    <HeartBrokenIcon />
                                                     <div className="label">Cancel Match Request</div>
                                                 </button>
                                             ) : userProfile.match_status === 'pending' && userProfile.match_is_towards_me ? (
@@ -308,7 +318,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                                         onClick={onRequestMatchClick}
                                                         className="request-match"
                                                     >
-                                                        <i className="las la-heart"></i>
+                                                        <HeartIcon />
                                                         <div className="label">Accept Match</div>
                                                     </button>
                                                     <button
@@ -316,31 +326,33 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                                         onClick={onRejectMatchClick}
                                                         className="reject-match"
                                                     >
-                                                        <i className="las la-heart-broken"></i>
-                                                        <div className="label">Reject Match</div>
+                                                        <EyeSlashIcon/>
+                                                        <div className="label">Ignore</div>
                                                     </button>
                                                 </>
                                             ) : userProfile.match_status === 'matched' ? (
-                                                <div className="matched">
-                                                    <i className="las la-check-circle"></i>
-                                                    <div className="label">Matched</div>
-                                                </div>
+                                                <>
+                                                    <div className="matched">
+                                                        <CheckCircleIcon />
+                                                        <div className="label">Matched</div>
+                                                    </div>
+
+                                                    {userProfile.match_id && (
+                                                        <Link href={`/messages/${userProfile.match_id}`} className="request-match">
+                                                            <CommentsIcon />
+                                                            <div className="label">Send Message</div>
+                                                        </Link>
+                                                    )}
+                                                </>
                                             ) : (
                                                 <button
                                                     disabled={isUpdatingMatch}
                                                     onClick={onRequestMatchClick}
                                                     className="request-match"
                                                 >
-                                                    <i className="las la-heart"></i>
+                                                    <HeartIcon />
                                                     <div className="label">Like</div>
                                                 </button>
-                                            )}
-
-                                            {userProfile.match_status === 'matched' && userProfile.match_id && (
-                                                <Link href={`/messages/${userProfile.match_id}`} className="request-match">
-                                                    <i className="las la-comments"></i>
-                                                    <div className="label">Send Message</div>
-                                                </Link>
                                             )}
 
                                             <div className="cancel-block-button-container">
@@ -350,7 +362,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                                         onClick={onBlockUserClick}
                                                         className="block-user"
                                                     >
-                                                        <i className="las la-ban"></i>
+                                                        <BanIcon />
                                                         <div className="label">Block User</div>
                                                     </button>
                                                 ) : (
@@ -358,13 +370,13 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                                         disabled={isBlockingOrUnBlocking}
                                                         onClick={onUnBlockUserClick}
                                                         className="block-user">
-                                                        <i className="las la-unlock"></i>
+                                                        <UnlockIcon />
                                                         <div className="label">Unblock User</div>
                                                     </button>
                                                 )}
 
                                                 <button className="report-user">
-                                                    <i className="las la-exclamation-triangle"></i>
+                                                    <ExclamationTriangleIcon />
                                                     <div className="label">Report User</div>
                                                 </button>
                                             </div>
@@ -376,7 +388,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                             <div className="photos-additional-info-section">
                                 <div className="photos-container">
                                     <div className="section-title">
-                                        <i className="las la-image"></i>
+                                        <ImageIcon />
                                         <div className="title">Photos</div>
                                     </div>
                                     <div className="photos">
@@ -398,7 +410,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
 
                                 <div className="information-container">
                                     <div className="section-title">
-                                        <i className="las la-user-circle"></i>
+                                        <UserCircleIcon />
                                         <div className="title">Biography</div>
                                     </div>
                                     <div className="bio">{userProfile.user.bio || 'No biography available yet.'}</div>
@@ -406,7 +418,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                     {userProfile.interest_labels?.length > 0 && (
                                         <>
                                             <div className="section-title">
-                                                <i className="las la-star"></i>
+                                                <StarIcon />
                                                 <div className="title">Interests</div>
                                             </div>
                                             <div className="interests">
