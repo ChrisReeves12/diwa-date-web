@@ -82,8 +82,13 @@ export default function UserProfilePreview({ userPreview, type }: { userPreview:
             await removeUserMatch(Number(userPreview.id));
             setUserMatchStatus(undefined);
         } else {
-            const status = await sendUserMatch(Number(userPreview.id));
-            setUserMatchStatus(status);
+            const sendUserMatchResult = await sendUserMatch(Number(userPreview.id));
+            if (typeof sendUserMatchResult === 'object' && "error" in sendUserMatchResult) {
+                alert(sendUserMatchResult.error);
+                return;
+            }
+
+            setUserMatchStatus(sendUserMatchResult);
         }
     };
 
@@ -254,7 +259,13 @@ export default function UserProfilePreview({ userPreview, type }: { userPreview:
                                             await removeUserMatch(Number(userPreview.id));
                                             setUserMatchStatus(undefined);
                                         } else {
-                                            setUserMatchStatus(await sendUserMatch(Number(userPreview.id)));
+                                            const sendUserMatchResult = await sendUserMatch(Number(userPreview.id));
+                                            if (typeof sendUserMatchResult === 'object' && "error" in sendUserMatchResult) {
+                                                alert(sendUserMatchResult.error);
+                                                return;
+                                            }
+
+                                            setUserMatchStatus(sendUserMatchResult);
                                         }
                                     }}><HeartIcon /></button> : <a className="message-link" href=""><CommentsIcon /></a>
                             ) :

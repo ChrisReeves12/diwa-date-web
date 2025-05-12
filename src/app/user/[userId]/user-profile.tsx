@@ -1,6 +1,5 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import './user-profile.scss';
 import { User } from "@/types";
 import { NotificationCenterData } from "@/types/notification-center-data.interface";
 import { CurrentUserProvider } from "@/common/context/current-user-context";
@@ -25,7 +24,7 @@ import {
     sendUserMatch,
     blockUserAction,
     unBlockUserAction,
-    muteUser, unMuteUser
+    muteUser, unMuteUser, loadFullUserProfile
 } from '@/common/server-actions/user-profile.actions';
 
 interface UserProfileProps {
@@ -113,15 +112,21 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
         e.preventDefault();
         setIsUpdatingMatch(true);
         try {
-            const status = await sendUserMatch(Number(userProfile.user.id));
-            if (status) {
-                setUserProfile(prev => ({
-                    ...prev,
-                    match_status: status
-                }));
+            const sendUserMatchResult = await sendUserMatch(Number(userProfile.user.id));
+            if (typeof sendUserMatchResult === 'object' && 'error' in sendUserMatchResult) {
+                alert(sendUserMatchResult.error);
+                return;
             }
 
             await unMuteUser(Number(userProfile.user.id));
+
+            const result = await loadFullUserProfile(Number(userProfile.user.id));
+            if (result.error || !result.userProfileDetails) {
+                alert(result.error || 'An error occurred sending update. Please try again later.');
+                return;
+            }
+
+            setUserProfile(result.userProfileDetails);
         } catch (error) {
             console.error('Error sending match request:', error);
         } finally {
@@ -134,11 +139,13 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
         setIsUpdatingMatch(true);
         try {
             await removeUserMatch(Number(userProfile.user.id));
-            setUserProfile(prev => ({
-                ...prev,
-                match_status: undefined,
-                match_is_towards_me: false
-            }));
+            const result = await loadFullUserProfile(Number(userProfile.user.id));
+            if (result.error || !result.userProfileDetails) {
+                alert(result.error || 'An error occurred sending update. Please try again later.');
+                return;
+            }
+
+            setUserProfile(result.userProfileDetails);
         } catch (error) {
             console.error('Error canceling match request:', error);
         } finally {
@@ -146,20 +153,19 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
         }
     };
 
-    const onRejectMatchClick = async (e: React.MouseEvent) => {
+    const onIgnoreMatchClick = async (e: React.MouseEvent) => {
         e.preventDefault();
+
         setIsUpdatingMatch(true);
         try {
-            // Only mute the user without removing the match
             await muteUser(Number(userProfile.user.id));
+            const result = await loadFullUserProfile(Number(userProfile.user.id));
+            if (result.error || !result.userProfileDetails) {
+                alert(result.error || 'An error occurred sending update. Please try again later.');
+                return;
+            }
 
-            // Keep the match status intact but update the UI to indicate rejection
-            setUserProfile(prev => ({
-                ...prev,
-                // We're keeping the match_status and match_is_towards_me as is
-                // but we could add a custom property to track muted status if needed
-                // For now, the backend will handle this distinction
-            }));
+            setUserProfile(result.userProfileDetails);
         } catch (error) {
             console.error('Error rejecting match request:', error);
         } finally {
@@ -171,13 +177,14 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
         e.preventDefault();
         setIsBlockingOrUnBlocking(true);
         try {
-            const success = await blockUserAction(Number(userProfile.user.id));
-            if (success) {
-                setUserProfile(prev => ({
-                    ...prev,
-                    blocked_them: true
-                }));
+            await blockUserAction(Number(userProfile.user.id));
+            const result = await loadFullUserProfile(Number(userProfile.user.id));
+            if (result.error || !result.userProfileDetails) {
+                alert(result.error || 'An error occurred sending update. Please try again later.');
+                return;
             }
+
+            setUserProfile(result.userProfileDetails);
         } catch (error) {
             console.error('Error blocking user:', error);
         } finally {
@@ -189,13 +196,14 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
         e.preventDefault();
         setIsBlockingOrUnBlocking(true);
         try {
-            const success = await unBlockUserAction(Number(userProfile.user.id));
-            if (success) {
-                setUserProfile(prev => ({
-                    ...prev,
-                    blocked_them: false
-                }));
+            await unBlockUserAction(Number(userProfile.user.id));
+            const result = await loadFullUserProfile(Number(userProfile.user.id));
+            if (result.error || !result.userProfileDetails) {
+                alert(result.error || 'An error occurred sending update. Please try again later.');
+                return;
             }
+
+            setUserProfile(result.userProfileDetails);
         } catch (error) {
             console.error('Error unblocking user:', error);
         } finally {
@@ -323,7 +331,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                                     </button>
                                                     <button
                                                         disabled={isUpdatingMatch}
-                                                        onClick={onRejectMatchClick}
+                                                        onClick={onIgnoreMatchClick}
                                                         className="reject-match"
                                                     >
                                                         <EyeSlashIcon/>

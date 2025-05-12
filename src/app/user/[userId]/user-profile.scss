@@ -4,6 +4,15 @@
   min-height: calc(100vh - 290px);
 }
 
+.error-notification-section {
+  margin-top: 110px;
+
+  h2 {
+    text-align: center;
+    color: globals.$primary-blue;
+  }
+}
+
 .user-profile-container {
   .user-content-wrapper {
     .subscription-plan-display-container {

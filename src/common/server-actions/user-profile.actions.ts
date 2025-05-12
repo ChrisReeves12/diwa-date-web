@@ -5,7 +5,7 @@ import {
     sendUserMatchRequest,
     removeUserMatchRequest,
     blockUser,
-    unBlockUser, muteUserById, unMuteUserById
+    unBlockUser, muteUserById, unMuteUserById, getUser, getFullUserProfile
 } from "@/server-side-helpers/user.helpers";
 import { redirect } from "next/navigation";
 import { logError } from "@/server-side-helpers/logging.helpers";
@@ -48,6 +48,19 @@ export async function muteUser(recipientId: number) {
 }
 
 /**
+ * Load user profile information.
+ * @param userId
+ */
+export async function loadFullUserProfile(userId: number) {
+    const currentUser = await getCurrentUser(await cookies());
+    if (!currentUser) {
+        redirect('/');
+    }
+
+    return getFullUserProfile(userId, Number(currentUser.id));
+}
+
+/**
  * Unmute the user by Id.
  * @param recipientId
  */
@@ -71,7 +84,7 @@ export async function unMuteUser(recipientId: number) {
  * @param recipientId The ID of the user to send the match request to
  * @returns The status of the match after the operation ('pending' or 'matched')
  */
-export async function sendUserMatch(recipientId: number): Promise<'pending' | 'matched' | undefined> {
+export async function sendUserMatch(recipientId: number): Promise<'pending' | 'matched' | undefined | {error: string}> {
     try {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {

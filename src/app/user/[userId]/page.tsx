@@ -1,8 +1,16 @@
-import { getCurrentUser, getUser, getUserProfileDetail, prepareUser } from "@/server-side-helpers/user.helpers";
+import {
+    getCurrentUser,
+    getFullUserProfile,
+} from "@/server-side-helpers/user.helpers";
 import { redirect, notFound } from "next/navigation";
 import UserProfile from "./user-profile";
 import { createNotificationCenterDataPromise } from "@/server-side-helpers/notification.helper";
 import { cookies } from "next/headers";
+import SiteTopBar from "@/common/site-top-bar/site-top-bar";
+import { CurrentUserProvider } from "@/common/context/current-user-context";
+import './user-profile.scss';
+import { InfoCircleIcon } from "react-line-awesome";
+import UserProfileError from "@/app/user/[userId]/user-profile-error";
 
 interface UserProfileParams {
     params: {
@@ -17,20 +25,21 @@ export default async function UserProfilePage({ params }: UserProfileParams) {
     if (!currentUser) {
         redirect('/');
     }
+    const notificationsPromise = createNotificationCenterDataPromise(currentUser);
+    const userProfileResult = await getFullUserProfile(Number(userId), Number(currentUser.id));
 
-    const user = await getUser(Number(userId));
-    if (!user) {
-        notFound();
+    if (userProfileResult.statusCode !== 200) {
+        return (
+            <UserProfileError currentUser={currentUser} notificationsPromise={notificationsPromise}>
+                <h2><InfoCircleIcon/> {userProfileResult.error}</h2>
+            </UserProfileError>
+        );
     }
-
-    // Todo: check if current user has been blocked
-
-    const userProfileDetails = await getUserProfileDetail(currentUser.id, user);
 
     return (
         <UserProfile
             currentUser={currentUser}
-            notificationsPromise={createNotificationCenterDataPromise(currentUser)}
-            userProfileDetail={userProfileDetails} />
+            notificationsPromise={notificationsPromise}
+            userProfileDetail={userProfileResult.userProfileDetails!} />
     );
 }

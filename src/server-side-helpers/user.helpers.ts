@@ -100,7 +100,7 @@ async function refreshLastActive(user: User) {
  * @param currentUserId
  * @param user
  */
-export async function getUserProfileDetail(currentUserId: number | bigint, user: Omit<User, "password">) {
+export async function getUserProfileDetail(currentUserId: number | bigint, user: User) {
   const [profileDetailResults] = await mySqlDbPool.query<any[]>(`
     WITH TheyBlockedMeIds AS (
       SELECT BU.user_id FROM blocked_users BU WHERE blocked_user_id = ?
@@ -252,7 +252,8 @@ export async function getCurrentUser(cookieStore: ReadonlyRequestCookies) {
   // Get the user from the database
   const result = await prisma.users.findUnique({
     where: {
-      id: BigInt(sessionData.userId)
+      id: BigInt(sessionData.userId),
+      suspended_at: null
     },
     include: {
       subscription_plan_enrollments: {
@@ -441,12 +442,29 @@ export function prepareUser(user: User) {
 }
 
 /**
+ * Checks if a user is suspended
+ * @param userId
+ */
+export async function isUserSuspended(userId: number) {
+  const [results] = await mySqlDbPool.query(`SELECT (suspended_at IS NOT NULL) AS isSuspended FROM users WHERE id = ?`, [userId]);
+  return _.get(results, [0, 'isSuspended']) === 1;
+}
+
+/**
  * Send a match request from one user to another
  * @param userId The ID of the user sending the match request
  * @param recipientUserId The ID of the user receiving the match request
  * @returns The status of the match after the operation ('pending' or 'matched')
  */
-export async function sendUserMatchRequest(userId: number, recipientUserId: number): Promise<'pending' | 'matched'> {
+export async function sendUserMatchRequest(userId: number, recipientUserId: number): Promise<'pending' | 'matched' | {error: string}> {
+  if (await isUserSuspended(recipientUserId)) {
+    return {error: 'You cannot send a like to this user because they have been suspended.'}
+  }
+
+  if (await isUserBlocked(recipientUserId, userId)) {
+    return {error: 'You have been blocked by this user.'};
+  }
+
   // Check if a match already exists
   const existingMatch = await prisma.user_matches.findFirst({
     where: {
@@ -466,7 +484,6 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
   // If there's an existing match where the current user is the recipient,
   // this means the other user already liked them, so we should confirm the match
   if (existingMatch && existingMatch.recipient_id === BigInt(userId) && existingMatch.status === 'pending') {
-    // Update the match status to matched
     await prisma.user_matches.update({
       where: {
         id: existingMatch.id
@@ -562,13 +579,24 @@ export async function muteUserById(userId: number, recipientUserId: number): Pro
 }
 
 /**
+ * Checks if a user has been blocked.
+ * @param userId
+ * @param blockedUserId
+ */
+export async function isUserBlocked(userId: number, blockedUserId: number) {
+  const [results] = await mySqlDbPool.query<any>(`SELECT EXISTS(SELECT 1 FROM blocked_users WHERE user_id = ? AND blocked_user_id = ?) as isBlocked`,
+      [userId, blockedUserId]);
+
+  return results[0].isBlocked === 1;
+}
+
+/**
  * Unmute a user by ID.
  * @param userId
  * @param recipientUserId
  * @returns True if the operation was successful
  */
 export async function unMuteUserById(userId: number, recipientUserId: number): Promise<boolean> {
-  // Delete the muted_user record by user_id and muted_user_id.
   await prisma.muted_users.deleteMany({
     where: {
       user_id: BigInt(userId),
@@ -577,6 +605,30 @@ export async function unMuteUserById(userId: number, recipientUserId: number): P
   });
 
   return true;
+}
+
+/**
+ * Returns the full user profile.
+ * @param userId
+ * @param currentUserId
+ */
+export async function getFullUserProfile(userId: number, currentUserId: number) {
+  const user = await getUser(Number(userId));
+  if (!user) {
+    return {error: 'This user account cannot be found.', statusCode: 404};
+  }
+
+  if (user.suspended_at) {
+    return {error: 'This user has been suspended.', statusCode: 400};
+  }
+
+  const isBlocked = await isUserBlocked(userId, currentUserId);
+  if (isBlocked) {
+    return {error: 'You have been blocked by this user.', statusCode: 403};
+  }
+
+  const userProfileDetails = await getUserProfileDetail(currentUserId, prepareUser(user));
+  return {statusCode: 200, userProfileDetails};
 }
 
 
