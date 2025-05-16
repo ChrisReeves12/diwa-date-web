@@ -8,6 +8,11 @@ export const businessConfig = {
         maxAge: 99,
         maritalStatus: 'single',
     },
+    
+    search: {
+        maxResultWindow: 20000,
+        pageSize: 60
+    },
 
     options: {
         bodyTypes: {

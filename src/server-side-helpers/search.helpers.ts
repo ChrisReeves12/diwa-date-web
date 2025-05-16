@@ -184,7 +184,7 @@ export async function indexUserForSearch(userOrId: User | number) {
 export async function searchUsers(currentUser: Pick<User, 'id' | 'location_viewport' | 'country' | 'seeking_max_distance' | 'gender'>, params: SearchParameters) {
     const usersIndex = process.env.ELASTICSEARCH_USER_INDEX;
     const elasticSearchRoot = process.env.ELASTICSEARCH_BASE_URL;
-    const pageSize = 60;
+    const pageSize = businessConfig.search.pageSize;
 
     const {
         page,
@@ -442,6 +442,13 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'location_viewp
 
         const content = response.data;
         const totalCount: number = _.get(content, ['hits', 'total', 'value'], 0);
+
+        // Ensure we don't exceed the max window size by limiting the offset + pageSize
+        const maxSafeOffset = businessConfig.search.maxResultWindow - pageSize;
+        if (offset > maxSafeOffset) {
+            console.warn(`Search offset ${offset} exceeds safe limit of ${maxSafeOffset}. Limiting results.`);
+        }
+
         const searchResults: UserPreview[] = _.get(content, ['hits', 'hits'], [])
             .map((hit: { _source: UserSearchDoc }) => translateToUserPreview(hit._source));
 
@@ -501,10 +508,59 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'location_viewp
             }
         }
 
-        return { hasError: false, searchResults, totalCount, pageCount: Math.ceil(totalCount / pageSize) };
+        // Calculate the total pages, but limit to the maximum safe pages
+        const calculatedPageCount = Math.ceil(totalCount / pageSize);
+        const maxSafePages = Math.floor(businessConfig.search.maxResultWindow / pageSize);
+        const pageCount = Math.min(calculatedPageCount, maxSafePages);
+
+        return { hasError: false, searchResults, totalCount, pageCount };
     } catch (err: any) {
         logError(err);
         return { hasError: true, searchResults: [], totalCount: 0, pageCount: 1 }
+    }
+}
+
+/**
+ * Increases the max_result_window setting for the existing users index
+ * @param newMaxWindow The new maximum window size (defaults to 20,000)
+ */
+export async function updateElasticsearchMaxResultWindow(newMaxWindow: number = businessConfig.search.maxResultWindow) {
+    const usersIndex = process.env.ELASTICSEARCH_USER_INDEX;
+    const elasticSearchRoot = process.env.ELASTICSEARCH_BASE_URL;
+
+    try {
+        const response = await axios.put(
+            `${elasticSearchRoot}/${usersIndex}/_settings`,
+            {
+                "index": {
+                    "max_result_window": newMaxWindow
+                }
+            },
+            {
+                headers: getElasticSearchRequestHeaders(),
+                httpsAgent
+            }
+        );
+
+        if (response.status >= 200 && response.status < 300) {
+            console.log(`Successfully updated max_result_window to ${newMaxWindow} for index ${usersIndex}`);
+            return true;
+        } else {
+            throw new Error(`Elasticsearch returned status ${response.status}`);
+        }
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            logError(
+                new Error(`Failed to update max_result_window for index ${usersIndex}`),
+                JSON.stringify(error.response.data)
+            );
+        } else {
+            logError(
+                new Error(`Failed to update max_result_window for index ${usersIndex}`),
+                String(error)
+            );
+        }
+        return false;
     }
 }
 
@@ -531,7 +587,8 @@ export async function createUserSearchIndex() {
             settings: {
                 index: {
                     number_of_shards: process.env.ELASTICSEARCH_SHARD_COUNT,
-                    number_of_replicas: process.env.ELASTICSEARCH_REPLICA_COUNT
+                    number_of_replicas: process.env.ELASTICSEARCH_REPLICA_COUNT,
+                    max_result_window: businessConfig.search.maxResultWindow // Increase from default 10000
                 }
             },
             mappings: {
