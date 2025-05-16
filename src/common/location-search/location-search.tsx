@@ -35,7 +35,7 @@ export default function LocationSearch({ onUpdate, error, initialLocality, geoBo
                 const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
                 await google.maps.importLibrary("places");
 
-                const center = initialLocality ?
+                const center = initialLocality?.coordinates ?
                     { lat: initialLocality.coordinates.latitude, lng: initialLocality.coordinates.longitude } :
                     { lat: 14.5995, lng: 120.9842 }; // Manila, Philippines as default
 

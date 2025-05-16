@@ -62,9 +62,9 @@
           padding-bottom: 10px;
 
           select {
-            @include globals.underlined-select();
             padding-bottom: 10px;
             width: 100%;
+            @include globals.underlined-select();
           }
         }
 

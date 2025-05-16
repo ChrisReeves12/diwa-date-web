@@ -13,7 +13,8 @@ export default function SelectedMapLocation({ location, onRemove }: SelectedMapL
             <div className="info-section">
                 <div className="label">Selected Location</div>
                 <div className="formal-name">{location.name}</div>
-                <div className="coords">{location.coordinates.latitude}, {location.coordinates.longitude}</div>
+                {location.coordinates &&
+                    <div className="coords">{location.coordinates.latitude}, {location.coordinates.longitude}</div>}
             </div>
             <div className="remove-button-container">
                 <button onClick={() => {

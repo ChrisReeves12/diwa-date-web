@@ -101,7 +101,7 @@ export async function refreshLastActive(user: User) {
                 where: {id: user.id},
                 data: {last_active_at: new Date()}
             }),
-            updateUserSearchDocument(Number(user.id), {doc: {last_active_at: new Date()}})
+            // updateUserSearchDocument(Number(user.id), {doc: {last_active_at: new Date()}})
         ]);
     } catch (error: any) {
         logError(error);
@@ -476,7 +476,7 @@ export async function isUserSuspended(userId: number) {
 export async function suspendUser(userId: number, suspend: boolean = true): Promise<boolean> {
     try {
         const suspendedAt = suspend ? new Date() : null;
-        
+
         // Update the user record in the database
         await prisma.users.update({
             where: {
@@ -486,14 +486,14 @@ export async function suspendUser(userId: number, suspend: boolean = true): Prom
                 suspended_at: suspendedAt
             }
         });
-        
+
         // Update the user's search document
         await updateUserSearchDocument(userId, {
             doc: {
                 suspended_at: suspendedAt
             }
         });
-        
+
         return true;
     } catch (error: any) {
         logError(

@@ -57,10 +57,10 @@ $default-font: "Nunito Sans", sans-serif;
 }
 
 @mixin underlined-select {
-  @include underlined-input;
   padding-bottom: 3px;
   padding-right: 10px;
   cursor: pointer;
+  @include underlined-input;
 }
 
 @mixin dark-mode {
