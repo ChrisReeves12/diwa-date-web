@@ -7,9 +7,25 @@ import { SearchFromOrigin, User } from "@/types";
 import { SearchSortBy } from "@/types/search-parameters.interface";
 import { createNotificationCenterDataPromise } from "@/server-side-helpers/notification.helper";
 import { cookies } from "next/headers";
+import { Metadata } from "next";
+import { cache } from "react";
+
+// Cache the user data to avoid duplicate fetching
+const getUser = cache(async () => {
+    return getCurrentUser(await cookies());
+});
+
+export async function generateMetadata(): Promise<Metadata> {
+    const currentUser = await getUser();
+
+    return {
+        title: currentUser ? `${process.env.APP_NAME} | Search` : process.env.APP_NAME
+    };
+}
 
 export default async function Home({ searchParams }: { searchParams: Promise<any> }) {
-    const currentUser = await getCurrentUser(await cookies());
+    const currentUser = await getUser();
+
     if (currentUser) {
         refreshLastActive(currentUser).then();
     }

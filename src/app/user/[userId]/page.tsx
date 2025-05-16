@@ -9,25 +9,59 @@ import { cookies } from "next/headers";
 import './user-profile.scss';
 import { InfoCircleIcon } from "react-line-awesome";
 import UserProfileError from "@/app/user/[userId]/user-profile-error";
+import { Metadata } from "next";
+import { cache } from "react";
 
-interface UserProfileParams {
-    params: {
-        userId: string
+// Cache the user data to avoid duplicate fetching
+const getUser = cache(async () => {
+    return getCurrentUser(await cookies());
+});
+
+// Cache the user profile data to avoid duplicate fetching
+const getUserProfile = cache(async (userId: string) => {
+    const currentUser = await getUser();
+    if (!currentUser) {
+        return { statusCode: 401, error: "Not authenticated" };
     }
-}
 
-export default async function UserProfilePage({ params }: UserProfileParams) {
-    const currentUser = await getCurrentUser(await cookies());
-    const { userId } = await params;
+    return await getFullUserProfile(Number(userId), Number(currentUser.id));
+});
+
+export async function generateMetadata({ params }: any): Promise<Metadata> {
+    const currentUser = await getUser();
 
     if (!currentUser) {
-        redirect('/');
+        return {
+            title: process.env.APP_NAME
+        };
     } else {
         refreshLastActive(currentUser).then();
     }
 
+    const { userId } = await params;
+    const userProfileResult = await getUserProfile(userId);
+
+    if (userProfileResult.statusCode !== 200) {
+        return {
+            title: `${process.env.APP_NAME} | Profile`
+        };
+    }
+
+    return {
+        title: `${process.env.APP_NAME} | ${userProfileResult.userProfileDetails?.user.display_name ?? 'Profile'}`
+    };
+}
+
+export default async function UserProfilePage({ params }: any) {
+    const currentUser = await getUser();
+    const { userId } = await params;
+
+    if (!currentUser) {
+        redirect('/');
+    }
+
     const notificationsPromise = createNotificationCenterDataPromise(currentUser);
-    const userProfileResult = await getFullUserProfile(Number(userId), Number(currentUser.id));
+    const userProfileResult = await getUserProfile(userId);
 
     if (userProfileResult.statusCode !== 200) {
         return (
