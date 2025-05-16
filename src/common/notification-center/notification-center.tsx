@@ -65,7 +65,7 @@ function NotificationCenterContent({ notificationsData }: { notificationsData: N
                                     <Image width={45} height={45} title="Matches" alt="Matches" src="/images/heart-dark.svg" />
                                 </span>
                             </span>
-                            {notificationsData?.pendingMatchesCount && notificationsData.pendingMatchesCount > 0 &&
+                            {!!notificationsData?.pendingMatchesCount && notificationsData.pendingMatchesCount > 0 &&
                                 <div className='notification-count-bubble'>{notificationsData.pendingMatchesCount > 99 ? '99+' : notificationsData.pendingMatchesCount}</div>}
                         </button>
                     </div>
@@ -79,7 +79,7 @@ function NotificationCenterContent({ notificationsData }: { notificationsData: N
                                     <Image width={45} height={45} title="Messages" alt="Messages" src="/images/messages-dark.svg" />
                                 </span>
                             </span>
-                            {notificationsData?.receivedMessagesCount && notificationsData.receivedMessagesCount > 0 &&
+                            {!!notificationsData?.receivedMessagesCount && notificationsData.receivedMessagesCount > 0 &&
                                 <div className="notification-count-bubble">{notificationsData.receivedMessagesCount > 99 ? '99+' : notificationsData.receivedMessagesCount}</div>}
                         </button>
                     </div>
@@ -93,7 +93,7 @@ function NotificationCenterContent({ notificationsData }: { notificationsData: N
                                     <Image width={45} height={45} title="Notifications" alt="Notifications" src="/images/bell-dark.svg" />
                                 </span>
                             </span>
-                            {notificationsData?.notificationCount && notificationsData.notificationCount > 0 &&
+                            {!!notificationsData?.notificationCount && notificationsData.notificationCount > 0 &&
                                 <div className="notification-count-bubble">
                                     {notificationsData.notificationCount > 99 ? '99+' : notificationsData.notificationCount}
                                 </div>}
