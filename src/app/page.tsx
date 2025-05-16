@@ -1,5 +1,5 @@
 import GuestHome from "@/app/guest-home/guest-home";
-import { getCurrentUser } from "@/server-side-helpers/user.helpers";
+import { getCurrentUser, refreshLastActive } from "@/server-side-helpers/user.helpers";
 import HomeSearch from "@/app/home-search/home-search";
 import { searchUsers } from "@/server-side-helpers/search.helpers";
 import { businessConfig } from "@/config/business";
@@ -10,6 +10,9 @@ import { cookies } from "next/headers";
 
 export default async function Home({ searchParams }: { searchParams: Promise<any> }) {
     const currentUser = await getCurrentUser(await cookies());
+    if (currentUser) {
+        refreshLastActive(currentUser).then();
+    }
 
     return (
         currentUser ?

@@ -7,28 +7,33 @@ import { User } from "@/types";
 export default class IndexUsersCommand extends ConsoleCommand {
     constructor() {
         super('search:index-users', 'Index users for search functionality', [
-            { option: '-u, --users <users>', description: 'Comma-delimited list of user emails to index.', required: false },
+            {
+                option: '-u, --users <users>',
+                description: 'Comma-delimited list of user emails to index.',
+                required: false
+            },
         ]);
     }
 
     async handle(prog: Command): Promise<number> {
         console.log('Starting user indexing process...');
+        const options = prog.options;
         const usersToIndex = prog.opts().users?.split(',').filter(Boolean) || [];
 
         if (usersToIndex.length > 0) {
             console.log(`Indexing specific users: ${usersToIndex.join(', ')}`);
 
-            // Get users by email
+            // Get users by ids
             const users = await prisma.users.findMany({
                 where: {
-                    email: {
-                        in: usersToIndex
+                    id: {
+                        in: usersToIndex.map((id: string) => BigInt(id))
                     }
                 }
             });
 
             if (users.length === 0) {
-                console.log('No users found with the provided emails.');
+                console.log('No users found with the provided ids.');
                 return 0;
             }
 

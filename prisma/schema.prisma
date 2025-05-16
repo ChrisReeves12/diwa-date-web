@@ -103,10 +103,8 @@ model notifications {
   data         Json?
   created_at   DateTime? @db.Timestamp(0)
   updated_at   DateTime? @db.Timestamp(0)
-  // users_notifications_recipient_idTousers users?    @relation("notifications_recipient_idTousers", fields: [recipient_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "notifications_recipient_id_foreign")
-  // users_notifications_user_idTousers      users     @relation("notifications_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "notifications_user_id_foreign")
-  sender       users     @relation("notifications_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, map: "notifications_user_id_foreign")
-  recipient    users?    @relation("notifications_recipient_idTousers", fields: [recipient_id], references: [id], onDelete: Cascade, map: "notifications_recipient_id_foreign")
+  recipient    users?    @relation("notifications_recipient_idTousers", fields: [recipient_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "notifications_recipient_id_foreign")
+  sender       users     @relation("notifications_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "notifications_user_id_foreign")
 
   @@index([recipient_id], map: "notifications_recipient_id_foreign")
   @@index([user_id], map: "notifications_user_id_foreign")
@@ -176,6 +174,7 @@ model users {
   date_of_birth                                      DateTime                        @db.Date
   last_active_at                                     DateTime?                       @db.DateTime(0)
   suspended_at                                       DateTime?                       @db.DateTime(0)
+  is_under_review                                    Int?                            @default(0) @db.TinyInt
   email_verified_at                                  DateTime?                       @db.DateTime(0)
   suspended_reason                                   String?                         @db.Text
   bio                                                String?                         @db.LongText
@@ -217,18 +216,6 @@ model users {
   marital_status_preferences                         Json?
   seeking_countries                                  Json?
   single_search_location                             Json?
-  required_min_age                                   Int?
-  required_max_age                                   Int?
-  required_min_height                                Int?
-  required_max_height                                Int?
-  required_religions                                 Json?
-  required_ethnicities                               Json?
-  required_body_types                                Json?
-  required_education_levels                          Json?
-  required_marital_statuses                          Json?
-  required_want_children_statuses                    Json?
-  required_has_children_statuses                     Json?
-  required_languages                                 Json?
   payment_profile_id                                 String?                         @db.VarChar(255)
   customer_payment_profile_id                        String?                         @db.VarChar(255)
   password                                           String                          @db.VarChar(500)
@@ -250,6 +237,9 @@ model users {
 
   @@index([gender], map: "users_gender_index")
   @@index([suspended_at], map: "users_suspended_at_index")
+  @@index([created_at(sort: Desc)], map: "users_created_at_index")
+  @@index([date_of_birth(sort: Desc)], map: "users_dob_index")
+  @@index([last_active_at(sort: Desc)], map: "users_last_active_at_index")
 }
 
 model user_matches {
@@ -263,8 +253,8 @@ model user_matches {
   created_at           DateTime?  @db.Timestamp(0)
   updated_at           DateTime?  @db.Timestamp(0)
   messages             messages[]
-  sender               users      @relation("user_matches_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, map: "matches_user_id_foreign")
   recipient            users      @relation("user_matches_recipient_idTousers", fields: [recipient_id], references: [id], onDelete: Cascade, map: "matches_recipient_id_foreign")
+  sender               users      @relation("user_matches_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, map: "matches_user_id_foreign")
 
   @@index([recipient_id], map: "matches_recipient_id_foreign")
   @@index([updated_at_timestamp(sort: Desc)], map: "matches_updated_at_timestamp_index")

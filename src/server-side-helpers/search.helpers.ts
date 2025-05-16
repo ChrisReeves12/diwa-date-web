@@ -26,12 +26,50 @@ const httpsAgent = new https.Agent({
 });
 
 /**
- * Indexes a user into the search index.
- * @param user
+ * Updates a user document in search.
+ * @param userId
+ * @param updateDoc
  */
-export async function indexUserForSearch(user: User) {
+export async function updateUserSearchDocument(userId: number, updateDoc: any) {
     const usersIndex = process.env.ELASTICSEARCH_USER_INDEX;
     const elasticSearchRoot = process.env.ELASTICSEARCH_BASE_URL;
+
+    try {
+        const updateIndexResponse = await axios.post(`${elasticSearchRoot}/${usersIndex}/_update/${userId}`, updateDoc, {
+            headers: getElasticSearchRequestHeaders(),
+            httpsAgent
+        });
+
+        return updateIndexResponse.status >= 200 && updateIndexResponse.status < 300;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+            logError(
+                new Error(`An error occurred while updating search index user ${userId}.`),
+                JSON.stringify(error.response.data)
+            );
+        } else {
+            logError(
+                new Error(`An error occurred while indexing user ${userId}.`),
+                String(error)
+            );
+        }
+
+        return false;
+    }
+}
+
+/**
+ * Indexes a user into the search index.
+ * @param userOrId
+ */
+export async function indexUserForSearch(userOrId: User | number) {
+    const usersIndex = process.env.ELASTICSEARCH_USER_INDEX;
+    const elasticSearchRoot = process.env.ELASTICSEARCH_BASE_URL;
+    const user = typeof userOrId === 'number' ?
+        (await prisma.users.findUnique({ where: { id: BigInt(userOrId) } }) as unknown as User) : userOrId;
+    if (!user) {
+        throw new Error('User could not be found while indexing.');
+    }
 
     const blockedUserIds = await prisma.blocked_users.findMany({
         where: {
@@ -71,6 +109,9 @@ export async function indexUserForSearch(user: User) {
                 last_active_at: user.last_active_at,
                 created_at: user.created_at,
                 suspended_at: user.suspended_at,
+
+                // @ts-expect-error prisma update needed
+                is_search_hidden: user.is_under_review === 1,
                 email_verified_at: user.email_verified_at,
                 date_of_birth: user.date_of_birth,
                 marital_status: user.marital_status,
@@ -267,9 +308,33 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'location_viewp
                 should: [
                     {
                         bool: {
+                            must: {
+                                term: {
+                                    is_search_hidden: false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        bool: {
+                            must_not: {
+                                exists: {
+                                    field: 'is_search_hidden'
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            bool: {
+                should: [
+                    {
+                        bool: {
                             must_not: {
                                 term: {
-                                    blocked_user_id: Number(currentUser.id)
+                                    blocked_user_ids: Number(currentUser.id)
                                 }
                             }
                         }
@@ -557,7 +622,8 @@ export async function createUserSearchIndex() {
                     has_children: { type: 'keyword' },
                     location_coordinates: { type: 'geo_point' },
                     country: { type: 'keyword' },
-                    location_name: { type: 'text', index: false }
+                    location_name: { type: 'text', index: false },
+                    is_search_hidden: { type: 'boolean', store: true }
                 }
             }
         },

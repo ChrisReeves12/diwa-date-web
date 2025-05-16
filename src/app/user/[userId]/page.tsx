@@ -1,13 +1,11 @@
 import {
     getCurrentUser,
-    getFullUserProfile,
+    getFullUserProfile, refreshLastActive,
 } from "@/server-side-helpers/user.helpers";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import UserProfile from "./user-profile";
 import { createNotificationCenterDataPromise } from "@/server-side-helpers/notification.helper";
 import { cookies } from "next/headers";
-import SiteTopBar from "@/common/site-top-bar/site-top-bar";
-import { CurrentUserProvider } from "@/common/context/current-user-context";
 import './user-profile.scss';
 import { InfoCircleIcon } from "react-line-awesome";
 import UserProfileError from "@/app/user/[userId]/user-profile-error";
@@ -24,7 +22,10 @@ export default async function UserProfilePage({ params }: UserProfileParams) {
 
     if (!currentUser) {
         redirect('/');
+    } else {
+        refreshLastActive(currentUser).then();
     }
+
     const notificationsPromise = createNotificationCenterDataPromise(currentUser);
     const userProfileResult = await getFullUserProfile(Number(userId), Number(currentUser.id));
 

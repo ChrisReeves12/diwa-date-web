@@ -5,7 +5,7 @@ import {
     sendUserMatchRequest,
     removeUserMatchRequest,
     blockUser,
-    unBlockUser, muteUserById, unMuteUserById, getUser, getFullUserProfile
+    unBlockUser, muteUserById, unMuteUserById, getUser, getFullUserProfile, refreshLastActive
 } from "@/server-side-helpers/user.helpers";
 import { redirect } from "next/navigation";
 import { logError } from "@/server-side-helpers/logging.helpers";
@@ -20,6 +20,8 @@ export async function removeUserMatch(recipientId: number) {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
             redirect('/');
+        } else {
+            refreshLastActive(currentUser).then();
         }
 
         await removeUserMatchRequest(Number(currentUser.id), recipientId);
@@ -37,6 +39,8 @@ export async function muteUser(recipientId: number) {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
             redirect('/');
+        } else {
+            refreshLastActive(currentUser).then();
         }
 
         await muteUserById(Number(currentUser.id), recipientId);
@@ -69,6 +73,8 @@ export async function unMuteUser(recipientId: number) {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
             redirect('/');
+        } else {
+            refreshLastActive(currentUser).then();
         }
 
         await unMuteUserById(Number(currentUser.id), recipientId);
@@ -89,6 +95,8 @@ export async function sendUserMatch(recipientId: number): Promise<'pending' | 'm
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
             redirect('/');
+        } else {
+            refreshLastActive(currentUser).then();
         }
 
         return await sendUserMatchRequest(Number(currentUser.id), recipientId);
@@ -108,6 +116,8 @@ export async function blockUserAction(blockedUserId: number): Promise<boolean> {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
             redirect('/');
+        } else {
+            refreshLastActive(currentUser).then();
         }
 
         return await blockUser(Number(currentUser.id), blockedUserId);
@@ -127,6 +137,8 @@ export async function unBlockUserAction(blockedUserId: number): Promise<boolean>
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
             redirect('/');
+        } else {
+            refreshLastActive(currentUser).then();
         }
 
         return await unBlockUser(Number(currentUser.id), blockedUserId);

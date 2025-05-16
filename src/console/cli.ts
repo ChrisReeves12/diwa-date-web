@@ -1,8 +1,10 @@
 import IndexUsersCommand from "./commands/index-users.command";
+import SuspendUserCommand from "./commands/suspend-user.command";
 
 export async function executeCommand(aCommand?: string) {
     const commands: Record<string, any> = {
-        'search:index-users': IndexUsersCommand
+        'search:index-users': IndexUsersCommand,
+        'users:suspend': SuspendUserCommand
     };
 
     // Show command list
@@ -28,7 +30,7 @@ export async function executeCommand(aCommand?: string) {
             return;
         }
 
-        await new commands[process.argv[2]]().bootstrap();
+        await new commands[process.argv[2]]().bootstrap(process.argv);
         return;
     }
 }
