@@ -50,6 +50,19 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
     const [isSaving, setIsSaving] = useState<boolean>(false);
 
     const onSubmit = () => {
+        // Validate that a location is selected if SingleLocation is chosen
+        if (seekingDistanceOrigin === SearchFromOrigin.SingleLocation && !singleSearchLocation) {
+            alert('Please select a location before applying filters');
+            return;
+        }
+        
+        // Validate that countries are selected if MultipleCountries is chosen
+        if (seekingDistanceOrigin === SearchFromOrigin.MultipleCountries && 
+            (!seekingCountries || seekingCountries.length === 0)) {
+            alert('Please select at least one country before applying filters');
+            return;
+        }
+        
         setIsSaving(true);
         updateUserSearchPreferences({
             seeking_min_age: seekingMinAge,
@@ -474,7 +487,17 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                     </div>
                 </div>
                 <div className="button-container">
-                    <button className="apply-button btn-primary" type="submit" onClick={() => onSubmit()}>Apply Filters</button>
+                    <button 
+                        className="apply-button btn-primary" 
+                        type="submit" 
+                        onClick={() => onSubmit()}
+                        disabled={isSaving || 
+                            (seekingDistanceOrigin === SearchFromOrigin.SingleLocation && !singleSearchLocation) ||
+                            (seekingDistanceOrigin === SearchFromOrigin.MultipleCountries && (!seekingCountries || seekingCountries.length === 0))
+                        }
+                    >
+                        {isSaving ? 'Saving...' : 'Apply Filters'}
+                    </button>
                     <button className="cancel-button" type="button" onClick={() => onClose()}>Cancel</button>
                 </div>
             </div>
