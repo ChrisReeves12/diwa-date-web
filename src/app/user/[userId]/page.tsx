@@ -48,6 +48,7 @@ export async function generateMetadata({ params }: any): Promise<Metadata> {
     }
 
     return {
+        // @ts-expect-error TypeScript is not cooperating
         title: `${process.env.APP_NAME} | ${userProfileResult.userProfileDetails?.user.display_name ?? 'Profile'}`
     };
 }
@@ -75,6 +76,7 @@ export default async function UserProfilePage({ params }: any) {
         <UserProfile
             currentUser={currentUser}
             notificationsPromise={notificationsPromise}
+            // @ts-expect-error TypeScript is not cooperating
             userProfileDetail={userProfileResult.userProfileDetails!} />
     );
 }

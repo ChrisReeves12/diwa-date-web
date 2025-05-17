@@ -1,0 +1,11 @@
+@use '../../styles/globals.scss' as globals;
+
+.user-likes-listing-container {
+  display: flex;
+  flex-wrap: wrap;
+
+  .no-likes-notice {
+    padding-top: 30px;
+    text-align: center;
+  }
+}

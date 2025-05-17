@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { User, AuthResult, UserPhoto } from '../types';
+import { User, AuthResult, UserPhoto, UserPreview } from '../types';
 import moment from "moment";
 import _ from "lodash";
 import {
@@ -644,6 +644,48 @@ export async function isUserBlocked(userId: number, blockedUserId: number) {
         [userId, blockedUserId]);
 
     return results[0].isBlocked === 1;
+}
+
+/**
+ * Gets all users who have pending likes for a given user.
+ * @param userId The ID of the user
+ * @returns Array of user preview objects for users who have sent like requests
+ */
+export async function getUserLikes(userId: number): Promise<UserPreview[]> {
+    const matches = await prisma.user_matches.findMany({
+        where: {
+            recipient_id: BigInt(userId),
+            status: 'pending'
+        },
+        include: {
+            sender: true
+        }
+    });
+
+    // Map the matches to user preview objects
+    return matches.map(match => {
+        const user = match.sender as unknown as User;
+        return {
+            id: Number(user.id),
+            display_name: user.display_name,
+            age: calculateUserAge(user),
+            gender: user.gender,
+            date_of_birth: user.date_of_birth,
+            last_active_at: user.last_active_at,
+            photos: user.photos,
+            num_of_photos: user.num_of_photos || 0,
+            main_photo: user.main_photo,
+            public_main_photo: appendMediaRootToImageUrl(user.main_photo),
+            main_photo_cropped_image_data: getMainCroppedImageData(user),
+            location_name: user.location_name || '',
+            latitude: user.latitude,
+            longitude: user.longitude,
+            country: user.country,
+            created_at: user.created_at,
+            match_id: Number(match.id),
+            match_status: match.status
+        } as UserPreview;
+    });
 }
 
 /**

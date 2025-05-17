@@ -10,3 +10,4 @@ export * from './user-photo.type';
 export * from './single-search-location.type';
 export * from './subscription-plan.interface';
 export * from './subscription-plan-enrollment.interface';
+export * from './user-preview.interface'
