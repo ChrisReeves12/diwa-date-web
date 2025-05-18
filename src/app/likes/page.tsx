@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { createNotificationCenterDataPromise } from "@/server-side-helpers/notification.helper";
 import './likes.scss';
 import { Metadata } from "next";
+import { LikesSortBy } from "@/types/likes-sort-by.enum";
 
 export async function generateMetadata(): Promise<Metadata> {
     return {
@@ -12,15 +13,34 @@ export async function generateMetadata(): Promise<Metadata> {
     };
 }
 
-export default async function LikesPage() {
+export default async function LikesPage({
+    searchParams
+}: {
+    searchParams: { [key: string]: string | string[] | undefined }
+}) {
     const currentUser = await getCurrentUser(await cookies());
 
     if (!currentUser) {
         redirect('/');
     }
 
+    const lSearchParams = await searchParams;
+
+    // Get filter parameters from URL query
+    const minAge = Number(lSearchParams.minAge) || currentUser.seeking_min_age || 18;
+    const maxAge = Number(lSearchParams.maxAge) || currentUser.seeking_max_age || 99;
+    const sortBy = (lSearchParams.sortBy as LikesSortBy) || LikesSortBy.LastActive;
+    const page = Number(lSearchParams.page) || 1;
+
     const notificationsPromise = createNotificationCenterDataPromise(currentUser);
-    const getLikesPromise = getUserLikes(Number(currentUser.id));
+    const getLikesPromise = getUserLikes(
+        Number(currentUser.id),
+        minAge,
+        maxAge,
+        sortBy,
+        page,
+        10
+    );
 
     return (
         <LikesView

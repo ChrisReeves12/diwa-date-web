@@ -17,6 +17,7 @@ import { businessConfig } from "@/config/business";
 import { transformBigInts } from "@/util";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 import { logError } from "@/server-side-helpers/logging.helpers";
+import { LikesSortBy } from "@/types/likes-sort-by.enum";
 
 /**
  * Get a user by their ID
@@ -647,23 +648,85 @@ export async function isUserBlocked(userId: number, blockedUserId: number) {
 }
 
 /**
- * Gets all users who have pending likes for a given user.
+ * Gets all users who have pending likes for a given user with filtering and sorting.
  * @param userId The ID of the user
- * @returns Array of user preview objects for users who have sent like requests
+ * @param minAge Minimum age filter
+ * @param maxAge Maximum age filter
+ * @param sortBy Sorting method
+ * @param page Page number (1-indexed)
+ * @param pageSize Number of items per page
+ * @returns Object with likes array and pagination data
  */
-export async function getUserLikes(userId: number): Promise<UserPreview[]> {
-    const matches = await prisma.user_matches.findMany({
+export async function getUserLikes(
+    userId: number,
+    minAge: number = 18,
+    maxAge: number = 100,
+    sortBy: LikesSortBy = LikesSortBy.LastActive,
+    page: number = 1,
+    pageSize: number = 10
+): Promise<{ likes: UserPreview[], totalCount: number, pageCount: number }> {
+    // Calculate minDate and maxDate for age filtering
+    const currentDate = new Date();
+    const minYear = currentDate.getFullYear() - maxAge - 1;
+    const maxYear = currentDate.getFullYear() - minAge;
+
+    const minDate = new Date(minYear, currentDate.getMonth(), currentDate.getDate());
+    const maxDate = new Date(maxYear, currentDate.getMonth(), currentDate.getDate());
+
+    // Get total count first (for pagination)
+    const totalCount = await prisma.user_matches.count({
         where: {
             recipient_id: BigInt(userId),
-            status: 'pending'
-        },
-        include: {
-            sender: true
+            status: 'pending',
+            sender: {
+                date_of_birth: {
+                    gte: minDate,
+                    lte: maxDate
+                }
+            }
         }
     });
 
+    // Calculate page count
+    const pageCount = Math.ceil(totalCount / pageSize);
+
+    // Apply sorting
+    let orderBy: any = {};
+    switch(sortBy) {
+        case LikesSortBy.Newest:
+            orderBy = { sender: { created_at: 'desc' } };
+            break;
+        case LikesSortBy.Age:
+            orderBy = { sender: { date_of_birth: 'desc' } };
+            break;
+        case LikesSortBy.LastActive:
+        default:
+            orderBy = { sender: { last_active_at: 'desc' } };
+            break;
+    }
+
+    // Get paginated results with filtering and sorting
+    const matches = await prisma.user_matches.findMany({
+        where: {
+            recipient_id: BigInt(userId),
+            status: 'pending',
+            sender: {
+                date_of_birth: {
+                    gte: minDate,
+                    lte: maxDate
+                }
+            }
+        },
+        include: {
+            sender: true
+        },
+        orderBy,
+        skip: (page - 1) * pageSize,
+        take: pageSize
+    });
+
     // Map the matches to user preview objects
-    return matches.map(match => {
+    const likes = matches.map(match => {
         const user = match.sender as unknown as User;
         return {
             id: Number(user.id),
@@ -686,6 +749,8 @@ export async function getUserLikes(userId: number): Promise<UserPreview[]> {
             match_status: match.status
         } as UserPreview;
     });
+
+    return { likes, totalCount, pageCount };
 }
 
 /**

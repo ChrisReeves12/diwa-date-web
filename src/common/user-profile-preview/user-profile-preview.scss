@@ -1,7 +1,7 @@
 @use '../../styles/globals' as globals;
 
 .user-profile-preview-container {
-  width: calc(50% - 16px);
+  width: calc(49% - 16px);
   display: flex;
   gap: 15px;
   align-items: flex-start;
@@ -42,14 +42,14 @@
             color: globals.$primary-blue-dark;
           }
         }
-        
+
         .they-liked-me {
           color: globals.$primary-blue;
           display: flex;
           align-items: center;
           font-weight: 500;
           margin-top: 4px;
-          
+
           @include globals.dark-mode() {
             color: globals.$primary-blue-dark;
           }
@@ -277,7 +277,7 @@
               color: globals.$primary-blue;
             }
           }
-          
+
         }
 
         .message-link {
