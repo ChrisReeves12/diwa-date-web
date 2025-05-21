@@ -8,7 +8,6 @@ import { SearchParameters, SearchSortBy } from "@/types/search-parameters.interf
 import moment from "moment";
 import _ from "lodash";
 import { LocalityViewport } from "@/types/locality-viewport.interface";
-import { transformBigInts } from "@/util";
 import { UserPreview } from "@/types/user-preview.interface";
 import { UserSearchDoc } from "@/types/user-search-doc.interface";
 import {
@@ -139,7 +138,7 @@ export async function indexUserForSearch(userOrId: User | number) {
                 religions: user.religions || [],
                 languages: user.languages || [],
                 interests: user.interests || [],
-                seeking_genders: user.seeking_genders || [],
+                seeking_gender: user.seeking_genders[0],
                 ethnic_preferences: user.ethnic_preferences || [],
                 religious_preferences: user.religious_preferences || [],
                 education_preferences: user.education_preferences || [],
@@ -253,13 +252,13 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'location_viewp
         locationSearchClause,
         countrySearchClause,
         {
-            terms: {
-                gender: seeking_genders
+            term: {
+                gender: seeking_genders[0]
             }
         },
         {
             term: {
-                seeking_genders: currentUser.gender
+                seeking_gender: currentUser.gender
             }
         },
         {
@@ -670,7 +669,7 @@ export async function createUserSearchIndex() {
                     marital_status_preferences: { type: 'keyword' },
                     drinking_preferences: { type: 'keyword' },
                     smoking_preferences: { type: 'keyword' },
-                    seeking_genders: { type: 'keyword' },
+                    seeking_gender: { type: 'keyword' },
                     gender: { type: 'keyword' },
                     smoking: { type: 'keyword' },
                     drinking: { type: 'keyword' },

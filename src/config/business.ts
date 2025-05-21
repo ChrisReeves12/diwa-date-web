@@ -8,9 +8,9 @@ export const businessConfig = {
         maxAge: 99,
         maritalStatus: 'single',
     },
-    
+
     search: {
-        maxResultWindow: 20000,
+        maxResultWindow: 50000,
         pageSize: 60
     },
 
