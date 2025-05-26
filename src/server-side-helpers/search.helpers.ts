@@ -190,3 +190,36 @@ function expandViewport(viewport: LocalityViewport, distanceKm: number): Localit
 
     return viewport;
 }
+
+/**
+ * Create a promise for executing search to be consumed by the `use` hook on the home search page.
+ * @param currentUser
+ * @param searchParams
+ */
+export async function createSearchPromise(currentUser: User, searchParams: {page?: number, sortBy?: SearchSortBy}) {
+    return searchUsers(currentUser, {
+        page: Number(searchParams?.page || 1),
+        seekingMinAge: currentUser.seekingMinAge || businessConfig.defaults.minAge,
+        seekingMaxAge: currentUser.seekingMaxAge || businessConfig.defaults.maxAge,
+        seekingMinHeight: currentUser.seekingMinHeight || businessConfig.defaults.minHeight,
+        seekingMaxHeight: currentUser.seekingMaxHeight || businessConfig.defaults.maxHeight,
+        numberOfPhotos: currentUser.seekingNumOfPhotos || businessConfig.defaults.numOfPhotos,
+        ethnicities: currentUser.ethnicPreferences,
+        religions: currentUser.religiousPreferences,
+        languages: currentUser.languagePreferences,
+        interests: currentUser.interestPreferences,
+        maritalStatus: currentUser.maritalStatusPreferences,
+        bodyType: currentUser.bodyTypePreferences,
+        hasChildren: currentUser.hasChildrenPreferences,
+        wantsChildren: currentUser.wantsChildrenPreferences,
+        education: currentUser.educationPreferences,
+        smoking: currentUser.smokingPreferences,
+        drinking: currentUser.drinkingPreferences,
+        seekingCountries: currentUser.seekingCountries,
+        seekingDistanceOrigin: currentUser.seekingDistanceOrigin as SearchFromOrigin,
+        seekingMaxDistance: currentUser.seekingMaxDistance,
+        seekingGender: currentUser.seekingGender || "",
+        sortBy: searchParams?.sortBy || SearchSortBy.LastActive,
+        searchFromLocation: undefined
+    });
+}

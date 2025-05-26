@@ -11,7 +11,7 @@ import { businessConfig } from "@/config/business";
 import { SearchResponse } from "@/types/search-response.interface";
 import UserProfilePreview from "@/common/user-profile-preview/user-profile-preview";
 import CenterScreenLoader from "@/common/center-screen-loader/center-screen-loader";
-import { updateUserSearchPreferences } from "@/app/home-search/home-search.actions";
+import { getUpdatedSearchResults, updateUserSearchPreferences } from "@/app/home-search/home-search.actions";
 import Modal from '@mui/material/Modal';
 import { Box } from "@mui/system";
 import SearchFiltersDialog from "@/app/home-search/search-filters-dialog/search-filters-dialog";
@@ -25,7 +25,7 @@ function SearchErrorDisplay() {
     );
 }
 
-function SearchResultsView({ currentUser, searchPromise }: {
+function SearchResultsView({currentUser, searchPromise}: {
     currentUser: User,
     searchPromise: Promise<SearchResponse>
 }) {
@@ -34,19 +34,34 @@ function SearchResultsView({ currentUser, searchPromise }: {
     const [isSearchFiltersModalOpen, setIsSearchFiltersModalOpen] = useState<boolean>(false);
     const [seekingMinAge, setSeekingMinAge] = useState<number>(currentUser.seekingMinAge || businessConfig.defaults.minAge);
     const [seekingMaxAge, setSeekingMaxAge] = useState<number>(currentUser.seekingMaxAge || businessConfig.defaults.maxAge);
+    const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
+    const [isUpdatingSearchResults, setIsUpdatingSearchResults] = useState(false);
+    const [updatedSearchResponse, setUpdatedSearchResponse] = useState<SearchResponse | undefined>();
+
+    const searchSortBy = searchParams.get('sortBy') || SearchSortBy.LastActive;
+    const page = Number(searchParams.get('page')) || 1;
 
     useEffect(() => {
         setSeekingMinAge(currentUser.seekingMinAge || businessConfig.defaults.minAge);
         setSeekingMaxAge(currentUser.seekingMaxAge || businessConfig.defaults.maxAge);
     }, [currentUser.seekingMinAge, currentUser.seekingMaxAge]);
 
-    const searchSortBy = searchParams.get('sortBy') || SearchSortBy.LastActive;
-    const page = Number(searchParams.get('page')) || 1;
+    // Reload search results upon update of page or sort
+    useEffect(() => {
+        if (isInitialLoadComplete) {
+            setIsUpdatingSearchResults(true);
+            getUpdatedSearchResults(page, searchSortBy as SearchSortBy)
+                .then((result: SearchResponse) => setUpdatedSearchResponse(result))
+                .finally(() => setIsUpdatingSearchResults(false));
+        }
 
-    const searchResponse = use(searchPromise);
+        setIsInitialLoadComplete(true);
+    }, [page, searchSortBy]);
+
+    const searchResponse = updatedSearchResponse || use(searchPromise);
     if (searchResponse.hasError) {
         return (
-            <SearchErrorDisplay />
+            <SearchErrorDisplay/>
         );
     }
 
@@ -67,9 +82,7 @@ function SearchResultsView({ currentUser, searchPromise }: {
                                             setSeekingMaxAge(newValues.maxAge);
                                             updateUserSearchPreferences({
                                                 seekingMinAge: newValues.minAge,
-                                                seekingMaxAge: newValues.maxAge,
-                                                sortBy: searchSortBy as SearchSortBy,
-                                                page: 1
+                                                seekingMaxAge: newValues.maxAge
                                             }).then(() => {
                                                 const params = new URLSearchParams(searchParams.toString());
                                                 params.set('page', '1');
@@ -85,11 +98,11 @@ function SearchResultsView({ currentUser, searchPromise }: {
                                 <label>Order By</label>
                                 <div className="input-container">
                                     <select value={searchSortBy}
-                                        onChange={(e) => {
-                                            const params = new URLSearchParams(searchParams.toString());
-                                            params.set('sortBy', e.target.value);
-                                            router.push(`?${params.toString()}`);
-                                        }} className="order-by">
+                                            onChange={(e) => {
+                                                const params = new URLSearchParams(searchParams.toString());
+                                                params.set('sortBy', e.target.value);
+                                                history.pushState({}, '', `?${params.toString()}`);
+                                            }} className="order-by">
                                         <option value={SearchSortBy.LastActive}>Last Active</option>
                                         <option value={SearchSortBy.Newest}>Newest Member</option>
                                         <option value={SearchSortBy.Age}>Age</option>
@@ -98,19 +111,21 @@ function SearchResultsView({ currentUser, searchPromise }: {
                                 </div>
                             </div>
                         </div>
-                        <button onClick={() => setIsSearchFiltersModalOpen(true)} className="search-filters-button">Search Filters</button>
+                        <button onClick={() => setIsSearchFiltersModalOpen(true)}
+                                className="search-filters-button">Search Filters
+                        </button>
                     </div>
                     <div className="paginator-section">
                         <div className="paginator-container">
                             {page > 1 && <button onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString());
                                 params.set('page', (page - 1).toString());
-                                router.push(`?${params.toString()}`);
+                                history.pushState({}, '', `?${params.toString()}`);
                             }} className="previous-button">Previous Page</button>}
                             {searchResponse.hasNextPage && <button onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString());
                                 params.set('page', (page + 1).toString());
-                                router.push(`?${params.toString()}`);
+                                history.pushState({}, '', `?${params.toString()}`);
                             }} className="next-button">Next Page</button>}
                         </div>
                     </div>
@@ -120,7 +135,7 @@ function SearchResultsView({ currentUser, searchPromise }: {
                         <h3 className="no-results-label">No results found.</h3> :
                         searchResponse.searchResults.map((userPreview) =>
                             <UserProfilePreview type="search" userPreview={userPreview}
-                                key={userPreview.id.toString()} />
+                                                key={userPreview.id.toString()}/>
                         )
                     }
                 </div>
@@ -141,16 +156,16 @@ function SearchResultsView({ currentUser, searchPromise }: {
                     overflowY: 'auto',
                     overflowX: 'hidden'
                 }}><SearchFiltersDialog
-                        onApply={() => router.refresh()}
-                        onClose={() => setIsSearchFiltersModalOpen(false)}
-                        currentUser={currentUser} />
+                    onApply={() => router.refresh()}
+                    onClose={() => setIsSearchFiltersModalOpen(false)}
+                    currentUser={currentUser}/>
                 </Box>
             </Modal>
         </>
     );
 }
 
-export default function HomeSearch({ currentUser, searchPromise, notificationsPromise }: {
+export default function HomeSearch({currentUser, searchPromise, notificationsPromise}: {
     currentUser: User,
     searchPromise: Promise<SearchResponse>,
     notificationsPromise: Promise<NotificationCenterData>
@@ -161,8 +176,9 @@ export default function HomeSearch({ currentUser, searchPromise, notificationsPr
             currentUser={currentUser}
             notificationsPromise={notificationsPromise}
         >
-            <Suspense fallback={<CenterScreenLoader />}>
-                <SearchResultsView currentUser={currentUser} searchPromise={searchPromise} />
+            <Suspense fallback={<CenterScreenLoader/>}>
+                <SearchResultsView currentUser={currentUser}
+                                   searchPromise={searchPromise}/>
             </Suspense>
         </DashboardWrapper>
     );

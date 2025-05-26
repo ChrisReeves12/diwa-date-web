@@ -3,9 +3,24 @@
 import { getCurrentUser } from "@/server-side-helpers/user.helpers";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
-import { SearchParameters } from "@/types/search-parameters.interface";
+import { SearchParameters, SearchSortBy } from "@/types/search-parameters.interface";
 import { logError } from "@/server-side-helpers/logging.helpers";
 import { cookies } from "next/headers";
+import { createSearchPromise } from "@/server-side-helpers/search.helpers";
+
+/**
+ * Perform search, for updating on page search results.
+ * @param page
+ * @param sortBy
+ */
+export async function getUpdatedSearchResults(page: number, sortBy: SearchSortBy) {
+    const currentUser = await getCurrentUser(await cookies());
+    if (!currentUser) {
+        redirect('/');
+    }
+
+    return createSearchPromise(currentUser, {page, sortBy});
+}
 
 /**
  * Updates user's search preferences

@@ -1,7 +1,7 @@
 import GuestHome from "@/app/guest-home/guest-home";
 import { getCurrentUser, refreshLastActive } from "@/server-side-helpers/user.helpers";
 import HomeSearch from "@/app/home-search/home-search";
-import { searchUsers } from "@/server-side-helpers/search.helpers";
+import { createSearchPromise, searchUsers } from "@/server-side-helpers/search.helpers";
 import { businessConfig } from "@/config/business";
 import { SearchFromOrigin, User } from "@/types";
 import { SearchParameters, SearchSortBy } from "@/types/search-parameters.interface";
@@ -30,40 +30,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<any
         refreshLastActive(currentUser).then();
     }
 
+    const lSearchParams = await searchParams;
+
     return (
         currentUser ?
             <HomeSearch
-                searchPromise={createSearchPromise(currentUser, await searchParams)}
+                searchPromise={createSearchPromise(currentUser, lSearchParams)}
                 notificationsPromise={createNotificationCenterDataPromise(currentUser)}
                 currentUser={currentUser}
             /> : <GuestHome />
     );
-}
-
-async function createSearchPromise(currentUser: User, searchParams: SearchParameters) {
-    return searchUsers(currentUser, {
-        page: Number(searchParams?.page || 1),
-        seekingMinAge: currentUser.seekingMinAge || businessConfig.defaults.minAge,
-        seekingMaxAge: currentUser.seekingMaxAge || businessConfig.defaults.maxAge,
-        seekingMinHeight: currentUser.seekingMinHeight || businessConfig.defaults.minHeight,
-        seekingMaxHeight: currentUser.seekingMaxHeight || businessConfig.defaults.maxHeight,
-        numberOfPhotos: currentUser.seekingNumOfPhotos || businessConfig.defaults.numOfPhotos,
-        ethnicities: currentUser.ethnicPreferences,
-        religions: currentUser.religiousPreferences,
-        languages: currentUser.languagePreferences,
-        interests: currentUser.interestPreferences,
-        maritalStatus: currentUser.maritalStatusPreferences,
-        bodyType: currentUser.bodyTypePreferences,
-        hasChildren: currentUser.hasChildrenPreferences,
-        wantsChildren: currentUser.wantsChildrenPreferences,
-        education: currentUser.educationPreferences,
-        smoking: currentUser.smokingPreferences,
-        drinking: currentUser.drinkingPreferences,
-        seekingCountries: currentUser.seekingCountries,
-        seekingDistanceOrigin: currentUser.seekingDistanceOrigin as SearchFromOrigin,
-        seekingMaxDistance: currentUser.seekingMaxDistance,
-        seekingGender: currentUser.seekingGender || "",
-        sortBy: searchParams?.sortBy || SearchSortBy.LastActive,
-        searchFromLocation: undefined
-    });
 }
