@@ -65,26 +65,26 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
 
         setIsSaving(true);
         updateUserSearchPreferences({
-            seeking_min_age: seekingMinAge,
-            seeking_max_age: seekingMaxAge,
-            number_of_photos: seekingNumOfPhotos,
-            seeking_min_height: seekingMinHeight,
-            seeking_max_height: seekingMaxHeight,
+            seekingMinAge: seekingMinAge,
+            seekingMaxAge: seekingMaxAge,
+            numberOfPhotos: seekingNumOfPhotos,
+            seekingMinHeight: seekingMinHeight,
+            seekingMaxHeight: seekingMaxHeight,
             ethnicities: ethnicPreferences,
             religions: religiousPreferences,
             languages: languagePreferences,
             interests: interestPreferences,
-            marital_status: maritalStatusPreferences,
-            body_type: bodyTypePreferences,
-            has_children: hasChildrenPreferences,
-            wants_children: wantsChildrenPreferences,
+            maritalStatus: maritalStatusPreferences,
+            bodyType: bodyTypePreferences,
+            hasChildren: hasChildrenPreferences,
+            wantsChildren: wantsChildrenPreferences,
             education: educationPreferences,
             smoking: smokingPreferences,
             drinking: drinkingPreferences,
-            seeking_countries: seekingCountries,
-            seeking_distance_origin: seekingDistanceOrigin,
-            seeking_max_distance: seekingMaxDistance,
-            search_from_location: seekingDistanceOrigin === SearchFromOrigin.SingleLocation ? singleSearchLocation : undefined
+            seekingCountries: seekingCountries,
+            seekingDistanceOrigin: seekingDistanceOrigin,
+            seekingMaxDistance: seekingMaxDistance,
+            searchFromLocation: seekingDistanceOrigin === SearchFromOrigin.SingleLocation ? singleSearchLocation : undefined
         }).then(() => {
             onClose();
             onApply();

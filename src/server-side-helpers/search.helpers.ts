@@ -18,42 +18,42 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'locationViewpo
 
     const {
         page,
-        seeking_min_height,
-        seeking_max_height,
-        seeking_max_age,
-        seeking_min_age,
-        seeking_max_distance,
-        seeking_distance_origin,
-        search_from_location,
+        seekingMinHeight,
+        seekingMaxHeight,
+        seekingMaxAge,
+        seekingMinAge,
+        seekingMaxDistance,
+        seekingDistanceOrigin,
+        searchFromLocation,
         seekingGender,
         sortBy
     } = params;
 
     const offset = ((page || 1) - 1) * pageSize;
-    const minDateOfBirth = moment().subtract(seeking_max_age || businessConfig.defaults.maxAge, 'years').format('YYYY-MM-DD');
-    const maxDateOfBirth = moment().subtract(seeking_min_age || businessConfig.defaults.minAge, 'years').format('YYYY-MM-DD');
+    const minDateOfBirth = moment().subtract(seekingMaxAge || businessConfig.defaults.maxAge, 'years').format('YYYY-MM-DD');
+    const maxDateOfBirth = moment().subtract(seekingMinAge || businessConfig.defaults.minAge, 'years').format('YYYY-MM-DD');
     let locationSearchClause: string = '';
     let countrySearchClause: string = '';
 
     // Handle geo-bounding box queries
-    if ((seeking_distance_origin === SearchFromOrigin.CurrentLocation && currentUser.locationViewport) || seeking_distance_origin === SearchFromOrigin.SingleLocation) {
-        let viewport = seeking_distance_origin === SearchFromOrigin.CurrentLocation ? currentUser.locationViewport : search_from_location?.selected_location?.viewport;
-        const country = search_from_location?.selected_country || currentUser.country!;
-        countrySearchClause = `AND country = '${country}'`;
+    if ((seekingDistanceOrigin === SearchFromOrigin.CurrentLocation && currentUser.locationViewport) || seekingDistanceOrigin === SearchFromOrigin.SingleLocation) {
+        let viewport = seekingDistanceOrigin === SearchFromOrigin.CurrentLocation ? currentUser.locationViewport : searchFromLocation?.selected_location?.viewport;
+        const country = searchFromLocation?.selected_country || currentUser.country!;
+        countrySearchClause = `AND U."country" = '${country}'`;
 
         if (viewport) {
-            viewport = expandViewport(viewport, seeking_max_distance || currentUser.seekingMaxDistance);
-            locationSearchClause = `AND ST_INTERSECTS("geoPoint", ST_MakeEnvelope(${viewport.low.longitude}, ${viewport.low.latitude}, ${viewport.high.longitude}, ${viewport.high.latitude}, 4326)::geography)`;
+            viewport = expandViewport(viewport, seekingMaxDistance || currentUser.seekingMaxDistance);
+            locationSearchClause = `AND ST_INTERSECTS(U."geoPoint", ST_MakeEnvelope(${viewport.low.longitude}, ${viewport.low.latitude}, ${viewport.high.longitude}, ${viewport.high.latitude}, 4326)::geography)`;
         }
     }
 
     // Handle multiple countries search
-    if (seeking_distance_origin === SearchFromOrigin.MultipleCountries && params.seeking_countries?.length) {
-        countrySearchClause = `AND country IN (${params.seeking_countries.map(c => `'${c}'`).join(',')})`;
+    if (seekingDistanceOrigin === SearchFromOrigin.MultipleCountries && params.seekingCountries?.length) {
+        countrySearchClause = `AND U."country" IN (${params.seekingCountries.map(c => `'${c}'`).join(',')})`;
     }
 
     if (!countrySearchClause) {
-        countrySearchClause = `country = '${currentUser.country}'`;
+        countrySearchClause = `AND U."country" = '${currentUser.country}'`;
     }
 
     const enumeratedQueries = [];
@@ -62,14 +62,14 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'locationViewpo
         "religions",
         "languages",
         "interests",
-        "marital_status",
-        "body_type",
-        "has_children",
-        "wants_children",
+        "maritalStatus",
+        "bodyType",
+        "hasChildren",
+        "wantsChildren",
         "education",
         "smoking",
         "drinking",
-        "seeking_countries"
+        "seekingCountries"
     ];
 
     for (const searchPreferenceLabel of searchPreferenceLabels) {
@@ -80,8 +80,9 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'locationViewpo
     }
 
     const searchResults = await pgDbPool.query(`
-        WITH SelectedUsers AS (SELECT U.id,
-                   U.gender,
+        WITH SelectedUsers AS (
+            SELECT U."id",
+                   U."gender",
                    U."displayName",
                    U."mainPhoto",
                    U."photos",
@@ -91,7 +92,7 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'locationViewpo
                    U."createdAt",
                    U."seekingGender",
                    U."locationName"
-            FROM users U
+            FROM "users" U
             WHERE U."deactivatedAt" IS NULL
               AND U."suspendedAt" IS NULL
               AND U."isUnderReview" = 0
@@ -100,19 +101,19 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'locationViewpo
               ${locationSearchClause}
               AND U."gender" = '${seekingGender}'
               AND U."seekingGender" = '${currentUser.gender}'
-              AND U."height" BETWEEN ${seeking_min_height || businessConfig.defaults.minHeight} AND ${seeking_max_height || businessConfig.defaults.maxHeight}
+              AND U."height" BETWEEN ${seekingMinHeight || businessConfig.defaults.minHeight} AND ${seekingMaxHeight || businessConfig.defaults.maxHeight}
               AND U."dateOfBirth" BETWEEN '${minDateOfBirth}' AND '${maxDateOfBirth}'
               ${enumeratedQueries.join("\n")}
             ORDER BY U."${resolveSearchSortBy(sortBy)}" DESC LIMIT ${pageSize} OFFSET ${offset})
         
         SELECT 
             SU.*, 
-            UM.id AS "matchId",
-            UM.status AS "matchStatus",
+            UM."id" AS "matchId",
+            UM."status" AS "matchStatus",
             Calculate_Age(SU."dateOfBirth") AS "age",
             UM."acceptedAt" AS "matchAcceptedAt",
-            (BU.id IS NOT NULL) AS "blockedThem",
-            (UM.status = 'pending' AND UM."recipientId" = ${currentUser.id}) AS "theyLikedMe"
+            (BU."id" IS NOT NULL) AS "blockedThem",
+            (UM."status" = 'pending' AND UM."recipientId" = ${currentUser.id}) AS "theyLikedMe"
         FROM SelectedUsers SU
             LEFT JOIN "userMatches" UM ON (UM."userId" = ${currentUser.id} AND UM."recipientId" = SU.id) OR (UM."userId" = SU.id AND UM."recipientId" = ${currentUser.id})
             LEFT JOIN "blockedUsers" BU ON BU."userId" = ${currentUser.id} AND BU."blockedUserId" = SU.id

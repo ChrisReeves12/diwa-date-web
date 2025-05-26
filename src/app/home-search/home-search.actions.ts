@@ -21,27 +21,27 @@ export async function updateUserSearchPreferences(searchPrefs: Partial<SearchPar
         await prisma.users.update({
             where: { id: currentUser.id },
             data: {
-                seekingMinAge: searchPrefs.seeking_min_age || currentUser.seekingMinAge,
-                seekingMaxAge: searchPrefs.seeking_max_age || currentUser.seekingMaxAge,
-                seekingMinHeight: searchPrefs.seeking_min_height || currentUser.seekingMinHeight,
-                seekingMaxHeight: searchPrefs.seeking_max_height || currentUser.seekingMaxHeight,
-                seekingNumOfPhotos: searchPrefs.number_of_photos || currentUser.seekingNumOfPhotos,
+                seekingMinAge: searchPrefs.seekingMinAge || currentUser.seekingMinAge,
+                seekingMaxAge: searchPrefs.seekingMaxAge || currentUser.seekingMaxAge,
+                seekingMinHeight: searchPrefs.seekingMinHeight || currentUser.seekingMinHeight,
+                seekingMaxHeight: searchPrefs.seekingMaxHeight || currentUser.seekingMaxHeight,
+                seekingNumOfPhotos: searchPrefs.numberOfPhotos || currentUser.seekingNumOfPhotos,
                 ethnicPreferences: searchPrefs.ethnicities,
                 religiousPreferences: searchPrefs.religions,
                 languagePreferences: searchPrefs.languages,
                 interestPreferences: searchPrefs.interests,
-                maritalStatusPreferences: searchPrefs.marital_status,
-                bodyTypePreferences: searchPrefs.body_type,
-                hasChildrenPreferences: searchPrefs.has_children,
-                wantsChildrenPreferences: searchPrefs.wants_children,
+                maritalStatusPreferences: searchPrefs.maritalStatus,
+                bodyTypePreferences: searchPrefs.bodyType,
+                hasChildrenPreferences: searchPrefs.hasChildren,
+                wantsChildrenPreferences: searchPrefs.wantsChildren,
                 educationPreferences: searchPrefs.education,
                 smokingPreferences: searchPrefs.smoking,
                 drinkingPreferences: searchPrefs.drinking,
-                seekingCountries: searchPrefs.seeking_countries,
-                seekingDistanceOrigin: searchPrefs.seeking_distance_origin || currentUser.seekingDistanceOrigin,
-                seekingMaxDistance: searchPrefs.seeking_max_distance || currentUser.seekingMaxDistance,
+                seekingCountries: searchPrefs.seekingCountries,
+                seekingDistanceOrigin: searchPrefs.seekingDistanceOrigin || currentUser.seekingDistanceOrigin,
+                seekingMaxDistance: searchPrefs.seekingMaxDistance || currentUser.seekingMaxDistance,
                 seekingGender: currentUser.seekingGender,
-                singleSearchLocation: searchPrefs.search_from_location ? JSON.parse(JSON.stringify(searchPrefs.search_from_location)) : undefined
+                singleSearchLocation: searchPrefs.searchFromLocation ? JSON.parse(JSON.stringify(searchPrefs.searchFromLocation)) : undefined
             }
         });
     } catch (err: any) {

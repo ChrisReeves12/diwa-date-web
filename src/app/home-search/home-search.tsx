@@ -12,7 +12,6 @@ import { SearchResponse } from "@/types/search-response.interface";
 import UserProfilePreview from "@/common/user-profile-preview/user-profile-preview";
 import CenterScreenLoader from "@/common/center-screen-loader/center-screen-loader";
 import { updateUserSearchPreferences } from "@/app/home-search/home-search.actions";
-import { Pagination } from "@mui/material";
 import Modal from '@mui/material/Modal';
 import { Box } from "@mui/system";
 import SearchFiltersDialog from "@/app/home-search/search-filters-dialog/search-filters-dialog";
@@ -68,12 +67,14 @@ function SearchResultsView({ currentUser, searchPromise }: {
                                             setSeekingMinAge(newValues.minAge);
                                             setSeekingMaxAge(newValues.maxAge);
                                             updateUserSearchPreferences({
-                                                seeking_min_age: newValues.minAge,
-                                                seeking_max_age: newValues.maxAge,
-                                                sort_by: searchSortBy as SearchSortBy,
-                                                page: page
+                                                seekingMinAge: newValues.minAge,
+                                                seekingMaxAge: newValues.maxAge,
+                                                sortBy: searchSortBy as SearchSortBy,
+                                                page: 1
                                             }).then(() => {
-                                                router.refresh();
+                                                const params = new URLSearchParams(searchParams.toString());
+                                                params.set('page', '1');
+                                                router.push(`?${params.toString()}`);
                                             }).catch(() => {
                                                 alert('An error occurred while updating search preferences.');
                                             });
@@ -101,14 +102,18 @@ function SearchResultsView({ currentUser, searchPromise }: {
                         <button onClick={() => setIsSearchFiltersModalOpen(true)} className="search-filters-button">Search Filters</button>
                     </div>
                     <div className="paginator-section">
-                        <Pagination
-                            color={'primary'}
-                            onChange={(_, aPage) => {
+                        <div className="paginator-container">
+                            {page > 1 && <button onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString());
-                                params.set('page', aPage.toString());
+                                params.set('page', (page - 1).toString());
                                 router.push(`?${params.toString()}`);
-                            }}
-                            page={Number(searchParams?.get('page') || 1)} />
+                            }} className="previous-button">Previous Page</button>}
+                            {searchResponse.hasNextPage && <button onClick={() => {
+                                const params = new URLSearchParams(searchParams.toString());
+                                params.set('page', (page + 1).toString());
+                                router.push(`?${params.toString()}`);
+                            }} className="next-button">Next Page</button>}
+                        </div>
                     </div>
                 </div>
                 <div className="search-results-section">

@@ -8,20 +8,20 @@ datasource db {
 }
 
 model billingInformationEntries {
-  id            Int     @id(map: "billinginformationentries_pk") @default(autoincrement())
+  id            Int       @id(map: "billinginformationentries_pk") @default(autoincrement())
   userId        Int
-  name          String  @db.VarChar(255)
-  address1      String  @db.VarChar(255)
-  address2      String? @db.VarChar(255)
-  city          String  @db.VarChar(255)
-  region        String  @db.VarChar(255)
-  postalCode    String  @db.VarChar(255)
-  country       String  @db.VarChar(255)
-  paymentMethod String  @db.VarChar(100)
-  cclast4       String  @db.VarChar(4)
-  createdAt     String?
-  updatedAt     String?
-  users         users   @relation(fields: [userId], references: [id], onDelete: Cascade, map: "billinginformationentries_users_id_fk")
+  name          String    @db.VarChar(255)
+  address1      String    @db.VarChar(255)
+  address2      String?   @db.VarChar(255)
+  city          String    @db.VarChar(255)
+  region        String    @db.VarChar(255)
+  postalCode    String    @db.VarChar(255)
+  country       String    @db.VarChar(255)
+  paymentMethod String    @db.VarChar(100)
+  cclast4       String    @db.VarChar(4)
+  createdAt     DateTime? @db.Timestamp(6)
+  updatedAt     DateTime? @db.Timestamp(6)
+  users         users     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "billinginformationentries_users_id_fk")
 
   @@index([userId], map: "billingInformationEntriesUserIdForeign")
   @@index([createdAt(sort: Desc)], map: "billinginformationentries_createdat_index")
@@ -29,14 +29,15 @@ model billingInformationEntries {
 }
 
 model blockedUsers {
-  id                                      Int     @id(map: "blockedusers_pk") @default(autoincrement())
+  id                                      Int       @id(map: "blockedusers_pk") @default(autoincrement())
   userId                                  Int
   blockedUserId                           Int
-  createdAt                               String?
-  updatedAt                               String?
-  users_blockedUsers_userIdTousers        users   @relation("blockedUsers_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "blockedusers_users_id_fk")
-  users_blockedUsers_blockedUserIdTousers users   @relation("blockedUsers_blockedUserIdTousers", fields: [blockedUserId], references: [id], onDelete: Cascade, map: "blockedusers_users_id_fk_2")
+  createdAt                               DateTime? @db.Timestamp(6)
+  updatedAt                               DateTime? @db.Timestamp(6)
+  users_blockedUsers_userIdTousers        users     @relation("blockedUsers_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "blockedusers_users_id_fk")
+  users_blockedUsers_blockedUserIdTousers users     @relation("blockedUsers_blockedUserIdTousers", fields: [blockedUserId], references: [id], onDelete: Cascade, map: "blockedusers_users_id_fk_2")
 
+  @@unique([userId, blockedUserId], map: "blockedusers_userid_blockeduserid_uindex")
   @@index([blockedUserId], map: "blockedUsersBlockedUserIdForeign")
   @@index([userId], map: "blockedUsersUserIdForeign")
   @@index([createdAt(sort: Desc)], map: "blockedusers_createdat_index")
@@ -44,18 +45,18 @@ model blockedUsers {
 }
 
 model cachedLocations {
-  id            Int     @id(map: "cachedlocations_pk") @default(autoincrement())
-  formattedName String  @db.VarChar(255)
-  area          String? @db.VarChar(255)
-  city          String  @db.VarChar(255)
-  region        String? @db.VarChar(255)
-  country       String? @db.VarChar(255)
-  googlePlaceId String  @db.VarChar(255)
+  id            Int       @id(map: "cachedlocations_pk") @default(autoincrement())
+  formattedName String    @db.VarChar(255)
+  area          String?   @db.VarChar(255)
+  city          String    @db.VarChar(255)
+  region        String?   @db.VarChar(255)
+  country       String?   @db.VarChar(255)
+  googlePlaceId String    @db.VarChar(255)
   latitude      Float
   longitude     Float
   viewport      Json
-  createdAt     String?
-  updatedAt     String?
+  createdAt     DateTime? @db.Timestamp(6)
+  updatedAt     DateTime? @db.Timestamp(6)
 
   @@index([createdAt(sort: Desc)], map: "cachedlocations_createdat_index")
   @@index([updatedAt(sort: Desc)], map: "cachedlocations_updatedat_index")
@@ -70,8 +71,8 @@ model messages {
   userId            Int
   recipientId       Int
   timestamp         BigInt       @default(0)
-  createdAt         String?
-  updatedAt         String?
+  createdAt         DateTime?    @db.Timestamp(6)
+  updatedAt         DateTime?    @db.Timestamp(6)
   userMatches       userMatches? @relation(fields: [matchId], references: [id], onDelete: Cascade, map: "messages_usermatches_id_fk")
   users             users        @relation(fields: [userId], references: [id], onDelete: Cascade, map: "messages_users_id_fk")
 
@@ -84,14 +85,15 @@ model messages {
 }
 
 model mutedUsers {
-  id                                  Int     @id(map: "mutedusers_pk") @default(autoincrement())
+  id                                  Int       @id(map: "mutedusers_pk") @default(autoincrement())
   userId                              Int
   recipientId                         Int
-  createdAt                           String?
-  updatedAt                           String?
-  users_mutedUsers_userIdTousers      users   @relation("mutedUsers_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "mutedusers_users_id_fk")
-  users_mutedUsers_recipientIdTousers users   @relation("mutedUsers_recipientIdTousers", fields: [recipientId], references: [id], onDelete: Cascade, map: "mutedusers_users_id_fk_2")
+  createdAt                           DateTime? @db.Timestamp(6)
+  updatedAt                           DateTime? @db.Timestamp(6)
+  users_mutedUsers_userIdTousers      users     @relation("mutedUsers_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "mutedusers_users_id_fk")
+  users_mutedUsers_recipientIdTousers users     @relation("mutedUsers_recipientIdTousers", fields: [recipientId], references: [id], onDelete: Cascade, map: "mutedusers_users_id_fk_2")
 
+  @@unique([userId, recipientId], map: "mutedusers_userid_recipientid_uindex")
   @@index([recipientId], map: "mutedUsersRecipientIdForeign")
   @@index([userId], map: "mutedUsersUserIdForeign")
   @@index([createdAt(sort: Desc)], map: "mutedusers_createdat_index")
@@ -99,16 +101,16 @@ model mutedUsers {
 }
 
 model notifications {
-  id                                     Int     @id(map: "notifications_pk") @default(autoincrement())
+  id                                     Int       @id(map: "notifications_pk") @default(autoincrement())
   userId                                 Int
   recipientId                            Int?
-  type                                   String  @db.VarChar(255)
+  type                                   String    @db.VarChar(255)
   readAt                                 String?
   data                                   Json?
-  createdAt                              String?
-  updatedAt                              String?
-  users_notifications_recipientIdTousers users?  @relation("notifications_recipientIdTousers", fields: [recipientId], references: [id], onDelete: Cascade, map: "notifications_users_id_fk")
-  users_notifications_userIdTousers      users   @relation("notifications_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "notifications_users_id_fk_2")
+  createdAt                              DateTime? @db.Timestamp(6)
+  updatedAt                              DateTime? @db.Timestamp(6)
+  users_notifications_recipientIdTousers users?    @relation("notifications_recipientIdTousers", fields: [recipientId], references: [id], onDelete: Cascade, map: "notifications_users_id_fk")
+  users_notifications_userIdTousers      users     @relation("notifications_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "notifications_users_id_fk_2")
 
   @@index([recipientId], map: "notificationsRecipientIdForeign")
   @@index([userId], map: "notificationsUserIdForeign")
@@ -117,12 +119,12 @@ model notifications {
 }
 
 model regionViewports {
-  id        Int     @id(map: "regionviewports_pk") @default(autoincrement())
-  name      String  @db.VarChar(255)
+  id        Int       @id(map: "regionviewports_pk") @default(autoincrement())
+  name      String    @db.VarChar(255)
   isState   Boolean
   viewport  Json
-  createdAt String?
-  updatedAt String?
+  createdAt DateTime? @db.Timestamp(6)
+  updatedAt DateTime? @db.Timestamp(6)
 
   @@index([createdAt(sort: Desc)], map: "regionviewports_createdat_index")
   @@index([updatedAt(sort: Desc)], map: "regionviewports_updatedat_index")
@@ -149,8 +151,8 @@ model subscriptionPlanEnrollments {
   nextPaymentAt      DateTime?         @db.Timestamp(6)
   startedAt          DateTime?         @db.Timestamp(6)
   endsAt             DateTime?         @db.Timestamp(6)
-  createdAt          String?
-  updatedAt          String?
+  createdAt          DateTime?         @db.Timestamp(6)
+  updatedAt          DateTime?         @db.Timestamp(6)
   subscriptionPlans  subscriptionPlans @relation(fields: [subscriptionPlanId], references: [id], onDelete: Cascade, map: "subscriptionplanenrollments_subscriptionplans_id_fk")
   users              users             @relation(fields: [userId], references: [id], onDelete: Cascade, map: "subscriptionplanenrollments_users_id_fk")
 
@@ -167,8 +169,8 @@ model subscriptionPlans {
   pricingInterval             String                        @db.VarChar(255)
   price                       Decimal                       @db.Decimal(10, 2)
   pricingUnit                 String                        @db.VarChar(255)
-  createdAt                   String?
-  updatedAt                   String?
+  createdAt                   DateTime?                     @db.Timestamp(6)
+  updatedAt                   DateTime?                     @db.Timestamp(6)
   subscriptionPlanEnrollments subscriptionPlanEnrollments[]
 
   @@index([createdAt(sort: Desc)], map: "subscriptionplans_createdat_index")
@@ -183,12 +185,13 @@ model userMatches {
   acceptedAt                           String?
   acknowledgedAt                       String?
   updatedAtTimestamp                   BigInt?    @default(0)
-  createdAt                            String?
-  updatedAt                            String?
+  createdAt                            DateTime?  @db.Timestamp(6)
+  updatedAt                            DateTime?  @db.Timestamp(6)
   messages                             messages[]
   users_userMatches_userIdTousers      users      @relation("userMatches_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "usermatches_users_id_fk")
   users_userMatches_recipientIdTousers users      @relation("userMatches_recipientIdTousers", fields: [recipientId], references: [id], onDelete: Cascade, map: "usermatches_users_id_fk_2")
 
+  @@unique([userId, recipientId], map: "usermatches_userid_recipientid_uindex")
   @@index([recipientId], map: "matchesRecipientIdForeign")
   @@index([updatedAtTimestamp], map: "matchesUpdatedAtTimestampIndex")
   @@index([userId], map: "matchesUserIdForeign")
@@ -255,10 +258,9 @@ model users {
   customerPaymentProfileId                       String?                       @db.VarChar(255)
   password                                       String                        @db.VarChar(500)
   refreshToken                                   String?                       @db.VarChar(500)
-  createdAt                                      String?
-  updatedAt                                      String?
+  createdAt                                      DateTime?                     @db.Timestamp(6)
+  updatedAt                                      DateTime?                     @db.Timestamp(6)
   seekingGender                                  String?                       @db.VarChar(20)
-  geoPoint                                       Unsupported("geography")?
   deactivatedAt                                  DateTime?                     @db.Timestamp(6)
   billingInformationEntries                      billingInformationEntries[]
   blockedUsers_blockedUsers_userIdTousers        blockedUsers[]                @relation("blockedUsers_userIdTousers")
@@ -275,13 +277,4 @@ model users {
 
   @@index([createdAt(sort: Desc)], map: "users_createdat_index")
   @@index([updatedAt(sort: Desc)], map: "users_updatedat_index")
-}
-
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model spatial_ref_sys {
-  srid      Int     @id
-  auth_name String? @db.VarChar(256)
-  auth_srid Int?
-  srtext    String? @db.VarChar(2048)
-  proj4text String? @db.VarChar(2048)
 }

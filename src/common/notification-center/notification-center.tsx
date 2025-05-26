@@ -153,16 +153,16 @@ function NotificationCenterContent({ notificationsData }: { notificationsData: N
                         id: receivedMessage.id,
                         content: _.truncate(receivedMessage.content),
                         senderUser: {
-                            displayName: receivedMessage.display_name,
-                            gender: receivedMessage.user_gender,
-                            publicMainPhoto: receivedMessage.public_main_photo,
-                            mainPhotoCroppedImageData: receivedMessage.main_photo_cropped_image_data,
+                            displayName: receivedMessage.displayName,
+                            gender: receivedMessage.userGender,
+                            publicMainPhoto: receivedMessage.publicMainPhoto,
+                            mainPhotoCroppedImageData: receivedMessage.mainPhotoCroppedImageData,
                             age: receivedMessage.age
                         },
-                        receivedAtMessage: `Sent ${humanizeTimeDiff(new Date(receivedMessage.created_at))}`,
-                        infoSectionUrl: `/user/messages/${receivedMessage.user_id}`,
-                        userPhotoUrl: userProfileLink({ id: receivedMessage.user_id }),
-                        numberOfMessages: receivedMessage.msg_count,
+                        receivedAtMessage: `Sent ${humanizeTimeDiff(new Date(receivedMessage.createdAt))}`,
+                        infoSectionUrl: `/user/messages/${receivedMessage.userId}`,
+                        userPhotoUrl: userProfileLink({ id: receivedMessage.userId }),
+                        numberOfMessages: receivedMessage.msgCount,
                         type: 'messages'
                     }))}
                 />
