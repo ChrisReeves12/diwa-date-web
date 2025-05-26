@@ -35,7 +35,6 @@ function SearchResultsView({ currentUser, searchPromise }: {
     const [seekingMinAge, setSeekingMinAge] = useState<number>(currentUser.seekingMinAge || businessConfig.defaults.minAge);
     const [seekingMaxAge, setSeekingMaxAge] = useState<number>(currentUser.seekingMaxAge || businessConfig.defaults.maxAge);
 
-    // Update state when currentUser changes
     useEffect(() => {
         setSeekingMinAge(currentUser.seekingMinAge || businessConfig.defaults.minAge);
         setSeekingMaxAge(currentUser.seekingMaxAge || businessConfig.defaults.maxAge);

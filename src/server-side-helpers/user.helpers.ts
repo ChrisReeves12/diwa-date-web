@@ -552,7 +552,7 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
             data: {
                 status: 'matched',
                 updatedAtTimestamp: Date.now(),
-                updatedAt: moment().format('YYYY-MM-DD HH:mm:ss')
+                updatedAt: new Date()
             }
         });
 
@@ -572,8 +572,8 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
             recipientId: recipientUserId,
             status: 'pending',
             updatedAtTimestamp: Date.now(),
-            createdAt: moment().format('YYYY-MM-DD HH:mm:ss'),
-            updatedAt: moment().format('YYYY-MM-DD HH:mm:ss')
+            createdAt: new Date(),
+            updatedAt: new Date()
         }
     });
 
@@ -631,8 +631,8 @@ export async function muteUserById(userId: number, recipientUserId: number): Pro
             data: {
                 userId: userId,
                 recipientId: recipientUserId,
-                createdAt: moment().format('YYYY-MM-DD HH:mm:ss'),
-                updatedAt: moment().format('YYYY-MM-DD HH:mm:ss')
+                createdAt: new Date(),
+                updatedAt: new Date()
             }
         });
     }
