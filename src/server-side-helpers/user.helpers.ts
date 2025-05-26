@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { User, AuthResult, UserPhoto, UserPreview } from '../types';
@@ -8,16 +8,13 @@ import {
     createSession,
     getSessionData,
     getSessionId,
-    rotateSession,
     deleteSession
 } from './session.helpers';
-import { indexUserForSearch, updateUserSearchDocument } from "@/server-side-helpers/search.helpers";
-import mySqlDbPool from "@/lib/mysql";
 import { businessConfig } from "@/config/business";
-import { transformBigInts } from "@/util";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 import { logError } from "@/server-side-helpers/logging.helpers";
 import { LikesSortBy } from "@/types/likes-sort-by.enum";
+import pgDbPool from "@/lib/postgres";
 
 /**
  * Get a user by their ID
@@ -27,7 +24,7 @@ import { LikesSortBy } from "@/types/likes-sort-by.enum";
 export async function getUser(id: number): Promise<User | null> {
     const user = await prisma.users.findUnique({
         where: {
-            id: BigInt(id)
+            id: id
         }
     });
 
@@ -46,10 +43,10 @@ export async function getUser(id: number): Promise<User | null> {
  */
 export async function blockUser(userId: number, blockedUserId: number) {
     // Check if already blocked
-    const existingBlock = await prisma.blocked_users.findFirst({
+    const existingBlock = await prisma.blockedUsers.findFirst({
         where: {
-            user_id: BigInt(userId),
-            blocked_user_id: BigInt(blockedUserId)
+            userId: userId,
+            blockedUserId: blockedUserId
         }
     });
 
@@ -58,15 +55,13 @@ export async function blockUser(userId: number, blockedUserId: number) {
     }
 
     // Create new block record
-    await prisma.blocked_users.create({
+    await prisma.blockedUsers.create({
         data: {
-            user_id: BigInt(userId),
-            blocked_user_id: BigInt(blockedUserId)
+            userId: userId,
+            blockedUserId: blockedUserId
         }
     });
 
-    // Update search index
-    await indexUserForSearch(blockedUserId);
     return true;
 }
 
@@ -78,15 +73,12 @@ export async function blockUser(userId: number, blockedUserId: number) {
  */
 export async function unBlockUser(userId: number, blockedUserId: number) {
     // Delete block record if exists
-    await prisma.blocked_users.deleteMany({
+    await prisma.blockedUsers.deleteMany({
         where: {
-            user_id: BigInt(userId),
-            blocked_user_id: BigInt(blockedUserId)
+            userId: userId,
+            blockedUserId: blockedUserId
         }
     });
-
-    // Update search index
-    await indexUserForSearch(blockedUserId);
 
     return true;
 }
@@ -99,8 +91,8 @@ export async function refreshLastActive(user: User) {
     try {
         await Promise.all([
             prisma.users.update({
-                where: {id: user.id},
-                data: {last_active_at: new Date()}
+                where: { id: user.id },
+                data: { lastActiveAt: new Date() }
             }),
             // updateUserSearchDocument(Number(user.id), {doc: {last_active_at: new Date()}})
         ]);
@@ -114,78 +106,101 @@ export async function refreshLastActive(user: User) {
  * @param currentUserId
  * @param user
  */
-export async function getUserProfileDetail(currentUserId: number | bigint, user: User) {
-    const [profileDetailResults] = await mySqlDbPool.query<any[]>(`
-        WITH TheyBlockedMeIds AS (SELECT BU.user_id
-                                  FROM blocked_users BU
-                                  WHERE blocked_user_id = ?),
-             IBlockedThemIds AS (SELECT BU.blocked_user_id
-                                 FROM blocked_users BU
-                                 WHERE user_id = ?),
-             IMutedThemIds AS (SELECT MU.recipient_id
-                               FROM muted_users MU
-                               WHERE MU.user_id = ?),
-             MyMatches AS (SELECT M.*
-                           FROM user_matches M
-                           WHERE (M.recipient_id = ? OR M.user_id = ?)
-                             AND M.recipient_id NOT IN (SELECT user_id FROM TheyBlockedMeIds)
-                             AND M.user_id NOT IN (SELECT recipient_id FROM IMutedThemIds))
+export async function getUserProfileDetail(currentUserId: number, user: User) {
+    const { rows: profileDetailResults } = await pgDbPool.query(`
+                WITH "TheyBlockedMeIds" AS (SELECT "BU"."userId"
+                                            FROM "blockedUsers" "BU"
+                                            WHERE "BU"."blockedUserId" = $1),
+                     "IBlockedThemIds" AS (SELECT "BU"."blockedUserId"
+                                           FROM "blockedUsers" "BU"
+                                           WHERE "BU"."userId" = $2),
+                     "IMutedThemIds" AS (SELECT "MU"."recipientId"
+                                         FROM "mutedUsers" "MU"
+                                         WHERE "MU"."userId" = $3),
+                     "MyMatches" AS (SELECT "M".*
+                                     FROM "userMatches" "M"
+                                     WHERE ("M"."recipientId" = $4 OR "M"."userId" = $5)
+                                       AND "M"."recipientId" NOT IN (SELECT "userId" FROM "TheyBlockedMeIds")
+                                       AND "M"."userId" NOT IN (SELECT "recipientId" FROM "IMutedThemIds"))
 
-        SELECT EXISTS(SELECT 1 FROM TheyBlockedMeIds WHERE user_id = ?)             AS they_blocked_me,
-               EXISTS(SELECT 1 FROM IBlockedThemIds WHERE blocked_user_id = ?)      AS blocked_them,
-               (SELECT status FROM MyMatches WHERE recipient_id = ? OR user_id = ?) AS match_status,
-               (SELECT id FROM MyMatches WHERE recipient_id = ? OR user_id = ?)     AS match_id,
-               EXISTS(SELECT 1 FROM MyMatches WHERE user_id = ?)                    AS match_is_towards_me`, [currentUserId, currentUserId, currentUserId,
-        currentUserId, currentUserId, user.id, user.id, user.id, user.id, user.id, user.id, user.id]);
+                SELECT EXISTS(SELECT 1 FROM "TheyBlockedMeIds" WHERE "userId" = $6)             AS "theyBlockedMe",
+                       EXISTS(SELECT 1 FROM "IBlockedThemIds" WHERE "blockedUserId" = $7)      AS "blockedThem",
+                       (SELECT "status" FROM "MyMatches" WHERE "recipientId" = $8 OR "userId" = $9) AS "matchStatus",
+                       (SELECT "id" FROM "MyMatches" WHERE "recipientId" = $10 OR "userId" = $11)     AS "matchId",
+                       EXISTS(SELECT 1 FROM "MyMatches" WHERE "userId" = $12)                    AS "matchIsTowardsMe"`,
+        [
+            currentUserId,
+            currentUserId,
+            currentUserId,
+            currentUserId,
+            currentUserId,
+            user.id,
+            user.id,
+            user.id,
+            user.id,
+            user.id,
+            user.id,
+            user.id
+        ]);
 
     const additionalProfileDetails = _.first(profileDetailResults) as
         {
-            they_blocked_me: boolean,
-            blocked_them: boolean,
-            match_status?: string,
-            match_id?: number,
-            match_is_towards_me: boolean
+            theyBlockedMe: boolean,
+            blockedThem: boolean,
+            matchStatus?: string,
+            matchId?: number,
+            matchIsTowardsMe: boolean
         };
 
     return {
         user,
-        seeking_label: createGenderLabels(user.seeking_genders),
-        marital_status_label: user.marital_status ?
-            businessConfig.options.maritalStatuses[user.marital_status as keyof typeof businessConfig.options.maritalStatuses] : 'No Answer',
-        interest_labels: (user.interests || [])
+        seekingLabel: createGenderLabels(user.seekingGender),
+        maritalStatusLabel: user.maritalStatus ?
+            businessConfig.options.maritalStatuses[user.maritalStatus as keyof typeof businessConfig.options.maritalStatuses] : 'No Answer',
+        interestLabels: (user.interests || [])
             .map((interest) => businessConfig.options.interests[interest as keyof typeof businessConfig.options.interests]),
-        wants_children_label: user.wants_children ?
-            businessConfig.options.wantsChildrenStatuses[user.wants_children as keyof typeof businessConfig.options.wantsChildrenStatuses] : 'No Answer',
-        has_children_label: user.has_children ?
-            businessConfig.options.hasChildrenStatuses[user.has_children as keyof typeof businessConfig.options.hasChildrenStatuses] : 'No Answer',
-        education_label: user.education ?
+        wantsChildrenLabel: user.wantsChildren ?
+            businessConfig.options.wantsChildrenStatuses[user.wantsChildren as keyof typeof businessConfig.options.wantsChildrenStatuses] : 'No Answer',
+        hasChildrenLabel: user.hasChildren ?
+            businessConfig.options.hasChildrenStatuses[user.hasChildren as keyof typeof businessConfig.options.hasChildrenStatuses] : 'No Answer',
+        educationLabel: user.education ?
             businessConfig.options.educationLevels[user.education as keyof typeof businessConfig.options.educationLevels] : 'No Answer',
-        smoking_label: user.smoking ?
+        smokingLabel: user.smoking ?
             businessConfig.options.smokingStatuses[user.smoking as keyof typeof businessConfig.options.smokingStatuses] : 'No Answer',
-        drinking_label: user.drinking ?
+        drinkingLabel: user.drinking ?
             businessConfig.options.drinkingStatuses[user.drinking as keyof typeof businessConfig.options.drinkingStatuses] : 'No Answer',
-        religion_label: (user.religions || []).map((religion) => businessConfig.options.religions[religion as keyof typeof businessConfig.options.religions]).join(', '),
-        body_type_label: user.body_type ?
-            businessConfig.options.bodyTypes[user.body_type as keyof typeof businessConfig.options.bodyTypes] : 'No Answer',
-        height_label: user.height ? businessConfig.options.height[user.height as keyof typeof businessConfig.options.height] : 'No Answer',
-        ethnicity_label: (user.ethnicities || []).map(ethnicity =>
+        religionLabel: (user.religions || []).map((religion) => businessConfig.options.religions[religion as keyof typeof businessConfig.options.religions]).join(', '),
+        bodyTypeLabel: user.bodyType ?
+            businessConfig.options.bodyTypes[user.bodyType as keyof typeof businessConfig.options.bodyTypes] : 'No Answer',
+        heightLabel: user.height ? businessConfig.options.height[user.height as keyof typeof businessConfig.options.height] : 'No Answer',
+        ethnicityLabel: (user.ethnicities || []).map(ethnicity =>
             businessConfig.options.ethnicities[ethnicity as keyof typeof businessConfig.options.ethnicities] || ethnicity).join(', '),
-        match_accepted_at: '',
+        matchAcceptedAt: '',
         ...additionalProfileDetails
     };
 }
 
 /**
  * Create appropriate gender seeking label.
- * @param genders
+ * @param gender The gender string (e.g., 'male', 'female', 'both')
  * @returns string
  */
-function createGenderLabels(genders: string[]) {
-    if (genders.length === 2) {
+function createGenderLabels(gender?: string): string {
+    if (!gender) {
+        return 'Not specified';
+    }
+    const lowerGender = gender.toLowerCase();
+    if (lowerGender === 'male') {
+        return 'Men';
+    }
+    if (lowerGender === 'female') {
+        return 'Women';
+    }
+    if (lowerGender === 'both' || lowerGender === 'all' || lowerGender === 'men and women') { // Assuming 'both' or 'all' can represent this
         return 'Men and Women';
     }
-
-    return genders[0] === 'male' ? 'Men' : 'Women';
+    // Fallback: capitalize the provided gender string if it's something else
+    return gender.charAt(0).toUpperCase() + gender.slice(1);
 }
 
 /**
@@ -271,13 +286,13 @@ export async function getCurrentUser(cookieStore: ReadonlyRequestCookies) {
     // Get the user from the database
     const result = await prisma.users.findUnique({
         where: {
-            id: BigInt(sessionData.userId),
-            suspended_at: null
+            id: typeof sessionData.userId === 'string' ? Number(sessionData.userId) : sessionData.userId,
+            suspendedAt: null
         },
         include: {
-            subscription_plan_enrollments: {
+            subscriptionPlanEnrollments: {
                 include: {
-                    subscription_plans: true
+                    subscriptionPlans: true
                 },
                 take: 1
             }
@@ -331,12 +346,13 @@ export function appendMediaRootToImageUrl(imageUrl?: string) {
  * @return {boolean} Returns true if the user's subscription is active, false otherwise.
  */
 export function checkSubscriptionActive(user: Omit<User, 'password'> & Partial<Pick<User, 'password'>>): boolean {
-    const subscription = _.first(user.subscription_plan_enrollments);
+    const subscription = _.first(user.subscriptionPlanEnrollments);
     if (!subscription) {
         return false;
     }
 
-    return (!subscription.ends_at || moment(subscription.ends_at).startOf('day').isAfter(moment().startOf('day')));
+    // @ts-expect-error User confirms endsAt is correct despite linter warning
+    return (!subscription.endsAt || moment(subscription.endsAt).startOf('day').isAfter(moment().startOf('day')));
 }
 
 /**
@@ -390,12 +406,12 @@ export async function logoutUser(cookieStore: ReadonlyRequestCookies): Promise<v
 
 /**
  * Calculate a user's age
- * @param { date_of_birth }
+ * @param { dateOfBirth }
  * @returns number
  */
-export function calculateUserAge({date_of_birth}: { date_of_birth: Date | string }) {
+export function calculateUserAge({ dateOfBirth }: { dateOfBirth: Date | string }) {
     const curDate = new Date();
-    const lDateOfBirth = typeof date_of_birth === 'string' ? moment(date_of_birth).toDate() : date_of_birth;
+    const lDateOfBirth = typeof dateOfBirth === 'string' ? moment(dateOfBirth).toDate() : dateOfBirth;
 
     let age = curDate.getFullYear() - lDateOfBirth.getFullYear();
 
@@ -417,11 +433,11 @@ export function calculateUserAge({date_of_birth}: { date_of_birth: Date | string
  * @param data
  * @returns
  */
-export function getMainCroppedImageData(data: Pick<User, 'photos' | 'main_photo'>) {
-    if (!data.main_photo || !data.photos)
+export function getMainCroppedImageData(data: Pick<User, 'photos' | 'mainPhoto'>) {
+    if (!data.mainPhoto || !data.photos)
         return undefined;
 
-    const mainPhotoCroppedImageData = data.photos.find(p => p.path === data.main_photo)?.cropped_image_data;
+    const mainPhotoCroppedImageData = data.photos.find(p => p.path === data.mainPhoto)?.cropped_image_data;
     if (mainPhotoCroppedImageData) {
         mainPhotoCroppedImageData.cropped_image_path =
             appendMediaRootToImageUrl(mainPhotoCroppedImageData.cropped_image_path) || mainPhotoCroppedImageData.cropped_image_path;
@@ -433,28 +449,22 @@ export function getMainCroppedImageData(data: Pick<User, 'photos' | 'main_photo'
 /**
  * Prepare user for API access.
  *
- * @param user
+ * @param user (can be a User object or a snake_case object from Prisma)
  * @returns
  */
-export function prepareUser(user: User) {
-    if (user.password) {
-        user.password = ''
-    }
+export function prepareUser(user: any): User {
+    user.isSubscriptionActive = checkSubscriptionActive(user);
 
-    user.age = calculateUserAge(user);
-
-    user.is_subscription_active = checkSubscriptionActive(user);
-
-    if (user.main_photo && user.photos) {
-        user.public_main_photo = appendMediaRootToImageUrl(user.main_photo);
-        user.main_photo_cropped_image_data = getMainCroppedImageData(user)
+    if (user.mainPhoto && user.photos) {
+        user.publicMainPhoto = appendMediaRootToImageUrl(user.mainPhoto);
+        user.mainPhotoCroppedImageData = getMainCroppedImageData({ photos: user.photos, mainPhoto: user.mainPhoto });
     }
 
     if (user.photos && user.photos.length) {
-        user.public_photos = user.photos.map(p => appendMediaRootToImage(p));
+        user.publicPhotos = user.photos.map((p: any) => appendMediaRootToImage(p));
     }
 
-    return transformBigInts(user) as User;
+    return user;
 }
 
 /**
@@ -462,10 +472,11 @@ export function prepareUser(user: User) {
  * @param userId
  */
 export async function isUserSuspended(userId: number) {
-    const [results] = await mySqlDbPool.query(`SELECT (suspended_at IS NOT NULL) AS isSuspended
+    const result = await pgDbPool.query(`SELECT ("suspendedAt" IS NOT NULL) AS "isSuspended"
                                                FROM users
-                                               WHERE id = ?`, [userId]);
-    return _.get(results, [0, 'isSuspended']) === 1;
+                                               WHERE id = $1`, [userId]);
+
+    return _.get(result.rows, [0, 'isSuspended']);
 }
 
 /**
@@ -476,22 +487,15 @@ export async function isUserSuspended(userId: number) {
  */
 export async function suspendUser(userId: number, suspend: boolean = true): Promise<boolean> {
     try {
-        const suspendedAt = suspend ? new Date() : null;
+        const suspendedAtValue = suspend ? new Date() : null;
 
         // Update the user record in the database
         await prisma.users.update({
             where: {
-                id: BigInt(userId)
+                id: userId
             },
             data: {
-                suspended_at: suspendedAt
-            }
-        });
-
-        // Update the user's search document
-        await updateUserSearchDocument(userId, {
-            doc: {
-                suspended_at: suspendedAt
+                suspendedAt: suspendedAtValue
             }
         });
 
@@ -515,24 +519,24 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
     error: string
 }> {
     if (await isUserSuspended(recipientUserId)) {
-        return {error: 'You cannot send a like to this user because they have been suspended.'}
+        return { error: 'You cannot send a like to this user because they have been suspended.' }
     }
 
     if (await isUserBlocked(recipientUserId, userId)) {
-        return {error: 'You have been blocked by this user.'};
+        return { error: 'You have been blocked by this user.' };
     }
 
     // Check if a match already exists
-    const existingMatch = await prisma.user_matches.findFirst({
+    const existingMatch = await prisma.userMatches.findFirst({
         where: {
             OR: [
                 {
-                    user_id: BigInt(userId),
-                    recipient_id: BigInt(recipientUserId)
+                    userId: userId,
+                    recipientId: recipientUserId
                 },
                 {
-                    user_id: BigInt(recipientUserId),
-                    recipient_id: BigInt(userId)
+                    userId: recipientUserId,
+                    recipientId: userId
                 }
             ]
         }
@@ -540,17 +544,18 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
 
     // If there's an existing match where the current user is the recipient,
     // this means the other user already liked them, so we should confirm the match
-    if (existingMatch && existingMatch.recipient_id === BigInt(userId) && existingMatch.status === 'pending') {
-        await prisma.user_matches.update({
+    if (existingMatch && Number(existingMatch.recipientId) === userId && existingMatch.status === 'pending') {
+        await prisma.userMatches.update({
             where: {
                 id: existingMatch.id
             },
             data: {
                 status: 'matched',
-                updated_at_timestamp: BigInt(Date.now()),
-                updated_at: new Date()
+                updatedAtTimestamp: Date.now(),
+                updatedAt: moment().format('YYYY-MM-DD HH:mm:ss')
             }
         });
+
         return 'matched';
     }
 
@@ -561,21 +566,21 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
     }
 
     // Create a new match with pending status
-    await prisma.user_matches.create({
+    await prisma.userMatches.create({
         data: {
-            user_id: BigInt(userId),
-            recipient_id: BigInt(recipientUserId),
+            userId: userId,
+            recipientId: recipientUserId,
             status: 'pending',
-            updated_at_timestamp: BigInt(Date.now()),
-            created_at: new Date(),
-            updated_at: new Date()
+            updatedAtTimestamp: Date.now(),
+            createdAt: moment().format('YYYY-MM-DD HH:mm:ss'),
+            updatedAt: moment().format('YYYY-MM-DD HH:mm:ss')
         }
     });
 
-    await prisma.muted_users.deleteMany({
+    await prisma.mutedUsers.deleteMany({
         where: {
-            user_id: BigInt(recipientUserId),
-            recipient_id: BigInt(userId)
+            userId: recipientUserId,
+            recipientId: userId
         }
     });
 
@@ -589,16 +594,16 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
  */
 export async function removeUserMatchRequest(userId: number, recipientUserId: number): Promise<void> {
     // Delete any match between these users
-    await prisma.user_matches.deleteMany({
+    await prisma.userMatches.deleteMany({
         where: {
             OR: [
                 {
-                    user_id: BigInt(userId),
-                    recipient_id: BigInt(recipientUserId)
+                    userId: userId,
+                    recipientId: recipientUserId
                 },
                 {
-                    user_id: BigInt(recipientUserId),
-                    recipient_id: BigInt(userId)
+                    userId: recipientUserId,
+                    recipientId: userId
                 }
             ]
         }
@@ -612,22 +617,22 @@ export async function removeUserMatchRequest(userId: number, recipientUserId: nu
  * @returns True if the operation was successful
  */
 export async function muteUserById(userId: number, recipientUserId: number): Promise<boolean> {
-    // Check if there is a muted_user record by user_id and muted_user_id
-    const existingMuted = await prisma.muted_users.findFirst({
+    // Check if there is a mutedUser record by userId and recipientId
+    const existingMuted = await prisma.mutedUsers.findFirst({
         where: {
-            user_id: BigInt(userId),
-            recipient_id: BigInt(recipientUserId)
+            userId: userId,
+            recipientId: recipientUserId
         }
     });
 
     // If there is no record, insert one
     if (!existingMuted) {
-        await prisma.muted_users.create({
+        await prisma.mutedUsers.create({
             data: {
-                user_id: BigInt(userId),
-                recipient_id: BigInt(recipientUserId),
-                created_at: new Date(),
-                updated_at: new Date()
+                userId: userId,
+                recipientId: recipientUserId,
+                createdAt: moment().format('YYYY-MM-DD HH:mm:ss'),
+                updatedAt: moment().format('YYYY-MM-DD HH:mm:ss')
             }
         });
     }
@@ -641,10 +646,10 @@ export async function muteUserById(userId: number, recipientUserId: number): Pro
  * @param blockedUserId
  */
 export async function isUserBlocked(userId: number, blockedUserId: number) {
-    const [results] = await mySqlDbPool.query<any>(`SELECT EXISTS(SELECT 1 FROM blocked_users WHERE user_id = ? AND blocked_user_id = ?) as isBlocked`,
+    const result = await pgDbPool.query(`SELECT EXISTS(SELECT 1 FROM "blockedUsers" WHERE "userId" = $1 AND "blockedUserId" = $2) as "isBlocked"`,
         [userId, blockedUserId]);
 
-    return results[0].isBlocked === 1;
+    return _.get(result, [0, 'isBlocked'], false);
 }
 
 /**
@@ -674,12 +679,12 @@ export async function getUserLikes(
     const maxDate = new Date(maxYear, currentDate.getMonth(), currentDate.getDate());
 
     // Get total count first (for pagination)
-    const totalCount = await prisma.user_matches.count({
+    const totalCount = await prisma.userMatches.count({
         where: {
-            recipient_id: BigInt(userId),
+            recipientId: userId,
             status: 'pending',
-            sender: {
-                date_of_birth: {
+            users_userMatches_userIdTousers: {
+                dateOfBirth: {
                     gte: minDate,
                     lte: maxDate
                 }
@@ -692,33 +697,33 @@ export async function getUserLikes(
 
     // Apply sorting
     let orderBy: any = {};
-    switch(sortBy) {
+    switch (sortBy) {
         case LikesSortBy.Newest:
-            orderBy = { sender: { created_at: 'desc' } };
+            orderBy = { users_userMatches_userIdTousers: { createdAt: 'desc' } };
             break;
         case LikesSortBy.Age:
-            orderBy = { sender: { date_of_birth: 'desc' } };
+            orderBy = { users_userMatches_userIdTousers: { dateOfBirth: 'desc' } };
             break;
         case LikesSortBy.LastActive:
         default:
-            orderBy = { sender: { last_active_at: 'desc' } };
+            orderBy = { users_userMatches_userIdTousers: { lastActiveAt: 'desc' } };
             break;
     }
 
     // Get paginated results with filtering and sorting
-    const matches = await prisma.user_matches.findMany({
+    const matches = await prisma.userMatches.findMany({
         where: {
-            recipient_id: BigInt(userId),
+            recipientId: userId,
             status: 'pending',
-            sender: {
-                date_of_birth: {
+            users_userMatches_userIdTousers: {
+                dateOfBirth: {
                     gte: minDate,
                     lte: maxDate
                 }
             }
         },
         include: {
-            sender: true
+            users_userMatches_userIdTousers: true
         },
         orderBy,
         skip: (page - 1) * pageSize,
@@ -727,26 +732,26 @@ export async function getUserLikes(
 
     // Map the matches to user preview objects
     const likes = matches.map(match => {
-        const user = match.sender as unknown as User;
+        const user = prepareUser(match.users_userMatches_userIdTousers as any);
         return {
             id: Number(user.id),
-            display_name: user.display_name,
-            age: calculateUserAge(user),
+            displayName: user.displayName,
+            age: user.age,
             gender: user.gender,
-            date_of_birth: user.date_of_birth,
-            last_active_at: user.last_active_at,
+            dateOfBirth: user.dateOfBirth,
+            lastActiveAt: user.lastActiveAt,
             photos: user.photos,
-            num_of_photos: user.num_of_photos || 0,
-            main_photo: user.main_photo,
-            public_main_photo: appendMediaRootToImageUrl(user.main_photo),
-            main_photo_cropped_image_data: getMainCroppedImageData(user),
-            location_name: user.location_name || '',
+            numOfPhotos: user.numOfPhotos,
+            mainPhoto: user.mainPhoto,
+            publicMainPhoto: user.publicMainPhoto,
+            mainPhotoCroppedImageData: user.mainPhotoCroppedImageData,
+            locationName: user.locationName,
             latitude: user.latitude,
             longitude: user.longitude,
             country: user.country,
-            created_at: user.created_at,
-            match_id: Number(match.id),
-            match_status: match.status
+            createdAt: user.createdAt,
+            matchId: Number(match.id),
+            matchStatus: match.status
         } as UserPreview;
     });
 
@@ -760,10 +765,10 @@ export async function getUserLikes(
  * @returns True if the operation was successful
  */
 export async function unMuteUserById(userId: number, recipientUserId: number): Promise<boolean> {
-    await prisma.muted_users.deleteMany({
+    await prisma.mutedUsers.deleteMany({
         where: {
-            user_id: BigInt(userId),
-            recipient_id: BigInt(recipientUserId)
+            userId: userId,
+            recipientId: recipientUserId
         }
     });
 
@@ -776,22 +781,22 @@ export async function unMuteUserById(userId: number, recipientUserId: number): P
  * @param currentUserId
  */
 export async function getFullUserProfile(userId: number, currentUserId: number) {
-    const user = await getUser(Number(userId));
+    const user = await getUser(userId);
     if (!user) {
-        return {error: 'This user account cannot be found.', statusCode: 404};
+        return { error: 'This user account cannot be found.', statusCode: 404 };
     }
 
-    if (user.suspended_at) {
-        return {error: 'This user has been suspended.', statusCode: 400};
+    if (user.suspendedAt) {
+        return { error: 'This user has been suspended.', statusCode: 400 };
     }
 
     const isBlocked = await isUserBlocked(userId, currentUserId);
     if (isBlocked) {
-        return {error: 'You have been blocked by this user.', statusCode: 403};
+        return { error: 'You have been blocked by this user.', statusCode: 403 };
     }
 
     const userProfileDetails = await getUserProfileDetail(currentUserId, prepareUser(user));
-    return {statusCode: 200, userProfileDetails};
+    return { statusCode: 200, userProfileDetails };
 }
 
 

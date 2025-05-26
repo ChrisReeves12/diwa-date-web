@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { checkUserExists, hashPassword } from '@/server-side-helpers/user.helpers';
-import { UserRegistrationData, ValidationErrors, User } from '@/types';
+import { UserRegistrationData, ValidationErrors, User, SearchFromOrigin } from '@/types';
 import prisma from '@/lib/prisma';
 import { createSession } from '@/server-side-helpers/session.helpers';
 import { businessConfig } from "@/config/business";
@@ -57,11 +57,11 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
       gender: userData.userGender,
       timezone: userData.timezone,
       created_at: new Date(),
-      seeking_genders: [userData.seekingGender],
+      seekingGender: userData.seekingGender,
       seeking_num_of_photos: businessConfig.defaults.numOfPhotos,
       seeking_max_distance: businessConfig.defaults.maxDistance,
       seeking_min_height: businessConfig.defaults.minHeight,
-      seeking_distance_origin: 'current_location',
+      seekingDistanceOrigin: SearchFromOrigin.CurrentLocation,
       seeking_max_height: businessConfig.defaults.maxHeight,
       seeking_min_age: businessConfig.defaults.minAge,
       seeking_max_age: businessConfig.defaults.maxAge,

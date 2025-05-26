@@ -3,260 +3,285 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model billing_information_entries {
-  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id        BigInt    @db.UnsignedBigInt
-  name           String    @db.VarChar(255)
-  address_1      String    @db.VarChar(255)
-  address_2      String?   @db.VarChar(255)
-  city           String    @db.VarChar(255)
-  region         String    @db.VarChar(255)
-  postal_code    String    @db.VarChar(255)
-  country        String    @db.VarChar(255)
-  payment_method String    @db.VarChar(100)
-  cc_last_4      String    @db.VarChar(4)
-  created_at     DateTime? @db.Timestamp(0)
-  updated_at     DateTime? @db.Timestamp(0)
-  users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "billing_information_entries_user_id_foreign")
+model billingInformationEntries {
+  id            Int     @id(map: "billinginformationentries_pk") @default(autoincrement())
+  userId        Int
+  name          String  @db.VarChar(255)
+  address1      String  @db.VarChar(255)
+  address2      String? @db.VarChar(255)
+  city          String  @db.VarChar(255)
+  region        String  @db.VarChar(255)
+  postalCode    String  @db.VarChar(255)
+  country       String  @db.VarChar(255)
+  paymentMethod String  @db.VarChar(100)
+  cclast4       String  @db.VarChar(4)
+  createdAt     String?
+  updatedAt     String?
+  users         users   @relation(fields: [userId], references: [id], onDelete: Cascade, map: "billinginformationentries_users_id_fk")
 
-  @@index([user_id], map: "billing_information_entries_user_id_foreign")
+  @@index([userId], map: "billingInformationEntriesUserIdForeign")
+  @@index([createdAt(sort: Desc)], map: "billinginformationentries_createdat_index")
+  @@index([updatedAt(sort: Desc)], map: "billinginformationentries_updatedat_index")
 }
 
-model blocked_users {
-  id                                         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id                                    BigInt    @db.UnsignedBigInt
-  blocked_user_id                            BigInt    @db.UnsignedBigInt
-  created_at                                 DateTime? @db.Timestamp(0)
-  updated_at                                 DateTime? @db.Timestamp(0)
-  users_blocked_users_blocked_user_idTousers users     @relation("blocked_users_blocked_user_idTousers", fields: [blocked_user_id], references: [id], onDelete: Cascade, map: "blocked_users_blocked_user_id_foreign")
-  users_blocked_users_user_idTousers         users     @relation("blocked_users_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, map: "blocked_users_user_id_foreign")
+model blockedUsers {
+  id                                      Int     @id(map: "blockedusers_pk") @default(autoincrement())
+  userId                                  Int
+  blockedUserId                           Int
+  createdAt                               String?
+  updatedAt                               String?
+  users_blockedUsers_userIdTousers        users   @relation("blockedUsers_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "blockedusers_users_id_fk")
+  users_blockedUsers_blockedUserIdTousers users   @relation("blockedUsers_blockedUserIdTousers", fields: [blockedUserId], references: [id], onDelete: Cascade, map: "blockedusers_users_id_fk_2")
 
-  @@index([blocked_user_id], map: "blocked_users_blocked_user_id_foreign")
-  @@index([user_id], map: "blocked_users_user_id_foreign")
+  @@index([blockedUserId], map: "blockedUsersBlockedUserIdForeign")
+  @@index([userId], map: "blockedUsersUserIdForeign")
+  @@index([createdAt(sort: Desc)], map: "blockedusers_createdat_index")
+  @@index([updatedAt(sort: Desc)], map: "blockedusers_updatedat_index")
 }
 
-model cached_locations {
-  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  formatted_name  String    @db.VarChar(255)
-  area            String?   @db.VarChar(255)
-  city            String    @db.VarChar(255)
-  region          String?   @db.VarChar(255)
-  country         String?   @db.VarChar(255)
-  google_place_id String    @db.VarChar(255)
-  latitude        Float
-  longitude       Float
-  viewport        Json
-  created_at      DateTime? @db.Timestamp(0)
-  updated_at      DateTime? @db.Timestamp(0)
+model cachedLocations {
+  id            Int     @id(map: "cachedlocations_pk") @default(autoincrement())
+  formattedName String  @db.VarChar(255)
+  area          String? @db.VarChar(255)
+  city          String  @db.VarChar(255)
+  region        String? @db.VarChar(255)
+  country       String? @db.VarChar(255)
+  googlePlaceId String  @db.VarChar(255)
+  latitude      Float
+  longitude     Float
+  viewport      Json
+  createdAt     String?
+  updatedAt     String?
+
+  @@index([createdAt(sort: Desc)], map: "cachedlocations_createdat_index")
+  @@index([updatedAt(sort: Desc)], map: "cachedlocations_updatedat_index")
 }
 
 model messages {
-  id                  BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
-  match_id            BigInt?       @db.UnsignedBigInt
-  content             String?       @db.LongText
-  read_at             DateTime?     @db.Timestamp(0)
-  notification_ack_at DateTime?     @db.Timestamp(0)
-  user_id             BigInt        @db.UnsignedBigInt
-  recipient_id        BigInt        @db.UnsignedBigInt
-  timestamp           BigInt        @default(0) @db.UnsignedBigInt
-  created_at          DateTime?     @db.Timestamp(0)
-  updated_at          DateTime?     @db.Timestamp(0)
-  matches             user_matches? @relation(fields: [match_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_match_id_foreign")
-  recipient           users         @relation("messages_recipient_idTousers", fields: [recipient_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_recipient_id_foreign")
-  sender              users         @relation("messages_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_user_id_foreign")
+  id                Int          @id(map: "messages_pk") @default(autoincrement())
+  matchId           Int?
+  content           String?
+  readAt            String?
+  notificationAckAt String?
+  userId            Int
+  recipientId       Int
+  timestamp         BigInt       @default(0)
+  createdAt         String?
+  updatedAt         String?
+  userMatches       userMatches? @relation(fields: [matchId], references: [id], onDelete: Cascade, map: "messages_usermatches_id_fk")
+  users             users        @relation(fields: [userId], references: [id], onDelete: Cascade, map: "messages_users_id_fk")
 
-  @@index([created_at], map: "messages_created_at_index")
-  @@index([match_id], map: "messages_match_id_foreign")
-  @@index([recipient_id], map: "messages_recipient_id_foreign")
-  @@index([user_id], map: "messages_user_id_foreign")
+  @@index([createdAt], map: "messagesCreatedAtIndex")
+  @@index([matchId], map: "messagesMatchIdForeign")
+  @@index([recipientId], map: "messagesRecipientIdForeign")
+  @@index([userId], map: "messagesUserIdForeign")
+  @@index([createdAt(sort: Desc)], map: "messages_createdat_index")
+  @@index([updatedAt(sort: Desc)], map: "messages_updatedat_index")
 }
 
-model migrations {
-  id        Int    @id @default(autoincrement()) @db.UnsignedInt
-  migration String @db.VarChar(255)
-  batch     Int
-}
+model mutedUsers {
+  id                                  Int     @id(map: "mutedusers_pk") @default(autoincrement())
+  userId                              Int
+  recipientId                         Int
+  createdAt                           String?
+  updatedAt                           String?
+  users_mutedUsers_userIdTousers      users   @relation("mutedUsers_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "mutedusers_users_id_fk")
+  users_mutedUsers_recipientIdTousers users   @relation("mutedUsers_recipientIdTousers", fields: [recipientId], references: [id], onDelete: Cascade, map: "mutedusers_users_id_fk_2")
 
-model muted_users {
-  id                                    BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id                               BigInt    @db.UnsignedBigInt
-  recipient_id                          BigInt    @db.UnsignedBigInt
-  created_at                            DateTime? @db.Timestamp(0)
-  updated_at                            DateTime? @db.Timestamp(0)
-  users_muted_users_recipient_idTousers users     @relation("muted_users_recipient_idTousers", fields: [recipient_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "muted_users_recipient_id_foreign")
-  users_muted_users_user_idTousers      users     @relation("muted_users_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "muted_users_user_id_foreign")
-
-  @@index([recipient_id], map: "muted_users_recipient_id_foreign")
-  @@index([user_id], map: "muted_users_user_id_foreign")
+  @@index([recipientId], map: "mutedUsersRecipientIdForeign")
+  @@index([userId], map: "mutedUsersUserIdForeign")
+  @@index([createdAt(sort: Desc)], map: "mutedusers_createdat_index")
+  @@index([updatedAt(sort: Desc)], map: "mutedusers_updatedat_index")
 }
 
 model notifications {
-  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id      BigInt    @db.UnsignedBigInt
-  recipient_id BigInt?   @db.UnsignedBigInt
-  type         String    @db.VarChar(255)
-  read_at      DateTime? @db.Timestamp(0)
-  data         Json?
-  created_at   DateTime? @db.Timestamp(0)
-  updated_at   DateTime? @db.Timestamp(0)
-  recipient    users?    @relation("notifications_recipient_idTousers", fields: [recipient_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "notifications_recipient_id_foreign")
-  sender       users     @relation("notifications_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "notifications_user_id_foreign")
+  id                                     Int     @id(map: "notifications_pk") @default(autoincrement())
+  userId                                 Int
+  recipientId                            Int?
+  type                                   String  @db.VarChar(255)
+  readAt                                 String?
+  data                                   Json?
+  createdAt                              String?
+  updatedAt                              String?
+  users_notifications_recipientIdTousers users?  @relation("notifications_recipientIdTousers", fields: [recipientId], references: [id], onDelete: Cascade, map: "notifications_users_id_fk")
+  users_notifications_userIdTousers      users   @relation("notifications_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "notifications_users_id_fk_2")
 
-  @@index([recipient_id], map: "notifications_recipient_id_foreign")
-  @@index([user_id], map: "notifications_user_id_foreign")
+  @@index([recipientId], map: "notificationsRecipientIdForeign")
+  @@index([userId], map: "notificationsUserIdForeign")
+  @@index([createdAt(sort: Desc)], map: "notifications_createdat_index")
+  @@index([updatedAt(sort: Desc)], map: "notifications_updatedat_index")
 }
 
-model region_viewports {
-  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  name       String    @db.VarChar(255)
-  is_state   Boolean
-  viewport   Json
-  created_at DateTime? @db.Timestamp(0)
-  updated_at DateTime? @db.Timestamp(0)
+model regionViewports {
+  id        Int     @id(map: "regionviewports_pk") @default(autoincrement())
+  name      String  @db.VarChar(255)
+  isState   Boolean
+  viewport  Json
+  createdAt String?
+  updatedAt String?
+
+  @@index([createdAt(sort: Desc)], map: "regionviewports_createdat_index")
+  @@index([updatedAt(sort: Desc)], map: "regionviewports_updatedat_index")
 }
 
 model sessions {
-  id            String  @id @db.VarChar(255)
-  user_id       BigInt? @db.UnsignedBigInt
-  ip_address    String? @db.VarChar(45)
-  user_agent    String? @db.Text
-  payload       String  @db.LongText
-  last_activity Int
+  id           String  @id(map: "sessions_pk") @db.VarChar(255)
+  userId       Int?
+  ipAddress    String? @db.VarChar(45)
+  userAgent    String?
+  payload      String
+  lastActivity Int
+  users        users?  @relation(fields: [userId], references: [id], onDelete: Cascade, map: "sessions_users_id_fk")
 
-  @@index([last_activity], map: "sessions_last_activity_index")
-  @@index([user_id], map: "sessions_user_id_index")
+  @@index([lastActivity], map: "sessionsLastActivityIndex")
+  @@index([userId], map: "sessionsUserIdIndex")
 }
 
-model subscription_plan_enrollments {
-  id                   BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id              BigInt             @db.UnsignedBigInt
-  subscription_plan_id BigInt             @db.UnsignedBigInt
-  last_payment_at      DateTime?          @db.DateTime(0)
-  next_payment_at      DateTime?          @db.DateTime(0)
-  started_at           DateTime?          @db.DateTime(0)
-  ends_at              DateTime?          @db.DateTime(0)
-  created_at           DateTime?          @db.Timestamp(0)
-  updated_at           DateTime?          @db.Timestamp(0)
-  subscription_plans   subscription_plans @relation(fields: [subscription_plan_id], references: [id], onDelete: Cascade, map: "subscription_plan_enrollments_subscription_plan_id_foreign")
-  users                users              @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "subscription_plan_enrollments_user_id_foreign")
+model subscriptionPlanEnrollments {
+  id                 Int               @id(map: "subscriptionplanenrollments_pk") @default(autoincrement())
+  userId             Int
+  subscriptionPlanId Int
+  lastPaymentAt      DateTime?         @db.Timestamp(6)
+  nextPaymentAt      DateTime?         @db.Timestamp(6)
+  startedAt          DateTime?         @db.Timestamp(6)
+  endsAt             DateTime?         @db.Timestamp(6)
+  createdAt          String?
+  updatedAt          String?
+  subscriptionPlans  subscriptionPlans @relation(fields: [subscriptionPlanId], references: [id], onDelete: Cascade, map: "subscriptionplanenrollments_subscriptionplans_id_fk")
+  users              users             @relation(fields: [userId], references: [id], onDelete: Cascade, map: "subscriptionplanenrollments_users_id_fk")
 
-  @@index([subscription_plan_id], map: "subscription_plan_enrollments_subscription_plan_id_foreign")
-  @@index([user_id], map: "subscription_plan_enrollments_user_id_foreign")
+  @@index([subscriptionPlanId], map: "subscriptionPlanEnrollmentsSubscriptionPlanIdForeign")
+  @@index([userId], map: "subscriptionPlanEnrollmentsUserIdForeign")
+  @@index([createdAt(sort: Desc)], map: "subscriptionplanenrollments_createdat_index")
+  @@index([updatedAt(sort: Desc)], map: "subscriptionplanenrollments_updatedat_index")
 }
 
-model subscription_plans {
-  id                            BigInt                          @id @default(autoincrement()) @db.UnsignedBigInt
-  name                          String                          @db.VarChar(255)
-  description                   String                          @db.LongText
-  pricing_interval              String                          @db.VarChar(255)
-  price                         Decimal                         @db.Decimal(10, 2)
-  pricing_unit                  String                          @db.VarChar(255)
-  created_at                    DateTime?                       @db.Timestamp(0)
-  updated_at                    DateTime?                       @db.Timestamp(0)
-  subscription_plan_enrollments subscription_plan_enrollments[]
+model subscriptionPlans {
+  id                          Int                           @id(map: "subscriptionplans_pk") @default(autoincrement())
+  name                        String                        @db.VarChar(255)
+  description                 String
+  pricingInterval             String                        @db.VarChar(255)
+  price                       Decimal                       @db.Decimal(10, 2)
+  pricingUnit                 String                        @db.VarChar(255)
+  createdAt                   String?
+  updatedAt                   String?
+  subscriptionPlanEnrollments subscriptionPlanEnrollments[]
+
+  @@index([createdAt(sort: Desc)], map: "subscriptionplans_createdat_index")
+  @@index([updatedAt(sort: Desc)], map: "subscriptionplans_updatedat_index")
+}
+
+model userMatches {
+  id                                   Int        @id(map: "usermatches_pk") @default(autoincrement())
+  userId                               Int
+  recipientId                          Int
+  status                               String     @db.VarChar(255)
+  acceptedAt                           String?
+  acknowledgedAt                       String?
+  updatedAtTimestamp                   BigInt?    @default(0)
+  createdAt                            String?
+  updatedAt                            String?
+  messages                             messages[]
+  users_userMatches_userIdTousers      users      @relation("userMatches_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "usermatches_users_id_fk")
+  users_userMatches_recipientIdTousers users      @relation("userMatches_recipientIdTousers", fields: [recipientId], references: [id], onDelete: Cascade, map: "usermatches_users_id_fk_2")
+
+  @@index([recipientId], map: "matchesRecipientIdForeign")
+  @@index([updatedAtTimestamp], map: "matchesUpdatedAtTimestampIndex")
+  @@index([userId], map: "matchesUserIdForeign")
+  @@index([createdAt(sort: Desc)], map: "usermatches_createdat_index")
+  @@index([updatedAt(sort: Desc)], map: "usermatches_updatedat_index")
 }
 
 model users {
-  id                                                 BigInt                          @id @default(autoincrement()) @db.UnsignedBigInt
-  display_name                                       String                          @db.VarChar(255)
-  first_name                                         String                          @db.VarChar(255)
-  last_name                                          String                          @db.VarChar(255)
-  gender                                             String                          @db.VarChar(50)
-  smoking                                            String?                         @db.VarChar(100)
-  drinking                                           String?                         @db.VarChar(100)
-  wants_children                                     String?                         @db.VarChar(100)
-  education                                          String?                         @db.VarChar(100)
-  has_children                                       String?                         @db.VarChar(100)
-  date_of_birth                                      DateTime                        @db.Date
-  last_active_at                                     DateTime?                       @db.DateTime(0)
-  suspended_at                                       DateTime?                       @db.DateTime(0)
-  is_under_review                                    Int?                            @default(0) @db.TinyInt
-  email_verified_at                                  DateTime?                       @db.DateTime(0)
-  suspended_reason                                   String?                         @db.Text
-  bio                                                String?                         @db.LongText
-  seeking_genders                                    Json
-  email                                              String                          @unique(map: "users_email_unique") @db.VarChar(255)
-  height                                             Int?
-  marital_status                                     String?                         @db.VarChar(100)
-  photos                                             Json?
-  num_of_photos                                      Int                             @default(0)
-  main_photo                                         String?                         @db.VarChar(255)
-  interests                                          Json?
-  country                                            String?                         @db.VarChar(200)
-  location_name                                      String?                         @db.VarChar(250)
-  location_viewport                                  Json?
-  latitude                                           Float?
-  longitude                                          Float?
-  seeking_distance_origin                            String?                         @db.VarChar(100)
-  body_type                                          String?                         @db.VarChar(100)
-  timezone                                           String?                         @default("UTC") @db.VarChar(100)
-  seeking_min_height                                 Int                             @default(0)
-  seeking_max_height                                 Int                             @default(0)
-  seeking_min_age                                    Int                             @default(0)
-  seeking_max_age                                    Int                             @default(0)
-  seeking_num_of_photos                              Int                             @default(0)
-  seeking_max_distance                               Int                             @default(0)
-  ethnicities                                        Json?
-  languages                                          Json?
-  religions                                          Json?
-  ethnic_preferences                                 Json?
-  religious_preferences                              Json?
-  education_preferences                              Json?
-  body_type_preferences                              Json?
-  drinking_preferences                               Json?
-  smoking_preferences                                Json?
-  has_children_preferences                           Json?
-  wants_children_preferences                         Json?
-  interest_preferences                               Json?
-  language_preferences                               Json?
-  marital_status_preferences                         Json?
-  seeking_countries                                  Json?
-  single_search_location                             Json?
-  payment_profile_id                                 String?                         @db.VarChar(255)
-  customer_payment_profile_id                        String?                         @db.VarChar(255)
-  password                                           String                          @db.VarChar(500)
-  refresh_token                                      String?                         @db.VarChar(500)
-  created_at                                         DateTime?                       @db.Timestamp(0)
-  updated_at                                         DateTime?                       @db.Timestamp(0)
-  billing_information_entries                        billing_information_entries[]
-  blocked_users_blocked_users_blocked_user_idTousers blocked_users[]                 @relation("blocked_users_blocked_user_idTousers")
-  blocked_users_blocked_users_user_idTousers         blocked_users[]                 @relation("blocked_users_user_idTousers")
-  messages_messages_recipient_idTousers              messages[]                      @relation("messages_recipient_idTousers")
-  messages_messages_user_idTousers                   messages[]                      @relation("messages_user_idTousers")
-  muted_users_muted_users_recipient_idTousers        muted_users[]                   @relation("muted_users_recipient_idTousers")
-  muted_users_muted_users_user_idTousers             muted_users[]                   @relation("muted_users_user_idTousers")
-  notifications_notifications_recipient_idTousers    notifications[]                 @relation("notifications_recipient_idTousers")
-  notifications_notifications_user_idTousers         notifications[]                 @relation("notifications_user_idTousers")
-  subscription_plan_enrollments                      subscription_plan_enrollments[]
-  user_matches_user_matches_recipient_idTousers      user_matches[]                  @relation("user_matches_recipient_idTousers")
-  user_matches_user_matches_user_idTousers           user_matches[]                  @relation("user_matches_user_idTousers")
+  id                                             Int                           @id(map: "users_pk") @default(autoincrement())
+  displayName                                    String                        @db.VarChar(255)
+  firstName                                      String                        @db.VarChar(255)
+  lastName                                       String                        @db.VarChar(255)
+  gender                                         String                        @db.VarChar(50)
+  smoking                                        String?                       @db.VarChar(100)
+  drinking                                       String?                       @db.VarChar(100)
+  wantsChildren                                  String?                       @db.VarChar(100)
+  education                                      String?                       @db.VarChar(100)
+  hasChildren                                    String?                       @db.VarChar(100)
+  dateOfBirth                                    DateTime                      @db.Timestamp(6)
+  lastActiveAt                                   DateTime?                     @db.Timestamp(6)
+  suspendedAt                                    DateTime?                     @db.Timestamp(6)
+  isUnderReview                                  Int?                          @default(0) @db.SmallInt
+  emailVerifiedAt                                DateTime?                     @db.Timestamp(6)
+  suspendedReason                                String?
+  bio                                            String?
+  email                                          String                        @unique(map: "usersEmailUnique") @db.VarChar(255)
+  height                                         Int?
+  maritalStatus                                  String?                       @db.VarChar(100)
+  photos                                         Json?
+  numOfPhotos                                    Int                           @default(0)
+  mainPhoto                                      String?                       @db.VarChar(255)
+  interests                                      Json?
+  country                                        String?                       @db.VarChar(200)
+  locationName                                   String?                       @db.VarChar(250)
+  locationViewport                               Json?
+  latitude                                       Float?
+  longitude                                      Float?
+  seekingDistanceOrigin                          String?                       @db.VarChar(100)
+  bodyType                                       String?                       @db.VarChar(100)
+  timezone                                       String?                       @default("UTC") @db.VarChar(100)
+  seekingMinHeight                               Int                           @default(0)
+  seekingMaxHeight                               Int                           @default(0)
+  seekingMinAge                                  Int                           @default(0)
+  seekingMaxAge                                  Int                           @default(0)
+  seekingNumOfPhotos                             Int                           @default(0)
+  seekingMaxDistance                             Int                           @default(0)
+  ethnicities                                    Json?
+  languages                                      Json?
+  religions                                      Json?
+  ethnicPreferences                              Json?
+  religiousPreferences                           Json?
+  educationPreferences                           Json?
+  bodyTypePreferences                            Json?
+  drinkingPreferences                            Json?
+  smokingPreferences                             Json?
+  hasChildrenPreferences                         Json?
+  wantsChildrenPreferences                       Json?
+  interestPreferences                            Json?
+  languagePreferences                            Json?
+  maritalStatusPreferences                       Json?
+  seekingCountries                               Json?
+  singleSearchLocation                           Json?
+  paymentProfileId                               String?                       @db.VarChar(255)
+  customerPaymentProfileId                       String?                       @db.VarChar(255)
+  password                                       String                        @db.VarChar(500)
+  refreshToken                                   String?                       @db.VarChar(500)
+  createdAt                                      String?
+  updatedAt                                      String?
+  seekingGender                                  String?                       @db.VarChar(20)
+  geoPoint                                       Unsupported("geography")?
+  deactivatedAt                                  DateTime?                     @db.Timestamp(6)
+  billingInformationEntries                      billingInformationEntries[]
+  blockedUsers_blockedUsers_userIdTousers        blockedUsers[]                @relation("blockedUsers_userIdTousers")
+  blockedUsers_blockedUsers_blockedUserIdTousers blockedUsers[]                @relation("blockedUsers_blockedUserIdTousers")
+  messages                                       messages[]
+  mutedUsers_mutedUsers_userIdTousers            mutedUsers[]                  @relation("mutedUsers_userIdTousers")
+  mutedUsers_mutedUsers_recipientIdTousers       mutedUsers[]                  @relation("mutedUsers_recipientIdTousers")
+  notifications_notifications_recipientIdTousers notifications[]               @relation("notifications_recipientIdTousers")
+  notifications_notifications_userIdTousers      notifications[]               @relation("notifications_userIdTousers")
+  sessions                                       sessions[]
+  subscriptionPlanEnrollments                    subscriptionPlanEnrollments[]
+  userMatches_userMatches_userIdTousers          userMatches[]                 @relation("userMatches_userIdTousers")
+  userMatches_userMatches_recipientIdTousers     userMatches[]                 @relation("userMatches_recipientIdTousers")
 
-  @@index([gender], map: "users_gender_index")
-  @@index([suspended_at], map: "users_suspended_at_index")
-  @@index([created_at(sort: Desc)], map: "users_created_at_index")
-  @@index([date_of_birth(sort: Desc)], map: "users_dob_index")
-  @@index([last_active_at(sort: Desc)], map: "users_last_active_at_index")
+  @@index([createdAt(sort: Desc)], map: "users_createdat_index")
+  @@index([updatedAt(sort: Desc)], map: "users_updatedat_index")
 }
 
-model user_matches {
-  id                   BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id              BigInt     @db.UnsignedBigInt
-  recipient_id         BigInt     @db.UnsignedBigInt
-  status               String     @db.VarChar(255)
-  accepted_at          DateTime?  @db.Timestamp(0)
-  acknowledged_at      DateTime?  @db.Timestamp(0)
-  updated_at_timestamp BigInt?    @default(0) @db.UnsignedBigInt
-  created_at           DateTime?  @db.Timestamp(0)
-  updated_at           DateTime?  @db.Timestamp(0)
-  messages             messages[]
-  recipient            users      @relation("user_matches_recipient_idTousers", fields: [recipient_id], references: [id], onDelete: Cascade, map: "matches_recipient_id_foreign")
-  sender               users      @relation("user_matches_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, map: "matches_user_id_foreign")
-
-  @@index([recipient_id], map: "matches_recipient_id_foreign")
-  @@index([updated_at_timestamp(sort: Desc)], map: "matches_updated_at_timestamp_index")
-  @@index([user_id], map: "matches_user_id_foreign")
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
 }

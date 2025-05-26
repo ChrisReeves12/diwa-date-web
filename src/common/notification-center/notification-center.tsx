@@ -103,10 +103,10 @@ function NotificationCenterContent({ notificationsData }: { notificationsData: N
                 <div className="profile-user">
                     <button onClick={handleProfileAccountMenuClick} className="profile-container">
                         <UserPhotoDisplay gender={currentUser.gender}
-                            croppedImageData={currentUser.main_photo_cropped_image_data}
-                            imageUrl={currentUser.public_main_photo} />
+                            croppedImageData={currentUser.mainPhotoCroppedImageData}
+                            imageUrl={currentUser.publicMainPhoto} />
                         <div className="profile-name-container">
-                            <h5>{currentUser.display_name}</h5>
+                            <h5>{currentUser.displayName}</h5>
                             <h6>My Account</h6>
                         </div>
                     </button>
@@ -130,7 +130,7 @@ function NotificationCenterContent({ notificationsData }: { notificationsData: N
                     title="Likes"
                     listItems={(notificationsData?.pendingMatches || []).map(pendingMatch => ({
                         id: pendingMatch.id,
-                        content: pendingMatch.sender.location_name,
+                        content: pendingMatch.sender.locationName,
                         senderUser: pendingMatch.sender,
                         receivedAtMessage: `Received ${humanizeTimeDiff(new Date(pendingMatch.created_at))}`,
                         infoSectionUrl: userProfileLink(pendingMatch.sender),
@@ -153,10 +153,10 @@ function NotificationCenterContent({ notificationsData }: { notificationsData: N
                         id: receivedMessage.id,
                         content: _.truncate(receivedMessage.content),
                         senderUser: {
-                            display_name: receivedMessage.display_name,
+                            displayName: receivedMessage.display_name,
                             gender: receivedMessage.user_gender,
-                            public_main_photo: receivedMessage.public_main_photo,
-                            main_photo_cropped_image_data: receivedMessage.main_photo_cropped_image_data,
+                            publicMainPhoto: receivedMessage.public_main_photo,
+                            mainPhotoCroppedImageData: receivedMessage.main_photo_cropped_image_data,
                             age: receivedMessage.age
                         },
                         receivedAtMessage: `Sent ${humanizeTimeDiff(new Date(receivedMessage.created_at))}`,

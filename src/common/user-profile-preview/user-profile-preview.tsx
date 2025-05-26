@@ -16,8 +16,8 @@ export default function UserProfilePreview({ userPreview, type }: { userPreview:
     const [showMoreOptionsPopover, setShowMoreOptionsPopover] = useState(false);
     const [showImageViewer, setShowImageViewer] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [userMatchStatus, setUserMatchStatus] = useState<string | undefined>(userPreview.match_status);
-    const [blockedThem, setBlockedThem] = useState<boolean | undefined>(userPreview.i_blocked_them);
+    const [userMatchStatus, setUserMatchStatus] = useState<string | undefined>(userPreview.matchStatus);
+    const [blockedThem, setBlockedThem] = useState<boolean | undefined>(userPreview.blockedThem);
     const popoverRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const moreOptionsPopoverRef = useRef<HTMLDivElement>(null);
@@ -78,7 +78,7 @@ export default function UserProfilePreview({ userPreview, type }: { userPreview:
     };
 
     const handleLike = async () => {
-        if (userMatchStatus === 'pending' && !userPreview.they_liked_me) {
+        if (userMatchStatus === 'pending' && !userPreview.theyLikedMe) {
             await removeUserMatch(Number(userPreview.id));
             setUserMatchStatus(undefined);
         } else {
@@ -153,10 +153,10 @@ export default function UserProfilePreview({ userPreview, type }: { userPreview:
             <div className="image-container">
                 <a href={userProfileLink(userPreview)}>
                     <UserPhotoDisplay
-                        alt={userPreview.display_name}
+                        alt={userPreview.displayName}
                         shape="rounded-square"
-                        imageUrl={userPreview.public_main_photo}
-                        croppedImageData={userPreview.main_photo_cropped_image_data}
+                        imageUrl={userPreview.publicMainPhoto}
+                        croppedImageData={userPreview.mainPhotoCroppedImageData}
                         width={210}
                         height={210}
                         gender={userPreview.gender} />
@@ -166,13 +166,13 @@ export default function UserProfilePreview({ userPreview, type }: { userPreview:
                 <div className="info-photo-count-container">
                     <div className="info-container">
                         <a className="user-display-name" href={userProfileLink(userPreview)}>
-                            {userPreview.display_name}
+                            {userPreview.displayName}
                         </a>
                         <div className="info-line age">Age: {userPreview.age}</div>
-                        <div className="info-line location">Location: {userPreview.location_name}</div>
+                        <div className="info-line location">Location: {userPreview.locationName}</div>
                         <div className="info-line last-active">Last
-                            Active {humanizeTimeDiff(userPreview.last_active_at)}</div>
-                        {userPreview.they_liked_me && (
+                            Active {humanizeTimeDiff(userPreview.lastActiveAt)}</div>
+                        {userPreview.theyLikedMe && (
                             <div className="info-line they-liked-me">
                                 <HeartIcon style={{ marginRight: '4px' }} />
                                 Liked you
@@ -184,19 +184,19 @@ export default function UserProfilePreview({ userPreview, type }: { userPreview:
                             className="photo-count"
                             onClick={togglePhotoPopover}
                             ref={buttonRef}>
-                            <span className="count-value">{userPreview.num_of_photos}</span>
+                            <span className="count-value">{userPreview.numOfPhotos}</span>
                             <Image className="camera-icon" width="20" height="20" alt="Camera" src="/images/camera.svg" />
                         </button>
                         {showPhotoPopover && (
                             <div className="photo-popover" ref={popoverRef}>
                                 <div className="photo-grid">
-                                    {userPreview.photos && userPreview.photos.map((photo: UserPhoto, index: number) => (
+                                    {userPreview.publicPhotos && userPreview.publicPhotos.map((photo: UserPhoto, index: number) => (
                                         <div
                                             key={index}
                                             className="photo-grid-item"
                                             onClick={() => openImageViewer(index)}>
                                             <UserPhotoDisplay
-                                                alt={`${userPreview.display_name}'s photo ${index + 1}`}
+                                                alt={`${userPreview.displayName}'s photo ${index + 1}`}
                                                 shape="square"
                                                 imageUrl={photo.path}
                                                 croppedImageData={photo.cropped_image_data}
@@ -236,7 +236,7 @@ export default function UserProfilePreview({ userPreview, type }: { userPreview:
                                 {userMatchStatus === 'matched' ?
                                     <a href=""><CommentsIcon /> Send Message</a> :
                                     <button onClick={handleLike}>
-                                        {userPreview.they_liked_me ?
+                                        {userPreview.theyLikedMe ?
                                             <><HeartIcon /> Accept Match</> :
                                             userMatchStatus === 'pending' ?
                                                 <><HeartBrokenIcon /> Remove Like</> :
@@ -252,10 +252,10 @@ export default function UserProfilePreview({ userPreview, type }: { userPreview:
                         {type === 'search' ?
                             (userMatchStatus !== 'matched' ?
                                 <button
-                                    className={"like-button" + (userMatchStatus === 'pending' && !userPreview.they_liked_me ? " liked" : "")}
-                                    title={userPreview.they_liked_me ? "Accept Match" : userMatchStatus === 'pending' ? "Remove Like" : "Like"}
+                                    className={"like-button" + (userMatchStatus === 'pending' && !userPreview.theyLikedMe ? " liked" : "")}
+                                    title={userPreview.theyLikedMe ? "Accept Match" : userMatchStatus === 'pending' ? "Remove Like" : "Like"}
                                     onClick={async () => {
-                                        if (userMatchStatus === 'pending' && !userPreview.they_liked_me) {
+                                        if (userMatchStatus === 'pending' && !userPreview.theyLikedMe) {
                                             await removeUserMatch(Number(userPreview.id));
                                             setUserMatchStatus(undefined);
                                         } else {
@@ -292,15 +292,15 @@ export default function UserProfilePreview({ userPreview, type }: { userPreview:
                         <div className="image-viewer-image-wrapper">
                             <div className="image-viewer-image-container">
                                 <img
-                                    src={userPreview.photos[currentImageIndex].cropped_image_data?.cropped_image_path ||
-                                        userPreview.photos[currentImageIndex].path}
-                                    alt={`${userPreview.display_name}'s photo ${currentImageIndex + 1}`}
+                                    src={userPreview.publicPhotos?.[currentImageIndex].cropped_image_data?.cropped_image_path ||
+                                        userPreview.publicPhotos?.[currentImageIndex].path}
+                                    alt={`${userPreview.displayName}'s photo ${currentImageIndex + 1}`}
                                     className="image-viewer-image"
                                 />
                             </div>
-                            {userPreview.photos[currentImageIndex].caption && (
+                            {userPreview.publicPhotos?.[currentImageIndex].caption && (
                                 <div className="image-viewer-caption">
-                                    {_.truncate(userPreview.photos[currentImageIndex].caption, { length: 180 })}
+                                    {_.truncate(userPreview.publicPhotos?.[currentImageIndex].caption, { length: 180 })}
                                 </div>
                             )}
                         </div>

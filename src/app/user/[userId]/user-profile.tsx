@@ -44,7 +44,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
 
     const onPhotoView = (e: React.MouseEvent, idx: number) => {
         if (e) e.preventDefault();
-        if (userProfile.user.public_photos) {
+        if (userProfile.user.publicPhotos) {
             setCurrentImageIndex(idx);
             setShowImageViewer(true);
         }
@@ -74,18 +74,18 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
     const navigateImage = useCallback((direction: 'prev' | 'next', event: React.MouseEvent) => {
         event.stopPropagation();
 
-        if (!userProfile.user.public_photos) return;
+        if (!userProfile.user.publicPhotos) return;
 
         if (direction === 'prev') {
             setCurrentImageIndex(prev =>
-                prev === 0 ? userProfile.user.public_photos!.length - 1 : prev - 1
+                prev === 0 ? userProfile.user.publicPhotos!.length - 1 : prev - 1
             );
         } else {
             setCurrentImageIndex(prev =>
-                prev === userProfile.user.public_photos!.length - 1 ? 0 : prev + 1
+                prev === userProfile.user.publicPhotos!.length - 1 ? 0 : prev + 1
             );
         }
-    }, [userProfile.user.public_photos]);
+    }, [userProfile.user.publicPhotos]);
 
     // Handle keyboard navigation with arrow keys
     useEffect(() => {
@@ -106,7 +106,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [showImageViewer, userProfile.user.public_photos, navigateImage]);
+    }, [showImageViewer, userProfile.user.publicPhotos, navigateImage]);
 
     const onRequestMatchClick = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -218,9 +218,9 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                 <div className="container">
                     {!userProfile ? (
                         <h2 className="profile-msg">User cannot be found.</h2>
-                    ) : userProfile.they_blocked_me ? (
+                    ) : userProfile.theyBlockedMe ? (
                         <h2 className="profile-msg">You have been blocked by this user.</h2>
-                    ) : userProfile.suspended_at ? (
+                    ) : userProfile.suspendedAt ? (
                         <h2 className="profile-msg">This user has been suspended.</h2>
                     ) : !userProfile ? (
                         <h2 className="profile-msg">User cannot be found.</h2>
@@ -231,9 +231,9 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                             <div className="user-profile-info-section">
                                 <a onClick={(e) => onPhotoView(e, 0)}>
                                     <UserPhotoDisplay
-                                        alt={userProfile.user.display_name}
-                                        croppedImageData={userProfile.user.main_photo_cropped_image_data}
-                                        imageUrl={userProfile.user.public_main_photo}
+                                        alt={userProfile.user.displayName}
+                                        croppedImageData={userProfile.user.mainPhotoCroppedImageData}
+                                        imageUrl={userProfile.user.publicMainPhoto}
                                         width={300}
                                         height={300}
                                         gender={userProfile.user.gender}
@@ -241,9 +241,9 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                 </a>
 
                                 <div className="user-basic-info-section">
-                                    <h1 className="user-display-name">{userProfile.user.display_name}</h1>
+                                    <h1 className="user-display-name">{userProfile.user.displayName}</h1>
                                     <h4 className="user-age">{userProfile.user.age} Year Old {userProfile.user.gender === 'male' ? 'Man' : 'Woman'}</h4>
-                                    {userProfile.match_is_towards_me === true && userProfile.match_status === 'pending' ? (
+                                    {userProfile.matchIsTowardsMe === true && userProfile.matchStatus === 'pending' ? (
                                         <h5 className="user-like-label">{userProfile.user.gender === 'male' ? 'He' : 'She'} Likes You</h5>
                                     ) : null}
 
@@ -254,7 +254,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                         </div>
                                         <div className="location-section">
                                             <MapMarkerIcon />
-                                            <div className="location-name">{userProfile.user.location_name}</div>
+                                            <div className="location-name">{userProfile.user.locationName}</div>
                                         </div>
                                     </div>
 
@@ -262,56 +262,56 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                         <div className="basic-info-container">
                                             <div className="basic-info-line">
                                                 <div className="label">Seeking:</div>
-                                                <div className="value">{userProfile.seeking_label}</div>
+                                                <div className="value">{userProfile.seekingLabel}</div>
                                             </div>
                                             <div className="basic-info-line">
                                                 <div className="label">Marital Status:</div>
-                                                <div className="value">{userProfile.marital_status_label}</div>
+                                                <div className="value">{userProfile.maritalStatusLabel}</div>
                                             </div>
                                             <div className="basic-info-line">
                                                 <div className="label">Ethnicity:</div>
-                                                <div className="value">{userProfile.ethnicity_label}</div>
+                                                <div className="value">{userProfile.ethnicityLabel}</div>
                                             </div>
                                             <div className="basic-info-line">
                                                 <div className="label">Height:</div>
-                                                <div className="value">{userProfile.height_label}</div>
+                                                <div className="value">{userProfile.heightLabel}</div>
                                             </div>
                                             <div className="basic-info-line">
                                                 <div className="label">Body Type:</div>
-                                                <div className="value">{userProfile.body_type_label}</div>
+                                                <div className="value">{userProfile.bodyTypeLabel}</div>
                                             </div>
                                             <div className="basic-info-line">
                                                 <div className="label">Religion:</div>
-                                                <div className="value">{userProfile.religion_label}</div>
+                                                <div className="value">{userProfile.religionLabel}</div>
                                             </div>
                                             <div className="basic-info-line">
                                                 <div className="label">Drinking:</div>
-                                                <div className="value">{userProfile.drinking_label}</div>
+                                                <div className="value">{userProfile.drinkingLabel}</div>
                                             </div>
                                             <div className="basic-info-line">
                                                 <div className="label">Smoking:</div>
-                                                <div className="value">{userProfile.smoking_label}</div>
+                                                <div className="value">{userProfile.smokingLabel}</div>
                                             </div>
                                             <div className="basic-info-line">
                                                 <div className="label">Education:</div>
-                                                <div className="value">{userProfile.education_label}</div>
+                                                <div className="value">{userProfile.educationLabel}</div>
                                             </div>
                                             <div className="basic-info-line">
                                                 <div className="label">Has Children:</div>
-                                                <div className="value">{userProfile.has_children_label}</div>
+                                                <div className="value">{userProfile.hasChildrenLabel}</div>
                                             </div>
                                             <div className="basic-info-line">
                                                 <div className="label">Wants Children:</div>
-                                                <div className="value">{userProfile.wants_children_label}</div>
+                                                <div className="value">{userProfile.wantsChildrenLabel}</div>
                                             </div>
                                             <div className="basic-info-line">
                                                 <div className="label">Last Active:</div>
-                                                <div className="value">{humanizeTimeDiff(userProfile.user.last_active_at)}</div>
+                                                <div className="value">{humanizeTimeDiff(userProfile.user.lastActiveAt)}</div>
                                             </div>
                                         </div>
 
                                         <div className="buttons-container">
-                                            {userProfile.match_status === 'pending' && !userProfile.match_is_towards_me ? (
+                                            {userProfile.matchStatus === 'pending' && !userProfile.matchIsTowardsMe ? (
                                                 <button
                                                     disabled={isUpdatingMatch}
                                                     onClick={onCancelMatchClick}
@@ -319,7 +319,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                                     <HeartBrokenIcon />
                                                     <div className="label">Cancel Match Request</div>
                                                 </button>
-                                            ) : userProfile.match_status === 'pending' && userProfile.match_is_towards_me ? (
+                                            ) : userProfile.matchStatus === 'pending' && userProfile.matchIsTowardsMe ? (
                                                 <>
                                                     <button
                                                         disabled={isUpdatingMatch}
@@ -334,19 +334,19 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                                         onClick={onIgnoreMatchClick}
                                                         className="reject-match"
                                                     >
-                                                        <EyeSlashIcon/>
+                                                        <EyeSlashIcon />
                                                         <div className="label">Ignore</div>
                                                     </button>
                                                 </>
-                                            ) : userProfile.match_status === 'matched' ? (
+                                            ) : userProfile.matchStatus === 'matched' ? (
                                                 <>
                                                     <div className="matched">
                                                         <CheckCircleIcon />
                                                         <div className="label">Matched</div>
                                                     </div>
 
-                                                    {userProfile.match_id && (
-                                                        <Link href={`/messages/${userProfile.match_id}`} className="request-match">
+                                                    {userProfile.matchId && (
+                                                        <Link href={`/messages/${userProfile.matchId}`} className="request-match">
                                                             <CommentsIcon />
                                                             <div className="label">Send Message</div>
                                                         </Link>
@@ -364,7 +364,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                             )}
 
                                             <div className="cancel-block-button-container">
-                                                {!userProfile.blocked_them ? (
+                                                {!userProfile.blockedThem ? (
                                                     <button
                                                         disabled={isBlockingOrUnBlocking}
                                                         onClick={onBlockUserClick}
@@ -400,11 +400,11 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                         <div className="title">Photos</div>
                                     </div>
                                     <div className="photos">
-                                        {userProfile.user.public_photos?.map((photo: UserPhoto, idx: number) => (
+                                        {userProfile.user.publicPhotos?.map((photo: UserPhoto, idx: number) => (
                                             <a key={idx} onClick={(e) => onPhotoView(e, idx)} href="">
                                                 <UserPhotoDisplay
                                                     imageUrl={photo.path}
-                                                    alt={userProfile.user.display_name}
+                                                    alt={`${userProfile.user.displayName}'s photo ${idx}`}
                                                     width={96}
                                                     height={96}
                                                     shape="square"
@@ -423,14 +423,14 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                     </div>
                                     <div className="bio">{userProfile.user.bio || 'No biography available yet.'}</div>
 
-                                    {userProfile.interest_labels?.length > 0 && (
+                                    {userProfile.interestLabels?.length > 0 && (
                                         <>
                                             <div className="section-title">
                                                 <StarIcon />
                                                 <div className="title">Interests</div>
                                             </div>
                                             <div className="interests">
-                                                {userProfile.interest_labels.map((interest: any, idx: number) => (
+                                                {userProfile.interestLabels.map((interest: any, idx: number) => (
                                                     <div key={idx} className="interest-bubble">
                                                         <div className="bubble-container">
                                                             <div className="emoji">{interest.emoji}</div>
@@ -448,7 +448,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                 </div>
 
                 {/* Full-screen Image Viewer */}
-                {showImageViewer && userProfile.user.public_photos && userProfile.user.public_photos.length > 0 && (
+                {showImageViewer && userProfile.user.publicPhotos && userProfile.user.publicPhotos.length > 0 && (
                     <div className="image-viewer-overlay" ref={imageViewerRef}>
                         <div className="image-viewer-content">
                             <div className="image-viewer-nav image-viewer-prev"
@@ -458,15 +458,15 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                             <div className="image-viewer-image-wrapper">
                                 <div className="image-viewer-image-container">
                                     <img
-                                        src={userProfile.user.public_photos[currentImageIndex].cropped_image_data?.cropped_image_path ||
-                                            userProfile.user.public_photos[currentImageIndex].path}
-                                        alt={`${userProfile.user.display_name}'s photo ${currentImageIndex + 1}`}
+                                        src={userProfile.user.publicPhotos[currentImageIndex].cropped_image_data?.cropped_image_path ||
+                                            userProfile.user.publicPhotos[currentImageIndex].path}
+                                        alt={`${userProfile.user.displayName}'s photo ${currentImageIndex + 1}`}
                                         className="image-viewer-image"
                                     />
                                 </div>
-                                {userProfile.user.public_photos[currentImageIndex].caption && (
+                                {userProfile.user.publicPhotos[currentImageIndex].caption && (
                                     <div className="image-viewer-caption">
-                                        {_.truncate(userProfile.user.public_photos[currentImageIndex].caption, { length: 180 })}
+                                        {_.truncate(userProfile.user.publicPhotos[currentImageIndex].caption, { length: 180 })}
                                     </div>
                                 )}
                             </div>

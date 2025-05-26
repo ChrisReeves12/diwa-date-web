@@ -8,8 +8,7 @@ import {
     prepareUser
 } from './user.helpers';
 import _ from 'lodash';
-import { NotificationPendingMatch, NotificationReceivedMessage, Notification } from '@/types/notification-response.interface';
-import { transformBigInts } from '@/util';
+import { NotificationPendingMatch, NotificationReceivedMessage, Notification, NotificationUser } from '@/types/notification-response.interface';
 import { NotificationCenterData } from "@/types/notification-center-data.interface";
 
 /**
@@ -19,52 +18,52 @@ import { NotificationCenterData } from "@/types/notification-center-data.interfa
  */
 export async function getPendingMatches(user: User): Promise<NotificationPendingMatch[]> {
     // Get pending matches where the current user is the recipient
-    const pendingMatches = await prisma.user_matches.findMany({
+    const pendingMatches = await prisma.userMatches.findMany({
         where: {
-            recipient_id: user.id,
+            recipientId: user.id,
             status: 'pending'
         },
         orderBy: {
-            created_at: 'desc'
+            createdAt: 'desc'
         },
         take: 5,
         include: {
-            sender: {
+            users_userMatches_userIdTousers: {
                 select: {
                     id: true,
-                    display_name: true,
-                    main_photo: true,
-                    location_name: true,
+                    displayName: true,
+                    mainPhoto: true,
+                    locationName: true,
                     country: true,
                     photos: true,
                     gender: true,
-                    date_of_birth: true,
-                    last_active_at: true
+                    dateOfBirth: true,
+                    lastActiveAt: true
                 }
             }
         }
     });
 
-    const mutedUsersPromise = prisma.muted_users.findMany({
+    const mutedUsersPromise = prisma.mutedUsers.findMany({
         select: {
-            recipient_id: true
+            recipientId: true
         },
         where: {
-            user_id: user.id,
-            recipient_id: {
-                in: pendingMatches.map(pm => pm.user_id)
+            userId: user.id,
+            recipientId: {
+                in: pendingMatches.map((pm: any) => pm.userId)
             }
         }
     });
 
-    const blockedUsersPromise = prisma.blocked_users.findMany({
+    const blockedUsersPromise = prisma.blockedUsers.findMany({
         select: {
-            blocked_user_id: true
+            blockedUserId: true
         },
         where: {
-            user_id: user.id,
-            blocked_user_id: {
-                in: pendingMatches.map(pm => pm.user_id)
+            userId: user.id,
+            blockedUserId: {
+                in: pendingMatches.map((pm: any) => pm.userId)
             }
         }
     });
@@ -75,16 +74,43 @@ export async function getPendingMatches(user: User): Promise<NotificationPending
     ]);
 
     // Filter out muted and blocked users
-    const finalPendingMatches = _.reject(pendingMatches, pm =>
-        _.some(mutedUsers, mu => mu.recipient_id === pm.user_id) ||
-        _.some(blockedUsers, bu => bu.blocked_user_id === pm.user_id)
+    const finalPendingMatches = _.reject(pendingMatches, (pm: any) =>
+        _.some(mutedUsers, (mu: any) => mu.recipientId === pm.userId) ||
+        _.some(blockedUsers, (bu: any) => bu.blockedUserId === pm.userId)
     );
 
-    return finalPendingMatches.map((pm) => {
-        (pm.sender as unknown) = prepareUser(pm.sender as unknown as User);
-        delete (pm.sender as any).date_of_birth;
-        delete (pm.sender as any).password;
-        return transformBigInts(pm);
+    return finalPendingMatches.map((pm: any) => {
+        const preparedSender = prepareUser(pm.users_userMatches_userIdTousers as any); // prepareUser handles casing
+
+        // Ensure pm.sender conforms to NotificationUser from notification-response.interface.ts
+        const senderForNotification: NotificationUser = {
+            id: String(preparedSender.id), // Ensure id is string
+            displayName: preparedSender.displayName,
+            mainPhoto: preparedSender.mainPhoto || '', // Provide fallback for non-optional
+            photos: preparedSender.photos || [], // Provide fallback
+            gender: preparedSender.gender,
+            lastActiveAt: preparedSender.lastActiveAt || new Date(), // Provide fallback
+            locationName: preparedSender.locationName || '', // Provide fallback
+            country: preparedSender.country || '', // Provide fallback
+            password: '', // Not in NotificationUser, but was in original sender select, clear it
+            age: preparedSender.age,
+            isSubscriptionActive: preparedSender.isSubscriptionActive,
+            publicMainPhoto: preparedSender.publicMainPhoto || '', // Provide fallback
+            publicPhotos: preparedSender.publicPhotos || [], // Provide fallback
+        };
+
+        return {
+            ...pm,
+            id: typeof pm.id === 'bigint' ? pm.id.toString() : pm.id,
+            userId: typeof pm.userId === 'bigint' ? pm.userId.toString() : pm.userId,
+            recipientId: typeof pm.recipientId === 'bigint' ? pm.recipientId.toString() : (pm.recipientId === null ? '' : pm.recipientId),
+            acceptedAt: pm.acceptedAt instanceof Date ? pm.acceptedAt.toISOString() : (pm.acceptedAt ?? ''),
+            acknowledgedAt: pm.acknowledgedAt instanceof Date ? pm.acknowledgedAt.toISOString() : (pm.acknowledgedAt ?? ''),
+            createdAt: pm.createdAt instanceof Date ? pm.createdAt.toISOString() : (pm.createdAt ?? ''),
+            updatedAt: pm.updatedAt instanceof Date ? pm.updatedAt.toISOString() : (pm.updatedAt ?? ''),
+            updatedAtTimestamp: typeof pm.updatedAtTimestamp === 'bigint' ? pm.updatedAtTimestamp.toString() : (pm.updatedAtTimestamp ?? ''),
+            sender: senderForNotification // Assign the correctly shaped sender
+        };
     });
 }
 
@@ -121,37 +147,34 @@ export async function getReceivedMessages(user: User): Promise<NotificationRecei
     const results = await prisma.$queryRaw`
         SELECT S.* FROM (
                     SELECT M.*,
-                       U.display_name,
-                       U.main_photo,
-                       U.photos,
-                       U.date_of_birth,
-                       U.last_active_at,
-                       U.suspended_at,
-                       U.location_name,
-                       U.gender AS user_gender,
-                       LEAST(COUNT(M.id) OVER (PARTITION BY M.user_id), 100) AS msg_count,
-                       IF(MAX(M.timestamp) OVER (PARTITION BY M.user_id) = M.timestamp, 1, 0) AS is_latest
-                    FROM messages M
-                        JOIN users U ON M.user_id = U.id AND M.user_id NOT IN (SELECT blocked_user_id FROM blocked_users _BU WHERE _BU.user_id = ${user.id})
-                    WHERE M.recipient_id = ${user.id}
+                       U."displayName",
+                       U."mainPhoto",
+                       U."photos",
+                       Calculate_Age(U."dateOfBirth") AS "age",
+                       U."lastActiveAt",
+                       U."suspendedAt",
+                       U."locationName",
+                       U."gender" AS "userGender",
+                       LEAST(COUNT(M.id) OVER (PARTITION BY M."userId"), 100) AS "msgCount",
+                       CASE WHEN MAX(M."timestamp") OVER (PARTITION BY M."userId") = M."timestamp" THEN 1 ELSE 0 END AS "isLatest"
+                    FROM "messages" M
+                        JOIN "users" U ON M."userId" = U.id AND M."userId" NOT IN (SELECT "blockedUserId" FROM "blockedUsers" _BU WHERE _BU."userId" = ${user.id})
+                    WHERE M."recipientId" = ${user.id}
                         ) S
-        WHERE S.is_latest = 1
-        ORDER BY S.timestamp DESC LIMIT 5
+        WHERE S."isLatest" = 1
+        ORDER BY S."timestamp" DESC LIMIT 5
     `;
 
     return (results as NotificationReceivedMessage[]).map(m => {
-        const retVal = transformBigInts({
+        const retVal = {
             ...m,
             ...{
                 photos: Array.isArray(m.photos) ? m.photos.map(p => appendMediaRootToImage(p)) : [],
-                public_main_photo: m.main_photo ? appendMediaRootToImageUrl(m.main_photo) : undefined,
-                main_photo_cropped_image_data: getMainCroppedImageData(m),
-                msg_count: Number(m.msg_count),
-                age: calculateUserAge({ date_of_birth: (m as any).date_of_birth })
+                publicMainPhoto: m.mainPhoto ? appendMediaRootToImageUrl(m.mainPhoto) : undefined,
+                mainPhotoCroppedImageData: getMainCroppedImageData(m),
+                msgCount: Number(m.msgCount)
             }
-        });
-
-        delete (retVal as any).date_of_birth;
+        };
 
         return retVal as NotificationReceivedMessage;
     });
@@ -163,14 +186,14 @@ export async function getReceivedMessages(user: User): Promise<NotificationRecei
  * @returns A promise that resolves to the total count of pending matches after filtering.
  */
 export async function countAllPendingMatches(user: User): Promise<number> {
-    const mutedUsersPromise = prisma.muted_users.findMany({
-        select: { recipient_id: true },
-        where: { user_id: user.id }
+    const mutedUsersPromise = prisma.mutedUsers.findMany({
+        select: { recipientId: true },
+        where: { userId: user.id }
     });
 
-    const blockedUsersPromise = prisma.blocked_users.findMany({
-        select: { blocked_user_id: true },
-        where: { user_id: user.id }
+    const blockedUsersPromise = prisma.blockedUsers.findMany({
+        select: { blockedUserId: true },
+        where: { userId: user.id }
     });
 
     const [mutedUsers, blockedUsers] = await Promise.all([
@@ -179,15 +202,15 @@ export async function countAllPendingMatches(user: User): Promise<number> {
     ]);
 
     const excludedUserIds = [
-        ...mutedUsers.map(mu => mu.recipient_id),
-        ...blockedUsers.map(bu => bu.blocked_user_id)
+        ...mutedUsers.map((mu: any) => mu.recipientId),
+        ...blockedUsers.map((bu: any) => bu.blockedUserId)
     ];
 
-    return prisma.user_matches.count({
+    return prisma.userMatches.count({
         where: {
-            recipient_id: user.id,
+            recipientId: user.id,
             status: 'pending',
-            user_id: {
+            userId: {
                 notIn: excludedUserIds.length > 0 ? excludedUserIds : undefined
             }
         }
@@ -200,15 +223,15 @@ export async function countAllPendingMatches(user: User): Promise<number> {
  * @returns A promise that resolves to the total count of unique senders.
  */
 export async function countAllMessages(user: User): Promise<number> {
-    const result = await prisma.$queryRaw<{ total_count: bigint }[]>`
-        SELECT COUNT(DISTINCT M.user_id) as total_count
-        FROM messages M
-        WHERE M.recipient_id = ${user.id}
-          AND M.user_id NOT IN (SELECT blocked_user_id FROM blocked_users _BU WHERE _BU.user_id = ${user.id})
+    const result = await prisma.$queryRaw<{ totalCount: number }[]>`
+        SELECT COUNT(DISTINCT M."userId") as "totalCount"
+        FROM "messages" M
+        WHERE M."recipientId" = ${user.id}
+          AND M."userId" NOT IN (SELECT "blockedUserId" FROM "blockedUsers" _BU WHERE _BU."userId" = ${user.id})
     `;
 
-    if (result && result.length > 0 && result[0].total_count !== undefined) {
-        return Number(result[0].total_count);
+    if (result && result.length > 0 && result[0].totalCount !== undefined) {
+        return Number(result[0].totalCount);
     }
 
     return 0;
@@ -222,34 +245,65 @@ export async function countAllMessages(user: User): Promise<number> {
 export async function getPendingNotifications(user: User): Promise<Notification[]> {
     const notifications = await prisma.notifications.findMany({
         where: {
-            recipient_id: user.id,
-            read_at: null
+            recipientId: user.id,
+            readAt: null,
         },
+        orderBy: {
+            createdAt: 'desc'
+        },
+        take: 5,
         include: {
-            sender: {
+            users_notifications_userIdTousers: {
                 select: {
                     id: true,
-                    display_name: true,
-                    main_photo: true,
-                    location_name: true,
+                    displayName: true,
+                    mainPhoto: true,
+                    locationName: true,
                     country: true,
                     photos: true,
                     gender: true,
-                    date_of_birth: true,
-                    last_active_at: true
+                    dateOfBirth: true,
+                    lastActiveAt: true
                 }
-            },
-        },
-        orderBy: {
-            created_at: 'desc'
-        },
-        take: 5
+            }
+        }
     });
 
-    return notifications.map(notification => {
-        (notification.sender as unknown) = prepareUser(notification.sender as unknown as User);
-        delete (notification.sender as any).date_of_birth;
-        return transformBigInts(notification);
+    return notifications.map((n: any) => {
+        const preparedSender = prepareUser(n.users_notifications_userIdTousers as any);
+        const senderForNotification: NotificationUser = {
+            id: String(preparedSender.id),
+            displayName: preparedSender.displayName,
+            mainPhoto: preparedSender.mainPhoto || '',
+            photos: preparedSender.photos || [],
+            gender: preparedSender.gender,
+            lastActiveAt: preparedSender.lastActiveAt || new Date(),
+            locationName: preparedSender.locationName || '',
+            country: preparedSender.country || '',
+            password: '',
+            age: preparedSender.age,
+            isSubscriptionActive: preparedSender.isSubscriptionActive,
+            publicMainPhoto: preparedSender.publicMainPhoto || '',
+            publicPhotos: preparedSender.publicPhotos || [],
+        };
+
+        // Ensure data has match_id property
+        let notificationData: { match_id: number } = { match_id: 0 }; // Default value
+        if (n.data && typeof n.data === 'object' && 'match_id' in n.data && typeof n.data.match_id === 'number') {
+            notificationData = { match_id: n.data.match_id };
+        }
+
+        return {
+            ...n,
+            id: typeof n.id === 'bigint' ? n.id.toString() : n.id,
+            userId: typeof n.userId === 'bigint' ? n.userId.toString() : n.userId,
+            recipientId: typeof n.recipientId === 'bigint' ? n.recipientId.toString() : (n.recipientId === null ? '' : n.recipientId),
+            createdAt: n.createdAt instanceof Date ? n.createdAt.toISOString() : (n.createdAt ?? ''),
+            updatedAt: n.updatedAt instanceof Date ? n.updatedAt.toISOString() : (n.updatedAt ?? ''),
+            readAt: n.readAt instanceof Date ? n.readAt.toISOString() : (n.readAt ?? ''),
+            data: notificationData, // Assign the correctly shaped data
+            sender: senderForNotification
+        };
     });
 }
 
@@ -261,8 +315,8 @@ export async function getPendingNotifications(user: User): Promise<Notification[
 export async function countAllNotifications(user: User): Promise<number> {
     return prisma.notifications.count({
         where: {
-            recipient_id: user.id,
-            read_at: null
+            recipientId: user.id,
+            readAt: null
         }
     });
 }

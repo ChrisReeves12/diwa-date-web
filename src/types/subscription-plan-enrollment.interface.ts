@@ -4,9 +4,9 @@ import { SubscriptionPlan } from './subscription-plan.interface';
  * Subscription Plan Enrollment interface definition based on the database structure
  */
 export interface SubscriptionPlanEnrollment {
-  id: bigint;
-  user_id: bigint;
-  subscription_plan_id: bigint;
+  id: number;
+  user_id: number;
+  subscription_plan_id: number;
   last_payment_at?: Date | null;
   next_payment_at?: Date | null;
   started_at?: Date | null;

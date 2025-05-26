@@ -25,26 +25,26 @@ interface SearchFiltersDialogProps {
 }
 
 export default function SearchFiltersDialog({ currentUser, onApply, onClose }: SearchFiltersDialogProps) {
-    const [seekingMinAge, setSeekingMinAge] = useState<number>(currentUser.seeking_min_age || businessConfig.defaults.minAge);
-    const [seekingMaxAge, setSeekingMaxAge] = useState<number>(currentUser.seeking_max_age || businessConfig.defaults.maxAge);
-    const [seekingMinHeight, setSeekingMinHeight] = useState<number>(currentUser.seeking_min_height || businessConfig.defaults.minHeight);
-    const [seekingMaxHeight, setSeekingMaxHeight] = useState<number>(currentUser.seeking_max_height || businessConfig.defaults.maxHeight);
-    const [seekingNumOfPhotos, setSeekingNumOfPhotos] = useState<number>(currentUser.seeking_num_of_photos || businessConfig.defaults.numOfPhotos);
-    const [ethnicPreferences, setEthnicPreferences] = useState<string[] | undefined>(currentUser.ethnic_preferences);
-    const [religiousPreferences, setReligiousPreferences] = useState<string[] | undefined>(currentUser.religious_preferences);
-    const [languagePreferences, setLanguagePreferences] = useState<string[] | undefined>(currentUser.language_preferences);
-    const [interestPreferences, setInterestPreferences] = useState<string[] | undefined>(currentUser.interest_preferences);
-    const [maritalStatusPreferences, setMaritalStatusPreferences] = useState<string[] | undefined>(currentUser.marital_status_preferences);
-    const [bodyTypePreferences, setBodyTypePreferences] = useState<string[] | undefined>(currentUser.body_type_preferences);
-    const [hasChildrenPreferences, setHasChildrenPreferences] = useState<string[] | undefined>(currentUser.has_children_preferences);
-    const [wantsChildrenPreferences, setWantsChildrenPreferences] = useState<string[] | undefined>(currentUser.wants_children_preferences);
-    const [educationPreferences, setEducationPreferences] = useState<string[] | undefined>(currentUser.education_preferences);
-    const [smokingPreferences, setSmokingPreferences] = useState<string[] | undefined>(currentUser.smoking_preferences);
-    const [drinkingPreferences, setDrinkingPreferences] = useState<string[] | undefined>(currentUser.drinking_preferences);
-    const [seekingCountries, setSeekingCountries] = useState<string[] | undefined>(currentUser.seeking_countries);
-    const [seekingDistanceOrigin, setSeekingDistanceOrigin] = useState<SearchFromOrigin>((currentUser.seeking_distance_origin || SearchFromOrigin.CurrentLocation) as SearchFromOrigin);
-    const [seekingMaxDistance, setSeekingMaxDistance] = useState<number>(currentUser.seeking_max_distance || businessConfig.defaults.maxDistance);
-    const [singleSearchLocation, setSingleSearchLocation] = useState<SingleSearchLocation | undefined>(currentUser.single_search_location);
+    const [seekingMinAge, setSeekingMinAge] = useState<number>(currentUser.seekingMinAge || businessConfig.defaults.minAge);
+    const [seekingMaxAge, setSeekingMaxAge] = useState<number>(currentUser.seekingMaxAge || businessConfig.defaults.maxAge);
+    const [seekingMinHeight, setSeekingMinHeight] = useState<number>(currentUser.seekingMinHeight || businessConfig.defaults.minHeight);
+    const [seekingMaxHeight, setSeekingMaxHeight] = useState<number>(currentUser.seekingMaxHeight || businessConfig.defaults.maxHeight);
+    const [seekingNumOfPhotos, setSeekingNumOfPhotos] = useState<number>(currentUser.seekingNumOfPhotos || businessConfig.defaults.numOfPhotos);
+    const [ethnicPreferences, setEthnicPreferences] = useState<string[] | undefined>(currentUser.ethnicPreferences);
+    const [religiousPreferences, setReligiousPreferences] = useState<string[] | undefined>(currentUser.religiousPreferences);
+    const [languagePreferences, setLanguagePreferences] = useState<string[] | undefined>(currentUser.languagePreferences);
+    const [interestPreferences, setInterestPreferences] = useState<string[] | undefined>(currentUser.interestPreferences);
+    const [maritalStatusPreferences, setMaritalStatusPreferences] = useState<string[] | undefined>(currentUser.maritalStatusPreferences);
+    const [bodyTypePreferences, setBodyTypePreferences] = useState<string[] | undefined>(currentUser.bodyTypePreferences);
+    const [hasChildrenPreferences, setHasChildrenPreferences] = useState<string[] | undefined>(currentUser.hasChildrenPreferences);
+    const [wantsChildrenPreferences, setWantsChildrenPreferences] = useState<string[] | undefined>(currentUser.wantsChildrenPreferences);
+    const [educationPreferences, setEducationPreferences] = useState<string[] | undefined>(currentUser.educationPreferences);
+    const [smokingPreferences, setSmokingPreferences] = useState<string[] | undefined>(currentUser.smokingPreferences);
+    const [drinkingPreferences, setDrinkingPreferences] = useState<string[] | undefined>(currentUser.drinkingPreferences);
+    const [seekingCountries, setSeekingCountries] = useState<string[] | undefined>(currentUser.seekingCountries);
+    const [seekingDistanceOrigin, setSeekingDistanceOrigin] = useState<SearchFromOrigin>((currentUser.seekingDistanceOrigin || SearchFromOrigin.CurrentLocation) as SearchFromOrigin);
+    const [seekingMaxDistance, setSeekingMaxDistance] = useState<number>(currentUser.seekingMaxDistance || businessConfig.defaults.maxDistance);
+    const [singleSearchLocation, setSingleSearchLocation] = useState<SingleSearchLocation | undefined>(currentUser.singleSearchLocation);
     const [isSearchFromLocationModalOpen, setIsSearchFromLocationModalOpen] = useState<boolean>(false);
     const [isCountrySelectModalOpen, setIsCountrySelectModalOpen] = useState<boolean>(false);
     const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -55,14 +55,14 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
             alert('Please select a location before applying filters');
             return;
         }
-        
+
         // Validate that countries are selected if MultipleCountries is chosen
-        if (seekingDistanceOrigin === SearchFromOrigin.MultipleCountries && 
+        if (seekingDistanceOrigin === SearchFromOrigin.MultipleCountries &&
             (!seekingCountries || seekingCountries.length === 0)) {
             alert('Please select at least one country before applying filters');
             return;
         }
-        
+
         setIsSaving(true);
         updateUserSearchPreferences({
             seeking_min_age: seekingMinAge,
@@ -487,11 +487,11 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                     </div>
                 </div>
                 <div className="button-container">
-                    <button 
-                        className="apply-button btn-primary" 
-                        type="submit" 
+                    <button
+                        className="apply-button btn-primary"
+                        type="submit"
                         onClick={() => onSubmit()}
-                        disabled={isSaving || 
+                        disabled={isSaving ||
                             (seekingDistanceOrigin === SearchFromOrigin.SingleLocation && !singleSearchLocation) ||
                             (seekingDistanceOrigin === SearchFromOrigin.MultipleCountries && (!seekingCountries || seekingCountries.length === 0))
                         }

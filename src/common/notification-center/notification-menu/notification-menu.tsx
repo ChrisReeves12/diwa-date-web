@@ -15,7 +15,7 @@ interface NotificationMenuProps {
     listItems: NotificationListItemProps[]
 }
 
-type NotificationUser = Pick<User, 'main_photo_cropped_image_data' | 'public_main_photo' | 'display_name' | 'age' | 'gender'>
+type NotificationUser = Pick<User, 'mainPhotoCroppedImageData' | 'publicMainPhoto' | 'displayName' | 'age' | 'gender' | 'locationName'>
 
 interface NotificationListItemProps {
     id: string,
@@ -38,11 +38,11 @@ function NotificationListItem({ senderUser, content, receivedAtMessage,
                 <Link href={userPhotoUrl}>
                     <UserPhotoDisplay
                         gender={senderUser.gender}
-                        alt={senderUser.display_name}
+                        alt={senderUser.displayName}
                         width={45}
                         height={45}
-                        croppedImageData={senderUser.main_photo_cropped_image_data}
-                        imageUrl={senderUser.public_main_photo}
+                        croppedImageData={senderUser.mainPhotoCroppedImageData}
+                        imageUrl={senderUser.publicMainPhoto}
                     />
                 </Link>
             </div>
@@ -52,7 +52,7 @@ function NotificationListItem({ senderUser, content, receivedAtMessage,
                         <div className="name-section">
                             <div className="name">
                                 {type !== "notifications" ?
-                                    <>{senderUser.display_name}, {senderUser.age}</> :
+                                    <>{senderUser.displayName}, {senderUser.age}</> :
                                     <>It&apos;s A Match!</>}
                             </div>
                         </div>
@@ -60,8 +60,8 @@ function NotificationListItem({ senderUser, content, receivedAtMessage,
                             {type !== "notifications" ?
                                 <>{decodeHtmlEntities(content)}</> :
                                 <>
-                                    🎉Congratulations on the match! 🎉<br/>
-                                    Go start the conversation with <strong>{senderUser.display_name}</strong>
+                                    🎉Congratulations on the match! 🎉<br />
+                                    Go start the conversation with <strong>{senderUser.displayName}</strong>
                                 </>}
                         </div>
                         <div className="received-at-message">{receivedAtMessage}</div>

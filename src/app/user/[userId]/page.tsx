@@ -7,8 +7,8 @@ import UserProfile from "./user-profile";
 import { createNotificationCenterDataPromise } from "@/server-side-helpers/notification.helper";
 import { cookies } from "next/headers";
 import './user-profile.scss';
-import { InfoCircleIcon } from "react-line-awesome";
-import UserProfileError from "@/app/user/[userId]/user-profile-error";
+// import { InfoCircleIcon } from "react-line-awesome"; // Commented out as UserProfileError is not used
+// import UserProfileError from "@/app/user/[userId]/user-profile-error"; // Commented out as UserProfileError is not used
 import { Metadata } from "next";
 import { cache } from "react";
 
@@ -21,10 +21,16 @@ const getUser = cache(async () => {
 const getUserProfile = cache(async (userId: string) => {
     const currentUser = await getUser();
     if (!currentUser) {
-        return { statusCode: 401, error: "Not authenticated" };
+        // Return a more specific type for error cases
+        return { statusCode: 401, error: "Not authenticated", userProfileDetails: undefined };
     }
 
-    return await getFullUserProfile(Number(userId), Number(currentUser.id));
+    // Ensure getFullUserProfile also returns a consistent shape, especially for errors
+    const profileResult = await getFullUserProfile(Number(userId), Number(currentUser.id));
+    if (profileResult.error) {
+        return { ...profileResult, userProfileDetails: undefined };
+    }
+    return profileResult;
 });
 
 export async function generateMetadata({ params }: any): Promise<Metadata> {
@@ -41,15 +47,15 @@ export async function generateMetadata({ params }: any): Promise<Metadata> {
     const { userId } = await params;
     const userProfileResult = await getUserProfile(userId);
 
-    if (userProfileResult.statusCode !== 200) {
+    // Check for error before accessing userProfileDetails
+    if (userProfileResult.error || !userProfileResult.userProfileDetails) {
         return {
             title: `${process.env.APP_NAME} | Profile`
         };
     }
 
     return {
-        // @ts-expect-error TypeScript is not cooperating
-        title: `${process.env.APP_NAME} | ${userProfileResult.userProfileDetails?.user.display_name ?? 'Profile'}`
+        title: `${process.env.APP_NAME} | ${userProfileResult.userProfileDetails.user.displayName ?? 'Profile'}`
     };
 }
 
@@ -64,19 +70,16 @@ export default async function UserProfilePage({ params }: any) {
     const notificationsPromise = createNotificationCenterDataPromise(currentUser);
     const userProfileResult = await getUserProfile(userId);
 
-    if (userProfileResult.statusCode !== 200) {
-        return (
-            <UserProfileError currentUser={currentUser} notificationsPromise={notificationsPromise}>
-                <h2><InfoCircleIcon/> {userProfileResult.error}</h2>
-            </UserProfileError>
-        );
+    if (userProfileResult.error || !userProfileResult.userProfileDetails) {
+        // Ensure a fallback UI for errors or missing details
+        return <div>Error: {userProfileResult.error || "Profile not found"}</div>;
     }
 
     return (
         <UserProfile
             currentUser={currentUser}
             notificationsPromise={notificationsPromise}
-            // @ts-expect-error TypeScript is not cooperating
-            userProfileDetail={userProfileResult.userProfileDetails!} />
+            userProfileDetail={userProfileResult.userProfileDetails}
+        />
     );
 }

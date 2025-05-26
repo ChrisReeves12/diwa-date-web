@@ -29,7 +29,7 @@ export interface SearchParameters {
     seeking_countries?: string[];
     seeking_distance_origin: SearchFromOrigin;
     seeking_max_distance?: number;
-    seeking_genders: string[];
-    sort_by: SearchSortBy,
+    seekingGender: string;
+    sortBy: SearchSortBy,
     search_from_location?: SingleSearchLocation
 }

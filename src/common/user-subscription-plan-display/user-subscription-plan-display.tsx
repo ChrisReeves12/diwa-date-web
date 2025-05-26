@@ -12,7 +12,7 @@ export default function UserSubscriptionPlanDisplay() {
     return (
         <div className="subscription-plan-display-container">
             <div className="label">My Subscription Level:</div>
-            <div className="subscription-level">{ currentUser.is_subscription_active ? 'Premium' : 'Free' } Member</div>
+            <div className="subscription-level">{currentUser.isSubscriptionActive ? 'Premium' : 'Free'} Member</div>
         </div>
     );
 }

@@ -33,8 +33,8 @@ function LikesListing({ currentUser, likesPromise }: Omit<LikesViewProps, "notif
     const sortBy = (searchParams.get('sortBy') as LikesSortBy) || LikesSortBy.LastActive;
     // const sortBy = 'lastActive' as LikesSortBy.LastActive;
     const page = Number(searchParams.get('page')) || 1;
-    const minAge = Number(searchParams.get('minAge')) || currentUser.seeking_min_age || businessConfig.defaults.minAge;
-    const maxAge = Number(searchParams.get('maxAge')) || currentUser.seeking_max_age || businessConfig.defaults.maxAge;
+    const minAge = Number(searchParams.get('minAge')) || currentUser.seekingMinAge || businessConfig.defaults.minAge;
+    const maxAge = Number(searchParams.get('maxAge')) || currentUser.seekingMaxAge || businessConfig.defaults.maxAge;
 
     // Fetch likes when filter parameters change
     useEffect(() => {
@@ -134,10 +134,10 @@ function LikesListing({ currentUser, likesPromise }: Omit<LikesViewProps, "notif
             ) : (
                 <div className="user-likes-listing-container">
                     {likesData.likes.length === 0 &&
-                        <div className="no-likes-notice"><InfoCircleIcon/> You have no likes at this time.</div>}
+                        <div className="no-likes-notice"><InfoCircleIcon /> You have no likes at this time.</div>}
 
                     {likesData.likes.map((user: UserPreview) =>
-                        <UserProfilePreview key={user.id} userPreview={user} type={'like'}/>)}
+                        <UserProfilePreview key={user.id} userPreview={user} type={'like'} />)}
                 </div>
             )}
         </>

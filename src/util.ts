@@ -1,27 +1,11 @@
 import _ from "lodash";
 
 /**
- * Transforms BigInt values to strings in the given data.
- * @param data The data to transform.
- * @returns
- */
-export function transformBigInts<T>(data: any): T {
-    if (!data)
-        return data;
-
-    return JSON.parse(
-        JSON.stringify(data, (_, value) =>
-            typeof value === 'bigint' ? value.toString() : value
-        )
-    );
-}
-
-/**
  * Returns the URL for a user's profile.
  * @param user The user object.
  * @returns The URL for the user's profile.
  */
-export function userProfileLink(user: { id: bigint | string | number }) {
+export function userProfileLink(user: { id: string | number }) {
     return `/user/${user.id}`;
 }
 

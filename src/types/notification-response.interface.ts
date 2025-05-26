@@ -1,20 +1,20 @@
 import { UserPhoto } from "@/types/user-photo.type";
 import { CroppedImageData } from "./cropped-image-data.interface";
 
-interface NotificationUser {
+export interface NotificationUser {
   id: string;
-  display_name: string;
-  main_photo: string;
+  displayName: string;
+  mainPhoto: string;
   photos: UserPhoto[];
   gender: string;
-  last_active_at: Date;
-  location_name: string;
+  lastActiveAt: Date;
+  locationName: string;
   country: string;
   password: string;
   age: number;
-  is_subscription_active: boolean;
-  public_main_photo: string;
-  public_photos: UserPhoto[];
+  isSubscriptionActive: boolean;
+  publicMainPhoto: string;
+  publicPhotos: UserPhoto[];
 }
 
 export interface NotificationPendingMatch {
@@ -32,27 +32,27 @@ export interface NotificationPendingMatch {
 
 export interface NotificationReceivedMessage {
   id: string;
-  match_id: string;
+  matchId: string;
   content: string;
-  read_at?: Date;
-  notification_ack_at?: Date;
-  main_photo_cropped_image_data?: CroppedImageData;
-  public_main_photo?: string;
-  user_id: string;
+  readAt?: Date;
+  notificationAckAt?: Date;
+  mainPhotoCroppedImageData?: CroppedImageData;
+  publicMainPhoto?: string;
+  userId: string;
   age: number;
-  recipient_id: string;
+  recipientId: string;
   timestamp: number;
-  created_at: Date;
-  updated_at: Date;
-  display_name: string;
-  main_photo: string;
+  createdAt: Date;
+  updatedAt: Date;
+  displayName: string;
+  mainPhoto: string;
   photos?: UserPhoto[];
-  last_active_at?: Date;
-  suspended_at?: Date;
-  location_name: string;
-  user_gender: string;
-  msg_count: number;
-  is_latest: number;
+  lastActiveAt?: Date;
+  suspendedAt?: Date;
+  locationName: string;
+  userGender: string;
+  msgCount: number;
+  isLatest: number;
 }
 
 export interface Notification {

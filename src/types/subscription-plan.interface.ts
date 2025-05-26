@@ -2,7 +2,7 @@
  * Subscription Plan interface definition based on the database structure
  */
 export interface SubscriptionPlan {
-  id: bigint;
+  id: number;
   name: string;
   description: string;
   pricing_interval: string;

@@ -1,14 +1,8 @@
-import IndexUsersCommand from "./commands/index-users.command";
 import SuspendUserCommand from "./commands/suspend-user.command";
-import UpdateElasticsearchWindowCommand from "./commands/update-elasticsearch-window.command";
-import CreateUserSearchIndexCommand from "./commands/create-user-search-index.command";
 
 export async function executeCommand(aCommand?: string) {
     const commands: Record<string, any> = {
-        'search:index-users': IndexUsersCommand,
         'users:suspend': SuspendUserCommand,
-        'search:update-window': UpdateElasticsearchWindowCommand,
-        'search:create-user-index': CreateUserSearchIndexCommand
     };
 
     // Show command list

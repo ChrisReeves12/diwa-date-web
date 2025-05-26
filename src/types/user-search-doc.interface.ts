@@ -39,7 +39,7 @@ export interface UserSearchDoc {
     religions?: string[];
     languages?: string[];
     interests?: string[];
-    seeking_genders?: string[];
+    seekingGender?: string;
     ethnic_preferences?: string[];
     religious_preferences?: string[];
     education_preferences?: string[];

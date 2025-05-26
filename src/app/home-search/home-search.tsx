@@ -33,14 +33,14 @@ function SearchResultsView({ currentUser, searchPromise }: {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isSearchFiltersModalOpen, setIsSearchFiltersModalOpen] = useState<boolean>(false);
-    const [seekingMinAge, setSeekingMinAge] = useState<number>(currentUser.seeking_min_age || businessConfig.defaults.minAge);
-    const [seekingMaxAge, setSeekingMaxAge] = useState<number>(currentUser.seeking_max_age || businessConfig.defaults.maxAge);
+    const [seekingMinAge, setSeekingMinAge] = useState<number>(currentUser.seekingMinAge || businessConfig.defaults.minAge);
+    const [seekingMaxAge, setSeekingMaxAge] = useState<number>(currentUser.seekingMaxAge || businessConfig.defaults.maxAge);
 
     // Update state when currentUser changes
     useEffect(() => {
-        setSeekingMinAge(currentUser.seeking_min_age || businessConfig.defaults.minAge);
-        setSeekingMaxAge(currentUser.seeking_max_age || businessConfig.defaults.maxAge);
-    }, [currentUser.seeking_min_age, currentUser.seeking_max_age]);
+        setSeekingMinAge(currentUser.seekingMinAge || businessConfig.defaults.minAge);
+        setSeekingMaxAge(currentUser.seekingMaxAge || businessConfig.defaults.maxAge);
+    }, [currentUser.seekingMinAge, currentUser.seekingMaxAge]);
 
     const searchSortBy = searchParams.get('sortBy') || SearchSortBy.LastActive;
     const page = Number(searchParams.get('page')) || 1;
@@ -103,7 +103,6 @@ function SearchResultsView({ currentUser, searchPromise }: {
                     <div className="paginator-section">
                         <Pagination
                             color={'primary'}
-                            count={searchResponse.pageCount}
                             onChange={(_, aPage) => {
                                 const params = new URLSearchParams(searchParams.toString());
                                 params.set('page', aPage.toString());

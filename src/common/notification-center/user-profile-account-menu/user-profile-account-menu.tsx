@@ -47,13 +47,13 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
           <Link href={`/profile/${currentUser.id}`} onClick={handleSelectionMade}>
             <UserPhotoDisplay
               gender={currentUser.gender}
-              alt={currentUser.display_name}
-              croppedImageData={currentUser.main_photo_cropped_image_data}
-              imageUrl={currentUser.public_main_photo}
+              alt={currentUser.displayName}
+              croppedImageData={currentUser.mainPhotoCroppedImageData}
+              imageUrl={currentUser.publicMainPhoto}
             />
           </Link>
           <div className="name-online-status-section">
-            <h5>{currentUser.display_name}</h5>
+            <h5>{currentUser.displayName}</h5>
             <button className="online-status">
               <div className="online-lamp-section">
                 <div className="online-lamp online"></div>

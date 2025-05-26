@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function LikesPage({
     searchParams
 }: {
-    searchParams: { [key: string]: string | string[] | undefined }
+    searchParams: any
 }) {
     const currentUser = await getCurrentUser(await cookies());
 
@@ -27,8 +27,8 @@ export default async function LikesPage({
     const lSearchParams = await searchParams;
 
     // Get filter parameters from URL query
-    const minAge = Number(lSearchParams.minAge) || currentUser.seeking_min_age || 18;
-    const maxAge = Number(lSearchParams.maxAge) || currentUser.seeking_max_age || 99;
+    const minAge = Number(lSearchParams.minAge) || currentUser.seekingMinAge || 18;
+    const maxAge = Number(lSearchParams.maxAge) || currentUser.seekingMaxAge || 99;
     const sortBy = (lSearchParams.sortBy as LikesSortBy) || LikesSortBy.LastActive;
     const page = Number(lSearchParams.page) || 1;
 
