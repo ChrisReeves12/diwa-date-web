@@ -17,14 +17,18 @@ import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import { updateUserSearchPreferences } from "@/app/home-search/home-search.actions";
+import { useSearchParams } from 'next/navigation';
+import { SearchSortBy } from '@/types/search-parameters.interface';
+import { SearchResponse } from "@/types/search-response.interface";
 
 interface SearchFiltersDialogProps {
     currentUser: User;
-    onApply: () => void;
+    onApply: (searchResponse: SearchResponse) => void;
     onClose: () => void;
 }
 
 export default function SearchFiltersDialog({ currentUser, onApply, onClose }: SearchFiltersDialogProps) {
+    const searchParams = useSearchParams();
     const [seekingMinAge, setSeekingMinAge] = useState<number>(currentUser.seekingMinAge || businessConfig.defaults.minAge);
     const [seekingMaxAge, setSeekingMaxAge] = useState<number>(currentUser.seekingMaxAge || businessConfig.defaults.maxAge);
     const [seekingMinHeight, setSeekingMinHeight] = useState<number>(currentUser.seekingMinHeight || businessConfig.defaults.minHeight);
@@ -48,6 +52,9 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
     const [isSearchFromLocationModalOpen, setIsSearchFromLocationModalOpen] = useState<boolean>(false);
     const [isCountrySelectModalOpen, setIsCountrySelectModalOpen] = useState<boolean>(false);
     const [isSaving, setIsSaving] = useState<boolean>(false);
+
+    const searchSortBy = (searchParams.get('sortBy') || SearchSortBy.LastActive) as SearchSortBy;
+    const page = Number(searchParams.get('page')) || 1;
 
     const onSubmit = () => {
         // Validate that a location is selected if SingleLocation is chosen
@@ -85,9 +92,9 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
             seekingDistanceOrigin: seekingDistanceOrigin,
             seekingMaxDistance: seekingMaxDistance,
             searchFromLocation: seekingDistanceOrigin === SearchFromOrigin.SingleLocation ? singleSearchLocation : undefined
-        }).then(() => {
+        }, page, searchSortBy).then((searchResponse) => {
+            onApply(searchResponse);
             onClose();
-            onApply();
         }).catch((error) => {
             alert('An error occurred while updating your search preferences');
             console.error(error);

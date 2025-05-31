@@ -6,8 +6,8 @@ import { CroppedImageData } from "./cropped-image-data.interface";
 export type UserPhoto = {
   path: string;
   caption?: string;
-  is_hidden: boolean;
-  sort_order: number;
-  uploaded_at: string;
-  cropped_image_data?: CroppedImageData;
+  isHidden: boolean;
+  sortOrder: number;
+  uploadedAt: string;
+  croppedImageData?: CroppedImageData;
 };

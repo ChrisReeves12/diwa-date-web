@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
     };
 }
 
-export default async function Home({ searchParams }: { searchParams: Promise<any> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ page?: number, sortBy?: SearchSortBy }> }) {
     const currentUser = await getUser();
 
     if (currentUser) {

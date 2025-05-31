@@ -38,7 +38,7 @@ function SearchResultsView({currentUser, searchPromise}: {
     const [isUpdatingSearchResults, setIsUpdatingSearchResults] = useState(false);
     const [updatedSearchResponse, setUpdatedSearchResponse] = useState<SearchResponse | undefined>();
 
-    const searchSortBy = searchParams.get('sortBy') || SearchSortBy.LastActive;
+    const searchSortBy = (searchParams.get('sortBy') || SearchSortBy.LastActive) as SearchSortBy;
     const page = Number(searchParams.get('page')) || 1;
 
     useEffect(() => {
@@ -50,7 +50,7 @@ function SearchResultsView({currentUser, searchPromise}: {
     useEffect(() => {
         if (isInitialLoadComplete) {
             setIsUpdatingSearchResults(true);
-            getUpdatedSearchResults(page, searchSortBy as SearchSortBy)
+            getUpdatedSearchResults(page, searchSortBy)
                 .then((result: SearchResponse) => setUpdatedSearchResponse(result))
                 .finally(() => setIsUpdatingSearchResults(false));
         }
@@ -80,16 +80,15 @@ function SearchResultsView({currentUser, searchPromise}: {
                                         onChange={(newValues) => {
                                             setSeekingMinAge(newValues.minAge);
                                             setSeekingMaxAge(newValues.maxAge);
+                                            setIsUpdatingSearchResults(true);
                                             updateUserSearchPreferences({
                                                 seekingMinAge: newValues.minAge,
                                                 seekingMaxAge: newValues.maxAge
-                                            }).then(() => {
-                                                const params = new URLSearchParams(searchParams.toString());
-                                                params.set('page', '1');
-                                                router.push(`?${params.toString()}`);
-                                            }).catch(() => {
-                                                alert('An error occurred while updating search preferences.');
-                                            });
+                                            }, page, searchSortBy)
+                                                .then((searchResponse) => setUpdatedSearchResponse(searchResponse))
+                                                .catch(() => {
+                                                    alert('An error occurred while updating search preferences.');
+                                            }).finally(() => setIsUpdatingSearchResults(false));
                                         }}
                                     />
                                 </div>
@@ -131,10 +130,11 @@ function SearchResultsView({currentUser, searchPromise}: {
                     </div>
                 </div>
                 <div className="search-results-section">
+                    {isUpdatingSearchResults && <CenterScreenLoader/>}
                     {searchResponse.searchResults.length === 0 ?
                         <h3 className="no-results-label">No results found.</h3> :
                         searchResponse.searchResults.map((userPreview) =>
-                            <UserProfilePreview type="search" userPreview={userPreview}
+                            <UserProfilePreview isInactive={isUpdatingSearchResults} type="search" userPreview={userPreview}
                                                 key={userPreview.id.toString()}/>
                         )
                     }
@@ -156,7 +156,7 @@ function SearchResultsView({currentUser, searchPromise}: {
                     overflowY: 'auto',
                     overflowX: 'hidden'
                 }}><SearchFiltersDialog
-                    onApply={() => router.refresh()}
+                    onApply={(searchResponse) => setUpdatedSearchResponse(searchResponse)}
                     onClose={() => setIsSearchFiltersModalOpen(false)}
                     currentUser={currentUser}/>
                 </Box>

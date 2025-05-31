@@ -105,9 +105,9 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'locationViewpo
               AND U."dateOfBirth" BETWEEN '${minDateOfBirth}' AND '${maxDateOfBirth}'
               ${enumeratedQueries.join("\n")}
             ORDER BY U."${resolveSearchSortBy(sortBy)}" DESC LIMIT ${pageSize} OFFSET ${offset})
-        
-        SELECT 
-            SU.*, 
+
+        SELECT
+            SU.*,
             UM."id" AS "matchId",
             UM."status" AS "matchStatus",
             Calculate_Age(SU."dateOfBirth") AS "age",
@@ -196,7 +196,7 @@ function expandViewport(viewport: LocalityViewport, distanceKm: number): Localit
  * @param currentUser
  * @param searchParams
  */
-export async function createSearchPromise(currentUser: User, searchParams: {page?: number, sortBy?: SearchSortBy}) {
+export async function createSearchPromise(currentUser: User, searchParams: { page?: number, sortBy?: SearchSortBy }) {
     return searchUsers(currentUser, {
         page: Number(searchParams?.page || 1),
         seekingMinAge: currentUser.seekingMinAge || businessConfig.defaults.minAge,
@@ -220,6 +220,6 @@ export async function createSearchPromise(currentUser: User, searchParams: {page
         seekingMaxDistance: currentUser.seekingMaxDistance,
         seekingGender: currentUser.seekingGender || "",
         sortBy: searchParams?.sortBy || SearchSortBy.LastActive,
-        searchFromLocation: undefined
+        searchFromLocation: currentUser.seekingDistanceOrigin === SearchFromOrigin.SingleLocation ? currentUser.singleSearchLocation : undefined
     });
 }

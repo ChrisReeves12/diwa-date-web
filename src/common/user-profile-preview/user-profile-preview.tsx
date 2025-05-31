@@ -11,7 +11,7 @@ import { AngleLeftIcon, AngleRightIcon } from "react-line-awesome";
 import { removeUserMatch, sendUserMatch, blockUserAction, unBlockUserAction } from '../server-actions/user-profile.actions';
 import _ from 'lodash';
 
-export default function UserProfilePreview({ userPreview, type }: { userPreview: UserPreview, type: 'search' | 'like' }) {
+export default function UserProfilePreview({ userPreview, type, isInactive = false }: { userPreview: UserPreview, type: 'search' | 'like', isInactive?: boolean }) {
     const [showPhotoPopover, setShowPhotoPopover] = useState(false);
     const [showMoreOptionsPopover, setShowMoreOptionsPopover] = useState(false);
     const [showImageViewer, setShowImageViewer] = useState(false);
@@ -149,7 +149,7 @@ export default function UserProfilePreview({ userPreview, type }: { userPreview:
     }, [showImageViewer, userPreview.photos, navigateImage]);
 
     return (
-        <div className="user-profile-preview-container">
+        <div className={"user-profile-preview-container" + (isInactive ? " inactive" : "")}>
             <div className="image-container">
                 <a href={userProfileLink(userPreview)}>
                     <UserPhotoDisplay
@@ -199,7 +199,7 @@ export default function UserProfilePreview({ userPreview, type }: { userPreview:
                                                 alt={`${userPreview.displayName}'s photo ${index + 1}`}
                                                 shape="square"
                                                 imageUrl={photo.path}
-                                                croppedImageData={photo.cropped_image_data}
+                                                croppedImageData={photo.croppedImageData}
                                                 width={64}
                                                 height={64}
                                                 gender={userPreview.gender}
@@ -292,7 +292,7 @@ export default function UserProfilePreview({ userPreview, type }: { userPreview:
                         <div className="image-viewer-image-wrapper">
                             <div className="image-viewer-image-container">
                                 <img
-                                    src={userPreview.publicPhotos?.[currentImageIndex].cropped_image_data?.cropped_image_path ||
+                                    src={userPreview.publicPhotos?.[currentImageIndex].croppedImageData?.croppedImagePath ||
                                         userPreview.publicPhotos?.[currentImageIndex].path}
                                     alt={`${userPreview.displayName}'s photo ${currentImageIndex + 1}`}
                                     className="image-viewer-image"

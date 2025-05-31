@@ -316,9 +316,9 @@ export async function getCurrentUser(cookieStore: ReadonlyRequestCookies) {
 export function appendMediaRootToImage(image: UserPhoto) {
     const lImage = _.cloneDeep(image);
     lImage.path = appendMediaRootToImageUrl(lImage.path) || lImage.path;
-    if (lImage.cropped_image_data?.cropped_image_path) {
-        lImage.cropped_image_data.cropped_image_path = appendMediaRootToImageUrl(lImage.cropped_image_data.cropped_image_path)
-            || lImage.cropped_image_data.cropped_image_path;
+    if (lImage.croppedImageData?.croppedImagePath) {
+        lImage.croppedImageData.croppedImagePath = appendMediaRootToImageUrl(lImage.croppedImageData.croppedImagePath)
+            || lImage.croppedImageData.croppedImagePath;
     }
 
     return lImage;
@@ -437,10 +437,10 @@ export function getMainCroppedImageData(data: Pick<User, 'photos' | 'mainPhoto'>
     if (!data.mainPhoto || !data.photos)
         return undefined;
 
-    const mainPhotoCroppedImageData = data.photos.find(p => p.path === data.mainPhoto)?.cropped_image_data;
+    const mainPhotoCroppedImageData = data.photos.find(p => p.path === data.mainPhoto)?.croppedImageData;
     if (mainPhotoCroppedImageData) {
-        mainPhotoCroppedImageData.cropped_image_path =
-            appendMediaRootToImageUrl(mainPhotoCroppedImageData.cropped_image_path) || mainPhotoCroppedImageData.cropped_image_path;
+        mainPhotoCroppedImageData.croppedImagePath =
+            appendMediaRootToImageUrl(mainPhotoCroppedImageData.croppedImagePath) || mainPhotoCroppedImageData.croppedImagePath;
     }
 
     return mainPhotoCroppedImageData;

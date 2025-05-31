@@ -56,7 +56,7 @@ export default function UserPhotoDisplay({
         objectFit: 'cover' as const
     };
 
-    const imgSrc = imageUrl ? (croppedImageData?.cropped_image_path ? croppedImageData.cropped_image_path : imageUrl) : undefined;
+    const imgSrc = imageUrl ? (croppedImageData?.croppedImagePath ? croppedImageData.croppedImagePath : imageUrl) : undefined;
 
     return (
         <div className="user-photo-display-container">
@@ -72,7 +72,7 @@ export default function UserPhotoDisplay({
                     title={alt}
                     width={width}
                     height={height}
-                /> : <Image style={imgStyle} src={fallbackImage} alt={alt} title={alt} width={width} height={height}/>}
+                /> : <Image style={imgStyle} src={fallbackImage} alt={alt} title={alt} width={width} height={height} />}
             </div>
         </div>
     );

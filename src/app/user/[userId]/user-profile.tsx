@@ -408,7 +408,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                                     width={96}
                                                     height={96}
                                                     shape="square"
-                                                    croppedImageData={photo.cropped_image_data}
+                                                    croppedImageData={photo.croppedImageData}
                                                     gender={userProfile.user.gender}
                                                 />
                                             </a>
@@ -458,7 +458,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                             <div className="image-viewer-image-wrapper">
                                 <div className="image-viewer-image-container">
                                     <img
-                                        src={userProfile.user.publicPhotos[currentImageIndex].cropped_image_data?.cropped_image_path ||
+                                        src={userProfile.user.publicPhotos[currentImageIndex].croppedImageData?.croppedImagePath ||
                                             userProfile.user.publicPhotos[currentImageIndex].path}
                                         alt={`${userProfile.user.displayName}'s photo ${currentImageIndex + 1}`}
                                         className="image-viewer-image"

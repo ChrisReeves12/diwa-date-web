@@ -60,5 +60,12 @@
     padding-top: 16px;
     display: flex;
     flex-wrap: wrap;
+    position: relative;
+
+    .center-screen-loader-container {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+    }
   }
 }

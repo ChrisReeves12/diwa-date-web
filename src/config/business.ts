@@ -11,7 +11,7 @@ export const businessConfig = {
 
     search: {
         maxResultWindow: 50000,
-        pageSize: 80
+        pageSize: 180
     },
 
     options: {
