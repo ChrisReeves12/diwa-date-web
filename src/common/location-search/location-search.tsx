@@ -213,7 +213,7 @@ export default function LocationSearch({ onUpdate, error, initialLocality, geoBo
                                 setTimeout(() => setShowSuggestions(false), 200);
                             }}
                             className={error ? 'error' : ''}
-                            placeholder="City, Country"
+                            placeholder="City or Region"
                             autoComplete="off"
                         />
                         {showSuggestions && locationSuggestions.length > 0 && (

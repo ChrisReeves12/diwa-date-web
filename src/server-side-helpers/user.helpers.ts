@@ -655,58 +655,30 @@ export async function isUserBlocked(userId: number, blockedUserId: number) {
 /**
  * Gets all users who have pending likes for a given user with filtering and sorting.
  * @param userId The ID of the user
- * @param minAge Minimum age filter
- * @param maxAge Maximum age filter
  * @param sortBy Sorting method
  * @param page Page number (1-indexed)
  * @param pageSize Number of items per page
- * @returns Object with likes array and pagination data
+ * @returns Object with hasMore boolean and likes array
  */
 export async function getUserLikes(
     userId: number,
-    minAge: number = 18,
-    maxAge: number = 100,
     sortBy: LikesSortBy = LikesSortBy.LastActive,
     page: number = 1,
-    pageSize: number = 10
-): Promise<{ likes: UserPreview[], totalCount: number, pageCount: number }> {
-    // Calculate minDate and maxDate for age filtering
-    const currentDate = new Date();
-    const minYear = currentDate.getFullYear() - maxAge - 1;
-    const maxYear = currentDate.getFullYear() - minAge;
-
-    const minDate = new Date(minYear, currentDate.getMonth(), currentDate.getDate());
-    const maxDate = new Date(maxYear, currentDate.getMonth(), currentDate.getDate());
-
-    // Get total count first (for pagination)
-    const totalCount = await prisma.userMatches.count({
-        where: {
-            recipientId: userId,
-            status: 'pending',
-            users_userMatches_userIdTousers: {
-                dateOfBirth: {
-                    gte: minDate,
-                    lte: maxDate
-                }
-            }
-        }
-    });
-
-    // Calculate page count
-    const pageCount = Math.ceil(totalCount / pageSize);
+    pageSize: number = 60
+): Promise<{ hasMore: boolean; likes: UserPreview[] }> {
 
     // Apply sorting
     let orderBy: any = {};
     switch (sortBy) {
-        case LikesSortBy.Newest:
-            orderBy = { users_userMatches_userIdTousers: { createdAt: 'desc' } };
-            break;
-        case LikesSortBy.Age:
-            orderBy = { users_userMatches_userIdTousers: { dateOfBirth: 'desc' } };
+        case LikesSortBy.ReceivedAt:
+            orderBy = { createdAt: 'desc' };
             break;
         case LikesSortBy.LastActive:
-        default:
             orderBy = { users_userMatches_userIdTousers: { lastActiveAt: 'desc' } };
+            break;
+        case LikesSortBy.Newest:
+        default:
+            orderBy = { users_userMatches_userIdTousers: { createdAt: 'desc' } };
             break;
     }
 
@@ -714,13 +686,7 @@ export async function getUserLikes(
     const matches = await prisma.userMatches.findMany({
         where: {
             recipientId: userId,
-            status: 'pending',
-            users_userMatches_userIdTousers: {
-                dateOfBirth: {
-                    gte: minDate,
-                    lte: maxDate
-                }
-            }
+            status: 'pending'
         },
         include: {
             users_userMatches_userIdTousers: true
@@ -729,6 +695,8 @@ export async function getUserLikes(
         skip: (page - 1) * pageSize,
         take: pageSize
     });
+
+    const hasMore = matches.length === pageSize;
 
     // Map the matches to user preview objects
     const likes = matches.map(match => {
@@ -755,7 +723,7 @@ export async function getUserLikes(
         } as UserPreview;
     });
 
-    return { likes, totalCount, pageCount };
+    return { hasMore, likes };
 }
 
 /**

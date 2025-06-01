@@ -1,6 +1,6 @@
 import { SearchFromOrigin, User } from "@/types";
 import { businessConfig } from "@/config/business";
-import { SearchParameters, SearchSortBy } from "@/types/search-parameters.interface";
+import { SearchSortBy } from "@/types/search-parameters.interface";
 import moment from "moment";
 import _ from "lodash";
 import { LocalityViewport } from "@/types/locality-viewport.interface";
@@ -13,43 +13,31 @@ import { SearchResponse } from "@/types/search-response.interface";
  * @param currentUser
  * @param params
  */
-export async function searchUsers(currentUser: Pick<User, 'id' | 'locationViewport' | 'country' | 'seekingMaxDistance' | 'gender'>, params: SearchParameters): Promise<SearchResponse> {
+export async function searchUsers(currentUser: Omit<User, 'password'>, params: { page?: number, sortBy?: SearchSortBy }): Promise<SearchResponse> {
     const pageSize = businessConfig.search.pageSize;
-
-    const {
-        page,
-        seekingMinHeight,
-        seekingMaxHeight,
-        seekingMaxAge,
-        seekingMinAge,
-        seekingMaxDistance,
-        seekingDistanceOrigin,
-        searchFromLocation,
-        seekingGender,
-        sortBy
-    } = params;
+    const { page, sortBy } = params;
 
     const offset = ((page || 1) - 1) * pageSize;
-    const minDateOfBirth = moment().subtract(seekingMaxAge || businessConfig.defaults.maxAge, 'years').format('YYYY-MM-DD');
-    const maxDateOfBirth = moment().subtract(seekingMinAge || businessConfig.defaults.minAge, 'years').format('YYYY-MM-DD');
+    const minDateOfBirth = moment().subtract(currentUser.seekingMaxAge || businessConfig.defaults.maxAge, 'years').format('YYYY-MM-DD');
+    const maxDateOfBirth = moment().subtract(currentUser.seekingMinAge || businessConfig.defaults.minAge, 'years').format('YYYY-MM-DD');
     let locationSearchClause: string = '';
     let countrySearchClause: string = '';
 
     // Handle geo-bounding box queries
-    if ((seekingDistanceOrigin === SearchFromOrigin.CurrentLocation && currentUser.locationViewport) || seekingDistanceOrigin === SearchFromOrigin.SingleLocation) {
-        let viewport = seekingDistanceOrigin === SearchFromOrigin.CurrentLocation ? currentUser.locationViewport : searchFromLocation?.selected_location?.viewport;
-        const country = searchFromLocation?.selected_country || currentUser.country!;
+    if ((currentUser.seekingDistanceOrigin === SearchFromOrigin.CurrentLocation && currentUser.locationViewport) || currentUser.seekingDistanceOrigin === SearchFromOrigin.SingleLocation) {
+        let viewport = currentUser.seekingDistanceOrigin === SearchFromOrigin.CurrentLocation ? currentUser.locationViewport : currentUser.singleSearchLocation?.selectedLocation?.viewport;
+        const country = currentUser.singleSearchLocation?.selectedCountry || currentUser.country!;
         countrySearchClause = `AND U."country" = '${country}'`;
 
         if (viewport) {
-            viewport = expandViewport(viewport, seekingMaxDistance || currentUser.seekingMaxDistance);
+            viewport = expandViewport(viewport, currentUser.seekingMaxDistance || businessConfig.defaults.maxDistance);
             locationSearchClause = `AND ST_INTERSECTS(U."geoPoint", ST_MakeEnvelope(${viewport.low.longitude}, ${viewport.low.latitude}, ${viewport.high.longitude}, ${viewport.high.latitude}, 4326)::geography)`;
         }
     }
 
     // Handle multiple countries search
-    if (seekingDistanceOrigin === SearchFromOrigin.MultipleCountries && params.seekingCountries?.length) {
-        countrySearchClause = `AND U."country" IN (${params.seekingCountries.map(c => `'${c}'`).join(',')})`;
+    if (currentUser.seekingDistanceOrigin === SearchFromOrigin.MultipleCountries && currentUser.seekingCountries?.length) {
+        countrySearchClause = `AND U."country" IN (${currentUser.seekingCountries.map(c => `'${c}'`).join(',')})`;
     }
 
     if (!countrySearchClause) {
@@ -68,12 +56,11 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'locationViewpo
         "wantsChildren",
         "education",
         "smoking",
-        "drinking",
-        "seekingCountries"
+        "drinking"
     ];
 
     for (const searchPreferenceLabel of searchPreferenceLabels) {
-        const predicate = createEnumeratedPredicate(searchPreferenceLabel, _.get(params, searchPreferenceLabel));
+        const predicate = createEnumeratedPredicate(searchPreferenceLabel, currentUser);
         if (!predicate) continue;
 
         enumeratedQueries.push(`AND ${predicate}`);
@@ -96,15 +83,16 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'locationViewpo
             WHERE U."deactivatedAt" IS NULL
               AND U."suspendedAt" IS NULL
               AND U."isUnderReview" = 0
+              AND U."id" != ${currentUser.id}
               AND NOT EXISTS (SELECT 1 FROM "blockedUsers" WHERE "userId" = U."id" AND "blockedUserId" = ${currentUser.id})
               ${countrySearchClause}
               ${locationSearchClause}
-              AND U."gender" = '${seekingGender}'
+              AND U."gender" = '${currentUser.seekingGender}'
               AND U."seekingGender" = '${currentUser.gender}'
-              AND U."height" BETWEEN ${seekingMinHeight || businessConfig.defaults.minHeight} AND ${seekingMaxHeight || businessConfig.defaults.maxHeight}
+              AND U."height" BETWEEN ${currentUser.seekingMinHeight || businessConfig.defaults.minHeight} AND ${currentUser.seekingMaxHeight || businessConfig.defaults.maxHeight}
               AND U."dateOfBirth" BETWEEN '${minDateOfBirth}' AND '${maxDateOfBirth}'
               ${enumeratedQueries.join("\n")}
-            ORDER BY U."${resolveSearchSortBy(sortBy)}" DESC LIMIT ${pageSize} OFFSET ${offset})
+            ORDER BY U."${resolveSearchSortBy(sortBy || SearchSortBy.LastActive)}" DESC LIMIT ${pageSize} OFFSET ${offset})
 
         SELECT
             SU.*,
@@ -116,10 +104,14 @@ export async function searchUsers(currentUser: Pick<User, 'id' | 'locationViewpo
             (UM."status" = 'pending' AND UM."recipientId" = ${currentUser.id}) AS "theyLikedMe"
         FROM SelectedUsers SU
             LEFT JOIN "userMatches" UM ON (UM."userId" = ${currentUser.id} AND UM."recipientId" = SU.id) OR (UM."userId" = SU.id AND UM."recipientId" = ${currentUser.id})
-            LEFT JOIN "blockedUsers" BU ON BU."userId" = ${currentUser.id} AND BU."blockedUserId" = SU.id
-    `);
+            LEFT JOIN "blockedUsers" BU ON BU."userId" = ${currentUser.id} AND BU."blockedUserId" = SU.id`);
 
-    return { hasError: false, searchResults: searchResults.rows.map((row: any) => prepareUser(row)), hasNextPage: searchResults.rowCount === pageSize }
+    return {
+        hasError: false,
+        searchResults: searchResults.rows.map((row: any) => prepareUser(row)),
+        hasNextPage: searchResults.rowCount === pageSize,
+        currentUser
+    }
 }
 
 function resolveSearchSortBy(sortBy: SearchSortBy) {
@@ -147,20 +139,33 @@ function resolveSearchSortBy(sortBy: SearchSortBy) {
  * @param field
  * @param values
  */
-function createEnumeratedPredicate(field: string, values?: string[]) {
+function createEnumeratedPredicate(field: string, user: Omit<User, 'password'>) {
+    const prefLookup = {
+        "bodyType": "bodyTypePreferences",
+        "languages": "languagePreferences",
+        "ethnicities": "ethnicPreferences",
+        "religions": "religiousPreferences",
+        "interests": "interestPreferences",
+        "maritalStatus": "maritalStatusPreferences",
+        "smoking": "smokingPreferences",
+        "drinking": "drinkingPreferences"
+    };
+
+    const values = _.get(user, prefLookup[field as keyof typeof prefLookup]);
+
     if (!values || values.length === 0) {
         return '';
     }
 
     if (['languages', 'ethnicities', 'religions', 'interests'].includes(field)) {
-        return `"${field}" ?| ARRAY[${values.map(v => `'${v}'`).join(',')}]`;
+        return `"${field}" ?| ARRAY[${values.map((v: string) => `'${v}'`).join(',')}]`;
     }
 
     if (values.length === 1) {
         return `"${field}" = '${values[0]}'`;
     }
 
-    return `"${field}" IN (${values.map(v => `'${v}'`).join(',')})`
+    return `"${field}" IN (${values.map((v: string) => `'${v}'`).join(',')})`
 }
 
 /**
@@ -199,27 +204,6 @@ function expandViewport(viewport: LocalityViewport, distanceKm: number): Localit
 export async function createSearchPromise(currentUser: User, searchParams: { page?: number, sortBy?: SearchSortBy }) {
     return searchUsers(currentUser, {
         page: Number(searchParams?.page || 1),
-        seekingMinAge: currentUser.seekingMinAge || businessConfig.defaults.minAge,
-        seekingMaxAge: currentUser.seekingMaxAge || businessConfig.defaults.maxAge,
-        seekingMinHeight: currentUser.seekingMinHeight || businessConfig.defaults.minHeight,
-        seekingMaxHeight: currentUser.seekingMaxHeight || businessConfig.defaults.maxHeight,
-        numberOfPhotos: currentUser.seekingNumOfPhotos || businessConfig.defaults.numOfPhotos,
-        ethnicities: currentUser.ethnicPreferences,
-        religions: currentUser.religiousPreferences,
-        languages: currentUser.languagePreferences,
-        interests: currentUser.interestPreferences,
-        maritalStatus: currentUser.maritalStatusPreferences,
-        bodyType: currentUser.bodyTypePreferences,
-        hasChildren: currentUser.hasChildrenPreferences,
-        wantsChildren: currentUser.wantsChildrenPreferences,
-        education: currentUser.educationPreferences,
-        smoking: currentUser.smokingPreferences,
-        drinking: currentUser.drinkingPreferences,
-        seekingCountries: currentUser.seekingCountries,
-        seekingDistanceOrigin: currentUser.seekingDistanceOrigin as SearchFromOrigin,
-        seekingMaxDistance: currentUser.seekingMaxDistance,
-        seekingGender: currentUser.seekingGender || "",
         sortBy: searchParams?.sortBy || SearchSortBy.LastActive,
-        searchFromLocation: currentUser.seekingDistanceOrigin === SearchFromOrigin.SingleLocation ? currentUser.singleSearchLocation : undefined
     });
 }

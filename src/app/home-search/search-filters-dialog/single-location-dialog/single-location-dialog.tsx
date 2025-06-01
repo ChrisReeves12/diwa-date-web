@@ -92,10 +92,10 @@ export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleS
                                         if (locality) {
                                             setSingleSearchLocation((prevState) => {
                                                 return ({
-                                                    max_distance: prevState?.max_distance || _.toPairs(businessConfig.options.distance)[0][0].toString(),
-                                                    selected_location: locality,
-                                                    selected_country: locality.country,
-                                                    region_viewport: {
+                                                    maxDistance: prevState?.maxDistance || _.toPairs(businessConfig.options.distance)[0][0].toString(),
+                                                    selectedLocation: locality,
+                                                    selectedCountry: locality.country,
+                                                    regionViewport: {
                                                         high: {
                                                             latitude: countryBounds!.getNorthEast().lat(),
                                                             longitude: countryBounds!.getNorthEast().lng()
@@ -114,13 +114,13 @@ export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleS
                                     <button onClick={() => {
                                         setSingleSearchLocation((prevState) => {
                                             return ({
-                                                max_distance: prevState?.max_distance || _.toPairs(businessConfig.options.distance)[0][0].toString(),
-                                                selected_location: {
+                                                maxDistance: prevState?.maxDistance || _.toPairs(businessConfig.options.distance)[0][0].toString(),
+                                                selectedLocation: {
                                                     name: 'All Localities',
                                                     country: singleLocationCountry
                                                 },
-                                                selected_country: singleLocationCountry,
-                                                region_viewport: {
+                                                selectedCountry: singleLocationCountry,
+                                                regionViewport: {
                                                     high: {
                                                         latitude: countryBounds!.getNorthEast().lat(),
                                                         longitude: countryBounds!.getNorthEast().lng()
@@ -139,7 +139,7 @@ export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleS
                                 singleSearchLocation={singleSearchLocation}
                                 onRemove={() => setSingleSearchLocation(undefined)}
                             />}
-                        {singleSearchLocation && singleSearchLocation.selected_location.name !== 'All Localities' &&
+                        {singleSearchLocation && singleSearchLocation.selectedLocation.name !== 'All Localities' &&
                             <div className="input-container max-distance-container">
                                 <label>Maximum Distance From Location</label>
                                 <select onChange={(e) => {
@@ -147,7 +147,7 @@ export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleS
                                     if (singleSearchLocation) {
                                         setSingleSearchLocation({
                                             ...singleSearchLocation,
-                                            ...{ max_distance: e.target.value.toString() }
+                                            ...{ maxDistance: e.target.value.toString() }
                                         });
                                     }
                                 }} value={singleLocationDistance} className="location-distance">
@@ -164,7 +164,7 @@ export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleS
                                     // @ts-expect-error ad-hoc object composition
                                     onUpdate({
                                         ...(singleSearchLocation || {}),
-                                        ...{ max_distance: singleLocationDistance }
+                                        ...{ maxDistance: singleLocationDistance }
                                     });
                                     onClose();
                                 }}

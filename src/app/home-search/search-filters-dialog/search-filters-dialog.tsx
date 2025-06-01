@@ -2,7 +2,7 @@ import HeightRangeSelect from '@/common/height-range-select/height-range-select'
 import './search-filters-dialog.scss';
 import AgeRangeSelect from "@/common/age-range-select/age-range-select";
 import { businessConfig } from '@/config/business';
-import _, { set } from 'lodash';
+import _ from 'lodash';
 import { SearchFromOrigin, User } from '@/types/user.interface';
 import { useState } from 'react';
 import { Modal } from '@mui/material';
@@ -22,7 +22,7 @@ import { SearchSortBy } from '@/types/search-parameters.interface';
 import { SearchResponse } from "@/types/search-response.interface";
 
 interface SearchFiltersDialogProps {
-    currentUser: User;
+    currentUser: Omit<User, 'password'>;
     onApply: (searchResponse: SearchResponse) => void;
     onClose: () => void;
 }
@@ -54,7 +54,6 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
     const [isSaving, setIsSaving] = useState<boolean>(false);
 
     const searchSortBy = (searchParams.get('sortBy') || SearchSortBy.LastActive) as SearchSortBy;
-    const page = Number(searchParams.get('page')) || 1;
 
     const onSubmit = () => {
         // Validate that a location is selected if SingleLocation is chosen
@@ -92,7 +91,7 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
             seekingDistanceOrigin: seekingDistanceOrigin,
             seekingMaxDistance: seekingMaxDistance,
             searchFromLocation: seekingDistanceOrigin === SearchFromOrigin.SingleLocation ? singleSearchLocation : undefined
-        }, page, searchSortBy).then((searchResponse) => {
+        }, searchSortBy).then((searchResponse) => {
             onApply(searchResponse);
             onClose();
         }).catch((error) => {
@@ -127,7 +126,10 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                         <div className="inline-form-container">
                             <span className="label">Has at least </span>
                             <select value={seekingNumOfPhotos} onChange={(e) => setSeekingNumOfPhotos(Number(e.target.value))} className="photo-count">
-                                {_.range(1, businessConfig.defaults.numOfPhotos + 1).map((num) => <option key={num} value={num}>{num}</option>)}
+                                {Object.entries(businessConfig.options.numberOfPhotos).map(([value, label]) => (
+                                    <option key={value} value={value}>
+                                        {label}
+                                    </option>))}
                             </select>
                             <span className="label">photos</span>
                         </div>

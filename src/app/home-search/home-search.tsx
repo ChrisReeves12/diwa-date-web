@@ -25,12 +25,13 @@ function SearchErrorDisplay() {
     );
 }
 
-function SearchResultsView({currentUser, searchPromise}: {
-    currentUser: User,
+function SearchResultsView({ currentUser: initialCurrentUser, searchPromise }: {
+    currentUser: Omit<User, 'password'>,
     searchPromise: Promise<SearchResponse>
 }) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const [currentUser, setCurrentUser] = useState(initialCurrentUser);
     const [isSearchFiltersModalOpen, setIsSearchFiltersModalOpen] = useState<boolean>(false);
     const [seekingMinAge, setSeekingMinAge] = useState<number>(currentUser.seekingMinAge || businessConfig.defaults.minAge);
     const [seekingMaxAge, setSeekingMaxAge] = useState<number>(currentUser.seekingMaxAge || businessConfig.defaults.maxAge);
@@ -61,7 +62,7 @@ function SearchResultsView({currentUser, searchPromise}: {
     const searchResponse = updatedSearchResponse || use(searchPromise);
     if (searchResponse.hasError) {
         return (
-            <SearchErrorDisplay/>
+            <SearchErrorDisplay />
         );
     }
 
@@ -84,11 +85,20 @@ function SearchResultsView({currentUser, searchPromise}: {
                                             updateUserSearchPreferences({
                                                 seekingMinAge: newValues.minAge,
                                                 seekingMaxAge: newValues.maxAge
-                                            }, page, searchSortBy)
-                                                .then((searchResponse) => setUpdatedSearchResponse(searchResponse))
+                                            }, searchSortBy)
+                                                .then((searchResponse) => {
+                                                    const params = new URLSearchParams(searchParams.toString());
+                                                    if (params.get('page') !== '1') {
+                                                        params.set('page', '1');
+                                                        history.pushState({}, '', `?${params.toString()}`);
+                                                    }
+
+                                                    setUpdatedSearchResponse(searchResponse);
+                                                    setCurrentUser(searchResponse!.currentUser);
+                                                })
                                                 .catch(() => {
                                                     alert('An error occurred while updating search preferences.');
-                                            }).finally(() => setIsUpdatingSearchResults(false));
+                                                }).finally(() => setIsUpdatingSearchResults(false));
                                         }}
                                     />
                                 </div>
@@ -97,11 +107,11 @@ function SearchResultsView({currentUser, searchPromise}: {
                                 <label>Order By</label>
                                 <div className="input-container">
                                     <select value={searchSortBy}
-                                            onChange={(e) => {
-                                                const params = new URLSearchParams(searchParams.toString());
-                                                params.set('sortBy', e.target.value);
-                                                history.pushState({}, '', `?${params.toString()}`);
-                                            }} className="order-by">
+                                        onChange={(e) => {
+                                            const params = new URLSearchParams(searchParams.toString());
+                                            params.set('sortBy', e.target.value);
+                                            history.pushState({}, '', `?${params.toString()}`);
+                                        }} className="order-by">
                                         <option value={SearchSortBy.LastActive}>Last Active</option>
                                         <option value={SearchSortBy.Newest}>Newest Member</option>
                                         <option value={SearchSortBy.Age}>Age</option>
@@ -111,7 +121,7 @@ function SearchResultsView({currentUser, searchPromise}: {
                             </div>
                         </div>
                         <button onClick={() => setIsSearchFiltersModalOpen(true)}
-                                className="search-filters-button">Search Filters
+                            className="search-filters-button">Search Filters
                         </button>
                     </div>
                     <div className="paginator-section">
@@ -130,12 +140,12 @@ function SearchResultsView({currentUser, searchPromise}: {
                     </div>
                 </div>
                 <div className="search-results-section">
-                    {isUpdatingSearchResults && <CenterScreenLoader/>}
+                    {isUpdatingSearchResults && <CenterScreenLoader />}
                     {searchResponse.searchResults.length === 0 ?
                         <h3 className="no-results-label">No results found.</h3> :
                         searchResponse.searchResults.map((userPreview) =>
                             <UserProfilePreview isInactive={isUpdatingSearchResults} type="search" userPreview={userPreview}
-                                                key={userPreview.id.toString()}/>
+                                key={userPreview.id.toString()} />
                         )
                     }
                 </div>
@@ -156,16 +166,25 @@ function SearchResultsView({currentUser, searchPromise}: {
                     overflowY: 'auto',
                     overflowX: 'hidden'
                 }}><SearchFiltersDialog
-                    onApply={(searchResponse) => setUpdatedSearchResponse(searchResponse)}
-                    onClose={() => setIsSearchFiltersModalOpen(false)}
-                    currentUser={currentUser}/>
+                        onApply={(searchResponse) => {
+                            const params = new URLSearchParams(searchParams.toString());
+                            if (params.get('page') !== '1') {
+                                params.set('page', '1');
+                                history.pushState({}, '', `?${params.toString()}`);
+                            }
+
+                            setUpdatedSearchResponse(searchResponse);
+                            setCurrentUser(searchResponse.currentUser);
+                        }}
+                        onClose={() => setIsSearchFiltersModalOpen(false)}
+                        currentUser={currentUser} />
                 </Box>
             </Modal>
         </>
     );
 }
 
-export default function HomeSearch({currentUser, searchPromise, notificationsPromise}: {
+export default function HomeSearch({ currentUser, searchPromise, notificationsPromise }: {
     currentUser: User,
     searchPromise: Promise<SearchResponse>,
     notificationsPromise: Promise<NotificationCenterData>
@@ -176,9 +195,9 @@ export default function HomeSearch({currentUser, searchPromise, notificationsPro
             currentUser={currentUser}
             notificationsPromise={notificationsPromise}
         >
-            <Suspense fallback={<CenterScreenLoader/>}>
+            <Suspense fallback={<CenterScreenLoader />}>
                 <SearchResultsView currentUser={currentUser}
-                                   searchPromise={searchPromise}/>
+                    searchPromise={searchPromise} />
             </Suspense>
         </DashboardWrapper>
     );

@@ -9,7 +9,6 @@ export enum SearchSortBy {
 }
 
 export interface SearchParameters {
-    page?: number;
     seekingMinAge?: number;
     seekingMaxAge?: number;
     seekingMinHeight?: number;
@@ -29,7 +28,5 @@ export interface SearchParameters {
     seekingCountries?: string[];
     seekingDistanceOrigin: SearchFromOrigin;
     seekingMaxDistance?: number;
-    seekingGender: string;
-    sortBy: SearchSortBy,
     searchFromLocation?: SingleSearchLocation
 }

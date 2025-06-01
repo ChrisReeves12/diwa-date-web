@@ -1,5 +1,5 @@
 export enum LikesSortBy {
+    ReceivedAt = "receivedAt",
     LastActive = "lastActive",
-    Newest = "newest",
-    Age = "age"
+    Newest = "newestMember"
 }

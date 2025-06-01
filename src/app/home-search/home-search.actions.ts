@@ -19,16 +19,15 @@ export async function getUpdatedSearchResults(page: number, sortBy: SearchSortBy
         redirect('/');
     }
 
-    return createSearchPromise(currentUser, {page, sortBy});
+    return createSearchPromise(currentUser, { page, sortBy });
 }
 
 /**
  * Updates user's search preferences
  * @param searchPrefs
- * @param page
  * @param sortBy
  */
-export async function updateUserSearchPreferences(searchPrefs: Partial<SearchParameters>, page: number, sortBy: SearchSortBy) {
+export async function updateUserSearchPreferences(searchPrefs: Partial<SearchParameters>, sortBy: SearchSortBy) {
     try {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
@@ -62,9 +61,10 @@ export async function updateUserSearchPreferences(searchPrefs: Partial<SearchPar
             }
         });
 
+
         const refreshedUser = await getCurrentUser(await cookies());
 
-        return createSearchPromise(refreshedUser!, {page, sortBy});
+        return createSearchPromise(refreshedUser!, { page: 1, sortBy });
     } catch (err: any) {
         logError(err);
         throw err;

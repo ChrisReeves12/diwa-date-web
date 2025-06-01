@@ -26,26 +26,20 @@ export default async function LikesPage({
 
     const lSearchParams = await searchParams;
 
-    // Get filter parameters from URL query
-    const minAge = Number(lSearchParams.minAge) || currentUser.seekingMinAge || 18;
-    const maxAge = Number(lSearchParams.maxAge) || currentUser.seekingMaxAge || 99;
     const sortBy = (lSearchParams.sortBy as LikesSortBy) || LikesSortBy.LastActive;
     const page = Number(lSearchParams.page) || 1;
 
     const notificationsPromise = createNotificationCenterDataPromise(currentUser);
     const getLikesPromise = getUserLikes(
         Number(currentUser.id),
-        minAge,
-        maxAge,
         sortBy,
-        page,
-        10
+        page
     );
 
     return (
         <LikesView
             likesPromise={getLikesPromise}
             currentUser={currentUser}
-            notificationsPromise={notificationsPromise}/>
+            notificationsPromise={notificationsPromise} />
     );
 }

@@ -7,10 +7,7 @@ import { NotificationCenterData } from "@/types/notification-center-data.interfa
 import { UserPreview } from "@/types/user-preview.interface";
 import UserProfilePreview from "@/common/user-profile-preview/user-profile-preview";
 import { InfoCircleIcon } from "react-line-awesome";
-import AgeRangeSelect from "@/common/age-range-select/age-range-select";
 import { useRouter, useSearchParams } from "next/navigation";
-import { businessConfig } from "@/config/business";
-import { Pagination } from "@mui/material";
 import { getLikes } from "./likes.actions";
 import './likes.scss';
 import { LikesSortBy } from "@/types/likes-sort-by.enum";
@@ -18,7 +15,7 @@ import { LikesSortBy } from "@/types/likes-sort-by.enum";
 interface LikesViewProps {
     currentUser: User,
     notificationsPromise: Promise<NotificationCenterData>,
-    likesPromise: Promise<{ likes: UserPreview[], totalCount: number, pageCount: number }>
+    likesPromise: Promise<{ hasMore: boolean; likes: UserPreview[] }>
 }
 
 function LikesListing({ currentUser, likesPromise }: Omit<LikesViewProps, "notificationsPromise">) {
@@ -26,15 +23,13 @@ function LikesListing({ currentUser, likesPromise }: Omit<LikesViewProps, "notif
     const searchParams = useSearchParams();
     const initialLikesData = use(likesPromise);
 
-    const [likesData, setLikesData] = useState(initialLikesData);
+    const [likes, setLikes] = useState(initialLikesData.likes);
+    const [hasMore, setHasMore] = useState(initialLikesData.hasMore);
     const [isLoading, setIsLoading] = useState(false);
 
     // Get filter values from URL or use defaults
     const sortBy = (searchParams.get('sortBy') as LikesSortBy) || LikesSortBy.LastActive;
-    // const sortBy = 'lastActive' as LikesSortBy.LastActive;
     const page = Number(searchParams.get('page')) || 1;
-    const minAge = Number(searchParams.get('minAge')) || currentUser.seekingMinAge || businessConfig.defaults.minAge;
-    const maxAge = Number(searchParams.get('maxAge')) || currentUser.seekingMaxAge || businessConfig.defaults.maxAge;
 
     // Fetch likes when filter parameters change
     useEffect(() => {
@@ -42,13 +37,12 @@ function LikesListing({ currentUser, likesPromise }: Omit<LikesViewProps, "notif
             setIsLoading(true);
             try {
                 const updatedLikes = await getLikes({
-                    minAge,
-                    maxAge,
                     sortBy,
-                    page,
-                    pageSize: 10
+                    page
                 });
-                setLikesData(updatedLikes);
+
+                setLikes(updatedLikes.likes);
+                setHasMore(updatedLikes.hasMore);
             } catch (error) {
                 console.error("Error fetching likes:", error);
             } finally {
@@ -60,16 +54,7 @@ function LikesListing({ currentUser, likesPromise }: Omit<LikesViewProps, "notif
         if (initialLikesData && searchParams.toString()) {
             fetchFilteredLikes();
         }
-    }, [sortBy, page, minAge, maxAge, searchParams]);
-
-    // Handle age filter change
-    const handleAgeFilterChange = (newValues: { minAge: number, maxAge: number }) => {
-        const params = new URLSearchParams(searchParams.toString());
-        params.set('minAge', newValues.minAge.toString());
-        params.set('maxAge', newValues.maxAge.toString());
-        params.set('page', '1'); // Reset to page 1 when filters change
-        router.push(`?${params.toString()}`);
-    };
+    }, [sortBy, page, searchParams]);
 
     // Handle sort change
     const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -79,8 +64,9 @@ function LikesListing({ currentUser, likesPromise }: Omit<LikesViewProps, "notif
     };
 
     // Handle pagination change
-    const handlePageChange = (_: React.ChangeEvent<unknown>, newPage: number) => {
+    const handlePageChange = (direction: 'prev' | 'next') => {
         const params = new URLSearchParams(searchParams.toString());
+        const newPage = direction === 'next' ? page + 1 : page - 1;
         params.set('page', newPage.toString());
         router.push(`?${params.toString()}`);
     };
@@ -91,40 +77,32 @@ function LikesListing({ currentUser, likesPromise }: Omit<LikesViewProps, "notif
                 <div className="filter-section">
                     <div className="age-order-by-container">
                         <div className="filter">
-                            <label>Age</label>
-                            <div className="input-container">
-                                <AgeRangeSelect
-                                    minAge={minAge}
-                                    maxAge={maxAge}
-                                    onChange={handleAgeFilterChange}
-                                />
-                            </div>
-                        </div>
-                        <div className="filter">
                             <label>Order By</label>
                             <div className="input-container">
                                 <select
                                     value={sortBy}
                                     onChange={handleSortChange}
                                     className="order-by">
-                                    <option value={LikesSortBy.LastActive}>Last Active</option>
-                                    <option value={LikesSortBy.Newest}>Newest</option>
-                                    <option value={LikesSortBy.Age}>Age</option>
+                                    <option value={LikesSortBy.ReceivedAt}>Received By</option>
+                                    <option value={LikesSortBy.LastActive}>LastActive</option>
+                                    <option value={LikesSortBy.Newest}>Newest Member</option>
                                 </select>
                             </div>
                         </div>
                     </div>
                 </div>
-                {likesData.totalCount > 0 && (
-                    <div className="paginator-section">
-                        <Pagination
-                            color={'primary'}
-                            count={likesData.pageCount}
-                            onChange={handlePageChange}
-                            page={page}
-                        />
-                    </div>
-                )}
+                <div className="paginator-section">
+                    {page > 1 && (
+                        <button onClick={() => handlePageChange('prev')}>
+                            Previous Page
+                        </button>
+                    )}
+                    {hasMore && (
+                        <button onClick={() => handlePageChange('next')}>
+                            Next Page
+                        </button>
+                    )}
+                </div>
             </div>
 
             {isLoading ? (
@@ -133,10 +111,10 @@ function LikesListing({ currentUser, likesPromise }: Omit<LikesViewProps, "notif
                 </div>
             ) : (
                 <div className="user-likes-listing-container">
-                    {likesData.likes.length === 0 &&
+                    {likes.length === 0 &&
                         <div className="no-likes-notice"><InfoCircleIcon /> You have no likes at this time.</div>}
 
-                    {likesData.likes.map((user: UserPreview) =>
+                    {likes.map((user: UserPreview) =>
                         <UserProfilePreview key={user.id} userPreview={user} type={'like'} />)}
                 </div>
             )}

@@ -16,16 +16,16 @@ export default function MultiCountrySelect({ selectedCountries = [], onUpdate, o
     const [selected, setSelected] = useState<string[]>(selectedCountries || []);
     const [error, setError] = useState<string | null>(null);
 
-    const handleToggleCountry = (countryCode: string) => {
-        if (selected.includes(countryCode)) {
-            setSelected(selected.filter(c => c !== countryCode));
+    const handleToggleCountry = (countryName: string) => {
+        if (selected.includes(countryName)) {
+            setSelected(selected.filter(c => c !== countryName));
             setError(null);
         } else {
             if (selected.length >= MAX_COUNTRIES) {
                 setError(`You can only select up to ${MAX_COUNTRIES} countries`);
                 return;
             }
-            setSelected([...selected, countryCode]);
+            setSelected([...selected, countryName]);
             setError(null);
         }
     };
@@ -63,9 +63,9 @@ export default function MultiCountrySelect({ selectedCountries = [], onUpdate, o
                         {countries.map((country) => (
                             <div
                                 key={country.code}
-                                className={`country-item ${selected.includes(country.code) ? 'selected' : ''} ${selected.length >= MAX_COUNTRIES && 
-                                    !selected.includes(country.code) ? 'disabled' : ''}`}
-                                onClick={() => handleToggleCountry(country.code)}
+                                className={`country-item ${selected.includes(country.name) ? 'selected' : ''} ${selected.length >= MAX_COUNTRIES && 
+                                    !selected.includes(country.name) ? 'disabled' : ''}`}
+                                onClick={() => handleToggleCountry(country.name)}
                             >
                                 {country.name}
                             </div>

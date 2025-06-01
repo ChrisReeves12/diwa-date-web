@@ -15,6 +15,15 @@ export const businessConfig = {
     },
 
     options: {
+        numberOfPhotos: {
+            3: '3+',
+            4: '4+',
+            5: '5+',
+            6: '6+',
+            7: '7+',
+            8: '8+'
+        },
+
         bodyTypes: {
             slim: 'Slim',
             athletic: 'Athletic',
@@ -24,9 +33,9 @@ export const businessConfig = {
         },
 
         searchFromLocationTypes: {
-            current_location: 'Current Location',
-            single_location: 'Single Location',
-            multiple_countries: 'Multiple Countries'
+            currentLocation: 'Current Location',
+            singleLocation: 'Single Location',
+            multipleCountries: 'Multiple Countries'
         },
 
         religions: {
