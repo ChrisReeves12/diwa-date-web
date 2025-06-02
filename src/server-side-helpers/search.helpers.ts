@@ -92,7 +92,7 @@ export async function searchUsers(currentUser: Omit<User, 'password'>, params: {
               AND U."height" BETWEEN ${currentUser.seekingMinHeight || businessConfig.defaults.minHeight} AND ${currentUser.seekingMaxHeight || businessConfig.defaults.maxHeight}
               AND U."dateOfBirth" BETWEEN '${minDateOfBirth}' AND '${maxDateOfBirth}'
               ${enumeratedQueries.join("\n")}
-            ORDER BY U."${resolveSearchSortBy(sortBy || SearchSortBy.LastActive)}" DESC LIMIT ${pageSize} OFFSET ${offset})
+            ORDER BY ${resolveSearchSortBy(sortBy || SearchSortBy.LastActive)} LIMIT ${pageSize} OFFSET ${offset})
 
         SELECT
             SU.*,
@@ -117,19 +117,19 @@ export async function searchUsers(currentUser: Omit<User, 'password'>, params: {
 function resolveSearchSortBy(sortBy: SearchSortBy) {
     switch (sortBy) {
         case SearchSortBy.Age: {
-            return 'dateOfBirth';
+            return 'U."dateOfBirth" DESC, U."lastActiveAt" DESC';
         }
 
         case SearchSortBy.Newest: {
-            return 'createdAt';
+            return 'U."createdAt" DESC, U."lastActiveAt" DESC';
         }
 
         case SearchSortBy.NumberOfPhotos: {
-            return 'numOfPhotos';
+            return 'U."numOfPhotos" DESC, U."lastActiveAt" DESC';
         }
 
         default: {
-            return 'lastActiveAt';
+            return 'U."lastActiveAt" DESC';
         }
     }
 }

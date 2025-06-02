@@ -8,53 +8,22 @@ import { UserPreview } from "@/types/user-preview.interface";
 import UserProfilePreview from "@/common/user-profile-preview/user-profile-preview";
 import { InfoCircleIcon } from "react-line-awesome";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getLikes } from "./likes.actions";
 import './likes.scss';
 import { LikesSortBy } from "@/types/likes-sort-by.enum";
 
 interface LikesViewProps {
-    currentUser: User,
     notificationsPromise: Promise<NotificationCenterData>,
     likesPromise: Promise<{ hasMore: boolean; likes: UserPreview[] }>
 }
 
-function LikesListing({ currentUser, likesPromise }: Omit<LikesViewProps, "notificationsPromise">) {
+function LikesListing({ likesPromise }: Omit<LikesViewProps, "notificationsPromise">) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const initialLikesData = use(likesPromise);
-
-    const [likes, setLikes] = useState(initialLikesData.likes);
-    const [hasMore, setHasMore] = useState(initialLikesData.hasMore);
-    const [isLoading, setIsLoading] = useState(false);
+    const { likes, hasMore } = use(likesPromise);
 
     // Get filter values from URL or use defaults
-    const sortBy = (searchParams.get('sortBy') as LikesSortBy) || LikesSortBy.LastActive;
+    const sortBy = (searchParams.get('sortBy') as LikesSortBy) || LikesSortBy.ReceivedAt;
     const page = Number(searchParams.get('page')) || 1;
-
-    // Fetch likes when filter parameters change
-    useEffect(() => {
-        async function fetchFilteredLikes() {
-            setIsLoading(true);
-            try {
-                const updatedLikes = await getLikes({
-                    sortBy,
-                    page
-                });
-
-                setLikes(updatedLikes.likes);
-                setHasMore(updatedLikes.hasMore);
-            } catch (error) {
-                console.error("Error fetching likes:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-
-        // Only fetch if URL parameters changed after initial load
-        if (initialLikesData && searchParams.toString()) {
-            fetchFilteredLikes();
-        }
-    }, [sortBy, page, searchParams]);
 
     // Handle sort change
     const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -83,8 +52,8 @@ function LikesListing({ currentUser, likesPromise }: Omit<LikesViewProps, "notif
                                     value={sortBy}
                                     onChange={handleSortChange}
                                     className="order-by">
-                                    <option value={LikesSortBy.ReceivedAt}>Received By</option>
-                                    <option value={LikesSortBy.LastActive}>LastActive</option>
+                                    <option value={LikesSortBy.ReceivedAt}>Time Received</option>
+                                    <option value={LikesSortBy.LastActive}>Last Active</option>
                                     <option value={LikesSortBy.Newest}>Newest Member</option>
                                 </select>
                             </div>
@@ -104,20 +73,13 @@ function LikesListing({ currentUser, likesPromise }: Omit<LikesViewProps, "notif
                     )}
                 </div>
             </div>
+            <div className="user-likes-listing-container">
+                {likes.length === 0 &&
+                    <div className="no-likes-notice"><InfoCircleIcon /> You have no likes at this time.</div>}
 
-            {isLoading ? (
-                <div className="likes-loading-container">
-                    <CenterScreenLoader />
-                </div>
-            ) : (
-                <div className="user-likes-listing-container">
-                    {likes.length === 0 &&
-                        <div className="no-likes-notice"><InfoCircleIcon /> You have no likes at this time.</div>}
-
-                    {likes.map((user: UserPreview) =>
-                        <UserProfilePreview key={user.id} userPreview={user} type={'like'} />)}
-                </div>
-            )}
+                {likes.map((user: UserPreview) =>
+                    <UserProfilePreview key={user.id} userPreview={user} type={'like'} />)}
+            </div>
         </>
     );
 }
@@ -129,7 +91,7 @@ export default function LikesView({ currentUser, notificationsPromise, likesProm
             currentUser={currentUser}
             notificationsPromise={notificationsPromise}>
             <Suspense fallback={<CenterScreenLoader />}>
-                <LikesListing currentUser={currentUser} likesPromise={likesPromise} />
+                <LikesListing likesPromise={likesPromise} />
             </Suspense>
         </DashboardWrapper>
     );

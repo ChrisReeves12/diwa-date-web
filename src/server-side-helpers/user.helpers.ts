@@ -667,61 +667,52 @@ export async function getUserLikes(
     pageSize: number = 60
 ): Promise<{ hasMore: boolean; likes: UserPreview[] }> {
 
-    // Apply sorting
-    let orderBy: any = {};
+    const offset = (page - 1) * pageSize;
+
+    // Determine ORDER BY clause based on sortBy
+    let orderByClause: string;
     switch (sortBy) {
         case LikesSortBy.ReceivedAt:
-            orderBy = { createdAt: 'desc' };
+            orderByClause = 'UM."createdAt" DESC';
             break;
         case LikesSortBy.LastActive:
-            orderBy = { users_userMatches_userIdTousers: { lastActiveAt: 'desc' } };
+            orderByClause = 'U."lastActiveAt" DESC, UM."createdAt" DESC';
             break;
         case LikesSortBy.Newest:
         default:
-            orderBy = { users_userMatches_userIdTousers: { createdAt: 'desc' } };
+            orderByClause = 'U."createdAt" DESC, UM."createdAt" DESC';
             break;
     }
 
-    // Get paginated results with filtering and sorting
-    const matches = await prisma.userMatches.findMany({
-        where: {
-            recipientId: userId,
-            status: 'pending'
-        },
-        include: {
-            users_userMatches_userIdTousers: true
-        },
-        orderBy,
-        skip: (page - 1) * pageSize,
-        take: pageSize
-    });
+    const result = await pgDbPool.query(`
+        SELECT 
+            U."id",
+            U."displayName",
+            U."gender",
+            U."dateOfBirth",
+            U."lastActiveAt",
+            U."photos",
+            U."numOfPhotos",
+            U."mainPhoto",
+            U."locationName",
+            U."latitude",
+            U."longitude",
+            U."country",
+            U."createdAt",
+            UM."id" AS "matchId",
+            UM."status" AS "matchStatus",
+            UM."createdAt" AS "receivedLikeAt",
+            Calculate_Age(U."dateOfBirth") AS "age"
+        FROM "userMatches" UM
+        INNER JOIN "users" U ON U."id" = UM."userId"
+        WHERE UM."recipientId" = $1 
+          AND UM."status" = 'pending'
+        ORDER BY ${orderByClause}
+        LIMIT $2 OFFSET $3
+    `, [userId, pageSize, offset]);
 
-    const hasMore = matches.length === pageSize;
-
-    // Map the matches to user preview objects
-    const likes = matches.map(match => {
-        const user = prepareUser(match.users_userMatches_userIdTousers as any);
-        return {
-            id: Number(user.id),
-            displayName: user.displayName,
-            age: user.age,
-            gender: user.gender,
-            dateOfBirth: user.dateOfBirth,
-            lastActiveAt: user.lastActiveAt,
-            photos: user.photos,
-            numOfPhotos: user.numOfPhotos,
-            mainPhoto: user.mainPhoto,
-            publicMainPhoto: user.publicMainPhoto,
-            mainPhotoCroppedImageData: user.mainPhotoCroppedImageData,
-            locationName: user.locationName,
-            latitude: user.latitude,
-            longitude: user.longitude,
-            country: user.country,
-            createdAt: user.createdAt,
-            matchId: Number(match.id),
-            matchStatus: match.status
-        } as UserPreview;
-    });
+    const hasMore = result.rows.length === pageSize;
+    const likes = result.rows.map(row => prepareUser(row));
 
     return { hasMore, likes };
 }

@@ -83,5 +83,6 @@ export interface User {
   updatedAt?: Date;
   isUnderReview?: number;
   deactivatedAt?: Date;
+  receivedLikeAt?: Date;
 }
 
