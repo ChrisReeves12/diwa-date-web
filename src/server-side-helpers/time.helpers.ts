@@ -11,8 +11,12 @@ export function humanizeTimeDiff(date?: Date | string): string {
 
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     const now = new Date();
+
+    const utcDate = new Date(dateObj.getTime());
+    const utcNow = new Date(now.getTime());
+
     // Calculate difference in seconds
-    const diffInSeconds = Math.floor((now.getTime() - dateObj.getTime()) / 1000);
+    const diffInSeconds = Math.floor((utcNow.getTime() - utcDate.getTime()) / 1000);
 
     // If exactly now, return 'just now'
     if (diffInSeconds === 0) {
