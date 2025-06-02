@@ -218,7 +218,8 @@
             border-color: transparent transparent #d2d2d2 transparent;
           }
 
-          a, button {
+          a,
+          button {
             background: none;
             border: none;
             display: flex;
@@ -254,7 +255,8 @@
               border-color: transparent transparent #444 transparent;
             }
 
-            a, button {
+            a,
+            button {
               color: #e0e0e0;
 
               &:hover {
@@ -284,6 +286,29 @@
           i {
             font-size: 36px;
             color: globals.$primary-blue;
+          }
+        }
+
+        .match-buttons {
+          display: flex;
+          gap: 12px;
+
+          button {
+            padding: 10px;
+            border-radius: 50%;
+
+            i {
+              font-size: 24px;
+              color: white;
+            }
+
+            &.like {
+              background-color: globals.$primary-blue;
+            }
+
+            &.pass {
+              background-color: #c0c0c0;
+            }
           }
         }
       }
