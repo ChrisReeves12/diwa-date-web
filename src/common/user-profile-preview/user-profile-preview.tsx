@@ -171,10 +171,10 @@ export default function UserProfilePreview({ userPreview, type, isInactive = fal
                         <div className="info-line age">Age: {userPreview.age}</div>
                         <div className="info-line location">Location: {userPreview.locationName}</div>
                         {type === 'like' && (
-                            <div className="info-line received-on">Received {humanizeTimeDiff(userPreview.receivedLikeAt)}</div>
+                            <div className="info-line received-on">Received {userPreview.receivedLikeHumanized}</div>
                         )}
                         <div className="info-line last-active">Last
-                            Active {humanizeTimeDiff(userPreview.lastActiveAt)}</div>
+                            Active {userPreview.lastActiveHumanized}</div>
                         {userPreview.theyLikedMe && (
                             <div className="info-line they-liked-me">
                                 <HeartIcon style={{ marginRight: '4px' }} />

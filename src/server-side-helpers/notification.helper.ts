@@ -10,6 +10,7 @@ import {
 import _ from 'lodash';
 import { NotificationPendingMatch, NotificationReceivedMessage, Notification, NotificationUser } from '@/types/notification-response.interface';
 import { NotificationCenterData } from "@/types/notification-center-data.interface";
+import { humanizeTimeDiff } from "@/server-side-helpers/time.helpers";
 
 /**
  * Get pending matches for a user
@@ -109,6 +110,7 @@ export async function getPendingMatches(user: User): Promise<NotificationPending
             createdAt: pm.createdAt instanceof Date ? pm.createdAt.toISOString() : (pm.createdAt ?? ''),
             updatedAt: pm.updatedAt instanceof Date ? pm.updatedAt.toISOString() : (pm.updatedAt ?? ''),
             updatedAtTimestamp: typeof pm.updatedAtTimestamp === 'bigint' ? pm.updatedAtTimestamp.toString() : (pm.updatedAtTimestamp ?? ''),
+            receivedAtHumanized: humanizeTimeDiff(pm.createdAt),
             sender: senderForNotification // Assign the correctly shaped sender
         };
     });
@@ -172,7 +174,8 @@ export async function getReceivedMessages(user: User): Promise<NotificationRecei
                 photos: Array.isArray(m.photos) ? m.photos.map(p => appendMediaRootToImage(p)) : [],
                 publicMainPhoto: m.mainPhoto ? appendMediaRootToImageUrl(m.mainPhoto) : undefined,
                 mainPhotoCroppedImageData: getMainCroppedImageData(m),
-                msgCount: Number(m.msgCount)
+                msgCount: Number(m.msgCount),
+                sentAtHumanized: humanizeTimeDiff(m.createdAt)
             }
         };
 

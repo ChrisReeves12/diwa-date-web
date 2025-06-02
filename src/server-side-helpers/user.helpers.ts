@@ -15,6 +15,7 @@ import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adap
 import { logError } from "@/server-side-helpers/logging.helpers";
 import { LikesSortBy } from "@/types/likes-sort-by.enum";
 import pgDbPool from "@/lib/postgres";
+import { humanizeTimeDiff } from "@/server-side-helpers/time.helpers";
 
 /**
  * Get a user by their ID
@@ -176,6 +177,7 @@ export async function getUserProfileDetail(currentUserId: number, user: User) {
         ethnicityLabel: (user.ethnicities || []).map(ethnicity =>
             businessConfig.options.ethnicities[ethnicity as keyof typeof businessConfig.options.ethnicities] || ethnicity).join(', '),
         matchAcceptedAt: '',
+        lastActiveHumanized: humanizeTimeDiff(user.lastActiveAt),
         ...additionalProfileDetails
     };
 }
@@ -712,7 +714,12 @@ export async function getUserLikes(
     `, [userId, pageSize, offset]);
 
     const hasMore = result.rows.length === pageSize;
-    const likes = result.rows.map(row => prepareUser(row));
+    const likes = result.rows.map(row => {
+        const user = prepareUser(row);
+        (user as any).lastActiveHumanized = humanizeTimeDiff(user.lastActiveAt);
+        (user as any).receivedLikeHumanized = humanizeTimeDiff(user.receivedLikeAt);
+        return user;
+    });
 
     return { hasMore, likes };
 }

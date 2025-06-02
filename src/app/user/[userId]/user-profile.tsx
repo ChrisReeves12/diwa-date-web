@@ -306,7 +306,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                             </div>
                                             <div className="basic-info-line">
                                                 <div className="label">Last Active:</div>
-                                                <div className="value">{humanizeTimeDiff(userProfile.user.lastActiveAt)}</div>
+                                                <div className="value">{userProfile.lastActiveHumanized}</div>
                                             </div>
                                         </div>
 

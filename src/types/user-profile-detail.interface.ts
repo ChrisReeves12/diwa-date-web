@@ -21,4 +21,5 @@ export interface UserProfileDetail {
     ethnicityLabel: string;
     matchAcceptedAt?: string;
     suspendedAt?: Date;
+    lastActiveHumanized: string;
 }

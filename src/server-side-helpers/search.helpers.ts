@@ -7,6 +7,7 @@ import { LocalityViewport } from "@/types/locality-viewport.interface";
 import { prepareUser } from "@/server-side-helpers/user.helpers";
 import pgDbPool from "@/lib/postgres";
 import { SearchResponse } from "@/types/search-response.interface";
+import { humanizeTimeDiff } from "@/server-side-helpers/time.helpers";
 
 /**
  * Search users based on given search parameters.
@@ -108,7 +109,11 @@ export async function searchUsers(currentUser: Omit<User, 'password'>, params: {
 
     return {
         hasError: false,
-        searchResults: searchResults.rows.map((row: any) => prepareUser(row)),
+        searchResults: searchResults.rows.map((row: any) => {
+            const user = prepareUser(row);
+            (user as any).lastActiveHumanized = humanizeTimeDiff(user.lastActiveAt);
+            return user;
+        }),
         hasNextPage: searchResults.rowCount === pageSize,
         currentUser
     }

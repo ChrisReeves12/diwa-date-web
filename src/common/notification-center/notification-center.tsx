@@ -132,7 +132,7 @@ function NotificationCenterContent({ notificationsData }: { notificationsData: N
                         id: pendingMatch.id,
                         content: pendingMatch.sender.locationName,
                         senderUser: pendingMatch.sender,
-                        receivedAtMessage: `Received ${humanizeTimeDiff(new Date(pendingMatch.created_at))}`,
+                        receivedAtMessage: `Received ${pendingMatch.receivedAtHumanized}`,
                         infoSectionUrl: userProfileLink(pendingMatch.sender),
                         userPhotoUrl: userProfileLink(pendingMatch.sender),
                         onLike: () => { },
@@ -159,7 +159,7 @@ function NotificationCenterContent({ notificationsData }: { notificationsData: N
                             mainPhotoCroppedImageData: receivedMessage.mainPhotoCroppedImageData,
                             age: receivedMessage.age
                         },
-                        receivedAtMessage: `Sent ${humanizeTimeDiff(new Date(receivedMessage.createdAt))}`,
+                        receivedAtMessage: `Sent ${receivedMessage.sentAtHumanized}`,
                         infoSectionUrl: `/user/messages/${receivedMessage.userId}`,
                         userPhotoUrl: userProfileLink({ id: receivedMessage.userId }),
                         numberOfMessages: receivedMessage.msgCount,

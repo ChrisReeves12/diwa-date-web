@@ -27,6 +27,7 @@ export interface NotificationPendingMatch {
   updated_at_timestamp: string;
   created_at: string;
   updated_at: string;
+  receivedAtHumanized: string;
   sender: NotificationUser;
 }
 
@@ -53,6 +54,7 @@ export interface NotificationReceivedMessage {
   userGender: string;
   msgCount: number;
   isLatest: number;
+  sentAtHumanized: string;
 }
 
 export interface Notification {
