@@ -709,6 +709,16 @@ export async function getUserLikes(
         INNER JOIN "users" U ON U."id" = UM."userId"
         WHERE UM."recipientId" = $1 
           AND UM."status" = 'pending'
+          AND U."id" NOT IN (
+              SELECT MU."recipientId" 
+              FROM "mutedUsers" MU 
+              WHERE MU."userId" = $1
+          )
+          AND U."id" NOT IN (
+              SELECT BU."userId" 
+              FROM "blockedUsers" BU 
+              WHERE BU."blockedUserId" = $1
+          )
         ORDER BY ${orderByClause}
         LIMIT $2 OFFSET $3
     `, [userId, pageSize, offset]);

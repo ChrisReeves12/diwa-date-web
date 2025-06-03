@@ -8,7 +8,7 @@ import { BanIcon, CommentsIcon, ExclamationTriangleIcon, HeartBrokenIcon, HeartI
 import { useState, useRef, useEffect, useCallback } from "react";
 import { UserPhoto } from "@/types/user-photo.type";
 import { AngleLeftIcon, AngleRightIcon } from "react-line-awesome";
-import { removeUserMatch, sendUserMatch, blockUserAction, unBlockUserAction } from '../server-actions/user-profile.actions';
+import { removeUserMatch, sendUserMatch, blockUserAction, unBlockUserAction, muteUser } from '../server-actions/user-profile.actions';
 import _ from 'lodash';
 
 export default function UserProfilePreview({ userPreview, type, isInactive = false }: { userPreview: UserPreview, type: 'search' | 'like', isInactive?: boolean }) {
@@ -148,6 +148,20 @@ export default function UserProfilePreview({ userPreview, type, isInactive = fal
         };
     }, [showImageViewer, userPreview.photos, navigateImage]);
 
+    const confirmMatch = async () => {
+        const sendUserMatchResult = await sendUserMatch(Number(userPreview.id));
+        if (typeof sendUserMatchResult === 'object' && "error" in sendUserMatchResult) {
+            alert('An error occurred while sending user match confirmation.');
+            return;
+        }
+
+        setUserMatchStatus(sendUserMatchResult);
+    }
+
+    const passOnMatch = async () => {
+        const muteResult = await muteUser(Number(userPreview.id));
+    }
+
     return (
         <div className={"user-profile-preview-container" + (isInactive ? " inactive" : "")}>
             <div className="image-container">
@@ -273,10 +287,10 @@ export default function UserProfilePreview({ userPreview, type, isInactive = fal
                                     }}><HeartIcon /></button> : <a className="message-link" href=""><CommentsIcon /></a>
                             ) :
                             <div className="match-buttons">
-                                <button title="Like" className="like">
+                                <button onClick={confirmMatch} title="Confirm Match" className="like">
                                     <HeartIcon />
                                 </button>
-                                <button title="Pass" className="pass">
+                                <button onClick={passOnMatch} title="Pass" className="pass">
                                     <TimesIcon />
                                 </button>
                             </div>}
