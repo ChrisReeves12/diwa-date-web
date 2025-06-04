@@ -2,7 +2,6 @@
 import { Suspense, use, useState, useEffect } from "react";
 import CenterScreenLoader from "@/common/center-screen-loader/center-screen-loader";
 import DashboardWrapper from "@/common/dashboard-wrapper/dashboard-wrapper";
-import { User } from "@/types";
 import { NotificationCenterData } from "@/types/notification-center-data.interface";
 import { UserPreview } from "@/types/user-preview.interface";
 import UserProfilePreview from "@/common/user-profile-preview/user-profile-preview";
@@ -10,6 +9,7 @@ import { InfoCircleIcon } from "react-line-awesome";
 import { useRouter, useSearchParams } from "next/navigation";
 import './likes.scss';
 import { LikesSortBy } from "@/types/likes-sort-by.enum";
+import { getLikes } from "./likes.actions";
 
 interface LikesViewProps {
     notificationsPromise: Promise<NotificationCenterData>,
@@ -17,9 +17,16 @@ interface LikesViewProps {
 }
 
 function LikesListing({ likesPromise }: Omit<LikesViewProps, "notificationsPromise">) {
+    const [updatedLikes, setUpdatedLikes] = useState<UserPreview[] | undefined>();
+    const [updatedHasMore, setUpdatedHasMore] = useState<boolean | undefined>();
+    const [isLoading, setIsLoading] = useState(false);
+
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { likes, hasMore } = use(likesPromise);
+    const likesData = use(likesPromise);
+
+    const likes = updatedLikes || likesData.likes;
+    const hasMore = updatedHasMore || likesData.hasMore;
 
     // Get filter values from URL or use defaults
     const sortBy = (searchParams.get('sortBy') as LikesSortBy) || LikesSortBy.ReceivedAt;
@@ -40,8 +47,22 @@ function LikesListing({ likesPromise }: Omit<LikesViewProps, "notificationsPromi
         router.push(`?${params.toString()}`);
     };
 
+    const reloadLikes = async () => {
+        try {
+            setIsLoading(true);
+            const updatedLikeData = await getLikes({ sortBy: sortBy || LikesSortBy.ReceivedAt, page: page || 1 });
+            setUpdatedLikes(updatedLikeData.likes);
+            setUpdatedHasMore(updatedLikeData.hasMore);
+        } catch (e) {
+            alert('An error occurred while reloading your matches.');
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
     return (
-        <>
+        <div className="likes-view-container">
+            {isLoading && <CenterScreenLoader />}
             <div className="likes-filters-section">
                 <div className="filter-section">
                     <div className="age-order-by-container">
@@ -78,9 +99,9 @@ function LikesListing({ likesPromise }: Omit<LikesViewProps, "notificationsPromi
                     <div className="no-likes-notice"><InfoCircleIcon /> You have no likes at this time.</div>}
 
                 {likes.map((user: UserPreview) =>
-                    <UserProfilePreview key={user.id} userPreview={user} type={'like'} />)}
+                    <UserProfilePreview isInactive={isLoading} onCallToRefresh={() => reloadLikes()} key={user.id} userPreview={user} type={'like'} />)}
             </div>
-        </>
+        </div>
     );
 }
 

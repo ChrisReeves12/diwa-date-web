@@ -7,7 +7,6 @@ import SiteTopBar from "@/common/site-top-bar/site-top-bar";
 import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
 import { UserPhoto } from "@/types/user-photo.type";
 import Link from 'next/link';
-import { humanizeTimeDiff } from '@/util';
 import {
     AngleLeftIcon,
     AngleRightIcon, BanIcon,

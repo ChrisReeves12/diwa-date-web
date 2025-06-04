@@ -2,7 +2,7 @@ import './user-profile-preview.scss';
 
 import { UserPreview } from "@/types/user-preview.interface";
 import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
-import { humanizeTimeDiff, userProfileLink } from "@/util";
+import { userProfileLink } from "@/util";
 import Image from "next/image";
 import { BanIcon, CommentsIcon, ExclamationTriangleIcon, HeartBrokenIcon, HeartIcon, TimesIcon, UnlockIcon, UserCircleIcon } from "react-line-awesome";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -11,7 +11,14 @@ import { AngleLeftIcon, AngleRightIcon } from "react-line-awesome";
 import { removeUserMatch, sendUserMatch, blockUserAction, unBlockUserAction, muteUser } from '../server-actions/user-profile.actions';
 import _ from 'lodash';
 
-export default function UserProfilePreview({ userPreview, type, isInactive = false }: { userPreview: UserPreview, type: 'search' | 'like', isInactive?: boolean }) {
+interface UserProfilePreviewProps {
+    userPreview: UserPreview,
+    type: 'search' | 'like',
+    isInactive?: boolean,
+    onCallToRefresh?: () => Promise<void>
+}
+
+export default function UserProfilePreview({ userPreview, type, onCallToRefresh, isInactive = false }: UserProfilePreviewProps) {
     const [showPhotoPopover, setShowPhotoPopover] = useState(false);
     const [showMoreOptionsPopover, setShowMoreOptionsPopover] = useState(false);
     const [showImageViewer, setShowImageViewer] = useState(false);
@@ -287,10 +294,22 @@ export default function UserProfilePreview({ userPreview, type, isInactive = fal
                                     }}><HeartIcon /></button> : <a className="message-link" href=""><CommentsIcon /></a>
                             ) :
                             <div className="match-buttons">
-                                <button onClick={confirmMatch} title="Confirm Match" className="like">
+                                <button onClick={async () => {
+                                    await confirmMatch();
+
+                                    if (onCallToRefresh) {
+                                        await onCallToRefresh();
+                                    }
+                                }} title="Confirm Match" className="like">
                                     <HeartIcon />
                                 </button>
-                                <button onClick={passOnMatch} title="Pass" className="pass">
+                                <button onClick={async () => {
+                                    await passOnMatch();
+
+                                    if (onCallToRefresh) {
+                                        await onCallToRefresh();
+                                    }
+                                }} title="Pass" className="pass">
                                     <TimesIcon />
                                 </button>
                             </div>}
