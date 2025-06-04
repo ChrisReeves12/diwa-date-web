@@ -1,12 +1,12 @@
 'use client';
-import { Suspense, use, useState, useEffect } from "react";
+import { Suspense, use, useState, useEffect, useRef } from "react";
 import CenterScreenLoader from "@/common/center-screen-loader/center-screen-loader";
 import DashboardWrapper from "@/common/dashboard-wrapper/dashboard-wrapper";
 import { NotificationCenterData } from "@/types/notification-center-data.interface";
 import { UserPreview } from "@/types/user-preview.interface";
 import UserProfilePreview from "@/common/user-profile-preview/user-profile-preview";
 import { InfoCircleIcon } from "react-line-awesome";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import './likes.scss';
 import { LikesSortBy } from "@/types/likes-sort-by.enum";
 import { getLikes } from "./likes.actions";
@@ -20,23 +20,34 @@ function LikesListing({ likesPromise }: Omit<LikesViewProps, "notificationsPromi
     const [updatedLikes, setUpdatedLikes] = useState<UserPreview[] | undefined>();
     const [updatedHasMore, setUpdatedHasMore] = useState<boolean | undefined>();
     const [isLoading, setIsLoading] = useState(false);
+    const isFirstMount = useRef(true);
 
-    const router = useRouter();
     const searchParams = useSearchParams();
     const likesData = use(likesPromise);
 
     const likes = updatedLikes || likesData.likes;
-    const hasMore = updatedHasMore || likesData.hasMore;
+    const hasMore = typeof updatedHasMore !== 'undefined' ? updatedHasMore : likesData.hasMore;
 
     // Get filter values from URL or use defaults
     const sortBy = (searchParams.get('sortBy') as LikesSortBy) || LikesSortBy.ReceivedAt;
     const page = Number(searchParams.get('page')) || 1;
 
+    // React to searchParams changes and reload likes
+    useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
+
+        reloadLikes();
+    }, [searchParams]);
+
     // Handle sort change
     const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const params = new URLSearchParams(searchParams.toString());
         params.set('sortBy', e.target.value);
-        router.push(`?${params.toString()}`);
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.pushState({}, '', newUrl);
     };
 
     // Handle pagination change
@@ -44,7 +55,8 @@ function LikesListing({ likesPromise }: Omit<LikesViewProps, "notificationsPromi
         const params = new URLSearchParams(searchParams.toString());
         const newPage = direction === 'next' ? page + 1 : page - 1;
         params.set('page', newPage.toString());
-        router.push(`?${params.toString()}`);
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.pushState({}, '', newUrl);
     };
 
     const reloadLikes = async () => {

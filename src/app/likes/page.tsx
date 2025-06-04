@@ -26,7 +26,7 @@ export default async function LikesPage({
 
     const lSearchParams = await searchParams;
 
-    const sortBy = (lSearchParams.sortBy as LikesSortBy) || LikesSortBy.LastActive;
+    const sortBy = (lSearchParams.sortBy as LikesSortBy) || LikesSortBy.ReceivedAt;
     const page = Number(lSearchParams.page) || 1;
 
     const notificationsPromise = createNotificationCenterDataPromise(currentUser);

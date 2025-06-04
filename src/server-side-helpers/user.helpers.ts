@@ -664,18 +664,17 @@ export async function isUserBlocked(userId: number, blockedUserId: number) {
  */
 export async function getUserLikes(
     userId: number,
-    sortBy: LikesSortBy = LikesSortBy.LastActive,
+    sortBy: LikesSortBy = LikesSortBy.ReceivedAt,
     page: number = 1,
     pageSize: number = 60
 ): Promise<{ hasMore: boolean; likes: UserPreview[] }> {
 
     const offset = (page - 1) * pageSize;
 
-    // Determine ORDER BY clause based on sortBy
     let orderByClause: string;
     switch (sortBy) {
         case LikesSortBy.ReceivedAt:
-            orderByClause = 'UM."createdAt" DESC';
+            orderByClause = 'UM."createdAt" DESC, U."lastActiveAt" DESC';
             break;
         case LikesSortBy.LastActive:
             orderByClause = 'U."lastActiveAt" DESC, UM."createdAt" DESC';
