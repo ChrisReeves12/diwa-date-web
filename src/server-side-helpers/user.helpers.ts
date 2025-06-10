@@ -558,6 +558,17 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
             }
         });
 
+        // Create a notification for the original match initiator (the user who sent the original match request)
+        await prisma.notifications.create({
+            data: {
+                userId: existingMatch.userId, // The user who originally initiated the match
+                recipientId: userId, // The user who confirmed the match
+                type: 'match',
+                createdAt: new Date(),
+                updatedAt: new Date()
+            }
+        });
+
         return 'matched';
     }
 

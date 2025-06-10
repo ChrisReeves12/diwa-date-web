@@ -13,7 +13,7 @@ import {
     CheckCircleIcon,
     CommentsIcon, ExclamationTriangleIcon,
     EyeSlashIcon, HeartBrokenIcon,
-    HeartIcon, ImageIcon, MapMarkerIcon, StarIcon, UnlockIcon, UserCircleIcon
+    HeartIcon, ImageIcon, MapMarkerIcon, StarIcon, TimesIcon, UnlockIcon, UserCircleIcon
 } from "react-line-awesome";
 import _ from 'lodash';
 import { UserProfileDetail } from "@/types/user-profile-detail.interface";
@@ -333,8 +333,8 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                                         onClick={onIgnoreMatchClick}
                                                         className="reject-match"
                                                     >
-                                                        <EyeSlashIcon />
-                                                        <div className="label">Ignore</div>
+                                                        <TimesIcon />
+                                                        <div className="label">Pass</div>
                                                     </button>
                                                 </>
                                             ) : userProfile.matchStatus === 'matched' ? (
@@ -403,7 +403,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
                                             <a key={idx} onClick={(e) => onPhotoView(e, idx)} href="">
                                                 <UserPhotoDisplay
                                                     imageUrl={photo.path}
-                                                    alt={`${userProfile.user.displayName}'s photo ${idx}`}
+                                                    alt={`${userProfile.user.displayName}'s photo ${idx + 1}`}
                                                     width={96}
                                                     height={96}
                                                     shape="square"

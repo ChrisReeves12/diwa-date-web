@@ -257,16 +257,18 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                             <div className="more-options-popover" ref={moreOptionsPopoverRef}>
                                 <h4>More Options</h4>
                                 <a href={userProfileLink(userPreview)}><UserCircleIcon /> View Profile</a>
-                                {userMatchStatus === 'matched' ?
-                                    <a href=""><CommentsIcon /> Send Message</a> :
-                                    <button onClick={handleLike}>
-                                        {userPreview.theyLikedMe ?
-                                            <><HeartIcon /> Accept Match</> :
-                                            userMatchStatus === 'pending' ?
-                                                <><HeartBrokenIcon /> Remove Like</> :
-                                                <><HeartIcon /> Like</>}
-                                    </button>
-                                }
+                                {type === 'search' && <>
+                                    {userMatchStatus === 'matched' ?
+                                        <a href=""><CommentsIcon /> Send Message</a> :
+                                        <button onClick={handleLike}>
+                                            {userPreview.theyLikedMe ?
+                                                <><HeartIcon /> Accept Match</> :
+                                                userMatchStatus === 'pending' ?
+                                                    <><HeartBrokenIcon /> Remove Like</> :
+                                                    <><HeartIcon /> Like</>}
+                                        </button>
+                                    }
+                                </>}
                                 <button onClick={handleBlock}>{blockedThem ? <><UnlockIcon /> Unblock</> : <><BanIcon /> Block</>}</button>
                                 <button onClick={handleReport}><ExclamationTriangleIcon /> Report</button>
                             </div>
