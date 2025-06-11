@@ -34,7 +34,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
         currentUser ?
             <HomeSearch
                 searchPromise={createSearchPromise(currentUser, lSearchParams)}
-                notificationsPromise={createNotificationCenterDataPromise(currentUser)}
+
                 currentUser={currentUser}
             /> : <GuestHome />
     );

@@ -11,16 +11,15 @@ import { loadGoogleMapsScript } from "@/util";
 
 interface DashboardWrapperProps {
     currentUser: User,
-    activeTab: 'search'|'likes'|'messages',
-    children: React.ReactNode,
-    notificationsPromise?: Promise<any>
+    activeTab: 'search' | 'likes' | 'messages',
+    children: React.ReactNode
 }
 
-export default function DashboardWrapper({ currentUser, activeTab, children, notificationsPromise }: DashboardWrapperProps) {
+export default function DashboardWrapper({ currentUser, activeTab, children }: DashboardWrapperProps) {
     const tabs = [
-        {label: 'Search', url: '/', icon: 'las la-search', isSelected: activeTab === 'search' },
-        {label: 'Likes', url: '/likes', icon: 'las la-heart', isSelected: activeTab === 'likes' },
-        {label: 'Messages', url: '/messages', icon: 'las la-comments', isSelected: activeTab === 'messages' },
+        { label: 'Search', url: '/', icon: 'las la-search', isSelected: activeTab === 'search' },
+        { label: 'Likes', url: '/likes', icon: 'las la-heart', isSelected: activeTab === 'likes' },
+        { label: 'Messages', url: '/messages', icon: 'las la-comments', isSelected: activeTab === 'messages' },
     ];
 
     useEffect(() => {
@@ -29,12 +28,12 @@ export default function DashboardWrapper({ currentUser, activeTab, children, not
 
     return (
         <CurrentUserProvider currentUser={currentUser}>
-            <SiteWrapper notificationsPromise={notificationsPromise}>
+            <SiteWrapper>
                 <div className="dashboard-wrapper-container">
                     <div className="container">
                         <UserSubscriptionPlanDisplay />
                         <div className="dashboard-content-section">
-                            <TabBar tabs={tabs}/>
+                            <TabBar tabs={tabs} />
                             {children}
                         </div>
                     </div>

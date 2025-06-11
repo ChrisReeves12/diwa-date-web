@@ -184,16 +184,14 @@ function SearchResultsView({ currentUser: initialCurrentUser, searchPromise }: {
     );
 }
 
-export default function HomeSearch({ currentUser, searchPromise, notificationsPromise }: {
+export default function HomeSearch({ currentUser, searchPromise }: {
     currentUser: User,
-    searchPromise: Promise<SearchResponse>,
-    notificationsPromise: Promise<NotificationCenterData>
+    searchPromise: Promise<SearchResponse>
 }) {
     return (
         <DashboardWrapper
             activeTab="search"
             currentUser={currentUser}
-            notificationsPromise={notificationsPromise}
         >
             <Suspense fallback={<CenterScreenLoader />}>
                 <SearchResultsView currentUser={currentUser}

@@ -67,7 +67,7 @@ export default async function UserProfilePage({ params }: any) {
         redirect('/');
     }
 
-    const notificationsPromise = createNotificationCenterDataPromise(currentUser);
+
     const userProfileResult = await getUserProfile(userId);
 
     if (userProfileResult.error || !userProfileResult.userProfileDetails) {
@@ -78,7 +78,7 @@ export default async function UserProfilePage({ params }: any) {
     return (
         <UserProfile
             currentUser={currentUser}
-            notificationsPromise={notificationsPromise}
+
             userProfileDetail={userProfileResult.userProfileDetails}
         />
     );

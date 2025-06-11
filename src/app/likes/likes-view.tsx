@@ -12,11 +12,10 @@ import { LikesSortBy } from "@/types/likes-sort-by.enum";
 import { getLikes } from "./likes.actions";
 
 interface LikesViewProps {
-    notificationsPromise: Promise<NotificationCenterData>,
     likesPromise: Promise<{ hasMore: boolean; likes: UserPreview[] }>
 }
 
-function LikesListing({ likesPromise }: Omit<LikesViewProps, "notificationsPromise">) {
+function LikesListing({ likesPromise }: LikesViewProps) {
     const [updatedLikes, setUpdatedLikes] = useState<UserPreview[] | undefined>();
     const [updatedHasMore, setUpdatedHasMore] = useState<boolean | undefined>();
     const [isLoading, setIsLoading] = useState(false);
@@ -117,12 +116,11 @@ function LikesListing({ likesPromise }: Omit<LikesViewProps, "notificationsPromi
     );
 }
 
-export default function LikesView({ currentUser, notificationsPromise, likesPromise }: any) {
+export default function LikesView({ currentUser, likesPromise }: any) {
     return (
         <DashboardWrapper
             activeTab="likes"
-            currentUser={currentUser}
-            notificationsPromise={notificationsPromise}>
+            currentUser={currentUser}>
             <Suspense fallback={<CenterScreenLoader />}>
                 <LikesListing likesPromise={likesPromise} />
             </Suspense>

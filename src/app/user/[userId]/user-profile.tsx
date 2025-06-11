@@ -28,11 +28,10 @@ import {
 
 interface UserProfileProps {
     userProfileDetail: UserProfileDetail,
-    currentUser: User,
-    notificationsPromise: Promise<NotificationCenterData>
+    currentUser: User
 }
 
-export default function UserProfile({ notificationsPromise, userProfileDetail, currentUser }: UserProfileProps) {
+export default function UserProfile({ userProfileDetail, currentUser }: UserProfileProps) {
     const [userProfile, setUserProfile] = useState<UserProfileDetail>(userProfileDetail);
 
     const [isUpdatingMatch, setIsUpdatingMatch] = useState(false);
@@ -212,7 +211,7 @@ export default function UserProfile({ notificationsPromise, userProfileDetail, c
 
     return (
         <CurrentUserProvider currentUser={currentUser}>
-            <SiteTopBar notificationsPromise={notificationsPromise} />
+            <SiteTopBar />
             <div className="user-profile-container">
                 <div className="container">
                     {!userProfile ? (

@@ -29,7 +29,7 @@ export default async function LikesPage({
     const sortBy = (lSearchParams.sortBy as LikesSortBy) || LikesSortBy.ReceivedAt;
     const page = Number(lSearchParams.page) || 1;
 
-    const notificationsPromise = createNotificationCenterDataPromise(currentUser);
+
     const getLikesPromise = getUserLikes(
         Number(currentUser.id),
         sortBy,
@@ -39,7 +39,6 @@ export default async function LikesPage({
     return (
         <LikesView
             likesPromise={getLikesPromise}
-            currentUser={currentUser}
-            notificationsPromise={notificationsPromise} />
+            currentUser={currentUser} />
     );
 }
