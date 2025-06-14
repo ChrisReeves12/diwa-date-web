@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import NotificationCenter from '../notification-center';
 import { useCurrentUser } from '../../context/current-user-context';
@@ -102,6 +103,110 @@ describe('NotificationCenter', () => {
 
             expect(screen.getByText('Jane Smith')).toBeInTheDocument();
             expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
+        });
+    });
+
+    describe('Popover Interaction Tests', () => {
+        it('shows and hides the likes popover on click interactions', async () => {
+            const user = userEvent.setup();
+            mockUseCurrentUser.mockReturnValue(mockUser);
+
+            render(<NotificationCenter />);
+
+            // Wait for loading to complete and buttons to become enabled
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /matches/i })).not.toBeDisabled();
+            });
+
+            // Initially, popover should not be visible
+            expect(document.querySelector('.notification-menu-container')).not.toBeInTheDocument();
+
+            // Click the matches button to open popover
+            const matchesButton = screen.getByRole('button', { name: /matches/i });
+            await user.click(matchesButton);
+
+            // Popover should now be visible
+            await waitFor(() => {
+                expect(document.querySelector('.notification-menu-container')).toBeInTheDocument();
+            });
+
+            // Click on the backdrop to close the popover
+            const backdrop = document.querySelector('.MuiBackdrop-root');
+            expect(backdrop).toBeInTheDocument();
+            await user.click(backdrop!);
+
+            // Popover should be hidden again
+            await waitFor(() => {
+                expect(document.querySelector('.notification-menu-container')).not.toBeInTheDocument();
+            });
+        });
+
+        it('shows and hides the messages popover on click interactions', async () => {
+            const user = userEvent.setup();
+            mockUseCurrentUser.mockReturnValue(mockUser);
+
+            render(<NotificationCenter />);
+
+            // Wait for loading to complete and buttons to become enabled
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /messages/i })).not.toBeDisabled();
+            });
+
+            // Initially, popover should not be visible
+            expect(document.querySelector('.notification-menu-container')).not.toBeInTheDocument();
+
+            // Click the messages button to open popover
+            const messagesButton = screen.getByRole('button', { name: /messages/i });
+            await user.click(messagesButton);
+
+            // Popover should now be visible
+            await waitFor(() => {
+                expect(document.querySelector('.notification-menu-container')).toBeInTheDocument();
+            });
+
+            // Click on the backdrop to close the popover
+            const backdrop = document.querySelector('.MuiBackdrop-root');
+            expect(backdrop).toBeInTheDocument();
+            await user.click(backdrop!);
+
+            // Popover should be hidden again
+            await waitFor(() => {
+                expect(document.querySelector('.notification-menu-container')).not.toBeInTheDocument();
+            });
+        });
+
+        it('shows and hides the notifications popover on click interactions', async () => {
+            const user = userEvent.setup();
+            mockUseCurrentUser.mockReturnValue(mockUser);
+
+            render(<NotificationCenter />);
+
+            // Wait for loading to complete and buttons to become enabled
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /notifications/i })).not.toBeDisabled();
+            });
+
+            // Initially, popover should not be visible
+            expect(document.querySelector('.notification-menu-container')).not.toBeInTheDocument();
+
+            // Click the notifications button to open popover
+            const notificationsButton = screen.getByRole('button', { name: /notifications/i });
+            await user.click(notificationsButton);
+
+            // Popover should now be visible
+            await waitFor(() => {
+                expect(document.querySelector('.notification-menu-container')).toBeInTheDocument();
+            });
+
+            // Click on the backdrop to close the popover
+            const backdrop = document.querySelector('.MuiBackdrop-root');
+            expect(backdrop).toBeInTheDocument();
+            await user.click(backdrop!);
+
+            // Popover should be hidden again
+            await waitFor(() => {
+                expect(document.querySelector('.notification-menu-container')).not.toBeInTheDocument();
+            });
         });
     });
 });
