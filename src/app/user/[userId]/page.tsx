@@ -4,7 +4,7 @@ import {
 } from "@/server-side-helpers/user.helpers";
 import { redirect } from "next/navigation";
 import UserProfile from "./user-profile";
-import { createNotificationCenterDataPromise } from "@/server-side-helpers/notification.helper";
+import { getNotificationCenterData } from "@/server-side-helpers/notification.helper";
 import { cookies } from "next/headers";
 import './user-profile.scss';
 // import { InfoCircleIcon } from "react-line-awesome"; // Commented out as UserProfileError is not used

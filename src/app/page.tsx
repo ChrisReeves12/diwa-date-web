@@ -3,7 +3,7 @@ import { getCurrentUser, refreshLastActive } from "@/server-side-helpers/user.he
 import HomeSearch from "@/app/home-search/home-search";
 import { createSearchPromise } from "@/server-side-helpers/search.helpers";
 import { SearchSortBy } from "@/types/search-parameters.interface";
-import { createNotificationCenterDataPromise } from "@/server-side-helpers/notification.helper";
+import { getNotificationCenterData } from "@/server-side-helpers/notification.helper";
 import { cookies } from "next/headers";
 import { Metadata } from "next";
 import { cache } from "react";

@@ -10,12 +10,17 @@ import { useCurrentUser } from '../context/current-user-context';
 import { userProfileLink } from '@/util';
 import _ from 'lodash';
 import { NotificationCenterData } from '@/types/notification-center-data.interface';
-import { loadNotificationCenterData } from '@/common/server-actions/notifications.actions';
+import {
+    loadNotificationCenterData,
+    markMatchNotificationsAsRead
+} from '@/common/server-actions/notifications.actions';
 import { useNotificationPopovers } from './hooks/use-notification-popovers';
 import NotificationIconsContainer from './notification-icons-container/notification-icons-container';
 import NotificationPopover from './notification-popover/notification-popover';
+import { muteUser, sendUserMatch } from '../server-actions/user-profile.actions';
 
-function NotificationCenterContent({ notificationsData }: { notificationsData: NotificationCenterData }) {
+function NotificationCenterContent({ initialNotificationsData }: { initialNotificationsData: NotificationCenterData }) {
+    const [notificationsData, setNotificationsData] = useState(initialNotificationsData);
     const currentUser = useCurrentUser();
     const popovers = useNotificationPopovers();
 
@@ -30,7 +35,17 @@ function NotificationCenterContent({ notificationsData }: { notificationsData: N
                     notificationsData={notificationsData}
                     onLikesClick={popovers.likes.handleClick}
                     onMessagesClick={popovers.messages.handleClick}
-                    onNotificationsClick={popovers.notifications.handleClick}
+                    onNotificationsClick={(e) => {
+                        popovers.notifications.handleClick(e);
+                        markMatchNotificationsAsRead(currentUser, notificationsData?.receivedNotifications)
+                            .then((newNotificationCount: number) =>
+                                setNotificationsData({
+                                    ...notificationsData,
+                                    ...{
+                                        notificationCount: newNotificationCount
+                                    }
+                                }));
+                    }}
                 />
                 <div className="profile-user">
                     <button onClick={popovers.profileUser.handleClick} className="profile-container">
@@ -67,8 +82,16 @@ function NotificationCenterContent({ notificationsData }: { notificationsData: N
                     receivedAtMessage: `Received ${pendingMatch.receivedAtHumanized}`,
                     infoSectionUrl: userProfileLink(pendingMatch.sender),
                     userPhotoUrl: userProfileLink(pendingMatch.sender),
-                    onLike: () => { },
-                    onPass: () => { },
+                    onLike: () => {
+                        sendUserMatch(pendingMatch.userId).then((matchStatus: "pending" | "matched") => {
+                            if (matchStatus === 'matched') {
+                                // Todo: update state
+                            }
+                        });
+                    },
+                    onPass: () => {
+                        muteUser(pendingMatch.userId);
+                    },
                     type: "likes"
                 }))}
             />
@@ -202,5 +225,5 @@ export default function NotificationCenter() {
         return null;
     }
 
-    return <NotificationCenterContent notificationsData={notificationsData} />;
+    return <NotificationCenterContent initialNotificationsData={notificationsData} />;
 }

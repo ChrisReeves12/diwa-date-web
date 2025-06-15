@@ -117,10 +117,10 @@ export async function getPendingMatches(user: User): Promise<NotificationPending
 }
 
 /**
- * Creates a promise to fetch notification center data.
+ * Fetch notification center data.
  * @param currentUser
  */
-export async function createNotificationCenterDataPromise(currentUser: User): Promise<NotificationCenterData> {
+export async function getNotificationCenterData(currentUser: User): Promise<NotificationCenterData> {
     return Promise.all([
         getPendingMatches(currentUser),
         getReceivedMessages(currentUser),
@@ -248,8 +248,7 @@ export async function countAllMessages(user: User): Promise<number> {
 export async function getPendingNotifications(user: User): Promise<Notification[]> {
     const notifications = await prisma.notifications.findMany({
         where: {
-            recipientId: user.id,
-            readAt: null,
+            recipientId: user.id
         },
         orderBy: {
             createdAt: 'desc'
@@ -290,23 +289,38 @@ export async function getPendingNotifications(user: User): Promise<Notification[
             publicPhotos: preparedSender.publicPhotos || [],
         };
 
-        // Ensure data has match_id property
-        let notificationData: { match_id: number } = { match_id: 0 }; // Default value
-        if (n.data && typeof n.data === 'object' && 'match_id' in n.data && typeof n.data.match_id === 'number') {
-            notificationData = { match_id: n.data.match_id };
-        }
-
         return {
             ...n,
-            id: typeof n.id === 'bigint' ? n.id.toString() : n.id,
-            userId: typeof n.userId === 'bigint' ? n.userId.toString() : n.userId,
-            recipientId: typeof n.recipientId === 'bigint' ? n.recipientId.toString() : (n.recipientId === null ? '' : n.recipientId),
-            createdAt: n.createdAt instanceof Date ? n.createdAt.toISOString() : (n.createdAt ?? ''),
-            updatedAt: n.updatedAt instanceof Date ? n.updatedAt.toISOString() : (n.updatedAt ?? ''),
-            readAt: n.readAt instanceof Date ? n.readAt.toISOString() : (n.readAt ?? ''),
-            data: notificationData, // Assign the correctly shaped data
             sender: senderForNotification
         };
+    });
+}
+
+/**
+ * Mark notifications as read.
+ * @param userId
+ * @param receivedNotifications 
+ */
+export async function markNotificationsAsRead(userId: number, receivedNotifications: Notification[]) {
+    if (receivedNotifications.length === 0) {
+        return;
+    }
+
+    const notificationIds = receivedNotifications.map(notification =>
+        typeof notification.id === 'string' ? parseInt(notification.id) : notification.id
+    );
+
+    await prisma.notifications.updateMany({
+        where: {
+            id: {
+                in: notificationIds
+            },
+            recipientId: userId,
+            readAt: null
+        },
+        data: {
+            readAt: new Date()
+        }
     });
 }
 
@@ -315,7 +329,7 @@ export async function getPendingNotifications(user: User): Promise<Notification[
  * @param user The recipient user.
  * @returns A promise that resolves to the total count of unread notifications.
  */
-export async function countAllNotifications(user: User): Promise<number> {
+export async function countAllNotifications(user: { id: number }): Promise<number> {
     return prisma.notifications.count({
         where: {
             recipientId: user.id,

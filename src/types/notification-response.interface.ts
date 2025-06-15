@@ -19,14 +19,14 @@ export interface NotificationUser {
 
 export interface NotificationPendingMatch {
   id: string;
-  user_id: string;
-  recipient_id: string;
+  userId: number;
+  recipientId: number;
   status: string;
-  accepted_at: string | null;
-  acknowledged_at: string | null;
-  updated_at_timestamp: string;
-  created_at: string;
-  updated_at: string;
+  acceptedAt: string | null;
+  acknowledgedAt: string | null;
+  updatedAtTimestamp: string;
+  createdAt: string;
+  updatedAt: string;
   receivedAtHumanized: string;
   sender: NotificationUser;
 }
@@ -59,15 +59,15 @@ export interface NotificationReceivedMessage {
 
 export interface Notification {
   id: string;
-  user_id: string;
-  recipient_id: string;
+  userId: string;
+  recipientId: string;
   type: string;
-  read_at: string | null;
+  readAt: string | null;
   data: {
-    match_id: number;
+    matchId: number;
   };
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
   sender: NotificationUser;
 }
 

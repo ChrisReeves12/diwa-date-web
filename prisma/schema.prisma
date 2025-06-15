@@ -105,7 +105,7 @@ model notifications {
   userId                                 Int
   recipientId                            Int?
   type                                   String    @db.VarChar(255)
-  readAt                                 String?
+  readAt                                 DateTime? @db.Timestamp(6)
   data                                   Json?
   createdAt                              DateTime? @db.Timestamp(6)
   updatedAt                              DateTime? @db.Timestamp(6)
@@ -261,6 +261,7 @@ model users {
   createdAt                                      DateTime?                     @db.Timestamp(6)
   updatedAt                                      DateTime?                     @db.Timestamp(6)
   seekingGender                                  String?                       @db.VarChar(20)
+  geoPoint                                       Unsupported("geography")?
   deactivatedAt                                  DateTime?                     @db.Timestamp(6)
   billingInformationEntries                      billingInformationEntries[]
   blockedUsers_blockedUsers_userIdTousers        blockedUsers[]                @relation("blockedUsers_userIdTousers")
@@ -277,4 +278,13 @@ model users {
 
   @@index([createdAt(sort: Desc)], map: "users_createdat_index")
   @@index([updatedAt(sort: Desc)], map: "users_updatedat_index")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
 }

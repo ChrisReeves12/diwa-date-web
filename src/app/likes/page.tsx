@@ -2,7 +2,7 @@ import LikesView from "@/app/likes/likes-view";
 import { redirect } from "next/navigation";
 import { getCurrentUser, getUserLikes } from "@/server-side-helpers/user.helpers";
 import { cookies } from "next/headers";
-import { createNotificationCenterDataPromise } from "@/server-side-helpers/notification.helper";
+import { getNotificationCenterData } from "@/server-side-helpers/notification.helper";
 import './likes.scss';
 import { Metadata } from "next";
 import { LikesSortBy } from "@/types/likes-sort-by.enum";

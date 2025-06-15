@@ -88,9 +88,11 @@ export async function unMuteUser(recipientId: number) {
 /**
  * Send a match request from the current user to another user
  * @param recipientId The ID of the user to send the match request to
+ * @param shouldCreateNotification Whether or not a notification should be created
  * @returns The status of the match after the operation ('pending' or 'matched')
  */
-export async function sendUserMatch(recipientId: number): Promise<'pending' | 'matched' | undefined | {error: string}> {
+export async function sendUserMatch(recipientId: number, shouldCreateNotification: boolean = true):
+    Promise<'pending' | 'matched' | undefined | { error: string }> {
     try {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
@@ -99,7 +101,7 @@ export async function sendUserMatch(recipientId: number): Promise<'pending' | 'm
             refreshLastActive(currentUser).then();
         }
 
-        return await sendUserMatchRequest(Number(currentUser.id), recipientId);
+        return await sendUserMatchRequest(Number(currentUser.id), recipientId, shouldCreateNotification);
     } catch (error) {
         logError(error instanceof Error ? error : new Error(String(error)), 'Error sending user match');
         return undefined;

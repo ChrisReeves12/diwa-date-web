@@ -226,7 +226,7 @@ export async function authenticateUser(
     if (!user) {
         return {
             success: false,
-            message: 'Invalid email or password'
+            message: 'The email and/or password does not match our records.'
         };
     }
 
@@ -515,9 +515,10 @@ export async function suspendUser(userId: number, suspend: boolean = true): Prom
  * Send a match request from one user to another
  * @param userId The ID of the user sending the match request
  * @param recipientUserId The ID of the user receiving the match request
+ * @param shouldCreateNotification Whether or not the notification should be created
  * @returns The status of the match after the operation ('pending' or 'matched')
  */
-export async function sendUserMatchRequest(userId: number, recipientUserId: number): Promise<'pending' | 'matched' | {
+export async function sendUserMatchRequest(userId: number, recipientUserId: number, shouldCreateNotification: boolean = true): Promise<'pending' | 'matched' | {
     error: string
 }> {
     if (await isUserSuspended(recipientUserId)) {
@@ -559,21 +560,22 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
         });
 
         // Create a notification for the original match initiator (the user who sent the original match request)
-        await prisma.notifications.create({
-            data: {
-                userId: existingMatch.userId, // The user who originally initiated the match
-                recipientId: userId, // The user who confirmed the match
-                type: 'match',
-                createdAt: new Date(),
-                updatedAt: new Date()
-            }
-        });
+        if (shouldCreateNotification) {
+            await prisma.notifications.create({
+                data: {
+                    userId: userId, // The user who confirmed the match
+                    recipientId: existingMatch.userId, // The user who originally initiated the match
+                    type: 'match',
+                    data: { matchId: existingMatch.id },
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                }
+            });
+        }
 
         return 'matched';
     }
 
-    // If there's an existing match where the current user is the sender,
-    // or if the match is already confirmed, just return the current status
     if (existingMatch) {
         return existingMatch.status as 'pending' | 'matched';
     }

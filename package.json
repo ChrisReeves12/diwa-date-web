@@ -11,6 +11,12 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test --workers=1",
+    "test:e2e:parallel": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
     "cli": "ts-node -r tsconfig-paths/register -P tsconfig.cli.json src/console/cli.ts",
     "cli:build": "tsc -p tsconfig.cli.json && tsc-alias -p tsconfig.cli.json"
   },
@@ -46,6 +52,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@faker-js/faker": "^9.8.0",
+    "@playwright/test": "^1.53.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",

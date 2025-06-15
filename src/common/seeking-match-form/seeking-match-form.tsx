@@ -47,6 +47,7 @@ export default function SeekingMatchForm({
                 <div className={`choice-container ${userSexError ? 'error' : ''}`}>
                     <div
                         className={`radio-button-container ${userSex === 'male' ? 'selected' : ''}`}
+                        id="user-sex-choice-male"
                         onClick={() => handleUserSexClick('male')}
                     >
                         <div className="radio-button"></div>
@@ -54,6 +55,7 @@ export default function SeekingMatchForm({
                     </div>
                     <div
                         className={`radio-button-container ${userSex === 'female' ? 'selected' : ''}`}
+                        id="user-sex-choice-female"
                         onClick={() => handleUserSexClick('female')}
                     >
                         <div className="radio-button"></div>
@@ -65,6 +67,7 @@ export default function SeekingMatchForm({
                 <div className={`choice-container ${userSexSeekingError ? 'error' : ''}`}>
                     <div
                         className={`radio-button-container ${userSexSeeking === 'male' ? 'selected' : ''}`}
+                        id="seeking-sex-choice-male"
                         onClick={() => handleUserSexSeekingClick('male')}
                     >
                         <div className="radio-button"></div>
@@ -72,6 +75,7 @@ export default function SeekingMatchForm({
                     </div>
                     <div
                         className={`radio-button-container ${userSexSeeking === 'female' ? 'selected' : ''}`}
+                        id="seeking-sex-choice-female"
                         onClick={() => handleUserSexSeekingClick('female')}
                     >
                         <div className="radio-button"></div>

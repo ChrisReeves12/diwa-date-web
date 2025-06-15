@@ -48,32 +48,32 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
 
     // Prepare user data for database storage
     const createData = {
-      first_name: userData.firstName,
-      last_name: userData.lastName,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
       email: userData.email.toLowerCase(),
       password: await hashPassword(userData.password),
-      display_name: `${userData.firstName} ${userData.lastName[0]}.`,
-      date_of_birth: new Date(userData.dateOfBirth),
+      displayName: `${userData.firstName} ${userData.lastName[0]}.`,
+      dateOfBirth: new Date(userData.dateOfBirth),
       gender: userData.userGender,
       timezone: userData.timezone,
-      created_at: new Date(),
+      createdAt: new Date(),
       seekingGender: userData.seekingGender,
-      seeking_num_of_photos: businessConfig.defaults.numOfPhotos,
-      seeking_max_distance: businessConfig.defaults.maxDistance,
-      seeking_min_height: businessConfig.defaults.minHeight,
+      seekingNumOfPhotos: businessConfig.defaults.numOfPhotos,
+      seekingMaxDistance: businessConfig.defaults.maxDistance,
+      seekingMinHeight: businessConfig.defaults.minHeight,
       seekingDistanceOrigin: SearchFromOrigin.CurrentLocation,
-      seeking_max_height: businessConfig.defaults.maxHeight,
-      seeking_min_age: businessConfig.defaults.minAge,
-      seeking_max_age: businessConfig.defaults.maxAge,
-      marital_status: businessConfig.defaults.maritalStatus,
+      seekingMaxHeight: businessConfig.defaults.maxHeight,
+      seekingMinAge: businessConfig.defaults.minAge,
+      seekingMaxAge: businessConfig.defaults.maxAge,
+      maritalStatus: businessConfig.defaults.maritalStatus,
       latitude: userData.location.coordinates?.latitude ?? null,
       longitude: userData.location.coordinates?.longitude ?? null,
-      location_name: userData.location.name,
-      location_viewport: userData.location.viewport,
+      locationName: userData.location.name,
+      locationViewport: userData.location.viewport,
       country: userData.location.country,
       height: businessConfig.defaults.minHeight,
-      updated_at: new Date(),
-      last_active_at: new Date()
+      updatedAt: new Date(),
+      lastActiveAt: new Date()
     };
 
     // Store user in database

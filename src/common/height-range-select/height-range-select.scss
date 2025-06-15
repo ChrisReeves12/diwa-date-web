@@ -13,7 +13,7 @@
   }
 
   select {
-    @include globals.underlined-select;
     width: 8.5rem;
+    @include globals.underlined-select;
   }
 }
