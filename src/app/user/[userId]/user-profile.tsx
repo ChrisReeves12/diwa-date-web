@@ -1,7 +1,6 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { User } from "@/types";
-import { NotificationCenterData } from "@/types/notification-center-data.interface";
 import { CurrentUserProvider } from "@/common/context/current-user-context";
 import SiteTopBar from "@/common/site-top-bar/site-top-bar";
 import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
@@ -12,7 +11,7 @@ import {
     AngleRightIcon, BanIcon,
     CheckCircleIcon,
     CommentsIcon, ExclamationTriangleIcon,
-    EyeSlashIcon, HeartBrokenIcon,
+    HeartBrokenIcon,
     HeartIcon, ImageIcon, MapMarkerIcon, StarIcon, TimesIcon, UnlockIcon, UserCircleIcon
 } from "react-line-awesome";
 import _ from 'lodash';
@@ -119,8 +118,8 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
             await unMuteUser(Number(userProfile.user.id));
 
             const result = await loadFullUserProfile(Number(userProfile.user.id));
-            if (result.error || !result.userProfileDetails) {
-                alert(result.error || 'An error occurred sending update. Please try again later.');
+            if (!("userProfileDetails" in result) || ("error" in result && result.error) || ("userProfileDetails" in result && !result.userProfileDetails)) {
+                alert(("error" in result && result.error) || 'An error occurred sending update. Please try again later.');
                 return;
             }
 
@@ -138,8 +137,8 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         try {
             await removeUserMatch(Number(userProfile.user.id));
             const result = await loadFullUserProfile(Number(userProfile.user.id));
-            if (result.error || !result.userProfileDetails) {
-                alert(result.error || 'An error occurred sending update. Please try again later.');
+            if ('error' in result || !result.userProfileDetails) {
+                alert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
                 return;
             }
 
@@ -158,8 +157,8 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         try {
             await muteUser(Number(userProfile.user.id));
             const result = await loadFullUserProfile(Number(userProfile.user.id));
-            if (result.error || !result.userProfileDetails) {
-                alert(result.error || 'An error occurred sending update. Please try again later.');
+            if ('error' in result || !result.userProfileDetails) {
+                alert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
                 return;
             }
 
@@ -177,8 +176,8 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         try {
             await blockUserAction(Number(userProfile.user.id));
             const result = await loadFullUserProfile(Number(userProfile.user.id));
-            if (result.error || !result.userProfileDetails) {
-                alert(result.error || 'An error occurred sending update. Please try again later.');
+            if ('error' in result || !result.userProfileDetails) {
+                alert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
                 return;
             }
 
@@ -196,8 +195,8 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         try {
             await unBlockUserAction(Number(userProfile.user.id));
             const result = await loadFullUserProfile(Number(userProfile.user.id));
-            if (result.error || !result.userProfileDetails) {
-                alert(result.error || 'An error occurred sending update. Please try again later.');
+            if ('error' in result || !result.userProfileDetails) {
+                alert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
                 return;
             }
 

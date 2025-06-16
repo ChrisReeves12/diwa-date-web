@@ -4,11 +4,8 @@ import {
 } from "@/server-side-helpers/user.helpers";
 import { redirect } from "next/navigation";
 import UserProfile from "./user-profile";
-import { getNotificationCenterData } from "@/server-side-helpers/notification.helper";
 import { cookies } from "next/headers";
 import './user-profile.scss';
-// import { InfoCircleIcon } from "react-line-awesome"; // Commented out as UserProfileError is not used
-// import UserProfileError from "@/app/user/[userId]/user-profile-error"; // Commented out as UserProfileError is not used
 import { Metadata } from "next";
 import { cache } from "react";
 
@@ -27,9 +24,10 @@ const getUserProfile = cache(async (userId: string) => {
 
     // Ensure getFullUserProfile also returns a consistent shape, especially for errors
     const profileResult = await getFullUserProfile(Number(userId), Number(currentUser.id));
-    if (profileResult.error) {
+    if ("error" in profileResult && profileResult.error) {
         return { ...profileResult, userProfileDetails: undefined };
     }
+
     return profileResult;
 });
 
@@ -48,7 +46,8 @@ export async function generateMetadata({ params }: any): Promise<Metadata> {
     const userProfileResult = await getUserProfile(userId);
 
     // Check for error before accessing userProfileDetails
-    if (userProfileResult.error || !userProfileResult.userProfileDetails) {
+    if (!("userProfileDetails" in userProfileResult) || ("error" in userProfileResult && userProfileResult.error) ||
+        ("userProfileDetails" in userProfileResult && !userProfileResult.userProfileDetails)) {
         return {
             title: `${process.env.APP_NAME} | Profile`
         };
@@ -67,18 +66,15 @@ export default async function UserProfilePage({ params }: any) {
         redirect('/');
     }
 
-
     const userProfileResult = await getUserProfile(userId);
 
-    if (userProfileResult.error || !userProfileResult.userProfileDetails) {
-        // Ensure a fallback UI for errors or missing details
+    if (!("userProfileDetails" in userProfileResult) || ("error" in userProfileResult && userProfileResult.error) || ("userProfileDetails" in userProfileResult && !userProfileResult.userProfileDetails)) {
         return <div>Error: {userProfileResult.error || "Profile not found"}</div>;
     }
 
     return (
         <UserProfile
             currentUser={currentUser}
-
             userProfileDetail={userProfileResult.userProfileDetails}
         />
     );

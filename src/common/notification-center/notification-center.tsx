@@ -19,12 +19,55 @@ import NotificationIconsContainer from './notification-icons-container/notificat
 import NotificationPopover from './notification-popover/notification-popover';
 import { muteUser, sendUserMatch } from '../server-actions/user-profile.actions';
 
-function NotificationCenterContent({ initialNotificationsData }: { initialNotificationsData: NotificationCenterData }) {
-    const [notificationsData, setNotificationsData] = useState(initialNotificationsData);
+export default function NotificationCenter() {
     const currentUser = useCurrentUser();
+    const [notificationsData, setNotificationsData] = useState<NotificationCenterData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const popovers = useNotificationPopovers();
 
+    useEffect(() => {
+        if (!currentUser) {
+            setIsLoading(false);
+            return;
+        }
+
+        const loadData = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const data = await loadNotificationCenterData(currentUser);
+                setNotificationsData(data);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to load notifications');
+                console.error('Error loading notification center data:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadData();
+    }, [currentUser]);
+
     if (!currentUser) {
+        return null;
+    }
+
+    if (isLoading) {
+        return (
+            <div>Please wait...</div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="notification-center-error">
+                An error occurred while loading notification center. Please try again later.
+            </div>
+        );
+    }
+
+    if (!notificationsData) {
         return null;
     }
 
@@ -83,14 +126,14 @@ function NotificationCenterContent({ initialNotificationsData }: { initialNotifi
                     infoSectionUrl: userProfileLink(pendingMatch.sender),
                     userPhotoUrl: userProfileLink(pendingMatch.sender),
                     onLike: () => {
-                        sendUserMatch(pendingMatch.userId).then((matchStatus: "pending" | "matched") => {
-                            if (matchStatus === 'matched') {
-                                // Todo: update state
-                            }
-                        });
+                        sendUserMatch(pendingMatch.sender.id).then(() => {
+                            return loadNotificationCenterData(currentUser);
+                        }).then((aData) => setNotificationsData(aData));
                     },
                     onPass: () => {
-                        muteUser(pendingMatch.userId);
+                        muteUser(pendingMatch.sender.id).then(() => {
+                            return loadNotificationCenterData(currentUser);
+                        }).then((aData) => setNotificationsData(aData));
                     },
                     type: "likes"
                 }))}
@@ -142,88 +185,4 @@ function NotificationCenterContent({ initialNotificationsData }: { initialNotifi
             />
         </>
     );
-}
-
-export default function NotificationCenter() {
-    const currentUser = useCurrentUser();
-    const [notificationsData, setNotificationsData] = useState<NotificationCenterData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (!currentUser) {
-            setIsLoading(false);
-            return;
-        }
-
-        const loadData = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const data = await loadNotificationCenterData(currentUser);
-                setNotificationsData(data);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to load notifications');
-                console.error('Error loading notification center data:', err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        loadData();
-    }, [currentUser]);
-
-    if (!currentUser) {
-        return null;
-    }
-
-    if (isLoading) {
-        return (
-            <div className="notification-center-loading">
-                <div className="notification-center-container">
-                    <NotificationIconsContainer disabled={true} />
-                    <div className="profile-user">
-                        <button disabled className="profile-container">
-                            <UserPhotoDisplay gender={currentUser.gender}
-                                croppedImageData={currentUser.mainPhotoCroppedImageData}
-                                imageUrl={currentUser.publicMainPhoto} />
-                            <div className="profile-name-container">
-                                <h5>{currentUser.displayName}</h5>
-                                <h6>My Account</h6>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (error) {
-        // On error, show the notification center without counts and log the error
-        // This prevents the entire top bar from breaking if notifications fail
-        return (
-            <div className="notification-center-error">
-                <div className="notification-center-container">
-                    <NotificationIconsContainer disabled={true} error={error} />
-                    <div className="profile-user">
-                        <button className="profile-container">
-                            <UserPhotoDisplay gender={currentUser.gender}
-                                croppedImageData={currentUser.mainPhotoCroppedImageData}
-                                imageUrl={currentUser.publicMainPhoto} />
-                            <div className="profile-name-container">
-                                <h5>{currentUser.displayName}</h5>
-                                <h6>My Account</h6>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (!notificationsData) {
-        return null;
-    }
-
-    return <NotificationCenterContent initialNotificationsData={notificationsData} />;
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { User, AuthResult, UserPhoto, UserPreview } from '../types';
+import { User, AuthResult, UserPhoto, UserPreview, SubscriptionPlanEnrollment } from '../types';
 import moment from "moment";
 import _ from "lodash";
 import {
@@ -16,6 +16,52 @@ import { logError } from "@/server-side-helpers/logging.helpers";
 import { LikesSortBy } from "@/types/likes-sort-by.enum";
 import pgDbPool from "@/lib/postgres";
 import { humanizeTimeDiff } from "@/server-side-helpers/time.helpers";
+import { UserProfileDetail } from '@/types/user-profile-detail.interface';
+
+type UserForProfileDetail = Pick<User,
+    | "id"
+    | "publicPhotos"
+    | "mainPhotoCroppedImageData"
+    | "publicMainPhoto"
+    | "displayName"
+    | "seekingGender"
+    | "gender"
+    | "age"
+    | "maritalStatus"
+    | "bio"
+    | "locationName"
+    | "interests"
+    | "wantsChildren"
+    | "hasChildren"
+    | "education"
+    | "smoking"
+    | "drinking"
+    | "religions"
+    | "bodyType"
+    | "height"
+    | "ethnicities"
+    | "lastActiveAt"
+>
+
+type DbLike = {
+    id: number;
+    displayName: string;
+    gender: string;
+    dateOfBirth: Date;
+    lastActiveAt: Date;
+    photos?: UserPhoto[];
+    numOfPhotos: number;
+    mainPhoto?: string;
+    locationName: string;
+    latitude: number;
+    longitude: number;
+    country: string;
+    createdAt: Date;
+    matchId: number;
+    matchStatus: string;
+    receivedLikeAt: Date;
+    age: number;
+};
 
 /**
  * Get a user by their ID
@@ -33,7 +79,7 @@ export async function getUser(id: number): Promise<User | null> {
         return null;
     }
 
-    return prepareUser(user as unknown as User);
+    return user as unknown as User;
 }
 
 /**
@@ -107,7 +153,7 @@ export async function refreshLastActive(user: User) {
  * @param currentUserId
  * @param user
  */
-export async function getUserProfileDetail(currentUserId: number, user: User) {
+export async function getUserProfileDetail(currentUserId: number, user: UserForProfileDetail) {
     const { rows: profileDetailResults } = await pgDbPool.query(`
                 WITH "TheyBlockedMeIds" AS (SELECT "BU"."userId"
                                             FROM "blockedUsers" "BU"
@@ -272,19 +318,6 @@ export async function getCurrentUser(cookieStore: ReadonlyRequestCookies) {
         return undefined;
     }
 
-    // const newSessionId = await rotateSession(sessionId, cookieStore);
-    // if (newSessionId) {
-    //   cookieStore.set({
-    //     name: SESSION_COOKIE_NAME,
-    //     value: newSessionId,
-    //     httpOnly: true,
-    //     secure: process.env.NODE_ENV === 'production',
-    //     sameSite: 'strict',
-    //     maxAge: SESSION_EXPIRY,
-    //     path: '/'
-    //   });
-    // }
-
     // Get the user from the database
     const result = await prisma.users.findUnique({
         where: {
@@ -306,7 +339,7 @@ export async function getCurrentUser(cookieStore: ReadonlyRequestCookies) {
     }
 
     const user = result as unknown as User;
-    return prepareUser(user);
+    return Object.assign({}, user, getPublicUserDetails(user));
 }
 
 /**
@@ -347,13 +380,16 @@ export function appendMediaRootToImageUrl(imageUrl?: string) {
  * @param {User} user - The user object whose subscription status is being checked.
  * @return {boolean} Returns true if the user's subscription is active, false otherwise.
  */
-export function checkSubscriptionActive(user: Omit<User, 'password'> & Partial<Pick<User, 'password'>>): boolean {
+export function checkSubscriptionActive(user: { subscriptionPlanEnrollments?: SubscriptionPlanEnrollment[] }): boolean {
+    if (!user.subscriptionPlanEnrollments) {
+        return false;
+    }
+
     const subscription = _.first(user.subscriptionPlanEnrollments);
     if (!subscription) {
         return false;
     }
 
-    // @ts-expect-error User confirms endsAt is correct despite linter warning
     return (!subscription.endsAt || moment(subscription.endsAt).startOf('day').isAfter(moment().startOf('day')));
 }
 
@@ -449,24 +485,21 @@ export function getMainCroppedImageData(data: Pick<User, 'photos' | 'mainPhoto'>
 }
 
 /**
- * Prepare user for API access.
- *
- * @param user (can be a User object or a snake_case object from Prisma)
+ * Get extra publicly facing details for user.
+ * @param user
  * @returns
  */
-export function prepareUser(user: any): User {
-    user.isSubscriptionActive = checkSubscriptionActive(user);
+export function getPublicUserDetails(user: Pick<User, "mainPhoto" | "photos"> & { subscriptionPlanEnrollments?: SubscriptionPlanEnrollment[] }) {
+    const preparedUser = Object.assign({}, user, {
+        isSubscriptionActive: "subscriptionPlanEnrollments" in user ? checkSubscriptionActive(user) : false,
+        publicMainPhoto: user.mainPhoto && user.photos ? appendMediaRootToImageUrl(user.mainPhoto) : undefined,
+        mainPhotoCroppedImageData: user.mainPhoto && user.photos ?
+            getMainCroppedImageData({ photos: user.photos, mainPhoto: user.mainPhoto }) : undefined,
+        publicPhotos: user.photos?.length ?
+            user.photos.map((p: any) => appendMediaRootToImage(p)) : []
+    });
 
-    if (user.mainPhoto && user.photos) {
-        user.publicMainPhoto = appendMediaRootToImageUrl(user.mainPhoto);
-        user.mainPhotoCroppedImageData = getMainCroppedImageData({ photos: user.photos, mainPhoto: user.mainPhoto });
-    }
-
-    if (user.photos && user.photos.length) {
-        user.publicPhotos = user.photos.map((p: any) => appendMediaRootToImage(p));
-    }
-
-    return user;
+    return preparedUser;
 }
 
 /**
@@ -698,7 +731,7 @@ export async function getUserLikes(
             break;
     }
 
-    const result = await pgDbPool.query(`
+    const results = await pgDbPool.query<DbLike>(`
         SELECT 
             U."id",
             U."displayName",
@@ -735,12 +768,14 @@ export async function getUserLikes(
         LIMIT $2 OFFSET $3
     `, [userId, pageSize, offset]);
 
-    const hasMore = result.rows.length === pageSize;
-    const likes = result.rows.map(row => {
-        const user = prepareUser(row);
-        (user as any).lastActiveHumanized = humanizeTimeDiff(user.lastActiveAt);
-        (user as any).receivedLikeHumanized = humanizeTimeDiff(user.receivedLikeAt);
-        return user;
+    const hasMore = results.rows.length === pageSize;
+    const likes = results.rows.map(like => {
+        const publicUserLike = Object.assign({}, like, getPublicUserDetails(like));
+
+        return Object.assign({}, publicUserLike, {
+            lastActiveHumanized: humanizeTimeDiff(publicUserLike.lastActiveAt),
+            receivedLikeHumanized: humanizeTimeDiff(publicUserLike.receivedLikeAt)
+        });
     });
 
     return { hasMore, likes };
@@ -768,7 +803,7 @@ export async function unMuteUserById(userId: number, recipientUserId: number): P
  * @param userId
  * @param currentUserId
  */
-export async function getFullUserProfile(userId: number, currentUserId: number) {
+export async function getFullUserProfile(userId: number, currentUserId: number): Promise<{ statusCode: number, userProfileDetails: UserProfileDetail } | { error: string, statusCode: number }> {
     const user = await getUser(userId);
     if (!user) {
         return { error: 'This user account cannot be found.', statusCode: 404 };
@@ -783,7 +818,7 @@ export async function getFullUserProfile(userId: number, currentUserId: number) 
         return { error: 'You have been blocked by this user.', statusCode: 403 };
     }
 
-    const userProfileDetails = await getUserProfileDetail(currentUserId, prepareUser(user));
+    const userProfileDetails = await getUserProfileDetail(currentUserId, user);
     return { statusCode: 200, userProfileDetails };
 }
 

@@ -1,13 +1,33 @@
-import { SearchFromOrigin, User } from "@/types";
+import { SearchFromOrigin, User, UserPhoto } from "@/types";
 import { businessConfig } from "@/config/business";
 import { SearchSortBy } from "@/types/search-parameters.interface";
 import moment from "moment";
 import _ from "lodash";
 import { LocalityViewport } from "@/types/locality-viewport.interface";
-import { prepareUser } from "@/server-side-helpers/user.helpers";
+import { getPublicUserDetails } from "@/server-side-helpers/user.helpers";
 import pgDbPool from "@/lib/postgres";
 import { SearchResponse } from "@/types/search-response.interface";
 import { humanizeTimeDiff } from "@/server-side-helpers/time.helpers";
+
+type DbUserSearchResult = {
+    id: number;
+    gender: string;
+    displayName: string;
+    mainPhoto?: string;
+    photos?: UserPhoto[];
+    dateOfBirth: Date;
+    lastActiveAt: Date;
+    numOfPhotos: number;
+    createdAt: Date;
+    seekingGender: string;
+    locationName: string;
+    matchId?: number;
+    matchStatus?: string;
+    age: number;
+    matchAcceptedAt?: Date;
+    blockedThem?: boolean;
+    theyLikedMe?: boolean;
+};
 
 /**
  * Search users based on given search parameters.
@@ -67,7 +87,7 @@ export async function searchUsers(currentUser: Omit<User, 'password'>, params: {
         enumeratedQueries.push(`AND ${predicate}`);
     }
 
-    const searchResults = await pgDbPool.query(`
+    const searchResults = await pgDbPool.query<DbUserSearchResult>(`
         WITH SelectedUsers AS (
             SELECT U."id",
                    U."gender",
@@ -109,10 +129,11 @@ export async function searchUsers(currentUser: Omit<User, 'password'>, params: {
 
     return {
         hasError: false,
-        searchResults: searchResults.rows.map((row: any) => {
-            const user = prepareUser(row);
-            (user as any).lastActiveHumanized = humanizeTimeDiff(user.lastActiveAt);
-            return user;
+        searchResults: searchResults.rows.map((userResult) => {
+            const publicUserDetails = getPublicUserDetails(userResult);
+            const publicUser = Object.assign({}, userResult, publicUserDetails);
+
+            return Object.assign({}, publicUser, { lastActiveHumanized: humanizeTimeDiff(userResult.lastActiveAt) });
         }),
         hasNextPage: searchResults.rowCount === pageSize,
         currentUser

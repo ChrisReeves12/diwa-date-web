@@ -2,31 +2,17 @@ import { UserPhoto } from "@/types/user-photo.type";
 import { CroppedImageData } from "./cropped-image-data.interface";
 
 export interface NotificationUser {
-  id: string;
-  displayName: string;
-  mainPhoto: string;
-  photos: UserPhoto[];
-  gender: string;
-  lastActiveAt: Date;
-  locationName: string;
-  country: string;
-  password: string;
-  age: number;
-  isSubscriptionActive: boolean;
-  publicMainPhoto: string;
-  publicPhotos: UserPhoto[];
+  id: number,
+  locationName: string,
+  gender: string,
+  displayName: string,
+  mainPhotoCroppedImageData?: CroppedImageData,
+  publicMainPhoto?: string,
+  age: number
 }
 
 export interface NotificationPendingMatch {
-  id: string;
-  userId: number;
-  recipientId: number;
-  status: string;
-  acceptedAt: string | null;
-  acknowledgedAt: string | null;
-  updatedAtTimestamp: string;
-  createdAt: string;
-  updatedAt: string;
+  id: number;
   receivedAtHumanized: string;
   sender: NotificationUser;
 }
@@ -58,16 +44,7 @@ export interface NotificationReceivedMessage {
 }
 
 export interface Notification {
-  id: string;
-  userId: string;
-  recipientId: string;
-  type: string;
-  readAt: string | null;
-  data: {
-    matchId: number;
-  };
-  createdAt: string;
-  updatedAt: string;
+  id: number;
   sender: NotificationUser;
 }
 

@@ -5,11 +5,12 @@ import {
     sendUserMatchRequest,
     removeUserMatchRequest,
     blockUser,
-    unBlockUser, muteUserById, unMuteUserById, getUser, getFullUserProfile, refreshLastActive
+    unBlockUser, muteUserById, unMuteUserById, getFullUserProfile, refreshLastActive
 } from "@/server-side-helpers/user.helpers";
 import { redirect } from "next/navigation";
 import { logError } from "@/server-side-helpers/logging.helpers";
 import { cookies } from "next/headers";
+import { UserProfileDetail } from "@/types/user-profile-detail.interface";
 
 /**
  * Remove a match between the current user and another user

@@ -5,13 +5,13 @@ import { SubscriptionPlan } from './subscription-plan.interface';
  */
 export interface SubscriptionPlanEnrollment {
   id: number;
-  user_id: number;
-  subscription_plan_id: number;
-  last_payment_at?: Date | null;
-  next_payment_at?: Date | null;
+  userId: number;
+  subscriptionPlanId: number;
+  lastPaymentAt?: Date | null;
+  nextPaymentAt?: Date | null;
   started_at?: Date | null;
-  ends_at?: Date | null;
-  created_at?: Date | null;
-  updated_at?: Date | null;
-  subscription_plans: SubscriptionPlan;
+  endsAt?: Date | null;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+  subscriptionPlans: SubscriptionPlan;
 }
