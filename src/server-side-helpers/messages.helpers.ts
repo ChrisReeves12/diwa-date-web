@@ -3,6 +3,7 @@ import { User, UserPhoto } from "@/types";
 import { getPublicUserDetails } from "./user.helpers";
 import { CroppedImageData } from "@/types/cropped-image-data.interface";
 import { humanizeTimeDiff } from "./time.helpers";
+import { isUserSuspended, isUserBlocked } from "./user.helpers";
 
 type DbConversation = {
     matchId: number;
@@ -78,3 +79,72 @@ export async function getConversationsFromMatches(userId: number): Promise<Conve
         return Object.assign({}, matchUser, publicUserDetails);
     });
 };
+
+/**
+ * Sends a message from one user to another.
+ *
+ * @param message The message content.
+ * @param userId The ID of the user sending the message.
+ * @param recipientId The ID of the user receiving the message.
+ * @param matchId The ID of the match.
+ * @returns Structured response with error handling
+ */
+export async function sendMessage(
+    message: string,
+    userId: number,
+    recipientId: number,
+    matchId: number
+): Promise<{ error?: string; statusCode: number; data?: any }> {
+    // Check if recipient is suspended
+    if (await isUserSuspended(recipientId)) {
+        return {
+            error: 'You cannot send a message to this user because they have been suspended.',
+            statusCode: 400
+        };
+    }
+
+    // Check if sender is blocked by recipient
+    if (await isUserBlocked(recipientId, userId)) {
+        return {
+            error: 'You have been blocked by this user.',
+            statusCode: 403
+        };
+    }
+
+    try {
+        const result = await prisma.$transaction(async (tx) => {
+            const now = new Date();
+            const timestamp = Date.now();
+
+            const messageResult = await tx.messages.create({
+                data: {
+                    content: message,
+                    userId: userId,
+                    recipientId: recipientId,
+                    matchId: matchId,
+                    timestamp: timestamp,
+                    createdAt: now,
+                    updatedAt: now,
+                }
+            });
+
+            await tx.userMatches.update({
+                where: {
+                    id: matchId,
+                },
+                data: {
+                    updatedAtTimestamp: timestamp,
+                },
+            });
+
+            return messageResult;
+        });
+
+        return { statusCode: 200, data: result };
+    } catch (error) {
+        return {
+            error: 'Failed to send message. Please try again later.',
+            statusCode: 500
+        };
+    }
+}

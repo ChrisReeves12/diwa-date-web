@@ -694,7 +694,7 @@ export async function isUserBlocked(userId: number, blockedUserId: number) {
     const result = await pgDbPool.query(`SELECT EXISTS(SELECT 1 FROM "blockedUsers" WHERE "userId" = $1 AND "blockedUserId" = $2) as "isBlocked"`,
         [userId, blockedUserId]);
 
-    return _.get(result, [0, 'isBlocked'], false);
+    return _.get(result.rows, [0, 'isBlocked'], false);
 }
 
 /**

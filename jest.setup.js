@@ -2,7 +2,7 @@ import '@testing-library/jest-dom'
 
 // Mock environment variables
 process.env.APP_KEY = 'test-app-key'
-process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test'
+process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/diwa_date'
 process.env.MEDIA_IMAGE_ROOT_URL = 'https://example.com/media'
 process.env.FAKER_MEDIA_IMAGE_ROOT_URL = 'https://example.com/faker'
 
