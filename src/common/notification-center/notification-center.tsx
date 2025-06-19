@@ -31,7 +31,7 @@ export default function NotificationCenter() {
             setIsLoading(false);
             return;
         }
-
+        
         const loadData = async () => {
             setIsLoading(true);
             setError(null);

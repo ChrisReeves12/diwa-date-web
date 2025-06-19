@@ -139,20 +139,20 @@ export async function getNotificationCenterData(currentUser: User): Promise<Noti
 export async function getReceivedMessages(user: User): Promise<NotificationReceivedMessage[]> {
     const results = await prisma.$queryRaw`
         SELECT S.* FROM (
-                    SELECT M.*,
-                       U."displayName",
-                       U."mainPhoto",
-                       U."photos",
-                       Calculate_Age(U."dateOfBirth") AS "age",
-                       U."lastActiveAt",
-                       U."suspendedAt",
-                       U."locationName",
-                       U."gender" AS "userGender",
-                       LEAST(COUNT(M.id) OVER (PARTITION BY M."userId"), 100) AS "msgCount",
-                       CASE WHEN MAX(M."timestamp") OVER (PARTITION BY M."userId") = M."timestamp" THEN 1 ELSE 0 END AS "isLatest"
-                    FROM "messages" M
-                        JOIN "users" U ON M."userId" = U.id AND M."userId" NOT IN (SELECT "blockedUserId" FROM "blockedUsers" _BU WHERE _BU."userId" = ${user.id})
-                    WHERE M."recipientId" = ${user.id}) S
+            SELECT M.*,
+                U."displayName",
+                U."mainPhoto",
+                U."photos",
+                Calculate_Age(U."dateOfBirth") AS "age",
+                U."lastActiveAt",
+                U."suspendedAt",
+                U."locationName",
+                U."gender" AS "userGender",
+                LEAST(COUNT(M.id) OVER (PARTITION BY M."userId"), 100) AS "msgCount",
+                CASE WHEN MAX(M."timestamp") OVER (PARTITION BY M."userId") = M."timestamp" THEN 1 ELSE 0 END AS "isLatest"
+            FROM "messages" M
+                JOIN "users" U ON M."userId" = U.id AND M."userId" NOT IN (SELECT "blockedUserId" FROM "blockedUsers" _BU WHERE _BU."userId" = ${user.id})
+            WHERE M."recipientId" = ${user.id}) S
         WHERE S."isLatest" = 1
         ORDER BY S."timestamp" DESC LIMIT 5
     `;

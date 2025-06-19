@@ -1,0 +1,70 @@
+@use '../../styles/globals.scss' as globals;
+
+.conversation-list-container {
+    height: 70vh;
+
+    .conversations-list {
+        overflow-y: auto;
+        padding-top: 24px;
+
+        .conversation-container {
+            display: flex;
+            font-size: 16px;
+            padding: 10px 12px 15px;
+            cursor: pointer;
+
+            .profile-container {
+                margin-right: 8px;
+                position: relative;
+
+                .unread-message-indicator {
+                    background-color: globals.$primary-blue;
+                    color: white;
+                    border-radius: 50%;
+                    width: 12px;
+                    height: 12px;
+                    top: 0;
+                    position: absolute;
+                    left: -2px;
+                }
+            }
+
+            .user-info-section {
+                .user-name {
+                    font-weight: bold;
+                    color: globals.$primary-blue;
+
+                    @include globals.dark-mode {
+                        color: #ffffff;
+                    }
+                }
+
+                .last-message {
+                    font-size: 14px;
+                    color: #858585;
+
+                    @include globals.dark-mode {
+                        color: #919191;
+                    }
+                }
+
+                .last-sent {
+                    font-size: 13px;
+                    font-style: italic;
+                    color: globals.$primary-blue;
+                }
+
+                &.unread {
+                    .last-message {
+                        font-weight: 500;
+                        color: #000000;
+
+                        @include globals.dark-mode {
+                            color: #ffffff;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

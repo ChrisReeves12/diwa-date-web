@@ -472,34 +472,31 @@ export function calculateUserAge({ dateOfBirth }: { dateOfBirth: Date | string }
  * @returns
  */
 export function getMainCroppedImageData(data: Pick<User, 'photos' | 'mainPhoto'>) {
-    if (!data.mainPhoto || !data.photos)
+    if (!data.photos) {
         return undefined;
-
-    const mainPhotoCroppedImageData = data.photos.find(p => p.path === data.mainPhoto)?.croppedImageData;
-    if (mainPhotoCroppedImageData) {
-        mainPhotoCroppedImageData.croppedImagePath =
-            appendMediaRootToImageUrl(mainPhotoCroppedImageData.croppedImagePath) || mainPhotoCroppedImageData.croppedImagePath;
     }
 
-    return mainPhotoCroppedImageData;
+    const mainPhotoName = data.mainPhoto;
+    const mainPhoto = data.photos.find(p => p.path.endsWith(mainPhotoName as string));
+    return mainPhoto ? mainPhoto.croppedImageData : undefined;
 }
 
 /**
- * Get extra publicly facing details for user.
- * @param user
- * @returns
+ * Get public user details.
+ * @param user The user object
+ * @returns An object containing public user details
  */
-export function getPublicUserDetails(user: Pick<User, "mainPhoto" | "photos"> & { subscriptionPlanEnrollments?: SubscriptionPlanEnrollment[] }) {
-    const preparedUser = Object.assign({}, user, {
-        isSubscriptionActive: "subscriptionPlanEnrollments" in user ? checkSubscriptionActive(user) : false,
+export function getPublicUserDetails(user: Partial<User>) {
+    const isSubscriptionActive = checkSubscriptionActive(user);
+
+    return {
+        isSubscriptionActive,
         publicMainPhoto: user.mainPhoto && user.photos ? appendMediaRootToImageUrl(user.mainPhoto) : undefined,
         mainPhotoCroppedImageData: user.mainPhoto && user.photos ?
             getMainCroppedImageData({ photos: user.photos, mainPhoto: user.mainPhoto }) : undefined,
         publicPhotos: user.photos?.length ?
             user.photos.map((p: any) => appendMediaRootToImage(p)) : []
-    });
-
-    return preparedUser;
+    };
 }
 
 /**
