@@ -4,10 +4,12 @@
 
 /**
  * Generate a Redis key with the application prefix
- * @param key The base key to prefix
- * @returns The prefixed key
+ * Note: The prefix is now handled by the Redis client configuration
+ * @param key The key to use
+ * @returns The key (prefix is handled by Redis client)
  */
 export function getRedisKey(key: string): string {
-  const prefix = process.env.REDIS_KEY_PREFIX || 'app';
-  return `${prefix}:${key}`;
+  // The prefix is now handled by the Redis client configuration
+  // This function is kept for backward compatibility
+  return key;
 }
