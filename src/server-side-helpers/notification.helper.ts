@@ -132,7 +132,7 @@ export async function getNotificationCenterData(currentUser: User): Promise<Noti
 }
 
 /**
- * Get received messages for a user
+ * Get received messages for a user, only returning unread messages
  * @param user
  * @returns
  */
@@ -152,7 +152,7 @@ export async function getReceivedMessages(user: User): Promise<NotificationRecei
                 CASE WHEN MAX(M."timestamp") OVER (PARTITION BY M."userId") = M."timestamp" THEN 1 ELSE 0 END AS "isLatest"
             FROM "messages" M
                 JOIN "users" U ON M."userId" = U.id AND M."userId" NOT IN (SELECT "blockedUserId" FROM "blockedUsers" _BU WHERE _BU."userId" = ${user.id})
-            WHERE M."recipientId" = ${user.id}) S
+            WHERE M."recipientId" = ${user.id} AND M."readAt" IS NULL) S
         WHERE S."isLatest" = 1
         ORDER BY S."timestamp" DESC LIMIT 5
     `;
@@ -211,7 +211,7 @@ export async function countAllPendingMatches(user: User): Promise<number> {
 }
 
 /**
- * Count all unique users who sent messages to the given user, excluding blocked users.
+ * Count all unique users who sent unread messages to the given user, excluding blocked users.
  * @param user The recipient user.
  * @returns A promise that resolves to the total count of unique senders.
  */
@@ -220,6 +220,7 @@ export async function countAllMessages(user: User): Promise<number> {
         SELECT COUNT(DISTINCT M."userId") as "totalCount"
         FROM "messages" M
         WHERE M."recipientId" = ${user.id}
+          AND M."readAt" IS NULL
           AND M."userId" NOT IN (SELECT "blockedUserId" FROM "blockedUsers" _BU WHERE _BU."userId" = ${user.id})
     `;
 

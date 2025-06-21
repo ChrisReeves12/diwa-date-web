@@ -18,6 +18,7 @@ import { useNotificationPopovers } from './hooks/use-notification-popovers';
 import NotificationIconsContainer from './notification-icons-container/notification-icons-container';
 import NotificationPopover from './notification-popover/notification-popover';
 import { muteUser, sendUserMatch } from '../server-actions/user-profile.actions';
+import { useRouter } from 'next/navigation';
 
 export default function NotificationCenter() {
     const currentUser = useCurrentUser();
@@ -25,13 +26,14 @@ export default function NotificationCenter() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const popovers = useNotificationPopovers();
+    const router = useRouter();
 
     useEffect(() => {
         if (!currentUser) {
             setIsLoading(false);
             return;
         }
-        
+
         const loadData = async () => {
             setIsLoading(true);
             setError(null);
@@ -48,6 +50,22 @@ export default function NotificationCenter() {
 
         loadData();
     }, [currentUser]);
+
+    const handleMessagesClick = (e: React.MouseEvent<HTMLElement>) => {
+        if (notificationsData?.receivedMessages?.length === 0) {
+            router.push('/messages');
+        } else {
+            popovers.messages.handleClick(e);
+        }
+    };
+
+    const handleLikesClick = (e: React.MouseEvent<HTMLElement>) => {
+        if (notificationsData?.pendingMatches?.length === 0) {
+            router.push('/likes');
+        } else {
+            popovers.likes.handleClick(e);
+        }
+    };
 
     if (!currentUser) {
         return null;
@@ -76,8 +94,8 @@ export default function NotificationCenter() {
             <div className="notification-center-container">
                 <NotificationIconsContainer
                     notificationsData={notificationsData}
-                    onLikesClick={popovers.likes.handleClick}
-                    onMessagesClick={popovers.messages.handleClick}
+                    onLikesClick={handleLikesClick}
+                    onMessagesClick={handleMessagesClick}
                     onNotificationsClick={(e) => {
                         popovers.notifications.handleClick(e);
                         markMatchNotificationsAsRead(currentUser, notificationsData?.receivedNotifications)
@@ -158,7 +176,7 @@ export default function NotificationCenter() {
                         age: receivedMessage.age
                     },
                     receivedAtMessage: `Sent ${receivedMessage.sentAtHumanized}`,
-                    infoSectionUrl: `/user/messages/${receivedMessage.userId}`,
+                    infoSectionUrl: `/messages/${receivedMessage.matchId}`,
                     userPhotoUrl: userProfileLink({ id: receivedMessage.userId }),
                     numberOfMessages: receivedMessage.msgCount,
                     type: 'messages'

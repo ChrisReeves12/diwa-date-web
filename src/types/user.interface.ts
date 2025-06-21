@@ -74,7 +74,7 @@ export interface User {
   singleSearchLocation?: SingleSearchLocation;
   paymentProfileId?: string;
   customerPaymentProfileId?: string;
-  password: string;
+  password?: string;
   isSubscriptionActive: boolean;
   age: number;
   subscriptionPlanEnrollments: SubscriptionPlanEnrollment[];

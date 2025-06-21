@@ -79,6 +79,8 @@ export async function getUser(id: number): Promise<User | null> {
         return null;
     }
 
+    user.password = '';
+
     return user as unknown as User;
 }
 
@@ -486,7 +488,7 @@ export function getMainCroppedImageData(data: Pick<User, 'photos' | 'mainPhoto'>
  * @param user The user object
  * @returns An object containing public user details
  */
-export function getPublicUserDetails(user: Partial<User>) {
+export function getPublicUserDetails(user: Pick<User, "mainPhoto" | "photos"> & { subscriptionPlanEnrollments?: SubscriptionPlanEnrollment[] }) {
     const isSubscriptionActive = checkSubscriptionActive(user);
 
     return {

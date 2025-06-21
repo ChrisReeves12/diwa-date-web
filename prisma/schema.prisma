@@ -66,8 +66,8 @@ model messages {
   id                Int          @id(map: "messages_pk") @default(autoincrement())
   matchId           Int?
   content           String?
-  readAt            String?
-  notificationAckAt String?
+  readAt            DateTime?    @db.Timestamp(6)
+  notificationAckAt DateTime?    @db.Timestamp(6)
   userId            Int
   recipientId       Int
   timestamp         BigInt       @default(0)
@@ -182,8 +182,8 @@ model userMatches {
   userId                               Int
   recipientId                          Int
   status                               String     @db.VarChar(255)
-  acceptedAt                           String?
-  acknowledgedAt                       String?
+  acceptedAt                           DateTime?  @db.Timestamp(6)
+  acknowledgedAt                       DateTime?  @db.Timestamp(6)
   updatedAtTimestamp                   BigInt?    @default(0)
   createdAt                            DateTime?  @db.Timestamp(6)
   updatedAt                            DateTime?  @db.Timestamp(6)

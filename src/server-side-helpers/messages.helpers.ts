@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { User, UserPhoto } from "@/types";
-import { getPublicUserDetails } from "./user.helpers";
+import { getPublicUserDetails, getUser, getUserProfileDetail } from "./user.helpers";
 import { CroppedImageData } from "@/types/cropped-image-data.interface";
 import { humanizeTimeDiff } from "./time.helpers";
 import { isUserSuspended, isUserBlocked } from "./user.helpers";
@@ -45,13 +45,11 @@ export async function getConversationsFromMatches(userId: number): Promise<Conve
             FROM "userMatches" UM
                 INNER JOIN "users" R ON R."id" = UM."recipientId"
                 INNER JOIN "users" U ON U."id" = UM."userId"
-            WHERE (UM."recipientId" = ${userId} OR UM."userId" = ${userId}) AND UM."status" = 'matched'
-            ORDER BY UM."updatedAtTimestamp" DESC
-            LIMIT 150),
+            WHERE (UM."recipientId" = ${userId} OR UM."userId" = ${userId}) AND UM."status" = 'matched'),
 
         ConversationsWithMessages AS (
             SELECT
-                ROW_NUMBER() OVER (PARTITION BY MW."id" ORDER BY M."updatedAt" DESC) AS "rowNum",
+                ROW_NUMBER() OVER (PARTITION BY MW."id" ORDER BY M."timestamp" DESC) AS "rowNum",
                 MW."id" AS "matchId",
                 M."id" AS "messageId",
                 M."content" AS "messageContent",
@@ -69,7 +67,7 @@ export async function getConversationsFromMatches(userId: number): Promise<Conve
                 INNER JOIN "users" U ON U."id" = MW."otherUserId"
                 LEFT JOIN "messages" M ON M."matchId" = MW."id")
 
-        SELECT * FROM ConversationsWithMessages WHERE "rowNum" = 1`;
+        SELECT * FROM ConversationsWithMessages WHERE "rowNum" = 1 ORDER BY "matchUpdatedAtTimestamp" DESC`;
 
     return matches.map((matchUser) => {
         const publicUserDetails = Object.assign(
@@ -95,7 +93,6 @@ export async function sendMessage(
     recipientId: number,
     matchId: number
 ): Promise<{ error?: string; statusCode: number; data?: any }> {
-    // Check if recipient is suspended
     if (await isUserSuspended(recipientId)) {
         return {
             error: 'You cannot send a message to this user because they have been suspended.',
@@ -103,7 +100,6 @@ export async function sendMessage(
         };
     }
 
-    // Check if sender is blocked by recipient
     if (await isUserBlocked(recipientId, userId)) {
         return {
             error: 'You have been blocked by this user.',
@@ -147,4 +143,288 @@ export async function sendMessage(
             statusCode: 500
         };
     }
+}
+
+/**
+ * Get all messages for a specific match between two users.
+ *
+ * @param matchId The ID of the match.
+ * @param userId The ID of the current user (for validation).
+ * @returns Array of messages with sender information
+ */
+export async function getMessagesForMatch(
+    matchId: number,
+    userId: number
+): Promise<{ error?: string; statusCode: number; data?: any[] }> {
+    try {
+        // First verify that the user is part of this match
+        const match = await prisma.userMatches.findFirst({
+            where: {
+                id: matchId,
+                OR: [
+                    { userId: userId },
+                    { recipientId: userId }
+                ],
+                status: 'matched'
+            }
+        });
+
+        if (!match) {
+            return {
+                error: 'Match not found or you do not have access to this conversation.',
+                statusCode: 404
+            };
+        }
+
+        // Get all messages for this match with sender information, excluding blocked/suspended users
+        const messages = await prisma.messages.findMany({
+            where: {
+                matchId: matchId,
+                users: {
+                    suspendedAt: null,
+                    NOT: {
+                        blockedUsers_blockedUsers_userIdTousers: {
+                            some: {
+                                blockedUserId: userId
+                            }
+                        }
+                    }
+                }
+            },
+            include: {
+                users: true
+            },
+            orderBy: {
+                timestamp: 'asc'
+            }
+        });
+
+        // Get unique users from messages and cache their profile details
+        const uniqueUsers = new Map();
+        for (const message of messages) {
+            if (!uniqueUsers.has(message.users.id)) {
+                uniqueUsers.set(message.users.id, message.users);
+            }
+        }
+
+        // Cache profile details for each unique user (avoid redundant DB calls)
+        const userProfileCache = new Map();
+        for (const [userIdKey, user] of uniqueUsers) {
+            const publicUserDetail = getPublicUserDetails(user);
+            userProfileCache.set(userIdKey, publicUserDetail);
+        }
+
+        // Transform messages to include detailed public user information
+        const transformedMessages = [];
+        for (const message of messages) {
+            const senderProfileDetail = userProfileCache.get(message.users.id);
+
+            transformedMessages.push({
+                id: message.id,
+                content: message.content,
+                userId: message.userId,
+                recipientId: message.recipientId,
+                timestamp: message.timestamp,
+                createdAt: message.createdAt,
+                readAt: message.readAt,
+                sender: {
+                    id: message.users.id,
+                    displayName: message.users.displayName,
+                    gender: message.users.gender,
+                    lastActiveAt: message.users.lastActiveAt,
+                    mainPhoto: message.users.mainPhoto,
+                    photos: message.users.photos,
+                    profileDetail: senderProfileDetail
+                },
+                isFromCurrentUser: message.userId === userId
+            });
+        }
+
+        return { statusCode: 200, data: transformedMessages };
+    } catch (error) {
+        console.error('Error fetching messages for match:', error);
+        return {
+            error: 'Failed to fetch messages. Please try again later.',
+            statusCode: 500
+        };
+    }
+}
+
+/**
+ * Get match details including the other user's information for the chat header.
+ *
+ * @param matchId The ID of the match.
+ * @param currentUserId The ID of the current user.
+ * @returns Match details with other user's profile information
+ */
+export async function getMatchDetails(
+    matchId: number,
+    currentUserId: number
+): Promise<{ error?: string; statusCode: number; data?: any }> {
+    try {
+        // Get the match and other user details
+        const match = await prisma.userMatches.findFirst({
+            where: {
+                id: matchId,
+                OR: [
+                    { userId: currentUserId },
+                    { recipientId: currentUserId }
+                ],
+                status: 'matched'
+            },
+            include: {
+                users_userMatches_userIdTousers: true,
+                users_userMatches_recipientIdTousers: true
+            }
+        });
+
+        if (!match) {
+            return {
+                error: 'Match not found or you do not have access to this conversation.',
+                statusCode: 404
+            };
+        }
+
+        // Determine which user is the "other" user (not the current user)
+        const otherUser = (match.userId === currentUserId
+            ? await getUser(match.recipientId)
+            : await getUser(match.userId));
+
+        // Check if the other user is suspended
+        if (otherUser?.suspendedAt) {
+            return {
+                error: 'Other user has been suspended.',
+                statusCode: 404
+            };
+        }
+
+        if (!otherUser) {
+            return {
+                error: 'Other user not found or has been suspended.',
+                statusCode: 404
+            };
+        }
+
+        // Check if the other user has blocked the current user
+        if (await isUserBlocked(otherUser.id, currentUserId)) {
+            return {
+                error: 'You have been blocked by this user.',
+                statusCode: 403
+            };
+        }
+
+        // Get detailed profile information for the other user
+        const otherUserPublicDetail = getPublicUserDetails(otherUser);
+
+        return {
+            statusCode: 200,
+            data: {
+                matchId: match.id,
+                matchStatus: match.status,
+                matchCreatedAt: match.createdAt,
+                matchUpdatedAt: match.updatedAt,
+                otherUser: {
+                    id: otherUser.id,
+                    displayName: otherUser.displayName,
+                    gender: otherUser.gender,
+                    lastActiveAt: otherUser.lastActiveAt,
+                    mainPhoto: otherUser.mainPhoto,
+                    photos: otherUser.photos,
+                    ...otherUserPublicDetail
+                }
+            }
+        };
+    } catch (error) {
+        console.error('Error fetching match details:', error);
+        return {
+            error: 'Failed to fetch match details. Please try again later.',
+            statusCode: 500
+        };
+    }
+}
+
+/**
+ * Mark all unread messages in a match as read for the current user.
+ *
+ * @param matchId The ID of the match.
+ * @param userId The ID of the current user.
+ * @returns Success status
+ */
+export async function markMessagesAsRead(
+    matchId: number,
+    userId: number
+): Promise<{ error?: string; statusCode: number; data?: any }> {
+    try {
+        // First verify that the user is part of this match
+        const match = await prisma.userMatches.findFirst({
+            where: {
+                id: matchId,
+                OR: [
+                    { userId: userId },
+                    { recipientId: userId }
+                ],
+                status: 'matched'
+            }
+        });
+
+        if (!match) {
+            return {
+                error: 'Match not found or you do not have access to this conversation.',
+                statusCode: 404
+            };
+        }
+
+        // Mark all unread messages in this match as read for the current user
+        // Only mark messages where the current user is the recipient and readAt is null
+        const updateResult = await prisma.messages.updateMany({
+            where: {
+                matchId: matchId,
+                recipientId: userId,
+                readAt: null
+            },
+            data: {
+                readAt: new Date(),
+                updatedAt: new Date()
+            }
+        });
+
+        return {
+            statusCode: 200,
+            data: {
+                messagesMarkedAsRead: updateResult.count
+            }
+        };
+    } catch (error) {
+        console.error('Error marking messages as read:', error);
+        return {
+            error: 'Failed to mark messages as read. Please try again later.',
+            statusCode: 500
+        };
+    }
+}
+
+/**
+ * Acknowledge matches as read.
+ * @param currentUserId
+ * @param conversations
+ */
+export async function markMatchesAsRead(currentUserId: number, conversations: ConversationMatch[]) {
+    const matchIds = conversations.map(conversation => conversation.matchId);
+    const updateResult = await prisma.userMatches.updateMany({
+        where: {
+            id: {
+                in: matchIds
+            },
+            acknowledgedAt: null
+        },
+        data: {
+            acknowledgedAt: new Date()
+        }
+    });
+
+    // Remove notifications
+    await prisma.$queryRaw`DELETE FROM "notifications" 
+        WHERE (data #>> '{matchId}')::integer = ANY (${matchIds}) AND "recipientId" = ${currentUserId}`;
+
+    return updateResult;
 }
