@@ -11,6 +11,8 @@ export interface UserProfileDetail {
         | "age"
         | "locationName"
         | "bio"
+        | "lastActiveAt"
+        | "hideOnlineStatus"
     >;
     theyBlockedMe: boolean;
     suspendedAt?: Date;

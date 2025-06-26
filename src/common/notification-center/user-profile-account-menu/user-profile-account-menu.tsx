@@ -7,6 +7,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { logoutAction } from '@/common/server-actions/logout.actions';
 import './user-profile-account-menu.scss';
+import { toggleOnlineStatus } from '@/common/server-actions/user.actions';
+import { useState } from 'react';
+import { isUserOnline } from '@/helpers/user.helpers';
 
 interface UserProfileAccountMenuProps {
   onSelectionMade?: () => void;
@@ -15,6 +18,18 @@ interface UserProfileAccountMenuProps {
 export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileAccountMenuProps) {
   const currentUser = useCurrentUser();
   const router = useRouter();
+  const [isOnline, setIsOnline] = useState(currentUser?.lastActiveAt ? isUserOnline(currentUser.lastActiveAt, currentUser.hideOnlineStatus) : false);
+  const [hideOnlineStatus, setHideOnlineStatus] = useState(currentUser?.hideOnlineStatus || false);
+
+  const handleToggleOnlineStatus = async (e: React.MouseEvent) => {
+    // Prevent event bubbling to avoid closing the popover
+    e.stopPropagation();
+
+    const newHideOnlineStatus = !hideOnlineStatus;
+    setHideOnlineStatus(newHideOnlineStatus);
+    await toggleOnlineStatus(newHideOnlineStatus);
+    setIsOnline(currentUser?.lastActiveAt ? isUserOnline(currentUser.lastActiveAt, newHideOnlineStatus) : false);
+  };
 
   const handleSelectionMade = () => {
     if (onSelectionMade) {
@@ -44,20 +59,18 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
     <div className="user-profile-account-menu-container">
       {currentUser && (
         <div className="profile-photo-name-section">
-          <Link href={`/profile/${currentUser.id}`} onClick={handleSelectionMade}>
-            <UserPhotoDisplay
-              gender={currentUser.gender}
-              alt={currentUser.displayName}
-              croppedImageData={currentUser.mainPhotoCroppedImageData}
-              imageUrl={currentUser.publicMainPhoto}
-            />
-          </Link>
+          <UserPhotoDisplay
+            gender={currentUser.gender}
+            alt={currentUser.displayName}
+            croppedImageData={currentUser.mainPhotoCroppedImageData}
+            imageUrl={currentUser.publicMainPhoto}
+          />
           <div className="name-online-status-section">
             <h5>{currentUser.displayName}</h5>
-            <button className="online-status">
+            <button className="online-status" onClick={handleToggleOnlineStatus}>
               <div className="online-lamp-section">
-                <div className="online-lamp online"></div>
-                <div className="online-status-label">Online Now</div>
+                <div className={`online-lamp ${isOnline ? 'online' : 'offline'}`}></div>
+                <div className="online-status-label">{isOnline ? 'Online Now' : 'Offline'}</div>
               </div>
               <div className="online-status-selector">
                 <i className="las la-angle-down"></i>
@@ -79,7 +92,7 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
           </div>
           <div className="label">Account Settings</div>
         </Link>
-        <Link href="/profile/settings" className="menu-item" onClick={handleSelectionMade}>
+        <Link href="/profile" className="menu-item" onClick={handleSelectionMade}>
           <div className="icon">
             <Image
               width={35}

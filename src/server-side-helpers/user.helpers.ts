@@ -17,6 +17,13 @@ import { LikesSortBy } from "@/types/likes-sort-by.enum";
 import pgDbPool from "@/lib/postgres";
 import { humanizeTimeDiff } from "@/server-side-helpers/time.helpers";
 import { UserProfileDetail } from '@/types/user-profile-detail.interface';
+import {
+    emitNewMatchNotification,
+    emitNewNotification,
+    emitMatchCancelled,
+    emitUserBlocked,
+    emitUserUnblocked
+} from '@/server-side-helpers/notification-emitter.helper';
 
 type UserForProfileDetail = Pick<User,
     | "id"
@@ -41,6 +48,7 @@ type UserForProfileDetail = Pick<User,
     | "height"
     | "ethnicities"
     | "lastActiveAt"
+    | "hideOnlineStatus"
 >
 
 type DbLike = {
@@ -104,12 +112,24 @@ export async function blockUser(userId: number, blockedUserId: number) {
     }
 
     // Create new block record
+    const blockTimestamp = new Date();
     await prisma.blockedUsers.create({
         data: {
             userId: userId,
             blockedUserId: blockedUserId
         }
     });
+
+    // Emit WebSocket event to the blocked user
+    try {
+        await emitUserBlocked(String(blockedUserId), {
+            blockedUserId: blockedUserId,
+            blockedBy: userId,
+            timestamp: blockTimestamp
+        });
+    } catch (wsError) {
+        console.error('Failed to emit user blocked notification:', wsError);
+    }
 
     return true;
 }
@@ -128,6 +148,17 @@ export async function unBlockUser(userId: number, blockedUserId: number) {
             blockedUserId: blockedUserId
         }
     });
+
+    // Emit WebSocket event to the unblocked user
+    try {
+        await emitUserUnblocked(String(blockedUserId), {
+            unblockedUserId: blockedUserId,
+            unblockedBy: userId,
+            timestamp: new Date()
+        });
+    } catch (wsError) {
+        console.error('Failed to emit user unblocked notification:', wsError);
+    }
 
     return true;
 }
@@ -203,7 +234,7 @@ export async function getUserProfileDetail(currentUserId: number, user: UserForP
 
     return {
         user,
-        seekingLabel: createGenderLabels(user.seekingGender),
+        seekingLabel: user.seekingGender ? createGenderLabels(user.seekingGender) : 'Not specified',
         maritalStatusLabel: user.maritalStatus ?
             businessConfig.options.maritalStatuses[user.maritalStatus as keyof typeof businessConfig.options.maritalStatuses] : 'No Answer',
         interestLabels: (user.interests || [])
@@ -230,28 +261,8 @@ export async function getUserProfileDetail(currentUserId: number, user: UserForP
     };
 }
 
-/**
- * Create appropriate gender seeking label.
- * @param gender The gender string (e.g., 'male', 'female', 'both')
- * @returns string
- */
-function createGenderLabels(gender?: string): string {
-    if (!gender) {
-        return 'Not specified';
-    }
-    const lowerGender = gender.toLowerCase();
-    if (lowerGender === 'male') {
-        return 'Men';
-    }
-    if (lowerGender === 'female') {
-        return 'Women';
-    }
-    if (lowerGender === 'both' || lowerGender === 'all' || lowerGender === 'men and women') { // Assuming 'both' or 'all' can represent this
-        return 'Men and Women';
-    }
-    // Fallback: capitalize the provided gender string if it's something else
-    return gender.charAt(0).toUpperCase() + gender.slice(1);
-}
+import { createGenderLabels } from '@/helpers/user.helpers';
+import { cookies } from "next/headers";
 
 /**
  * Authenticate a user with email and password
@@ -341,7 +352,8 @@ export async function getCurrentUser(cookieStore: ReadonlyRequestCookies) {
     }
 
     const user = result as unknown as User;
-    return Object.assign({}, user, getPublicUserDetails(user));
+    const enhancedUser = Object.assign({}, user, getPublicUserDetails(user));
+    return enhancedUser;
 }
 
 /**
@@ -480,6 +492,11 @@ export function getMainCroppedImageData(data: Pick<User, 'photos' | 'mainPhoto'>
 
     const mainPhotoName = data.mainPhoto;
     const mainPhoto = data.photos.find(p => p.path.endsWith(mainPhotoName as string));
+    if (mainPhoto?.croppedImageData?.croppedImagePath) {
+        mainPhoto.croppedImageData.croppedImagePath = appendMediaRootToImageUrl(mainPhoto.croppedImageData.croppedImagePath) ||
+            mainPhoto.croppedImageData.croppedImagePath;
+    }
+
     return mainPhoto ? mainPhoto.croppedImageData : undefined;
 }
 
@@ -593,7 +610,7 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
 
         // Create a notification for the original match initiator (the user who sent the original match request)
         if (shouldCreateNotification) {
-            await prisma.notifications.create({
+            const notification = await prisma.notifications.create({
                 data: {
                     userId: userId, // The user who confirmed the match
                     recipientId: existingMatch.userId, // The user who originally initiated the match
@@ -603,6 +620,27 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
                     updatedAt: new Date()
                 }
             });
+
+            // Send real-time notification for confirmed match
+            try {
+                // Get sender info for the notification
+                const senderUser = await getUser(userId);
+                if (senderUser) {
+                    await emitNewNotification(String(existingMatch.userId), {
+                        id: notification.id,
+                        sender: {
+                            id: senderUser.id,
+                            locationName: senderUser.locationName || '',
+                            gender: senderUser.gender,
+                            displayName: senderUser.displayName,
+                            age: calculateUserAge(senderUser),
+                            publicMainPhoto: senderUser.publicMainPhoto
+                        }
+                    });
+                }
+            } catch (wsError) {
+                console.error('Failed to emit confirmed match notification:', wsError);
+            }
         }
 
         return 'matched';
@@ -613,7 +651,7 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
     }
 
     // Create a new match with pending status
-    await prisma.userMatches.create({
+    const newMatch = await prisma.userMatches.create({
         data: {
             userId: userId,
             recipientId: recipientUserId,
@@ -623,6 +661,26 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
             updatedAt: new Date()
         }
     });
+
+    // Send real-time notification for new pending like
+    try {
+        const senderUser = await getUser(userId);
+        if (senderUser) {
+            await emitNewMatchNotification(String(recipientUserId), {
+                id: newMatch.id,
+                sender: {
+                    id: senderUser.id,
+                    locationName: senderUser.locationName || '',
+                    gender: senderUser.gender,
+                    displayName: senderUser.displayName,
+                    age: calculateUserAge(senderUser),
+                    publicMainPhoto: senderUser.publicMainPhoto
+                }
+            });
+        }
+    } catch (wsError) {
+        console.error('Failed to emit pending like notification:', wsError);
+    }
 
     await prisma.mutedUsers.deleteMany({
         where: {
@@ -640,6 +698,22 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
  * @param recipientUserId The ID of the other user in the match
  */
 export async function removeUserMatchRequest(userId: number, recipientUserId: number): Promise<void> {
+    // First get the match information before deleting for WebSocket notification
+    const existingMatch = await prisma.userMatches.findFirst({
+        where: {
+            OR: [
+                {
+                    userId: userId,
+                    recipientId: recipientUserId
+                },
+                {
+                    userId: recipientUserId,
+                    recipientId: userId
+                }
+            ]
+        }
+    });
+
     // Delete any match between these users
     await prisma.userMatches.deleteMany({
         where: {
@@ -655,6 +729,22 @@ export async function removeUserMatchRequest(userId: number, recipientUserId: nu
             ]
         }
     });
+
+    // Send WebSocket notification to the other user about match cancellation
+    if (existingMatch) {
+        try {
+            // Determine who the other user is (not the one cancelling)
+            const otherUserId = existingMatch.userId === userId ? existingMatch.recipientId : existingMatch.userId;
+
+            await emitMatchCancelled(String(otherUserId), {
+                matchId: existingMatch.id,
+                cancelledBy: userId
+            });
+        } catch (wsError) {
+            console.error('Failed to emit match cancellation notification:', wsError);
+            // Don't throw the error - match removal should still succeed even if WebSocket fails
+        }
+    }
 }
 
 /**
@@ -685,6 +775,44 @@ export async function muteUserById(userId: number, recipientUserId: number): Pro
     }
 
     return true;
+}
+
+/**
+ * Get all blocked users for a given user
+ * @param userId The ID of the user whose blocked list to retrieve
+ * @returns Array of blocked user details
+ */
+export async function getBlockedUsers(userId: number): Promise<UserPreview[]> {
+    const results = await pgDbPool.query(`
+        SELECT 
+            U."id",
+            U."displayName",
+            U."gender",
+            U."dateOfBirth",
+            U."lastActiveAt",
+            U."photos",
+            U."numOfPhotos",
+            U."mainPhoto",
+            U."locationName",
+            U."latitude",
+            U."longitude",
+            U."country",
+            U."createdAt",
+            BU."createdAt" AS "blockedAt",
+            Calculate_Age(U."dateOfBirth") AS "age"
+        FROM "blockedUsers" BU
+        INNER JOIN "users" U ON U."id" = BU."blockedUserId"
+        WHERE BU."userId" = $1
+        ORDER BY BU."createdAt" DESC
+    `, [userId]);
+
+    return results.rows.map(blockedUser => {
+        const publicUserDetails = getPublicUserDetails(blockedUser);
+        return Object.assign({}, blockedUser, publicUserDetails, {
+            lastActiveHumanized: humanizeTimeDiff(blockedUser.lastActiveAt),
+            blockedAtHumanized: humanizeTimeDiff(blockedUser.blockedAt)
+        });
+    });
 }
 
 /**
@@ -817,8 +945,9 @@ export async function getFullUserProfile(userId: number, currentUserId: number):
         return { error: 'You have been blocked by this user.', statusCode: 403 };
     }
 
-    const userProfileDetails = await getUserProfileDetail(currentUserId, user);
+    // Add public user details (including processed photo URLs) to the user object
+    const userWithPublicDetails = Object.assign({}, user, getPublicUserDetails(user));
+    
+    const userProfileDetails = await getUserProfileDetail(currentUserId, userWithPublicDetails);
     return { statusCode: 200, userProfileDetails };
 }
-
-

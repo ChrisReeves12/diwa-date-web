@@ -84,5 +84,5 @@ export interface User {
   isUnderReview?: number;
   deactivatedAt?: Date;
   receivedLikeAt?: Date;
+  hideOnlineStatus: boolean;
 }
-

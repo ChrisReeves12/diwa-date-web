@@ -31,6 +31,12 @@
           display: flex;
           justify-content: center;
           align-items: center;
+          transition: all 0.3s ease;
+
+          &.new-notification {
+            animation: pulse 1s ease-in-out 3;
+            transform: scale(1.1);
+          }
         }
       }
     }
@@ -76,5 +82,47 @@
         }
       }
     }
+  }
+}
+
+// Notification animations
+@keyframes pulse {
+  0% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 0 rgba(globals.$primary-blue, 0.7);
+  }
+
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 10px rgba(globals.$primary-blue, 0);
+  }
+
+  100% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 0 rgba(globals.$primary-blue, 0);
+  }
+}
+
+// Notification popover item animation
+.notification-list-item {
+  &.new-item {
+    animation: slideIn 0.3s ease-out;
+    background-color: rgba(globals.$primary-blue, 0.1);
+
+    @include globals.dark-mode {
+      background-color: rgba(globals.$primary-blue-dark, 0.1);
+    }
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }

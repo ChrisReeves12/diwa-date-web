@@ -24,6 +24,8 @@ import {
     unBlockUserAction,
     muteUser, unMuteUser, loadFullUserProfile
 } from '@/common/server-actions/user-profile.actions';
+import { useWebSocket } from '@/hooks/use-websocket';
+import { isUserOnline } from '@/helpers/user.helpers';
 
 interface UserProfileProps {
     userProfileDetail: UserProfileDetail,
@@ -38,6 +40,23 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
     const [showImageViewer, setShowImageViewer] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const imageViewerRef = useRef<HTMLDivElement>(null);
+    const { on, off, isConnected } = useWebSocket();
+
+    const refetchUserProfile = useCallback(async () => {
+        try {
+            const result = await loadFullUserProfile(Number(userProfile.user.id));
+            if ('userProfileDetails' in result && result.userProfileDetails) {
+                console.log('Successfully refetched user profile, updating state');
+                setUserProfile(result.userProfileDetails);
+            } else if ('error' in result) {
+                console.error('Error refetching user profile:', result.error);
+            } else {
+                console.error('Unexpected response format from loadFullUserProfile:', result);
+            }
+        } catch (error) {
+            console.error('Error refetching user profile:', error);
+        }
+    }, [userProfile.user.id]);
 
     const onPhotoView = (e: React.MouseEvent, idx: number) => {
         if (e) e.preventDefault();
@@ -104,6 +123,66 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, [showImageViewer, userProfile.user.publicPhotos, navigateImage]);
+
+    useEffect(() => {
+        if (!isConnected || !currentUser) return;
+
+        const handleMatchEvent = () => {
+            console.log('Match event received - refreshing user profile');
+            refetchUserProfile();
+        };
+
+        const handleMessageEvent = () => {
+            console.log('Message event received - refreshing user profile');
+            refetchUserProfile();
+        };
+
+        const handleBlockEvent = (data: { blockedUserId: number; blockedBy: number; timestamp: Date }) => {
+            console.log('Block event received:', data);
+            console.log('Current user ID:', currentUser.id, 'Viewed user ID:', userProfile.user.id);
+            
+            // Only update state if the current user was blocked by the user being viewed
+            if (data.blockedBy === userProfile.user.id && data.blockedUserId === currentUser.id) {
+                console.log('Current user was blocked by viewed user - updating local state');
+                setUserProfile(prev => ({
+                    ...prev,
+                    theyBlockedMe: true
+                }));
+            } else {
+                console.log('Block event not relevant to current profile view');
+            }
+        };
+
+        const handleUnblockEvent = (data: { unblockedUserId: number; unblockedBy: number; timestamp: Date }) => {
+            console.log('Unblock event received:', data);
+            console.log('Current user ID:', currentUser.id, 'Viewed user ID:', userProfile.user.id);
+            
+            // Only update state if the current user was unblocked by the user being viewed
+            if (data.unblockedBy === userProfile.user.id && data.unblockedUserId === currentUser.id) {
+                console.log('Current user was unblocked by viewed user - updating local state');
+                setUserProfile(prev => ({
+                    ...prev,
+                    theyBlockedMe: false
+                }));
+            } else {
+                console.log('Unblock event not relevant to current profile view');
+            }
+        };
+
+        on('match:new', handleMatchEvent);
+        on('match:cancelled', handleMatchEvent);
+        on('message:new', handleMessageEvent);
+        on('user:blocked', handleBlockEvent);
+        on('user:unblocked', handleUnblockEvent);
+
+        return () => {
+            off('match:new', handleMatchEvent);
+            off('match:cancelled', handleMatchEvent);
+            off('message:new', handleMessageEvent);
+            off('user:blocked', handleBlockEvent);
+            off('user:unblocked', handleUnblockEvent);
+        };
+    }, [isConnected, currentUser, on, off, refetchUserProfile]);
 
     const onRequestMatchClick = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -246,8 +325,8 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
 
                                     <div className="online-status-location-container">
                                         <div className="online-lamp-section">
-                                            <div className="online-lamp online"></div>
-                                            <div className="online-status-label">Online</div>
+                                            <div className={`online-lamp ${userProfile.user.lastActiveAt && isUserOnline(userProfile.user.lastActiveAt, userProfile.user.hideOnlineStatus) ? 'online' : 'offline'}`}></div>
+                                            <div className="online-status-label">{userProfile.user.lastActiveAt && isUserOnline(userProfile.user.lastActiveAt, userProfile.user.hideOnlineStatus) ? 'Online' : 'Offline'}</div>
                                         </div>
                                         <div className="location-section">
                                             <MapMarkerIcon />
@@ -479,4 +558,3 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         </CurrentUserProvider>
     );
 }
-

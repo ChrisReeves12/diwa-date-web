@@ -261,6 +261,7 @@ model users {
   createdAt                                      DateTime?                     @db.Timestamp(6)
   updatedAt                                      DateTime?                     @db.Timestamp(6)
   seekingGender                                  String?                       @db.VarChar(20)
+  hideOnlineStatus                               Boolean                       @default(false)
   geoPoint                                       Unsupported("geography")?
   deactivatedAt                                  DateTime?                     @db.Timestamp(6)
   billingInformationEntries                      billingInformationEntries[]

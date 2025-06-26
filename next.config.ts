@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  env: {
+    CHAT_MESSAGES_PAGE_SIZE: process.env.CHAT_MESSAGES_PAGE_SIZE || '20',
+  },
+
   // Use server external packages instead of the deprecated option
   serverExternalPackages: [],
   

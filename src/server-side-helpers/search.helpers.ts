@@ -5,6 +5,7 @@ import moment from "moment";
 import _ from "lodash";
 import { LocalityViewport } from "@/types/locality-viewport.interface";
 import { getPublicUserDetails } from "@/server-side-helpers/user.helpers";
+import { isUserOnline } from "@/helpers/user.helpers";
 import pgDbPool from "@/lib/postgres";
 import { SearchResponse } from "@/types/search-response.interface";
 import { humanizeTimeDiff } from "@/server-side-helpers/time.helpers";
@@ -27,6 +28,7 @@ type DbUserSearchResult = {
     matchAcceptedAt?: Date;
     blockedThem?: boolean;
     theyLikedMe?: boolean;
+    hideOnlineStatus: boolean;
 };
 
 /**
@@ -99,7 +101,8 @@ export async function searchUsers(currentUser: Omit<User, 'password'>, params: {
                    U."numOfPhotos",
                    U."createdAt",
                    U."seekingGender",
-                   U."locationName"
+                   U."locationName",
+                   U."hideOnlineStatus"
             FROM "users" U
             WHERE U."deactivatedAt" IS NULL
               AND U."suspendedAt" IS NULL
@@ -133,7 +136,10 @@ export async function searchUsers(currentUser: Omit<User, 'password'>, params: {
             const publicUserDetails = getPublicUserDetails(userResult);
             const publicUser = Object.assign({}, userResult, publicUserDetails);
 
-            return Object.assign({}, publicUser, { lastActiveHumanized: humanizeTimeDiff(userResult.lastActiveAt) });
+            return Object.assign({}, publicUser, {
+                lastActiveHumanized: humanizeTimeDiff(userResult.lastActiveAt),
+                isOnline: isUserOnline(userResult.lastActiveAt, userResult.hideOnlineStatus)
+            });
         }),
         hasNextPage: searchResults.rowCount === pageSize,
         currentUser

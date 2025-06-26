@@ -3,7 +3,6 @@ import { getCurrentUser, refreshLastActive } from "@/server-side-helpers/user.he
 import HomeSearch from "@/app/home-search/home-search";
 import { createSearchPromise } from "@/server-side-helpers/search.helpers";
 import { SearchSortBy } from "@/types/search-parameters.interface";
-import { getNotificationCenterData } from "@/server-side-helpers/notification.helper";
 import { cookies } from "next/headers";
 import { Metadata } from "next";
 import { cache } from "react";
@@ -34,8 +33,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
         currentUser ?
             <HomeSearch
                 searchPromise={createSearchPromise(currentUser, lSearchParams)}
-
-                currentUser={currentUser}
-            /> : <GuestHome />
+                currentUser={currentUser}/> : <GuestHome />
     );
 }

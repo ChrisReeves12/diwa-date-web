@@ -9,8 +9,8 @@ import { loginAction } from './login.actions';
 
 export default function LoginForm() {
     const router = useRouter();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState('chris.reeves1230@gmail.com');
+    const [password, setPassword] = useState('Rulatia12!');
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
@@ -18,15 +18,15 @@ export default function LoginForm() {
     const handleSubmit = async (formData: FormData) => {
         setErrors({});
         setIsLoading(true);
-        
+
         try {
             // Add email and password to the form data
             formData.set('email', email);
             formData.set('password', password);
-            
+
             // Call the server action
             const result = await loginAction(formData);
-            
+
             if (!result.success) {
                 // Authentication failed
                 setErrors({
@@ -34,7 +34,7 @@ export default function LoginForm() {
                 });
                 return;
             }
-            
+
             // Login successful
             router.push('/');
             router.refresh();
@@ -148,4 +148,4 @@ export default function LoginForm() {
             </div>
         </div>
     );
-} 
+}

@@ -14,11 +14,45 @@ import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 
 /**
+ * Get all conversations for the current user.
+ * This is used for client-side fetching of updated conversations.
+ */
+export async function getConversations() {
+    try {
+        const currentUser = await getCurrentUser(await cookies());
+
+        if (!currentUser) {
+            return {
+                error: 'Authentication required.',
+                statusCode: 401
+            };
+        }
+
+        const conversations = await getConversationsFromMatches(currentUser.id);
+        return { data: conversations, statusCode: 200 };
+    } catch (error) {
+        console.error('Error fetching conversations:', error);
+        return {
+            error: 'Failed to fetch conversations. Please try again later.',
+            statusCode: 500
+        };
+    }
+}
+
+
+/**
  * Get all messages for a specific chat conversation.
  * @param matchId The match ID as a string
  * @returns Messages with sender details or error
  */
-export async function getChatMessages(matchId: string) {
+export async function getChatMessages(
+    matchId: string,
+    options: {
+        limit?: number;
+        cursor?: number;
+        direction?: 'before' | 'after';
+    } = {}
+) {
     try {
         const currentUser = await getCurrentUser(await cookies());
 
@@ -37,7 +71,7 @@ export async function getChatMessages(matchId: string) {
             };
         }
 
-        return await getMessagesForMatch(matchIdNumber, currentUser.id);
+        return await getMessagesForMatch(matchIdNumber, currentUser.id, options);
     } catch (error) {
         console.error('Error in getChatMessages:', error);
         return {
@@ -211,4 +245,3 @@ export async function markConversationsAsAknowledged(conversations: Conversation
         };
     }
 }
-

@@ -10,6 +10,7 @@ interface NotificationIconProps {
     count?: number;
     disabled?: boolean;
     errorMessage?: string;
+    hasNewNotification?: boolean;
 }
 
 export default function NotificationIcon({
@@ -20,7 +21,8 @@ export default function NotificationIcon({
     onClick,
     count,
     disabled = false,
-    errorMessage
+    errorMessage,
+    hasNewNotification = false
 }: NotificationIconProps) {
     return (
         <div className="notification-icon-container">
@@ -38,7 +40,7 @@ export default function NotificationIcon({
                     </span>
                 </span>
                 {!!count && count > 0 && (
-                    <div className="notification-count-bubble">
+                    <div className={`notification-count-bubble ${hasNewNotification ? 'new-notification' : ''}`}>
                         {count > 99 ? '99+' : count}
                     </div>
                 )}

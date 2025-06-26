@@ -5,6 +5,34 @@
  * @param date The date to compare with the current date. Can be a Date object or a string.
  * @returns A string representing the time difference.
  */
+/**
+ * Checks if a given date is today.
+ * @param date The date to check
+ * @returns boolean indicating if the date is today
+ */
+export function isToday(date: Date | string): boolean {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const today = new Date();
+    return dateObj.getDate() === today.getDate() &&
+        dateObj.getMonth() === today.getMonth() &&
+        dateObj.getFullYear() === today.getFullYear();
+}
+
+/**
+ * Formats a date in the format "Monday, June 24, 2025"
+ * @param date The date to format
+ * @returns Formatted date string
+ */
+export function formatChatDate(date: Date | string): string {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
 export function humanizeTimeDiff(date?: Date | string): string {
     if (!date)
         return 'N/A';
@@ -47,4 +75,4 @@ export function humanizeTimeDiff(date?: Date | string): string {
     }
 
     return "just now";
-} 
+}

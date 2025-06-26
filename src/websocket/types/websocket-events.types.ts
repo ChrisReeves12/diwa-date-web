@@ -48,10 +48,26 @@ export interface ServerToClientEvents {
         matchedUserId: string;
         timestamp: Date;
     }) => void;
+    'match:cancelled': (data: {
+        matchId: number;
+        cancelledBy: number;
+    }) => void;
     'match:unmatch': (data: {
         matchId: string;
         userId: string;
         unmatchedUserId: string;
+    }) => void;
+
+    // User blocking events
+    'user:blocked': (data: {
+        blockedUserId: number;
+        blockedBy: number;
+        timestamp: Date;
+    }) => void;
+    'user:unblocked': (data: {
+        unblockedUserId: number;
+        unblockedBy: number;
+        timestamp: Date;
     }) => void;
 
     // Error events

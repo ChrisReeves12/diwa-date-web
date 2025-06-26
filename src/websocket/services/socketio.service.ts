@@ -49,9 +49,13 @@ export class SocketIOService {
                     return acc;
                 }, {} as Record<string, string>);
 
-                const sessionToken = cookies['session-token'];
+                // Get the session cookie name from environment or use default
+                const sessionCookieName = process.env.SESSION_COOKIE_NAME || 'session_id';
+                const sessionToken = cookies[sessionCookieName];
 
                 if (!sessionToken) {
+                    console.log('Available cookies:', Object.keys(cookies));
+                    console.log(`Looking for cookie: ${sessionCookieName}`);
                     return next(new Error('Authentication required'));
                 }
 

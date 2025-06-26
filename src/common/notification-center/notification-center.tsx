@@ -5,7 +5,7 @@ import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
 import { Popover } from '@mui/material';
 import UserProfileAccountMenu from './user-profile-account-menu/user-profile-account-menu';
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useCurrentUser } from '../context/current-user-context';
 import { userProfileLink } from '@/util';
 import _ from 'lodash';
@@ -18,15 +18,157 @@ import { useNotificationPopovers } from './hooks/use-notification-popovers';
 import NotificationIconsContainer from './notification-icons-container/notification-icons-container';
 import NotificationPopover from './notification-popover/notification-popover';
 import { muteUser, sendUserMatch } from '../server-actions/user-profile.actions';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { useWebSocket } from '@/hooks/use-websocket';
+
+interface NewNotificationAnimation {
+    [key: string]: boolean;
+}
 
 export default function NotificationCenter() {
     const currentUser = useCurrentUser();
     const [notificationsData, setNotificationsData] = useState<NotificationCenterData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [newNotificationAnimations, setNewNotificationAnimations] = useState<NewNotificationAnimation>({});
     const popovers = useNotificationPopovers();
     const router = useRouter();
+    const pathname = usePathname();
+    const { on, off, isConnected } = useWebSocket();
+    const notificationTimeoutRefs = useRef<Map<string, NodeJS.Timeout>>(new Map());
+    const profileButtonRef = useRef<HTMLButtonElement>(null);
+
+    // Compute which categories have new notifications
+    const hasNewMatch = useMemo(() => {
+        return Object.keys(newNotificationAnimations).some(key => key.startsWith('match-'));
+    }, [newNotificationAnimations]);
+
+    const hasNewMessage = useMemo(() => {
+        return Object.keys(newNotificationAnimations).some(key => key.startsWith('message-'));
+    }, [newNotificationAnimations]);
+
+    const hasNewNotification = useMemo(() => {
+        return Object.keys(newNotificationAnimations).some(key => key.startsWith('notification-'));
+    }, [newNotificationAnimations]);
+
+    // Handle new notification with animation
+    const addNotificationAnimation = useCallback((notificationId: string, type: 'match' | 'message' | 'notification') => {
+        // Set animation state
+        setNewNotificationAnimations(prev => ({ ...prev, [`${type}-${notificationId}`]: true }));
+
+        // Remove animation after delay
+        const timeoutId = setTimeout(() => {
+            setNewNotificationAnimations(prev => {
+                const newState = { ...prev };
+                delete newState[`${type}-${notificationId}`];
+                return newState;
+            });
+            notificationTimeoutRefs.current.delete(`${type}-${notificationId}`);
+        }, 3000); // Animation duration
+
+        notificationTimeoutRefs.current.set(`${type}-${notificationId}`, timeoutId);
+    }, []);
+
+    // Refetch notification data from server
+    const refetchNotificationData = useCallback(async () => {
+        if (!currentUser) return;
+
+        try {
+            const data = await loadNotificationCenterData(currentUser);
+            setNotificationsData(data);
+        } catch (err) {
+            console.error('Error refetching notification data:', err);
+        }
+    }, [currentUser]);
+
+    // Trigger refetch with animation
+    const triggerRefetch = useCallback((eventType: 'match' | 'message' | 'notification') => {
+        console.log(`Triggering refetch for event type: ${eventType}`);
+
+        // Trigger animation immediately for visual feedback
+        addNotificationAnimation(String(Date.now()), eventType);
+
+        // Refetch data from server
+        refetchNotificationData();
+    }, [addNotificationAnimation, refetchNotificationData]);
+
+    // Real-time notification handlers (simplified)
+    useEffect(() => {
+        if (!isConnected || !currentUser) return;
+
+        // Handle new match notification - simplified to refetch trigger
+        const handleNewMatch = () => {
+            console.log('New match signal received - triggering refetch');
+            triggerRefetch('match');
+        };
+
+        // Handle new message notification
+        const handleNewMessage = (data: any) => {
+            const messageMatchId = data.conversationId || data.matchId;
+
+            // Check if we are in the chat view for this message
+            const isViewingChat = pathname.includes(`/messages/${messageMatchId}`);
+
+            if (isViewingChat) {
+                console.log(`New message for currently viewed match (${messageMatchId}) - suppressing notification.`);
+                return; // Don't show notification if user is in the chat
+            }
+
+            console.log('New message signal received - triggering refetch');
+            triggerRefetch('message');
+        };
+
+        // Handle general notification - simplified to refetch trigger
+        const handleNewNotification = () => {
+            console.log('New notification signal received - triggering refetch');
+            triggerRefetch('notification');
+        };
+
+        // Handle notification read event - simplified to refetch trigger
+        const handleNotificationRead = () => {
+            console.log('Notification read signal received - triggering refetch');
+            refetchNotificationData(); // No animation needed for read events
+        };
+
+        // Handle match cancelled event - simplified to refetch trigger
+        const handleMatchCancelled = () => {
+            console.log('Match cancelled signal received - triggering refetch');
+            refetchNotificationData(); // No animation needed for cancellations
+        };
+
+        // Subscribe to events
+        on('match:new', handleNewMatch);
+        on('message:new', handleNewMessage);
+        on('notification:new', handleNewNotification);
+        on('notification:read', handleNotificationRead);
+        on('match:cancelled', handleMatchCancelled);
+
+        // Cleanup
+        return () => {
+            off('match:new', handleNewMatch);
+            off('message:new', handleNewMessage);
+            off('notification:new', handleNewNotification);
+            off('notification:read', handleNotificationRead);
+            off('match:cancelled', handleMatchCancelled);
+
+            // Clear all animation timeouts
+            notificationTimeoutRefs.current.forEach(timeout => clearTimeout(timeout));
+            notificationTimeoutRefs.current.clear();
+        };
+    }, [isConnected, currentUser, on, off, triggerRefetch, refetchNotificationData, pathname]);
+
+    useEffect(() => {
+        const handleMessagesRead = () => {
+            console.log('messages-read event received, refetching notification data.');
+            refetchNotificationData();
+        };
+
+        window.addEventListener('messages-read', handleMessagesRead);
+
+        return () => {
+            window.removeEventListener('messages-read', handleMessagesRead);
+        };
+    }, [refetchNotificationData]);
 
     useEffect(() => {
         if (!currentUser) {
@@ -107,9 +249,23 @@ export default function NotificationCenter() {
                                     }
                                 }));
                     }}
+                    hasNewMatch={hasNewMatch}
+                    hasNewMessage={hasNewMessage}
+                    hasNewNotification={hasNewNotification}
                 />
                 <div className="profile-user">
-                    <button onClick={popovers.profileUser.handleClick} className="profile-container">
+                    <button 
+                        ref={profileButtonRef}
+                        onClick={(e) => {
+                            // Use the ref instead of the event target to ensure stable anchor reference
+                            if (profileButtonRef.current) {
+                                popovers.profileUser.handleClick({ 
+                                    ...e, 
+                                    currentTarget: profileButtonRef.current 
+                                } as React.MouseEvent<HTMLElement>);
+                            }
+                        }} 
+                        className="profile-container">
                         <UserPhotoDisplay gender={currentUser.gender}
                             croppedImageData={currentUser.mainPhotoCroppedImageData}
                             imageUrl={currentUser.publicMainPhoto} />
@@ -122,7 +278,7 @@ export default function NotificationCenter() {
             </div>
             <Popover anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                 id="profile-user-account-popover"
-                anchorEl={popovers.profileUser.element}
+                anchorEl={profileButtonRef.current}
                 onClose={popovers.profileUser.handleClose}
                 open={popovers.profileUser.isOpen}>
                 <UserProfileAccountMenu onSelectionMade={popovers.profileUser.handleClose} />

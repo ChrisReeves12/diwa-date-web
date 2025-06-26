@@ -1,9 +1,11 @@
 import prisma from "@/lib/prisma";
 import { User, UserPhoto } from "@/types";
-import { getPublicUserDetails, getUser, getUserProfileDetail } from "./user.helpers";
+import { getPublicUserDetails, getUser, getUserProfileDetail, calculateUserAge, refreshLastActive } from "./user.helpers";
+import { isUserOnline } from "@/helpers/user.helpers";
 import { CroppedImageData } from "@/types/cropped-image-data.interface";
 import { humanizeTimeDiff } from "./time.helpers";
 import { isUserSuspended, isUserBlocked } from "./user.helpers";
+import { emitNewMessageNotification, emitMessageRead } from "./notification-emitter.helper";
 
 type DbConversation = {
     matchId: number;
@@ -18,6 +20,8 @@ type DbConversation = {
     gender: string;
     mainPhoto?: string;
     photos?: UserPhoto[];
+    hideOnlineStatus: boolean;
+    lastActiveAt: Date;
 };
 
 export type ConversationMatch = DbConversation & Pick<User, "photos" | "mainPhoto"> & {
@@ -26,6 +30,7 @@ export type ConversationMatch = DbConversation & Pick<User, "photos" | "mainPhot
     mainPhotoCroppedImageData?: CroppedImageData;
     publicPhotos: UserPhoto[];
     matchCreatedAtHumanized: string;
+    isOnline: boolean;
 }
 
 /**
@@ -62,7 +67,9 @@ export async function getConversationsFromMatches(userId: number): Promise<Conve
                 U."id" AS "userId",
                 U."displayName",
                 U."mainPhoto",
-                U."photos"
+                U."photos",
+                U."hideOnlineStatus",
+                U."lastActiveAt"
             FROM MatchesWithUserIds MW
                 INNER JOIN "users" U ON U."id" = MW."otherUserId"
                 LEFT JOIN "messages" M ON M."matchId" = MW."id")
@@ -71,7 +78,10 @@ export async function getConversationsFromMatches(userId: number): Promise<Conve
 
     return matches.map((matchUser) => {
         const publicUserDetails = Object.assign(
-            { matchCreatedAtHumanized: humanizeTimeDiff(matchUser.matchCreatedAt) },
+            {
+                matchCreatedAtHumanized: humanizeTimeDiff(matchUser.matchCreatedAt),
+                isOnline: isUserOnline(matchUser.lastActiveAt, matchUser.hideOnlineStatus)
+            },
             getPublicUserDetails(matchUser));
 
         return Object.assign({}, matchUser, publicUserDetails);
@@ -136,6 +146,29 @@ export async function sendMessage(
             return messageResult;
         });
 
+        // Send real-time message notification to recipient
+        try {
+            const senderUser = await getUser(userId);
+            if (senderUser) {
+                await refreshLastActive(senderUser);
+                await emitNewMessageNotification(String(recipientId), {
+                    id: String(result.id),
+                    matchId: String(matchId),
+                    content: message,
+                    userId: String(userId),
+                    displayName: senderUser.displayName,
+                    userGender: senderUser.gender,
+                    publicMainPhoto: senderUser.publicMainPhoto,
+                    mainPhotoCroppedImageData: senderUser.mainPhotoCroppedImageData,
+                    age: calculateUserAge(senderUser),
+                    timestamp: Number(result.timestamp),
+                    createdAt: result.createdAt || new Date()
+                });
+            }
+        } catch (wsError) {
+            console.error('Failed to emit message notification:', wsError);
+        }
+
         return { statusCode: 200, data: result };
     } catch (error) {
         return {
@@ -154,9 +187,19 @@ export async function sendMessage(
  */
 export async function getMessagesForMatch(
     matchId: number,
-    userId: number
+    userId: number,
+    options: {
+        limit?: number;
+        cursor?: number;
+        direction?: 'before' | 'after';
+    } = {}
 ): Promise<{ error?: string; statusCode: number; data?: any[] }> {
     try {
+        const pageSize = process.env.CHAT_MESSAGES_PAGE_SIZE
+            ? parseInt(process.env.CHAT_MESSAGES_PAGE_SIZE, 10)
+            : 30;
+        const { limit = pageSize, cursor, direction = 'before' } = options;
+
         // First verify that the user is part of this match
         const match = await prisma.userMatches.findFirst({
             where: {
@@ -176,28 +219,46 @@ export async function getMessagesForMatch(
             };
         }
 
-        // Get all messages for this match with sender information, excluding blocked/suspended users
-        const messages = await prisma.messages.findMany({
-            where: {
-                matchId: matchId,
-                users: {
-                    suspendedAt: null,
-                    NOT: {
-                        blockedUsers_blockedUsers_userIdTousers: {
-                            some: {
-                                blockedUserId: userId
-                            }
+        // Base query conditions
+        const where: any = {
+            matchId: matchId,
+            users: {
+                suspendedAt: null,
+                NOT: {
+                    blockedUsers_blockedUsers_userIdTousers: {
+                        some: {
+                            blockedUserId: userId
                         }
                     }
                 }
-            },
+            }
+        };
+
+        // Add cursor-based pagination logic
+        if (cursor) {
+            if (direction === 'before') {
+                where.id = { lt: cursor };
+            } else {
+                where.id = { gt: cursor };
+            }
+        }
+
+        // Get all messages for this match with sender information, excluding blocked/suspended users
+        const messages = await prisma.messages.findMany({
+            where,
             include: {
                 users: true
             },
             orderBy: {
-                timestamp: 'asc'
-            }
+                timestamp: direction === 'before' ? 'desc' : 'asc'
+            },
+            take: limit
         });
+
+        // Reverse the order if we fetched older messages to maintain ascending order
+        if (direction === 'before') {
+            messages.reverse();
+        }
 
         // Get unique users from messages and cache their profile details
         const uniqueUsers = new Map();
@@ -374,6 +435,11 @@ export async function markMessagesAsRead(
             };
         }
 
+        const now = new Date();
+        
+        // Get the other user's ID from the match
+        const otherUserId = match.userId === userId ? match.recipientId : match.userId;
+
         // Mark all unread messages in this match as read for the current user
         // Only mark messages where the current user is the recipient and readAt is null
         const updateResult = await prisma.messages.updateMany({
@@ -383,10 +449,38 @@ export async function markMessagesAsRead(
                 readAt: null
             },
             data: {
-                readAt: new Date(),
-                updatedAt: new Date()
+                readAt: now,
+                updatedAt: now
             }
         });
+
+        // Get the latest message to emit read status
+        if (updateResult.count > 0) {
+            const readingUser = await getUser(userId);
+            if (readingUser) {
+                await refreshLastActive(readingUser);
+            }
+
+            const latestMessage = await prisma.messages.findFirst({
+                where: {
+                    matchId: matchId,
+                    recipientId: userId
+                },
+                orderBy: {
+                    id: 'desc'
+                }
+            });
+
+            if (latestMessage) {
+                // Emit read status to the sender
+                await emitMessageRead(String(otherUserId), {
+                    messageId: String(latestMessage.id),
+                    conversationId: String(matchId),
+                    readBy: String(userId),
+                    timestamp: now
+                });
+            }
+        }
 
         return {
             statusCode: 200,

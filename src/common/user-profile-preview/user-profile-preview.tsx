@@ -186,9 +186,12 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
             <div className="image-container-info-section">
                 <div className="info-photo-count-container">
                     <div className="info-container">
-                        <a className="user-display-name" href={userProfileLink(userPreview)}>
-                            {userPreview.displayName}
-                        </a>
+                        <div className="display-name-container">
+                            <a className="user-display-name" href={userProfileLink(userPreview)}>
+                                {userPreview.displayName}
+                            </a>
+                            {userPreview.isOnline && <div className="online-lamp" title="Online now"></div>}
+                        </div>
                         <div className="info-line age">Age: {userPreview.age}</div>
                         <div className="info-line location">Location: {userPreview.locationName}</div>
                         {type === 'like' && (

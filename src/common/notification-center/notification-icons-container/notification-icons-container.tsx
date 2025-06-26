@@ -8,6 +8,9 @@ interface NotificationIconsContainerProps {
     onNotificationsClick?: (e: React.MouseEvent<HTMLElement>) => void;
     disabled?: boolean;
     error?: string | null;
+    hasNewMatch?: boolean;
+    hasNewMessage?: boolean;
+    hasNewNotification?: boolean;
 }
 
 export default function NotificationIconsContainer({
@@ -16,7 +19,10 @@ export default function NotificationIconsContainer({
     onMessagesClick,
     onNotificationsClick,
     disabled = false,
-    error = null
+    error = null,
+    hasNewMatch = false,
+    hasNewMessage = false,
+    hasNewNotification = false
 }: NotificationIconsContainerProps) {
     return (
         <div className="notification-container">
@@ -29,6 +35,7 @@ export default function NotificationIconsContainer({
                 count={notificationsData?.pendingMatchesCount}
                 disabled={disabled}
                 errorMessage={error ? `Error loading notifications: ${error}` : undefined}
+                hasNewNotification={hasNewMatch}
             />
             <NotificationIcon
                 lightIcon="/images/messages.svg"
@@ -39,6 +46,7 @@ export default function NotificationIconsContainer({
                 count={notificationsData?.receivedMessagesCount}
                 disabled={disabled}
                 errorMessage={error ? `Error loading notifications: ${error}` : undefined}
+                hasNewNotification={hasNewMessage}
             />
             <NotificationIcon
                 lightIcon="/images/bell.svg"
@@ -49,6 +57,7 @@ export default function NotificationIconsContainer({
                 count={notificationsData?.notificationCount}
                 disabled={disabled}
                 errorMessage={error ? `Error loading notifications: ${error}` : undefined}
+                hasNewNotification={hasNewNotification}
             />
         </div>
     );
