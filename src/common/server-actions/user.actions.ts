@@ -1,11 +1,12 @@
 'use server';
 
-import { getCurrentUser, hashPassword, comparePasswords, getBlockedUsers, unBlockUser } from "@/server-side-helpers/user.helpers";
+import { getCurrentUser, hashPassword, comparePasswords, getBlockedUsers, unBlockUser, generateEmailUpdateUrl } from "@/server-side-helpers/user.helpers";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { deleteSession, getSessionId } from "@/server-side-helpers/session.helpers";
 import { redirect } from "next/navigation";
+import { sendEmail } from "@/server-side-helpers/mail.helper";
 
 /**
  * Toggles the online status visibility for the current user.
@@ -184,5 +185,74 @@ export async function unblockUser(blockedUserId: number) {
     } catch (error) {
         console.error('Unblock user error:', error);
         return { success: false, error: "Failed to unblock user. Please try again." };
+    }
+}
+
+/**
+ * Updates the user's email address after verification
+ * @param newEmail The new email address
+ * @returns Success status and any error messages
+ */
+export async function updateEmail(newEmail: string) {
+    const currentUser = await getCurrentUser(await cookies());
+    if (!currentUser) {
+        return { success: false, error: "User not found" };
+    }
+
+    try {
+        // Validate email format
+        if (!newEmail.trim()) {
+            return { success: false, error: "Email is required" };
+        }
+
+        if (!/\S+@\S+\.\S+/.test(newEmail)) {
+            return { success: false, error: "Email format is invalid" };
+        }
+
+        // Check if email is the same as current
+        if (newEmail.toLowerCase() === currentUser.email.toLowerCase()) {
+            return { success: false, error: "This is already your current email address" };
+        }
+
+        // Check if email is already in use by another user
+        const existingUser = await prisma.users.findFirst({
+            where: {
+                email: newEmail.toLowerCase(),
+                id: { not: currentUser.id }
+            }
+        });
+
+        if (existingUser) {
+            return { success: false, error: "This email address is already in use" };
+        }
+
+        // Generate email verification URL
+        const emailUpdateUrl = await generateEmailUpdateUrl(currentUser.id, newEmail);
+
+        // Send verification email to the new email address
+        await sendEmail(
+            [`${currentUser.firstName} ${currentUser.lastName} <${newEmail}>`],
+            `Verification of email change for ${currentUser.firstName} ${currentUser.lastName}`,
+            `
+                <h1>Verification Of Email Change</h1>
+                <div>
+                    <p>Hello ${currentUser.firstName}!</p>
+                    <p>You are receiving this email because we received a request for the email belonging to the account 
+                        for ${currentUser.firstName} ${currentUser.lastName} to be updated from <strong>${currentUser.email}</strong> to <strong>${newEmail}</strong>. If you did not make this request, please let us know so that we can 
+                        investigate the matter.</p>
+                    <p>Your account email will <strong>not</strong> be updated until you click the link below, in which you will be asked to confirm this update with your account password.</p>
+                    <p>Click the link below to validate your email change request.</p>
+                    <p><a href="${emailUpdateUrl}" class="button">Verify Email Change</a></p>
+                    <p>If the button doesn't work, copy and paste this link into your browser:</p>
+                    <p><a href="${emailUpdateUrl}">${emailUpdateUrl}</a></p>
+                </div>
+            `
+        );
+
+        revalidatePath('/account/settings');
+        return { success: true };
+    } catch (error) {
+        console.error('Email update error:', error);
+        return { success: false, error: "Failed to send verification email. Please try again." };
     }
 }

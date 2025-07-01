@@ -1,0 +1,252 @@
+@use '@/styles/globals' as globals;
+@use "sass:color";
+
+.user-email-reset-container {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    background: linear-gradient(135deg, #ffffff 0%, #4190dc 100%);
+    padding-top: 6rem;
+    position: relative;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.1);
+        z-index: 1;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 0 1rem;
+        position: relative;
+        z-index: 2;
+
+        @include globals.media-min('screens.md') {
+            max-width: 600px;
+        }
+
+        h2 {
+            font-family: "Nunito Sans", sans-serif;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: white;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        >p {
+            font-family: "Nunito Sans", sans-serif;
+            font-size: 1.1rem;
+            color: white;
+            margin-bottom: 2rem;
+            text-align: center;
+            line-height: 1.5;
+        }
+    }
+
+    .form-container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        padding: 3rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+
+        @media (max-width: 639px) {
+            padding: 2rem;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+    }
+
+    .form-row {
+        &:last-child {
+            margin-top: 1rem;
+        }
+    }
+
+    .input-container {
+        position: relative;
+
+        label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-family: 'Nunito Sans', sans-serif;
+            font-weight: 600;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        strong {
+            font-family: 'Nunito Sans', sans-serif;
+            font-weight: 600;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        input {
+            @include globals.underlined-input;
+            width: 100%;
+            padding: 0.5rem 0;
+            font-family: 'Nunito Sans', sans-serif;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+
+            &:focus {
+                outline: none;
+                border-bottom-color: globals.$primary-blue;
+                border-bottom-width: 2px;
+            }
+
+            &.error {
+                border-bottom-color: #dc3545;
+                border-bottom-width: 2px;
+            }
+
+            &::placeholder {
+                color: #999;
+            }
+        }
+
+        &:first-child {
+            border-radius: 8px;
+            margin-bottom: 2rem;
+
+            strong {
+                color: globals.$primary-blue;
+                font-size: 1.1rem;
+            }
+        }
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        font-family: 'Nunito Sans', sans-serif;
+        font-weight: 500;
+        padding: 0.5rem;
+        background: rgba(220, 53, 69, 0.1);
+        border-radius: 4px;
+        border-left: 3px solid #dc3545;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, globals.$primary-blue 0%, color.adjust(globals.$primary-blue, $lightness: 10%) 100%);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-family: 'Nunito Sans', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        letter-spacing: 0.5px;
+        position: relative;
+        overflow: hidden;
+
+        &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        &:hover {
+            background: linear-gradient(135deg, color.adjust(globals.$primary-blue, $lightness: -5%) 0%, globals.$primary-blue 100%);
+            transform: translateY(-2px);
+
+            &::before {
+                left: 100%;
+            }
+        }
+
+        &:active {
+            transform: translateY(-1px);
+        }
+
+        &:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.7;
+
+            &::before {
+                display: none;
+            }
+        }
+    }
+
+    // Loading state animation
+    .btn-primary:disabled {
+        position: relative;
+
+        &::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            margin: auto;
+            border: 2px solid transparent;
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 1s ease infinite;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    }
+
+    @keyframes spin {
+        from {
+            transform: translate(-50%, -50%) rotate(0deg);
+        }
+
+        to {
+            transform: translate(-50%, -50%) rotate(360deg);
+        }
+    }
+
+    // Responsive adjustments
+    @media (max-width: 639px) {
+        padding: 1rem 0;
+
+        .container {
+            padding: 0 0.5rem;
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            >p {
+                font-size: 1rem;
+            }
+        }
+
+        .form-container {
+            padding: 1.5rem;
+        }
+
+        .btn-primary {
+            padding: 0.875rem 1.5rem;
+            font-size: 1rem;
+        }
+    }
+}

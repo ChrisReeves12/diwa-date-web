@@ -1,0 +1,50 @@
+.site-info-bar {
+    width: 100%;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    padding: 8px 0;
+    top: 72px;
+    position: sticky;
+
+    .info-bar-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .action-button {
+            background-color: #49b1f4;
+            color: #ffffff;
+            padding: 7px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+
+            &:disabled {
+                opacity: 0.5;
+            }
+        }
+
+        p {
+            margin: 0;
+            font-size: 14px;
+            color: #6c757d;
+        }
+    }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+    .site-info-bar {
+        background-color: #343a40;
+        border-bottom-color: #495057;
+
+        .info-bar-content {
+            p {
+                color: #adb5bd;
+            }
+        }
+    }
+}

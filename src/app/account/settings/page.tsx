@@ -2,16 +2,16 @@ import '../account-settings.scss';
 import { getCurrentUser } from "@/server-side-helpers/user.helpers";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { UserSettings } from "@/app/account/settings/user-settings";
 import { Metadata } from "next";
+import { GeneralSettings } from "@/app/account/settings/general-settings";
 
 export async function generateMetadata(): Promise<Metadata> {
     return {
-        title: `${process.env.APP_NAME} | Account - User Settings`
+        title: `${process.env.APP_NAME} | Account - General Settings`
     };
 }
 
-export default async function UserSettingsPage() {
+export default async function GeneralSettingsPage() {
     const currentUser = await getCurrentUser(await cookies());
 
     if (!currentUser) {
@@ -19,6 +19,6 @@ export default async function UserSettingsPage() {
     }
 
     return (
-        <UserSettings currentUser={currentUser} />
+        <GeneralSettings currentUser={currentUser} />
     );
 }

@@ -1,0 +1,72 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getRedisClient = getRedisClient;
+const ioredis_1 = __importDefault(require("ioredis"));
+let redis = null;
+/**
+ * Get or create Redis instance
+ * This ensures environment variables are loaded before connecting
+ */
+function getRedisClient() {
+    if (!redis) {
+        // Redis configuration
+        const redisConfig = Object.assign(Object.assign({ host: process.env.REDIS_HOST || '127.0.0.1', port: parseInt(process.env.REDIS_PORT || '6379'), password: process.env.REDIS_PASSWORD, keyPrefix: process.env.REDIS_KEY_PREFIX ? `${process.env.REDIS_KEY_PREFIX}:` : '' }, (process.env.REDIS_TLS === 'true' && {
+            tls: {
+                rejectUnauthorized: false // For development, in production you might want this to be true
+            }
+        })), { retryStrategy: (times) => {
+                const delay = Math.min(times * 50, 2000);
+                console.log(`[Redis] Retrying connection... Attempt ${times}, delay: ${delay}ms`);
+                return delay;
+            }, 
+            // Connection options
+            maxRetriesPerRequest: 3, enableOfflineQueue: true, connectTimeout: 10000, 
+            // Disable ready check to speed up connection
+            enableReadyCheck: false, 
+            // Show friendly error messages
+            showFriendlyErrorStack: process.env.NODE_ENV !== 'production' });
+        // Log configuration (without password)
+        console.log('[Redis] Connecting with config:', {
+            host: redisConfig.host,
+            port: redisConfig.port,
+            hasPassword: !!redisConfig.password,
+            keyPrefix: redisConfig.keyPrefix,
+            tls: !!redisConfig.tls
+        });
+        // Initialize Redis client
+        redis = new ioredis_1.default(redisConfig);
+        // Handle connection events
+        redis.on('connect', () => {
+            console.log('[Redis] Connected successfully');
+        });
+        redis.on('ready', () => {
+            console.log('[Redis] Ready to accept commands');
+        });
+        redis.on('error', (err) => {
+            console.error('[Redis] Connection error:', err.message);
+            // Log more details in development
+            if (process.env.NODE_ENV !== 'production') {
+                console.error('[Redis] Full error:', err);
+            }
+        });
+        redis.on('close', () => {
+            console.log('[Redis] Connection closed');
+        });
+        redis.on('reconnecting', (delay) => {
+            console.log(`[Redis] Reconnecting in ${delay}ms...`);
+        });
+    }
+    return redis;
+}
+// Export a proxy that lazily initializes Redis
+const redisProxy = new Proxy({}, {
+    get(target, prop, receiver) {
+        const client = getRedisClient();
+        return Reflect.get(client, prop, client);
+    }
+});
+exports.default = redisProxy;
+//# sourceMappingURL=redis.js.map

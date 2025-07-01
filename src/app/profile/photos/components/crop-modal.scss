@@ -1,0 +1,491 @@
+@use '../../../../styles/globals.scss' as globals;
+
+.crop-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.crop-modal {
+  background: globals.$light-background-color;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 1000px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  @include globals.dark-mode {
+    background: #1a1a1a;
+  }
+
+  .crop-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #dee2e6;
+    background: #f8f9fa;
+
+    @include globals.dark-mode {
+      border-bottom-color: #333;
+      background: #2a2a2a;
+    }
+
+    h2 {
+      color: #333;
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+
+      @include globals.dark-mode {
+        color: #fff;
+      }
+    }
+
+    .close-button {
+      background: none;
+      border: none;
+      color: #6c757d;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+
+      @include globals.dark-mode {
+        color: #ccc;
+      }
+
+      &:hover:not(:disabled) {
+        color: #333;
+        background: globals.$light-background-color;
+
+        @include globals.dark-mode {
+          color: #fff;
+          background: #1a1a1a;
+        }
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .crop-modal-content {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+
+    .crop-controls {
+      margin-bottom: 24px;
+
+      .aspect-ratio-controls {
+        margin-bottom: 20px;
+
+        label {
+          display: block;
+          color: #333;
+          font-weight: 500;
+          margin-bottom: 12px;
+
+          @include globals.dark-mode {
+            color: #fff;
+          }
+        }
+
+        .aspect-ratio-buttons {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+
+          button {
+            padding: 8px 16px;
+            border: 1px solid #dee2e6;
+            background: #f8f9fa;
+            color: #333;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+
+            @include globals.dark-mode {
+              border-color: #333;
+              background: #2a2a2a;
+              color: #fff;
+            }
+
+            &:hover {
+              border-color: globals.$primary-blue;
+              background: #e9ecef;
+
+              @include globals.dark-mode {
+                background: #333;
+              }
+            }
+
+            &.active {
+              background: globals.$primary-blue;
+              color: white;
+              border-color: globals.$primary-blue;
+            }
+          }
+        }
+      }
+
+      .caption-controls {
+        .caption-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+
+          label {
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+
+            @include globals.dark-mode {
+              color: #fff;
+            }
+          }
+
+          .character-count {
+            font-size: 12px;
+            color: #6c757d;
+
+            @include globals.dark-mode {
+              color: #ccc;
+            }
+          }
+        }
+
+        textarea {
+          width: 100%;
+          border: 1px solid #dee2e6;
+          border-radius: 6px;
+          padding: 12px;
+          font-size: 14px;
+          line-height: 1.5;
+          color: #333;
+          background: globals.$light-background-color;
+          resize: vertical;
+          min-height: 80px;
+          font-family: inherit;
+
+          @include globals.dark-mode {
+            border-color: #333;
+            color: #fff;
+            background: #1a1a1a;
+          }
+
+          &:focus {
+            outline: none;
+            border-color: globals.$primary-blue;
+            box-shadow: 0 0 0 2px rgba(0, 146, 228, 0.1);
+          }
+
+          &::placeholder {
+            color: #6c757d;
+
+            @include globals.dark-mode {
+              color: #ccc;
+            }
+          }
+        }
+      }
+    }
+
+    .crop-workspace {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 24px;
+      min-height: 400px;
+
+      .crop-editor {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        @include globals.dark-mode {
+          background: #2a2a2a;
+        }
+      }
+
+      .crop-preview {
+        h3 {
+          color: #333;
+          margin: 0 0 16px 0;
+          font-size: 16px;
+          font-weight: 600;
+
+          @include globals.dark-mode {
+            color: #fff;
+          }
+        }
+
+        .preview-container {
+          width: 100%;
+          height: 200px;
+          border: 1px solid #dee2e6;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #f8f9fa;
+          margin-bottom: 16px;
+          overflow: hidden;
+
+          @include globals.dark-mode {
+            border-color: #333;
+            background: #2a2a2a;
+          }
+
+          img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 4px;
+          }
+
+          .preview-placeholder {
+            text-align: center;
+            color: #6c757d;
+
+            @include globals.dark-mode {
+              color: #ccc;
+            }
+
+            i {
+              font-size: 48px;
+              margin-bottom: 8px;
+              display: block;
+            }
+
+            p {
+              margin: 0;
+              font-size: 14px;
+            }
+          }
+        }
+
+        .crop-info {
+          background: #f8f9fa;
+          padding: 12px;
+          border-radius: 6px;
+          border: 1px solid #dee2e6;
+
+          @include globals.dark-mode {
+            background: #2a2a2a;
+            border-color: #333;
+          }
+
+          p {
+            margin: 0 0 4px 0;
+            font-size: 13px;
+            color: #6c757d;
+
+            @include globals.dark-mode {
+              color: #ccc;
+            }
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .crop-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px 24px;
+    border-top: 1px solid #dee2e6;
+    background: #f8f9fa;
+
+    @include globals.dark-mode {
+      border-top-color: #333;
+      background: #2a2a2a;
+    }
+
+    button {
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      &.btn-cancel {
+        background: #f8f9fa;
+        color: #333;
+        border: 1px solid #dee2e6;
+
+        @include globals.dark-mode {
+          background: #2a2a2a;
+          color: #fff;
+          border-color: #333;
+        }
+
+        &:hover:not(:disabled) {
+          background: #e9ecef;
+          border-color: #6c757d;
+
+          @include globals.dark-mode {
+            background: #333;
+            border-color: #555;
+          }
+        }
+      }
+
+      &.btn-crop {
+        background: globals.$primary-blue;
+        color: white;
+        border: 1px solid globals.$primary-blue;
+
+        &:hover:not(:disabled) {
+          background: #0056b3;
+          border-color: #0056b3;
+        }
+
+        i.la-spin {
+          animation: spin 1s linear infinite;
+        }
+      }
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 1024px) {
+  .crop-modal {
+    width: 95vw;
+    height: 95vh;
+
+    .crop-modal-content {
+      .crop-workspace {
+        grid-template-columns: 1fr;
+        gap: 20px;
+
+        .crop-preview {
+          order: -1;
+
+          .preview-container {
+            height: 150px;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .crop-modal-overlay {
+    padding: 10px;
+  }
+
+  .crop-modal {
+    .crop-modal-header {
+      padding: 16px 20px;
+
+      h2 {
+        font-size: 18px;
+      }
+    }
+
+    .crop-modal-content {
+      padding: 20px;
+
+      .crop-controls {
+        margin-bottom: 20px;
+
+        .aspect-ratio-controls {
+          .aspect-ratio-buttons {
+            button {
+              padding: 6px 12px;
+              font-size: 13px;
+            }
+          }
+        }
+      }
+
+      .crop-workspace {
+        gap: 16px;
+        min-height: 300px;
+
+        .crop-editor {
+          padding: 12px;
+        }
+
+        .crop-preview {
+          .preview-container {
+            height: 120px;
+          }
+        }
+      }
+    }
+
+    .crop-modal-footer {
+      padding: 16px 20px;
+      flex-direction: column-reverse;
+
+      button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .crop-modal {
+    .crop-modal-content {
+      .crop-controls {
+        .aspect-ratio-controls {
+          .aspect-ratio-buttons {
+            flex-direction: column;
+
+            button {
+              width: 100%;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

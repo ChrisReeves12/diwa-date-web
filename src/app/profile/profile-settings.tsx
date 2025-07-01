@@ -3,6 +3,8 @@ import { CroppedImageData } from "@/types/cropped-image-data.interface";
 import SiteWrapper from "@/common/site-wrapper/site-wrapper";
 import { CurrentUserProvider } from "@/common/context/current-user-context";
 import UserSubscriptionPlanDisplay from "@/common/user-subscription-plan-display/user-subscription-plan-display";
+import { ProfileSettingsTabs } from "./profile-settings-tabs";
+import { redirect } from "next/navigation";
 
 interface ProfileSettingsProps {
     currentUser?: User & {
@@ -14,16 +16,7 @@ interface ProfileSettingsProps {
 }
 
 export function ProfileSettings({ currentUser }: ProfileSettingsProps) {
-    return (
-        <CurrentUserProvider currentUser={currentUser}>
-            <SiteWrapper>
-                <div className="profile-settings-container">
-                    <div className="container">
-                        <UserSubscriptionPlanDisplay />
-                        <h2>Profile Settings</h2>
-                    </div>
-                </div>
-            </SiteWrapper>
-        </CurrentUserProvider>
-    );
+    // Redirect to personal information tab by default
+    redirect('/profile/personal-information');
+    return null;
 }

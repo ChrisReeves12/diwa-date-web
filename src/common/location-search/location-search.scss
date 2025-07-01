@@ -1,6 +1,8 @@
 @use '../../styles/globals' as globals;
 
 .location-search-container {
+  max-width: 500px;
+  
   .location-input-container {
     position: relative;
     width: 100%;

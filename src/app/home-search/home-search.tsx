@@ -57,7 +57,7 @@ function SearchResultsView({ currentUser: initialCurrentUser, searchPromise }: {
         }
 
         setIsInitialLoadComplete(true);
-    }, [page, searchSortBy]);
+    }, [page, searchSortBy, isInitialLoadComplete]);
 
     const searchResponse = updatedSearchResponse || use(searchPromise);
     if (searchResponse.hasError) {

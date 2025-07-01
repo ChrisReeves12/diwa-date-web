@@ -79,6 +79,9 @@ export interface User {
   age: number;
   subscriptionPlanEnrollments: SubscriptionPlanEnrollment[];
   refreshToken?: string;
+  newDesiredEmail?: string;
+  resetToken?: string;
+  resetTokenExpiry?: Date;
   createdAt?: Date;
   updatedAt?: Date;
   isUnderReview?: number;

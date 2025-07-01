@@ -61,3 +61,24 @@ export function decodeHtmlEntities(str: string): string {
     textarea.innerHTML = str;
     return textarea.value;
 }
+
+/**
+ * Generate random string
+ * @param length
+ */
+export function generateCryptoRandomString(length: number): string {
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const randomBytes = new Uint8Array(length);
+
+    // Generate cryptographically secure random bytes
+    crypto.getRandomValues(randomBytes);
+
+    // Convert bytes to characters from our charset
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += charset[randomBytes[i] % charset.length];
+    }
+
+    return result;
+}
+

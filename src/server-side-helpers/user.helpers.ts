@@ -24,6 +24,7 @@ import {
     emitUserBlocked,
     emitUserUnblocked
 } from '@/server-side-helpers/notification-emitter.helper';
+import { sendEmail } from './mail.helper';
 
 type UserForProfileDetail = Pick<User,
     | "id"
@@ -88,6 +89,7 @@ export async function getUser(id: number): Promise<User | null> {
     }
 
     user.password = '';
+    (user as any).age = calculateUserAge(user);
 
     return user as unknown as User;
 }
@@ -263,6 +265,7 @@ export async function getUserProfileDetail(currentUserId: number, user: UserForP
 
 import { createGenderLabels } from '@/helpers/user.helpers';
 import { cookies } from "next/headers";
+import { generateCryptoRandomString } from "@/util";
 
 /**
  * Authenticate a user with email and password
@@ -423,6 +426,38 @@ export async function checkUserExists(email: string): Promise<boolean> {
 }
 
 /**
+ * Update user account with correct
+ * @param userId
+ * @param newEmail
+ */
+export async function generateEmailUpdateUrl(userId: number, newEmail: string) {
+    const token = generateCryptoRandomString(32);
+    await pgDbPool.query(`UPDATE "users" SET "resetToken" = $1, 
+                                             "resetTokenExpiry" = NOW() + INTERVAL '20 minutes', 
+                                             "newDesiredEmail" = $2,
+                                             "updatedAt" = NOW() WHERE id = $3`, [token, newEmail.toLowerCase(), userId]);
+
+    return `${process.env.APP_URL_ROOT}/user/reset/email?token=${token}`;
+}
+
+/**
+ * Update the user's email.
+ * @param userId
+ * @param newEmail
+ */
+export async function updateUserEmail(userId: number, newEmail: string) {
+    await pgDbPool.query(`
+        UPDATE "users" 
+        SET "email" = $1,
+            "newDesiredEmail" = NULL,
+            "resetToken" = NULL, 
+            "resetTokenExpiry" = NULL,
+            "updatedAt" = NOW()
+        WHERE id = $2
+    `, [newEmail.toLowerCase(), userId]);
+}
+
+/**
  * Hashes a password.
  * @param clearTextPassword
  */
@@ -528,6 +563,19 @@ export async function isUserSuspended(userId: number) {
                                                WHERE id = $1`, [userId]);
 
     return _.get(result.rows, [0, 'isSuspended']);
+}
+
+/**
+ * Find a user by reset Token.
+ * @param resetToken
+ */
+export async function findUserByResetToken(resetToken: string) {
+    const result = await pgDbPool.query<Pick<User, "id" | "newDesiredEmail" | "password">>(`SELECT id, "newDesiredEmail", "password" FROM "users" WHERE "resetToken" = $1 
+                        AND "resetTokenExpiry" IS NOT NULL AND "resetTokenExpiry" > NOW() LIMIT 1`, [resetToken]);
+
+    if (result.rows.length > 0) {
+        return result.rows[0];
+    }
 }
 
 /**
@@ -947,7 +995,50 @@ export async function getFullUserProfile(userId: number, currentUserId: number):
 
     // Add public user details (including processed photo URLs) to the user object
     const userWithPublicDetails = Object.assign({}, user, getPublicUserDetails(user));
-    
+
     const userProfileDetails = await getUserProfileDetail(currentUserId, userWithPublicDetails);
     return { statusCode: 200, userProfileDetails };
+}
+
+/**
+ * Sends a verification email to the user's email address on file.
+ * @param userId The user's ID
+ * @returns True if the email was sent, false otherwise
+ */
+export async function sendVerificationEmailToUser(userId: number): Promise<boolean> {
+    // Get the user from the database
+    const user = await prisma.users.findUnique({
+        where: { id: userId }
+    });
+    if (!user || !user.email) {
+        return false;
+    }
+
+    // Generate a verification token
+    const token = generateCryptoRandomString(32);
+    // Store the token and expiry in the database
+    await pgDbPool.query(
+        `UPDATE users 
+         SET "emailVerificationToken" = $1,
+             "emailVerificationTokenExpiry" = NOW() + INTERVAL '30 minutes'
+         WHERE id = $2`, [token, userId]
+    );
+
+    const verificationLink = `${process.env.APP_URL_ROOT}/user/verify-email?token=${token}`
+
+    // Email content
+    const content = `
+        <h1>Email Verification</h1>
+        <p>Hi ${user.firstName}!</p>
+        <p>Thank you for registering with Diwa Date!</p>
+        <p>Please verify your email address by clicking the button below:</p>
+        <a href="${verificationLink}" class="button">Verify Email</a>
+        <p>If you did not create an account, you can ignore this email.</p>
+    `;
+
+    // Send the email
+    const result = await sendEmail([
+        user.email
+    ], `Email verification for ${user.firstName} ${user.lastName}`, content);
+    return !result.hasError;
 }

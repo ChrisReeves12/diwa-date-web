@@ -656,3 +656,219 @@ a {
     background-color: #0077cc;
   }
 }
+
+.btn-secondary {
+  color: #666;
+  background-color: #f5f5f5;
+  padding: 8px 15px;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+
+  @include dark-mode() {
+    color: #ccc;
+    background-color: #333;
+    border-color: #555;
+  }
+
+  &:hover {
+    background-color: #e0e0e0;
+
+    @include dark-mode() {
+      background-color: #444;
+    }
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+// Billing settings specific styles
+.billing-settings {
+  // Inherit all security-settings styles
+  @extend .security-settings;
+
+  // Additional billing-specific styles
+  .input-container {
+    select {
+      border: 0;
+      outline-width: 0;
+      background-color: transparent;
+      padding-bottom: 8px;
+      font-size: 15px;
+      appearance: none;
+      -moz-appearance: none;
+      -webkit-appearance: none;
+      border-radius: 0;
+      border-bottom: 1px solid #ccc;
+      width: 100%;
+      display: block;
+      cursor: pointer;
+
+      @include dark-mode() {
+        border-bottom-color: #666;
+        color: #fff;
+      }
+
+      &:focus {
+        border-bottom-color: $primary-blue;
+      }
+    }
+
+    .help-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+      display: block;
+
+      @include dark-mode() {
+        color: #ccc;
+      }
+    }
+
+    &.error {
+      select {
+        border-bottom-color: $error-color-light;
+
+        @include dark-mode() {
+          border-bottom-color: $error-color-dark;
+        }
+      }
+    }
+  }
+
+  // Split form row for expiry date
+  .form-row-split {
+    display: flex;
+    gap: 15px;
+
+    .input-container {
+      flex: 1;
+    }
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      gap: 20px;
+    }
+  }
+
+  // Current payment method display
+  .current-payment-method {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid $primary-blue;
+
+    @include dark-mode() {
+      background-color: #2a2a2a;
+    }
+
+    p {
+      margin: 0 0 5px 0;
+
+      &:last-child {
+        margin-bottom: 0;
+        font-family: monospace;
+        font-size: 14px;
+        color: #666;
+
+        @include dark-mode() {
+          color: #ccc;
+        }
+      }
+    }
+  }
+
+  // Payment security notice
+  .payment-security-notice {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #e8f5e8;
+    border-radius: 4px;
+    border-left: 3px solid #4caf50;
+
+    @include dark-mode() {
+      background-color: #1b5e20;
+      border-left-color: #66bb6a;
+    }
+
+    p {
+      margin: 0;
+
+      small {
+        color: #2e7d32;
+        font-weight: 500;
+
+        @include dark-mode() {
+          color: #81c784;
+        }
+      }
+    }
+  }
+
+  // Alternative payment methods
+  .alternative-payment-methods {
+    .payment-option {
+      padding: 20px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background-color: #fff;
+
+      @include dark-mode() {
+        border-color: #333;
+        background-color: #1a1a1a;
+      }
+
+      &.disabled {
+        opacity: 0.6;
+        background-color: #f9f9f9;
+
+        @include dark-mode() {
+          background-color: #2a2a2a;
+        }
+      }
+
+      .payment-option-content {
+        h4 {
+          margin: 0 0 10px 0;
+          color: #333;
+          font-size: 18px;
+          font-weight: 600;
+
+          @include dark-mode() {
+            color: #fff;
+          }
+        }
+
+        p {
+          margin: 0 0 15px 0;
+          color: #666;
+
+          @include dark-mode() {
+            color: #ccc;
+          }
+        }
+      }
+    }
+  }
+
+  // Loading message
+  .loading-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+
+    @include dark-mode() {
+      color: #ccc;
+    }
+
+    p {
+      margin: 0;
+      font-style: italic;
+    }
+  }
+}

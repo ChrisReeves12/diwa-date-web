@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
     const currentUser = await getUser();
 
     return {
-        title: currentUser ? `${process.env.APP_NAME} | Search` : process.env.APP_NAME
+        title: currentUser ? `${process.env.APP_NAME} | Search` : `${process.env.APP_NAME} | ${process.env.APP_TAGLINE}`
     };
 }
 
@@ -33,6 +33,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
         currentUser ?
             <HomeSearch
                 searchPromise={createSearchPromise(currentUser, lSearchParams)}
-                currentUser={currentUser}/> : <GuestHome />
+                currentUser={currentUser} /> : <GuestHome />
     );
 }

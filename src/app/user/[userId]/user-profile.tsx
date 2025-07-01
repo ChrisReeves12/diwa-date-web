@@ -1,4 +1,5 @@
 'use client';
+
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { User } from "@/types";
 import { CurrentUserProvider } from "@/common/context/current-user-context";
@@ -8,7 +9,8 @@ import { UserPhoto } from "@/types/user-photo.type";
 import Link from 'next/link';
 import {
     AngleLeftIcon,
-    AngleRightIcon, BanIcon,
+    AngleRightIcon,
+    BanIcon,
     CheckCircleIcon,
     CommentsIcon, ExclamationTriangleIcon,
     HeartBrokenIcon,
@@ -140,7 +142,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         const handleBlockEvent = (data: { blockedUserId: number; blockedBy: number; timestamp: Date }) => {
             console.log('Block event received:', data);
             console.log('Current user ID:', currentUser.id, 'Viewed user ID:', userProfile.user.id);
-            
+
             // Only update state if the current user was blocked by the user being viewed
             if (data.blockedBy === userProfile.user.id && data.blockedUserId === currentUser.id) {
                 console.log('Current user was blocked by viewed user - updating local state');
@@ -156,7 +158,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         const handleUnblockEvent = (data: { unblockedUserId: number; unblockedBy: number; timestamp: Date }) => {
             console.log('Unblock event received:', data);
             console.log('Current user ID:', currentUser.id, 'Viewed user ID:', userProfile.user.id);
-            
+
             // Only update state if the current user was unblocked by the user being viewed
             if (data.unblockedBy === userProfile.user.id && data.unblockedUserId === currentUser.id) {
                 console.log('Current user was unblocked by viewed user - updating local state');
@@ -319,7 +321,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                 <div className="user-basic-info-section">
                                     <h1 className="user-display-name">{userProfile.user.displayName}</h1>
                                     <h4 className="user-age">{userProfile.user.age} Year Old {userProfile.user.gender === 'male' ? 'Man' : 'Woman'}</h4>
-                                    {userProfile.matchIsTowardsMe === true && userProfile.matchStatus === 'pending' ? (
+                                    {userProfile.matchIsTowardsMe && userProfile.matchStatus === 'pending' ? (
                                         <h5 className="user-like-label">{userProfile.user.gender === 'male' ? 'He' : 'She'} Likes You</h5>
                                     ) : null}
 

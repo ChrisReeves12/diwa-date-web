@@ -2,7 +2,7 @@
 
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { checkUserExists, hashPassword } from '@/server-side-helpers/user.helpers';
+import { checkUserExists, hashPassword, sendVerificationEmailToUser } from '@/server-side-helpers/user.helpers';
 import { UserRegistrationData, ValidationErrors, User, SearchFromOrigin } from '@/types';
 import prisma from '@/lib/prisma';
 import { createSession } from '@/server-side-helpers/session.helpers';
@@ -76,10 +76,35 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
       lastActiveAt: new Date()
     };
 
-    // Store user in database
-    const newUser = await prisma.users.create({
-      data: createData as never
-    });
+    // Store user in database with geoPoint
+    const newUserResult = await prisma.$queryRaw<{ id: number }[]>`
+      INSERT INTO users (
+        "firstName", "lastName", "email", "password", "displayName", "dateOfBirth",
+        "gender", "timezone", "createdAt", "seekingGender", "seekingNumOfPhotos",
+        "seekingMaxDistance", "seekingMinHeight", "seekingDistanceOrigin",
+        "seekingMaxHeight", "seekingMinAge", "seekingMaxAge", "maritalStatus",
+        "latitude", "longitude", "locationName", "locationViewport", "country",
+        "height", "updatedAt", "lastActiveAt", "geoPoint"
+      ) VALUES (
+        ${createData.firstName}, ${createData.lastName}, ${createData.email},
+        ${createData.password}, ${createData.displayName}, ${createData.dateOfBirth},
+        ${createData.gender}, ${createData.timezone}, ${createData.createdAt},
+        ${createData.seekingGender}, ${createData.seekingNumOfPhotos},
+        ${createData.seekingMaxDistance}, ${createData.seekingMinHeight},
+        ${createData.seekingDistanceOrigin}, ${createData.seekingMaxHeight},
+        ${createData.seekingMinAge}, ${createData.seekingMaxAge}, ${createData.maritalStatus},
+        ${createData.latitude}, ${createData.longitude}, ${createData.locationName},
+        ${createData.locationViewport ? JSON.stringify(createData.locationViewport) : null}::jsonb,
+        ${createData.country}, ${createData.height}, ${createData.updatedAt},
+        ${createData.lastActiveAt},
+        ST_SetSRID(ST_MakePoint(${createData.longitude}, ${createData.latitude}), 4326)
+      ) RETURNING id
+    `;
+
+    const newUser = { id: newUserResult[0].id, ...createData };
+
+    // Send verification email
+    await sendVerificationEmailToUser(newUser.id);
 
     // Create a session for the user
     const sessionId = await createSession(newUser as unknown as User);

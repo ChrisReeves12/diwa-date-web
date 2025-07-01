@@ -1,5 +1,5 @@
-// @ts-ignore
-const amqplib = require('amqplib');
+// const amqplib = require('amqplib');
+import amqplib from 'amqplib';
 import { v4 as uuidv4 } from 'uuid';
 import {
     RabbitMQConfig,

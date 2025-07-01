@@ -10,13 +10,13 @@ import { Metadata } from "next";
 import { cache } from "react";
 
 // Cache the user data to avoid duplicate fetching
-const getUser = cache(async () => {
+const getLoggedInUser = cache(async () => {
     return getCurrentUser(await cookies());
 });
 
 // Cache the user profile data to avoid duplicate fetching
 const getUserProfile = cache(async (userId: string) => {
-    const currentUser = await getUser();
+    const currentUser = await getLoggedInUser();
     if (!currentUser) {
         // Return a more specific type for error cases
         return { statusCode: 401, error: "Not authenticated", userProfileDetails: undefined };
@@ -32,7 +32,7 @@ const getUserProfile = cache(async (userId: string) => {
 });
 
 export async function generateMetadata({ params }: any): Promise<Metadata> {
-    const currentUser = await getUser();
+    const currentUser = await getLoggedInUser();
 
     if (!currentUser) {
         return {
@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: any): Promise<Metadata> {
 }
 
 export default async function UserProfilePage({ params }: any) {
-    const currentUser = await getUser();
+    const currentUser = await getLoggedInUser();
     const { userId } = await params;
 
     if (!currentUser) {

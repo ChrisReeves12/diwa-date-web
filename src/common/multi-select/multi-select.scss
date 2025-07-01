@@ -1,0 +1,151 @@
+@use '../../styles/globals.scss' as globals;
+
+.multi-select-container {
+    margin-bottom: 20px;
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: var(--text-color);
+    }
+
+    .multi-select-wrapper {
+        position: relative;
+        max-width: 500px;
+    }
+
+    .multi-select-display {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background: var(--input-background);
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        @media (prefers-color-scheme: dark) {
+            border-color: #666;
+        }
+
+        &:hover {
+            border-color: globals.$primary-blue;
+
+            @media (prefers-color-scheme: dark) {
+                border-color: globals.$primary-blue-dark;
+            }
+        }
+
+        &.open {
+            border-color: globals.$primary-blue;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+
+            @media (prefers-color-scheme: dark) {
+                border-color: globals.$primary-blue-dark;
+            }
+        }
+
+        .display-text {
+            color: var(--text-color);
+            flex: 1;
+        }
+
+        i {
+            color: var(--text-color-light);
+            transition: transform 0.2s ease;
+
+            &.rotated {
+                transform: rotate(180deg);
+            }
+        }
+    }
+
+    .multi-select-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #ffffff;
+        border: 1px solid globals.$primary-blue;
+
+        @media (prefers-color-scheme: dark) {
+            border-color: globals.$primary-blue-dark;
+        }
+        border-top: none;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+        @media (prefers-color-scheme: dark) {
+            background: #2a2a2a;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+
+            &:hover:not(.disabled) {
+                background-color: var(--hover-background);
+            }
+
+            &.selected {
+                background-color: var(--primary-color-light);
+                color: var(--primary-color);
+            }
+
+            &.disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            .option-content {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+
+                .emoji {
+                    font-size: 16px;
+                }
+
+                .label {
+                    font-size: 14px;
+                }
+            }
+
+            i {
+                color: var(--primary-color);
+                font-size: 16px;
+            }
+        }
+    }
+
+    .selection-counter {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--text-color-light);
+        text-align: right;
+        max-width: 500px;
+    }
+
+    .error-message {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--error-color);
+    }
+
+    &.error {
+        .multi-select-display {
+            border-color: var(--error-color);
+        }
+    }
+}
