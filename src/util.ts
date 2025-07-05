@@ -1,4 +1,83 @@
 import _ from "lodash";
+import { User } from "./types";
+
+// Global alert dialog state
+interface AlertState {
+    open: boolean;
+    title?: string;
+    message: string;
+}
+
+let alertState: AlertState = {
+    open: false,
+    message: ''
+};
+
+let alertStateUpdater: ((state: AlertState) => void) | null = null;
+
+/**
+ * Register the alert state updater function (called from the root component)
+ * @param updater Function to update the global alert state
+ */
+export function registerAlertUpdater(updater: (state: AlertState) => void) {
+    alertStateUpdater = updater;
+}
+
+/**
+ * Checks if a user has been onboarded in which they filled out all the necessary attributes to
+ * be visible in search.
+ * @param user
+ */
+export function userHasOnboarded(user: Pick<User, 'numOfPhotos' | 'emailVerifiedAt'>) {
+    const issues = { emailVerifiedAt: false, numOfPhotos: false };
+
+    if (user.emailVerifiedAt && user.numOfPhotos >= 3) {
+        return { hasOnboarded: true, issues };
+    }
+
+
+    if (!user.emailVerifiedAt) {
+        issues.emailVerifiedAt = true;
+    }
+
+    if (user.numOfPhotos < 3) {
+        issues.numOfPhotos = true;
+    }
+
+    return { hasOnboarded: false, issues };
+}
+
+/**
+ * Show a global alert dialog (replacement for window.alert())
+ * @param message The message to display
+ * @param title Optional title for the dialog
+ */
+export function showAlert(message: string, title?: string) {
+    if (alertStateUpdater) {
+        alertState = {
+            open: true,
+            message,
+            title
+        };
+        alertStateUpdater(alertState);
+    } else {
+        // Fallback to browser alert if the system isn't initialized yet
+        alert(message);
+    }
+}
+
+/**
+ * Close the global alert dialog
+ */
+export function closeAlert() {
+    if (alertStateUpdater) {
+        alertState = {
+            ...alertState,
+            open: false
+        };
+        alertStateUpdater(alertState);
+    }
+}
 
 /**
  * Returns the URL for a user's profile.

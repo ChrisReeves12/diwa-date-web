@@ -16,6 +16,7 @@ import Modal from '@mui/material/Modal';
 import { Box } from "@mui/system";
 import SearchFiltersDialog from "@/app/home-search/search-filters-dialog/search-filters-dialog";
 import { NotificationCenterData } from "@/types/notification-center-data.interface";
+import { showAlert } from '@/util';
 
 function SearchErrorDisplay() {
     return (
@@ -97,7 +98,7 @@ function SearchResultsView({ currentUser: initialCurrentUser, searchPromise }: {
                                                     setCurrentUser(searchResponse!.currentUser);
                                                 })
                                                 .catch(() => {
-                                                    alert('An error occurred while updating search preferences.');
+                                                    showAlert('An error occurred while updating search preferences.');
                                                 }).finally(() => setIsUpdatingSearchResults(false));
                                         }}
                                     />

@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function LoginPage() {
     return (
-        <SiteWrapper>
+        <SiteWrapper hideFlashMessage={true}>
             <LoginForm />
         </SiteWrapper>
     );

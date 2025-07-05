@@ -5,6 +5,7 @@ import { PhotoWithUrl } from '@/types/upload-progress.interface';
 import { useState, useEffect, useCallback } from 'react';
 import { ImageCropper } from './image-cropper';
 import { CropArea, ASPECT_RATIOS, cropImage, getCropPreview } from '@/lib/image-processing';
+import { showAlert } from '@/util';
 
 interface PhotoSpotlightModalProps {
   isOpen: boolean;
@@ -104,7 +105,7 @@ export function PhotoSpotlightModal({
 
   const handleCropAreaChange = useCallback((newCropArea: CropArea) => {
     setCropArea(newCropArea);
-    
+
     if (imageFile && newCropArea.width > 0 && newCropArea.height > 0) {
       getCropPreview(imageFile, newCropArea)
         .then(setPreview)
@@ -124,7 +125,7 @@ export function PhotoSpotlightModal({
     try {
       setIsProcessing(true);
       const processedImage = await cropImage(imageFile, cropArea);
-      
+
       // Use the replace API to replace the existing photo
       const formData = new FormData();
       formData.append('file', processedImage.file);
@@ -142,17 +143,17 @@ export function PhotoSpotlightModal({
       }
 
       const result = await response.json();
-      
+
       // Notify parent component that photo was replaced
       if (onPhotoReplaced) {
         onPhotoReplaced();
       }
-      
+
       setIsEditMode(false);
       onClose();
     } catch (error) {
       console.error('Failed to replace photo:', error);
-      alert('Failed to replace photo. Please try again.');
+      showAlert('Failed to replace photo. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -207,9 +208,9 @@ export function PhotoSpotlightModal({
       const response = await fetch('/api/photos/update-caption', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          photoPath: photo.path, 
-          caption: caption.trim() 
+        body: JSON.stringify({
+          photoPath: photo.path,
+          caption: caption.trim()
         }),
       });
 
@@ -220,19 +221,19 @@ export function PhotoSpotlightModal({
 
       setOriginalCaption(caption.trim());
       setIsEditingCaption(false);
-      
+
       // Update the photo object with new caption
       if (photo) {
         photo.caption = caption.trim();
       }
-      
+
       // Trigger refresh of photos list
       if (onCaptionUpdate) {
         onCaptionUpdate();
       }
     } catch (error) {
       console.error('Update caption error:', error);
-      alert('Failed to update caption. Please try again.');
+      showAlert('Failed to update caption. Please try again.');
       setCaption(originalCaption);
       setIsEditingCaption(false);
     }
@@ -269,7 +270,7 @@ export function PhotoSpotlightModal({
               </div>
             )}
           </div>
-          
+
           <button className="close-button" onClick={isEditMode ? handleCancelEdit : onClose}>
             <i className="las la-times"></i>
           </button>
@@ -286,7 +287,7 @@ export function PhotoSpotlightModal({
                   <p>Loading photo...</p>
                 </div>
               )}
-              
+
               <img
                 src={photo.url || ''}
                 alt="Photo preview"
@@ -357,7 +358,7 @@ export function PhotoSpotlightModal({
                   <i className="las la-eye"></i>
                   <span>Profile View</span>
                 </button>
-                
+
                 {onCropComplete && (
                   <button className="action-btn edit-btn" onClick={handleStartEdit}>
                     <i className="las la-crop"></i>
@@ -373,7 +374,7 @@ export function PhotoSpotlightModal({
                     <span>Make Main</span>
                   </button>
                 )}
-                
+
                 {onDelete && (
                   <button className="action-btn delete-btn" onClick={handleDelete}>
                     <i className="las la-trash"></i>
@@ -385,17 +386,17 @@ export function PhotoSpotlightModal({
           ) : (
             // Edit Mode Actions
             <div className="edit-actions">
-              <button 
-                className="action-btn cancel-btn" 
+              <button
+                className="action-btn cancel-btn"
                 onClick={handleCancelEdit}
                 disabled={isProcessing}
               >
                 <i className="las la-times"></i>
                 <span>Cancel</span>
               </button>
-              
-              <button 
-                className="action-btn save-btn" 
+
+              <button
+                className="action-btn save-btn"
                 onClick={handleSaveCrop}
                 disabled={isProcessing || cropArea.width === 0}
               >
@@ -432,14 +433,14 @@ export function PhotoSpotlightModal({
                   rows={3}
                 />
                 <div className="caption-edit-actions">
-                  <button 
-                    className="caption-btn cancel-btn" 
+                  <button
+                    className="caption-btn cancel-btn"
                     onClick={handleCancelCaptionEdit}
                   >
                     Cancel
                   </button>
-                  <button 
-                    className="caption-btn save-btn" 
+                  <button
+                    className="caption-btn save-btn"
                     onClick={handleSaveCaption}
                   >
                     Save
@@ -451,8 +452,8 @@ export function PhotoSpotlightModal({
                 {caption ? (
                   <div className="caption-content">
                     <p>{caption}</p>
-                    <button 
-                      className="edit-caption-btn" 
+                    <button
+                      className="edit-caption-btn"
                       onClick={handleStartCaptionEdit}
                       title="Edit caption"
                     >
@@ -461,8 +462,8 @@ export function PhotoSpotlightModal({
                   </div>
                 ) : (
                   <div className="no-caption">
-                    <button 
-                      className="add-caption-btn" 
+                    <button
+                      className="add-caption-btn"
                       onClick={handleStartCaptionEdit}
                     >
                       <i className="las la-plus"></i>

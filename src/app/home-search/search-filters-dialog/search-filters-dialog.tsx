@@ -20,6 +20,7 @@ import { updateUserSearchPreferences } from "@/app/home-search/home-search.actio
 import { useSearchParams } from 'next/navigation';
 import { SearchSortBy } from '@/types/search-parameters.interface';
 import { SearchResponse } from "@/types/search-response.interface";
+import { showAlert } from '@/util';
 
 interface SearchFiltersDialogProps {
     currentUser: Omit<User, 'password'>;
@@ -58,14 +59,14 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
     const onSubmit = () => {
         // Validate that a location is selected if SingleLocation is chosen
         if (seekingDistanceOrigin === SearchFromOrigin.SingleLocation && !singleSearchLocation) {
-            alert('Please select a location before applying filters');
+            showAlert('Please select a location before applying filters');
             return;
         }
 
         // Validate that countries are selected if MultipleCountries is chosen
         if (seekingDistanceOrigin === SearchFromOrigin.MultipleCountries &&
             (!seekingCountries || seekingCountries.length === 0)) {
-            alert('Please select at least one country before applying filters');
+            showAlert('Please select at least one country before applying filters');
             return;
         }
 
@@ -95,7 +96,7 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
             onApply(searchResponse);
             onClose();
         }).catch((error) => {
-            alert('An error occurred while updating your search preferences');
+            showAlert('An error occurred while updating your search preferences');
             console.error(error);
         }).finally(() => {
             setIsSaving(false);

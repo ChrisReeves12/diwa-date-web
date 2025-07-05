@@ -5,6 +5,8 @@ import { useCurrentUser } from '../context/current-user-context';
 import { InfoCircleIcon } from 'react-line-awesome';
 import { resendVerificationEmail } from './info-bar.actions';
 import { useState } from 'react';
+import { showAlert, userHasOnboarded } from '@/util';
+import Link from 'next/link';
 
 export default function InfoBar() {
     const [isLoading, setIsLoading] = useState(false);
@@ -18,20 +20,33 @@ export default function InfoBar() {
         try {
             setIsLoading(true);
             await resendVerificationEmail(currentUser.id);
-            alert('Your verification email has been resent.');
+            showAlert('Your verification email has been resent.');
         } catch (e) {
-            alert('An error occurred while re-sending verification email.');
+            showAlert('An error occurred while re-sending verification email.');
             console.error(e);
         } finally {
             setIsLoading(false);
         }
     }
 
+    const onboardedResult = userHasOnboarded(currentUser);
+
+    if (onboardedResult.hasOnboarded) {
+        return null;
+    }
+
     const InfoContent = () => {
-        if (!currentUser.emailVerifiedAt) {
+        if (onboardedResult.issues.emailVerifiedAt) {
             return (
                 <p><InfoCircleIcon /> Your profile will not be shown until you verify your email. <button disabled={isLoading}
                     onClick={handleResendVerificationEmail} className='action-button'>{isLoading ? 'Please wait...' : 'Resend Email'}</button></p>
+            );
+        }
+
+        if (onboardedResult.issues.numOfPhotos) {
+            return (
+                <p><InfoCircleIcon /> Your profile will not be shown until you have added at least 3 approved photos to your profile. <Link
+                    href={'/profile/photos'} className='action-button'>{isLoading ? 'Please wait...' : 'Add Photos'}</Link></p>
             );
         }
     };

@@ -2,7 +2,7 @@ import './user-profile-preview.scss';
 
 import { UserPreview } from "@/types/user-preview.interface";
 import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
-import { userProfileLink } from "@/util";
+import { userProfileLink, showAlert } from "@/util";
 import Image from "next/image";
 import { BanIcon, CommentsIcon, ExclamationTriangleIcon, HeartBrokenIcon, HeartIcon, TimesIcon, UnlockIcon, UserCircleIcon } from "react-line-awesome";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -91,7 +91,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
         } else {
             const sendUserMatchResult = await sendUserMatch(Number(userPreview.id));
             if (typeof sendUserMatchResult === 'object' && "error" in sendUserMatchResult) {
-                alert(sendUserMatchResult.error);
+                showAlert(sendUserMatchResult.error);
                 return;
             }
 
@@ -158,7 +158,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
     const confirmMatch = async () => {
         const sendUserMatchResult = await sendUserMatch(Number(userPreview.id));
         if (typeof sendUserMatchResult === 'object' && "error" in sendUserMatchResult) {
-            alert('An error occurred while sending user match confirmation.');
+            showAlert('An error occurred while sending user match confirmation.');
             return;
         }
 
@@ -290,7 +290,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                                         } else {
                                             const sendUserMatchResult = await sendUserMatch(Number(userPreview.id));
                                             if (typeof sendUserMatchResult === 'object' && "error" in sendUserMatchResult) {
-                                                alert(sendUserMatchResult.error);
+                                                showAlert(sendUserMatchResult.error);
                                                 return;
                                             }
 

@@ -1,23 +1,23 @@
 "use strict";
 'use client';
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function (o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
+        desc = { enumerable: true, get: function () { return m[k]; } };
     }
     Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
+}) : (function (o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
 }));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function (o, v) {
     Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
+}) : function (o, v) {
     o["default"] = v;
 });
 var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
+    var ownKeys = function (o) {
         ownKeys = Object.getOwnPropertyNames || function (o) {
             var ar = [];
             for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
@@ -106,7 +106,7 @@ function LocationSearch({ onUpdate, error, initialLocality, geoBounds, showMap =
         const country = (_d = geocoderResult.address_components.find(addrComponent => addrComponent.types.includes('country'))) === null || _d === void 0 ? void 0 : _d.long_name;
         if (!country) {
             console.error('Could not locate country.');
-            alert('An error occurred while trying to locate the country of your location. Please try a different search.');
+            showAlert('An error occurred while trying to locate the country of your location. Please try a different search.');
             throw Error('Could not locate country.');
         }
         return {
@@ -194,33 +194,33 @@ function LocationSearch({ onUpdate, error, initialLocality, geoBounds, showMap =
         }
     };
     return (<div className="location-search-container">
-            <div className="form-row">
-                {selectedLocation
-            && <selected_map_location_1.default onRemove={() => {
+        <div className="form-row">
+            {selectedLocation
+                && <selected_map_location_1.default onRemove={() => {
                     setSelectedLocation(undefined);
                     setLocationSearchText('');
                     if (onUpdate) {
                         onUpdate(undefined);
                     }
-                }} location={selectedLocation}/>}
-                {!selectedLocation && <div className={`input-container ${error ? 'error' : ''}`}>
-                    <label htmlFor="location">Location</label>
-                    <div className="location-input-container">
-                        <input type="text" id="location" name="location" value={locationSearchText} onChange={handleLocationInputChange} onFocus={() => locationSearchText.trim() !== '' && setShowSuggestions(true)} onBlur={() => {
-                setTimeout(() => setShowSuggestions(false), 200);
-            }} className={error ? 'error' : ''} placeholder="City or Region" autoComplete="off"/>
-                        {showSuggestions && locationSuggestions.length > 0 && (<div className="location-suggestions">
-                                {locationSuggestions.map((suggestion) => (<div key={suggestion.place_id} className="suggestion-item" onClick={() => handleSelectLocation(suggestion)}>
-                                        {suggestion.description}
-                                    </div>))}
-                            </div>)}
-                    </div>
-                    {error && (<div className="error-message">{error}</div>)}
-                </div>}
-            </div>
-            <div style={{ display: selectedLocation && showMap ? 'block' : 'none' }} className="form-row">
-                <div style={{ width: "100%", height: "480px", backgroundColor: "#f4f4f4", marginBottom: "40px" }} id="map"></div>
-            </div>
-        </div>);
+                }} location={selectedLocation} />}
+            {!selectedLocation && <div className={`input-container ${error ? 'error' : ''}`}>
+                <label htmlFor="location">Location</label>
+                <div className="location-input-container">
+                    <input type="text" id="location" name="location" value={locationSearchText} onChange={handleLocationInputChange} onFocus={() => locationSearchText.trim() !== '' && setShowSuggestions(true)} onBlur={() => {
+                        setTimeout(() => setShowSuggestions(false), 200);
+                    }} className={error ? 'error' : ''} placeholder="City or Region" autoComplete="off" />
+                    {showSuggestions && locationSuggestions.length > 0 && (<div className="location-suggestions">
+                        {locationSuggestions.map((suggestion) => (<div key={suggestion.place_id} className="suggestion-item" onClick={() => handleSelectLocation(suggestion)}>
+                            {suggestion.description}
+                        </div>))}
+                    </div>)}
+                </div>
+                {error && (<div className="error-message">{error}</div>)}
+            </div>}
+        </div>
+        <div style={{ display: selectedLocation && showMap ? 'block' : 'none' }} className="form-row">
+            <div style={{ width: "100%", height: "480px", backgroundColor: "#f4f4f4", marginBottom: "40px" }} id="map"></div>
+        </div>
+    </div>);
 }
 //# sourceMappingURL=location-search.jsx.map

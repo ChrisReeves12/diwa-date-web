@@ -4,7 +4,7 @@ import './location-search.scss';
 import SelectedMapLocation from "@/common/selected-map-location/selected-map-location";
 import React, { useEffect, useState } from "react";
 import { Locality } from "@/types/locality.interface";
-import { loadGoogleMapsScript } from "@/util";
+import { loadGoogleMapsScript, showAlert } from "@/util";
 
 interface LocationSearchProps {
     onUpdate?: (locality?: Locality) => void;
@@ -87,7 +87,7 @@ export default function LocationSearch({ onUpdate, error, initialLocality, geoBo
 
         if (!country) {
             console.error('Could not locate country.');
-            alert('An error occurred while trying to locate the country of your location. Please try a different search.');
+            showAlert('An error occurred while trying to locate the country of your location. Please try a different search.');
             throw Error('Could not locate country.');
         }
 

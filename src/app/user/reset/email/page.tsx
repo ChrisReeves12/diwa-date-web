@@ -3,6 +3,7 @@ import { ResetEmail } from "@/app/user/reset/email/reset-email";
 import SiteWrapper from "@/common/site-wrapper/site-wrapper";
 import { redirect } from "next/navigation";
 import { findUserByResetToken } from "@/server-side-helpers/user.helpers";
+import Link from 'next/link';
 
 export const metadata = {
     title: `${process.env.APP_NAME} | Email Reset`,
@@ -22,7 +23,9 @@ export default async function ResetEmailPage({ searchParams }: any) {
     if (!user) {
         return (
             <SiteWrapper hideButtons={true}>
-                <p>Your token has expired, please try again.</p>
+                <div className="container">
+                    <p style={{ textAlign: 'center', paddingTop: 20 }}>Your email reset token has expired, please try again.<br />Return to <Link href={'/'}>home page</Link>.</p>
+                </div>
             </SiteWrapper>
         );
     }

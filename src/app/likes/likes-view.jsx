@@ -57,51 +57,51 @@ function LikesListing({ likesPromise }) {
             setUpdatedHasMore(updatedLikeData.hasMore);
         }
         catch (e) {
-            alert('An error occurred while reloading your matches.');
+            showAlert('An error occurred while reloading your matches.');
         }
         finally {
             setIsLoading(false);
         }
     };
     return (<div className="likes-view-container">
-            {isLoading && <center_screen_loader_1.default />}
-            <div className="likes-filters-section">
-                <div className="filter-section">
-                    <div className="age-order-by-container">
-                        <div className="filter">
-                            <label>Order By</label>
-                            <div className="input-container">
-                                <select value={sortBy} onChange={handleSortChange} className="order-by">
-                                    <option value={likes_sort_by_enum_1.LikesSortBy.ReceivedAt}>Time Received</option>
-                                    <option value={likes_sort_by_enum_1.LikesSortBy.LastActive}>Last Active</option>
-                                    <option value={likes_sort_by_enum_1.LikesSortBy.Newest}>Newest Member</option>
-                                </select>
-                            </div>
+        {isLoading && <center_screen_loader_1.default />}
+        <div className="likes-filters-section">
+            <div className="filter-section">
+                <div className="age-order-by-container">
+                    <div className="filter">
+                        <label>Order By</label>
+                        <div className="input-container">
+                            <select value={sortBy} onChange={handleSortChange} className="order-by">
+                                <option value={likes_sort_by_enum_1.LikesSortBy.ReceivedAt}>Time Received</option>
+                                <option value={likes_sort_by_enum_1.LikesSortBy.LastActive}>Last Active</option>
+                                <option value={likes_sort_by_enum_1.LikesSortBy.Newest}>Newest Member</option>
+                            </select>
                         </div>
                     </div>
                 </div>
-                <div className="paginator-section">
-                    {page > 1 && (<button onClick={() => handlePageChange('prev')}>
-                            Previous Page
-                        </button>)}
-                    {hasMore && (<button onClick={() => handlePageChange('next')}>
-                            Next Page
-                        </button>)}
-                </div>
             </div>
-            <div className="user-likes-listing-container">
-                {likes.length === 0 &&
-            <div className="no-likes-notice"><react_line_awesome_1.InfoCircleIcon /> You have no likes at this time.</div>}
+            <div className="paginator-section">
+                {page > 1 && (<button onClick={() => handlePageChange('prev')}>
+                    Previous Page
+                </button>)}
+                {hasMore && (<button onClick={() => handlePageChange('next')}>
+                    Next Page
+                </button>)}
+            </div>
+        </div>
+        <div className="user-likes-listing-container">
+            {likes.length === 0 &&
+                <div className="no-likes-notice"><react_line_awesome_1.InfoCircleIcon /> You have no likes at this time.</div>}
 
-                {likes.map((user) => <user_profile_preview_1.default isInactive={isLoading} onCallToRefresh={() => reloadLikes()} key={user.id} userPreview={user} type={'like'}/>)}
-            </div>
-        </div>);
+            {likes.map((user) => <user_profile_preview_1.default isInactive={isLoading} onCallToRefresh={() => reloadLikes()} key={user.id} userPreview={user} type={'like'} />)}
+        </div>
+    </div>);
 }
 function LikesView({ currentUser, likesPromise }) {
     return (<dashboard_wrapper_1.default activeTab="likes" currentUser={currentUser}>
-            <react_1.Suspense fallback={<center_screen_loader_1.default />}>
-                <LikesListing likesPromise={likesPromise}/>
-            </react_1.Suspense>
-        </dashboard_wrapper_1.default>);
+        <react_1.Suspense fallback={<center_screen_loader_1.default />}>
+            <LikesListing likesPromise={likesPromise} />
+        </react_1.Suspense>
+    </dashboard_wrapper_1.default>);
 }
 //# sourceMappingURL=likes-view.jsx.map

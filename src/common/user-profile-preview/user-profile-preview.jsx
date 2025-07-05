@@ -138,7 +138,7 @@ function UserProfilePreview({ userPreview, type, onCallToRefresh, isInactive = f
     const confirmMatch = async () => {
         const sendUserMatchResult = await (0, user_profile_actions_1.sendUserMatch)(Number(userPreview.id));
         if (typeof sendUserMatchResult === 'object' && "error" in sendUserMatchResult) {
-            alert('An error occurred while sending user match confirmation.');
+            showAlert('An error occurred while sending user match confirmation.');
             return;
         }
         setUserMatchStatus(sendUserMatchResult);
@@ -147,133 +147,133 @@ function UserProfilePreview({ userPreview, type, onCallToRefresh, isInactive = f
         const muteResult = await (0, user_profile_actions_1.muteUser)(Number(userPreview.id));
     };
     return (<div className={"user-profile-preview-container" + (isInactive ? " inactive" : "")}>
-            <div className="image-container">
-                <a href={(0, util_1.userProfileLink)(userPreview)}>
-                    <user_photo_display_1.default alt={userPreview.displayName} shape="rounded-square" imageUrl={userPreview.publicMainPhoto} croppedImageData={userPreview.mainPhotoCroppedImageData} width={210} height={210} gender={userPreview.gender}/>
-                </a>
-            </div>
-            <div className="image-container-info-section">
-                <div className="info-photo-count-container">
-                    <div className="info-container">
-                        <div className="display-name-container">
-                            <a className="user-display-name" href={(0, util_1.userProfileLink)(userPreview)}>
-                                {userPreview.displayName}
-                            </a>
-                            {userPreview.isOnline && <div className="online-lamp" title="Online now"></div>}
-                        </div>
-                        <div className="info-line age">Age: {userPreview.age}</div>
-                        <div className="info-line location">Location: {userPreview.locationName}</div>
-                        {type === 'like' && (<div className="info-line received-on">Received {userPreview.receivedLikeHumanized}</div>)}
-                        <div className="info-line last-active">Last
-                            Active {userPreview.lastActiveHumanized}</div>
-                        {userPreview.theyLikedMe && (<div className="info-line they-liked-me">
-                                <react_line_awesome_1.HeartIcon style={{ marginRight: '4px' }}/>
-                                Liked you
-                            </div>)}
+        <div className="image-container">
+            <a href={(0, util_1.userProfileLink)(userPreview)}>
+                <user_photo_display_1.default alt={userPreview.displayName} shape="rounded-square" imageUrl={userPreview.publicMainPhoto} croppedImageData={userPreview.mainPhotoCroppedImageData} width={210} height={210} gender={userPreview.gender} />
+            </a>
+        </div>
+        <div className="image-container-info-section">
+            <div className="info-photo-count-container">
+                <div className="info-container">
+                    <div className="display-name-container">
+                        <a className="user-display-name" href={(0, util_1.userProfileLink)(userPreview)}>
+                            {userPreview.displayName}
+                        </a>
+                        {userPreview.isOnline && <div className="online-lamp" title="Online now"></div>}
                     </div>
-                    <div className="photo-count-container">
-                        <button className="photo-count" onClick={togglePhotoPopover} ref={buttonRef}>
-                            <span className="count-value">{userPreview.numOfPhotos}</span>
-                            <image_1.default className="camera-icon" width="20" height="20" alt="Camera" src="/images/camera.svg"/>
-                        </button>
-                        {showPhotoPopover && (<div className="photo-popover" ref={popoverRef}>
-                                <div className="photo-grid">
-                                    {userPreview.publicPhotos && userPreview.publicPhotos.map((photo, index) => (<div key={index} className="photo-grid-item" onClick={() => openImageViewer(index)}>
-                                            <user_photo_display_1.default alt={`${userPreview.displayName}'s photo ${index + 1}`} shape="square" imageUrl={photo.path} croppedImageData={photo.croppedImageData} width={64} height={64} gender={userPreview.gender}/>
-                                        </div>))}
-                                </div>
-                            </div>)}
-                    </div>
+                    <div className="info-line age">Age: {userPreview.age}</div>
+                    <div className="info-line location">Location: {userPreview.locationName}</div>
+                    {type === 'like' && (<div className="info-line received-on">Received {userPreview.receivedLikeHumanized}</div>)}
+                    <div className="info-line last-active">Last
+                        Active {userPreview.lastActiveHumanized}</div>
+                    {userPreview.theyLikedMe && (<div className="info-line they-liked-me">
+                        <react_line_awesome_1.HeartIcon style={{ marginRight: '4px' }} />
+                        Liked you
+                    </div>)}
                 </div>
-                <div className="controls-container">
-                    <div className="more-options-container">
-                        <button className="more-options-button" onClick={toggleMoreOptionsPopover} ref={moreOptionsButtonRef}>
-                            <span className="light-dark">
-                                <span className="light">
-                                    <image_1.default width="35" height="35" alt="More" src="/images/circle-ellipse.svg"/>
-                                </span>
-                                <span className="dark">
-                                    <image_1.default width="35" height="35" alt="More" src="/images/circle-ellipse-dark.svg"/>
-                                </span>
+                <div className="photo-count-container">
+                    <button className="photo-count" onClick={togglePhotoPopover} ref={buttonRef}>
+                        <span className="count-value">{userPreview.numOfPhotos}</span>
+                        <image_1.default className="camera-icon" width="20" height="20" alt="Camera" src="/images/camera.svg" />
+                    </button>
+                    {showPhotoPopover && (<div className="photo-popover" ref={popoverRef}>
+                        <div className="photo-grid">
+                            {userPreview.publicPhotos && userPreview.publicPhotos.map((photo, index) => (<div key={index} className="photo-grid-item" onClick={() => openImageViewer(index)}>
+                                <user_photo_display_1.default alt={`${userPreview.displayName}'s photo ${index + 1}`} shape="square" imageUrl={photo.path} croppedImageData={photo.croppedImageData} width={64} height={64} gender={userPreview.gender} />
+                            </div>))}
+                        </div>
+                    </div>)}
+                </div>
+            </div>
+            <div className="controls-container">
+                <div className="more-options-container">
+                    <button className="more-options-button" onClick={toggleMoreOptionsPopover} ref={moreOptionsButtonRef}>
+                        <span className="light-dark">
+                            <span className="light">
+                                <image_1.default width="35" height="35" alt="More" src="/images/circle-ellipse.svg" />
                             </span>
-                        </button>
-                        {showMoreOptionsPopover && (<div className="more-options-popover" ref={moreOptionsPopoverRef}>
-                                <h4>More Options</h4>
-                                <a href={(0, util_1.userProfileLink)(userPreview)}><react_line_awesome_1.UserCircleIcon /> View Profile</a>
-                                {type === 'search' && <>
-                                    {userMatchStatus === 'matched' ?
-                    <a href=""><react_line_awesome_1.CommentsIcon /> Send Message</a> :
-                    <button onClick={handleLike}>
-                                            {userPreview.theyLikedMe ?
-                            <><react_line_awesome_1.HeartIcon /> Accept Match</> :
-                            userMatchStatus === 'pending' ?
-                                <><react_line_awesome_1.HeartBrokenIcon /> Remove Like</> :
-                                <><react_line_awesome_1.HeartIcon /> Like</>}
-                                        </button>}
-                                </>}
-                                <button onClick={handleBlock}>{blockedThem ? <><react_line_awesome_1.UnlockIcon /> Unblock</> : <><react_line_awesome_1.BanIcon /> Block</>}</button>
-                                <button onClick={handleReport}><react_line_awesome_1.ExclamationTriangleIcon /> Report</button>
-                            </div>)}
-                    </div>
-                    <div className="action-buttons-container">
-                        {type === 'search' ?
-            (userMatchStatus !== 'matched' ?
-                <button className={"like-button" + (userMatchStatus === 'pending' && !userPreview.theyLikedMe ? " liked" : "")} title={userPreview.theyLikedMe ? "Accept Match" : userMatchStatus === 'pending' ? "Remove Like" : "Like"} onClick={async () => {
-                        if (userMatchStatus === 'pending' && !userPreview.theyLikedMe) {
-                            await (0, user_profile_actions_1.removeUserMatch)(Number(userPreview.id));
-                            setUserMatchStatus(undefined);
-                        }
-                        else {
-                            const sendUserMatchResult = await (0, user_profile_actions_1.sendUserMatch)(Number(userPreview.id));
-                            if (typeof sendUserMatchResult === 'object' && "error" in sendUserMatchResult) {
-                                alert(sendUserMatchResult.error);
-                                return;
-                            }
-                            setUserMatchStatus(sendUserMatchResult);
-                        }
-                    }}><react_line_awesome_1.HeartIcon /></button> : <a className="message-link" href=""><react_line_awesome_1.CommentsIcon /></a>) :
-            <div className="match-buttons">
-                                <button onClick={async () => {
-                    await confirmMatch();
-                    if (onCallToRefresh) {
-                        await onCallToRefresh();
-                    }
-                }} title="Confirm Match" className="like">
-                                    <react_line_awesome_1.HeartIcon />
-                                </button>
-                                <button onClick={async () => {
-                    await passOnMatch();
-                    if (onCallToRefresh) {
-                        await onCallToRefresh();
-                    }
-                }} title="Pass" className="pass">
-                                    <react_line_awesome_1.TimesIcon />
-                                </button>
-                            </div>}
-                    </div>
+                            <span className="dark">
+                                <image_1.default width="35" height="35" alt="More" src="/images/circle-ellipse-dark.svg" />
+                            </span>
+                        </span>
+                    </button>
+                    {showMoreOptionsPopover && (<div className="more-options-popover" ref={moreOptionsPopoverRef}>
+                        <h4>More Options</h4>
+                        <a href={(0, util_1.userProfileLink)(userPreview)}><react_line_awesome_1.UserCircleIcon /> View Profile</a>
+                        {type === 'search' && <>
+                            {userMatchStatus === 'matched' ?
+                                <a href=""><react_line_awesome_1.CommentsIcon /> Send Message</a> :
+                                <button onClick={handleLike}>
+                                    {userPreview.theyLikedMe ?
+                                        <><react_line_awesome_1.HeartIcon /> Accept Match</> :
+                                        userMatchStatus === 'pending' ?
+                                            <><react_line_awesome_1.HeartBrokenIcon /> Remove Like</> :
+                                            <><react_line_awesome_1.HeartIcon /> Like</>}
+                                </button>}
+                        </>}
+                        <button onClick={handleBlock}>{blockedThem ? <><react_line_awesome_1.UnlockIcon /> Unblock</> : <><react_line_awesome_1.BanIcon /> Block</>}</button>
+                        <button onClick={handleReport}><react_line_awesome_1.ExclamationTriangleIcon /> Report</button>
+                    </div>)}
+                </div>
+                <div className="action-buttons-container">
+                    {type === 'search' ?
+                        (userMatchStatus !== 'matched' ?
+                            <button className={"like-button" + (userMatchStatus === 'pending' && !userPreview.theyLikedMe ? " liked" : "")} title={userPreview.theyLikedMe ? "Accept Match" : userMatchStatus === 'pending' ? "Remove Like" : "Like"} onClick={async () => {
+                                if (userMatchStatus === 'pending' && !userPreview.theyLikedMe) {
+                                    await (0, user_profile_actions_1.removeUserMatch)(Number(userPreview.id));
+                                    setUserMatchStatus(undefined);
+                                }
+                                else {
+                                    const sendUserMatchResult = await (0, user_profile_actions_1.sendUserMatch)(Number(userPreview.id));
+                                    if (typeof sendUserMatchResult === 'object' && "error" in sendUserMatchResult) {
+                                        alert(sendUserMatchResult.error);
+                                        return;
+                                    }
+                                    setUserMatchStatus(sendUserMatchResult);
+                                }
+                            }}><react_line_awesome_1.HeartIcon /></button> : <a className="message-link" href=""><react_line_awesome_1.CommentsIcon /></a>) :
+                        <div className="match-buttons">
+                            <button onClick={async () => {
+                                await confirmMatch();
+                                if (onCallToRefresh) {
+                                    await onCallToRefresh();
+                                }
+                            }} title="Confirm Match" className="like">
+                                <react_line_awesome_1.HeartIcon />
+                            </button>
+                            <button onClick={async () => {
+                                await passOnMatch();
+                                if (onCallToRefresh) {
+                                    await onCallToRefresh();
+                                }
+                            }} title="Pass" className="pass">
+                                <react_line_awesome_1.TimesIcon />
+                            </button>
+                        </div>}
                 </div>
             </div>
+        </div>
 
-            {/* Full-screen Image Viewer */}
-            {showImageViewer && userPreview.photos && userPreview.photos.length > 0 && (<div className="image-viewer-overlay" ref={imageViewerRef}>
-                    <div className="image-viewer-content">
-                        <div className="image-viewer-nav image-viewer-prev" onClick={(e) => navigateImage('prev', e)}>
-                            <react_line_awesome_2.AngleLeftIcon />
-                        </div>
-                        <div className="image-viewer-image-wrapper">
-                            <div className="image-viewer-image-container">
-                                <img src={((_b = (_a = userPreview.publicPhotos) === null || _a === void 0 ? void 0 : _a[currentImageIndex].croppedImageData) === null || _b === void 0 ? void 0 : _b.croppedImagePath) ||
-                ((_c = userPreview.publicPhotos) === null || _c === void 0 ? void 0 : _c[currentImageIndex].path)} alt={`${userPreview.displayName}'s photo ${currentImageIndex + 1}`} className="image-viewer-image"/>
-                            </div>
-                            {((_d = userPreview.publicPhotos) === null || _d === void 0 ? void 0 : _d[currentImageIndex].caption) && (<div className="image-viewer-caption">
-                                    {lodash_1.default.truncate((_e = userPreview.publicPhotos) === null || _e === void 0 ? void 0 : _e[currentImageIndex].caption, { length: 180 })}
-                                </div>)}
-                        </div>
-                        <div className="image-viewer-nav image-viewer-next" onClick={(e) => navigateImage('next', e)}>
-                            <react_line_awesome_2.AngleRightIcon />
-                        </div>
+        {/* Full-screen Image Viewer */}
+        {showImageViewer && userPreview.photos && userPreview.photos.length > 0 && (<div className="image-viewer-overlay" ref={imageViewerRef}>
+            <div className="image-viewer-content">
+                <div className="image-viewer-nav image-viewer-prev" onClick={(e) => navigateImage('prev', e)}>
+                    <react_line_awesome_2.AngleLeftIcon />
+                </div>
+                <div className="image-viewer-image-wrapper">
+                    <div className="image-viewer-image-container">
+                        <img src={((_b = (_a = userPreview.publicPhotos) === null || _a === void 0 ? void 0 : _a[currentImageIndex].croppedImageData) === null || _b === void 0 ? void 0 : _b.croppedImagePath) ||
+                            ((_c = userPreview.publicPhotos) === null || _c === void 0 ? void 0 : _c[currentImageIndex].path)} alt={`${userPreview.displayName}'s photo ${currentImageIndex + 1}`} className="image-viewer-image" />
                     </div>
-                </div>)}
-        </div>);
+                    {((_d = userPreview.publicPhotos) === null || _d === void 0 ? void 0 : _d[currentImageIndex].caption) && (<div className="image-viewer-caption">
+                        {lodash_1.default.truncate((_e = userPreview.publicPhotos) === null || _e === void 0 ? void 0 : _e[currentImageIndex].caption, { length: 180 })}
+                    </div>)}
+                </div>
+                <div className="image-viewer-nav image-viewer-next" onClick={(e) => navigateImage('next', e)}>
+                    <react_line_awesome_2.AngleRightIcon />
+                </div>
+            </div>
+        </div>)}
+    </div>);
 }
 //# sourceMappingURL=user-profile-preview.jsx.map

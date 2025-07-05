@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { resetUserEmail } from "@/app/user/reset/reset.actions";
 import { useRouter } from "next/navigation";
+import { showAlert } from '@/util';
 
 interface ResetEmailProps {
     newEmail: string,
@@ -30,7 +31,7 @@ export function ResetEmail({ newEmail, token }: ResetEmailProps) {
             }
         } catch (e: any) {
             console.error(e);
-            alert('An error occurred while updating your email address, please try again later.');
+            showAlert('An error occurred while updating your email address, please try again later.');
         } finally {
             setIsLoading(false);
         }

@@ -5,7 +5,6 @@ import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { deleteSession, getSessionId } from "@/server-side-helpers/session.helpers";
-import { redirect } from "next/navigation";
 import { sendEmail } from "@/server-side-helpers/mail.helper";
 
 /**

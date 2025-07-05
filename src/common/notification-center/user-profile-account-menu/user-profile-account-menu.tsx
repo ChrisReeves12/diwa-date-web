@@ -10,6 +10,7 @@ import './user-profile-account-menu.scss';
 import { toggleOnlineStatus } from '@/common/server-actions/user.actions';
 import { useState } from 'react';
 import { isUserOnline } from '@/helpers/user.helpers';
+import { showAlert } from '@/util';
 
 interface UserProfileAccountMenuProps {
   onSelectionMade?: () => void;
@@ -44,11 +45,11 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
       if (result.success) {
         window.location.href = '/';
       } else {
-        window.alert('An error occurred while signing out.');
+        showAlert('An error occurred while signing out.');
         console.error('Logout failed:', result.message);
       }
     } catch (error) {
-      window.alert('An error occurred while signing out.');
+      showAlert('An error occurred while signing out.');
       console.error('Error during logout:', error);
     }
   };

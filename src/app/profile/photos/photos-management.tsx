@@ -13,20 +13,21 @@ import { processImage } from '@/lib/image-processing';
 import { getUserPhotos } from './photos.actions';
 import { useCurrentUserContext } from '@/common/context/current-user-context';
 import { v4 as uuidv4 } from 'uuid';
+import { showAlert } from '@/util';
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    rectSortingStrategy,
 } from '@dnd-kit/sortable';
 
 interface PhotosManagementProps {
@@ -242,7 +243,7 @@ export function PhotosManagement({ currentUser }: PhotosManagementProps) {
             await loadPhotos();
         } catch (error) {
             console.error('Delete photo error:', error);
-            alert('Failed to delete photo. Please try again.');
+            showAlert('Failed to delete photo. Please try again.');
         }
     };
 
@@ -281,7 +282,7 @@ export function PhotosManagement({ currentUser }: PhotosManagementProps) {
             }
         } catch (error) {
             console.error('Make main photo error:', error);
-            alert('Failed to set main photo. Please try again.');
+            showAlert('Failed to set main photo. Please try again.');
             // Reload photos to revert any optimistic updates
             await loadPhotos();
         }
@@ -344,13 +345,13 @@ export function PhotosManagement({ currentUser }: PhotosManagementProps) {
             }
 
             const result = await response.json();
-            alert(`Successfully fixed permissions for ${result.fixedCount} photos!`);
+            showAlert(`Successfully fixed permissions for ${result.fixedCount} photos!`);
 
             // Reload photos to refresh URLs
             await loadPhotos();
         } catch (error) {
             console.error('Fix permissions error:', error);
-            alert('Failed to fix photo permissions. Please try again.');
+            showAlert('Failed to fix photo permissions. Please try again.');
         } finally {
             setFixingPermissions(false);
         }

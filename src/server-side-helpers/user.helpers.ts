@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { User, AuthResult, UserPhoto, UserPreview, SubscriptionPlanEnrollment } from '../types';
@@ -264,8 +263,8 @@ export async function getUserProfileDetail(currentUserId: number, user: UserForP
 }
 
 import { createGenderLabels } from '@/helpers/user.helpers';
-import { cookies } from "next/headers";
 import { generateCryptoRandomString } from "@/util";
+import { NextResponse } from 'next/server';
 
 /**
  * Authenticate a user with email and password
@@ -356,7 +355,38 @@ export async function getCurrentUser(cookieStore: ReadonlyRequestCookies) {
 
     const user = result as unknown as User;
     const enhancedUser = Object.assign({}, user, getPublicUserDetails(user));
+
     return enhancedUser;
+}
+
+/**
+ * Validate email for user
+ * @param token
+ * @param currentUserId 
+ * @returns 
+ */
+export async function verifyUserEmail(token: string, currentUserId: number) {
+    const { rows: users } = await pgDbPool.query(
+        `SELECT * FROM users WHERE "emailVerificationToken" = $1 AND "emailVerificationTokenExpiry" > NOW() LIMIT 1`,
+        [token]
+    );
+
+    const user = users[0];
+
+    if (!user || (currentUserId !== user.id)) {
+        return { error: 'Unauthorized', status: 401 };
+    }
+
+    await pgDbPool.query(
+        `UPDATE users 
+         SET "emailVerifiedAt" = NOW(),
+             "emailVerificationToken" = NULL,
+             "emailVerificationTokenExpiry" = NULL
+         WHERE id = $1`,
+        [user.id]
+    );
+
+    return { status: 200 };
 }
 
 /**
@@ -1020,11 +1050,11 @@ export async function sendVerificationEmailToUser(userId: number): Promise<boole
     await pgDbPool.query(
         `UPDATE users 
          SET "emailVerificationToken" = $1,
-             "emailVerificationTokenExpiry" = NOW() + INTERVAL '30 minutes'
+             "emailVerificationTokenExpiry" = NOW() + INTERVAL '20 minutes'
          WHERE id = $2`, [token, userId]
     );
 
-    const verificationLink = `${process.env.APP_URL_ROOT}/user/verify-email?token=${token}`
+    const verificationLink = `${process.env.APP_URL_ROOT}/user/verify/email?token=${token}`
 
     // Email content
     const content = `
@@ -1041,4 +1071,93 @@ export async function sendVerificationEmailToUser(userId: number): Promise<boole
         user.email
     ], `Email verification for ${user.firstName} ${user.lastName}`, content);
     return !result.hasError;
+}
+
+/**
+ * Find a user by password reset token.
+ * @param resetToken
+ */
+export async function findUserByPasswordResetToken(resetToken: string) {
+    const result = await pgDbPool.query<Pick<User, "id" | "email" | "firstName" | "lastName">>(`
+        SELECT id, email, "firstName", "lastName" 
+        FROM "users" 
+        WHERE "passwordResetToken" = $1 
+        AND "passwordResetTokenExpiry" IS NOT NULL 
+        AND "passwordResetTokenExpiry" > NOW() 
+        LIMIT 1
+    `, [resetToken]);
+
+    if (result.rows.length > 0) {
+        return result.rows[0];
+    }
+}
+
+/**
+ * Generate password reset token and send email
+ * @param email
+ */
+export async function generatePasswordResetToken(email: string) {
+    // Check if user exists
+    const user = await prisma.users.findUnique({
+        where: { email: email.toLowerCase() }
+    });
+
+    if (!user) {
+        return null;
+    }
+
+    // Generate reset token
+    const token = generateCryptoRandomString(32);
+
+    // Store token and expiry in database
+    await pgDbPool.query(`
+        UPDATE "users" 
+        SET "passwordResetToken" = $1, 
+            "passwordResetTokenExpiry" = NOW() + INTERVAL '20 minutes', 
+            "updatedAt" = NOW() 
+        WHERE id = $2
+    `, [token, user.id]);
+
+    // Create reset URL
+    const resetUrl = `${process.env.APP_URL_ROOT}/user/reset/password?token=${token}`;
+
+    // Email content
+    const content = `
+        <h1>Password Reset</h1>
+        <p>Hi ${user.firstName}!</p>
+        <p>We received a request to reset your password for your Diwa Date account.</p>
+        <p>Click the button below to reset your password:</p>
+        <a href="${resetUrl}" class="button">Reset Password</a>
+        <p>This link will expire in 30 minutes.</p>
+        <p>If you did not request this password reset, you can ignore this email.</p>
+    `;
+
+    // Send the email
+    const result = await sendEmail([
+        user.email
+    ], `Password reset for ${user.firstName} ${user.lastName}`, content);
+
+    if (result.hasError) {
+        return null;
+    }
+
+    return resetUrl;
+}
+
+/**
+ * Update user's password
+ * @param userId
+ * @param newPassword
+ */
+export async function updateUserPassword(userId: number, newPassword: string) {
+    const hashedPassword = await hashPassword(newPassword);
+
+    await pgDbPool.query(`
+        UPDATE "users" 
+        SET "password" = $1,
+            "passwordResetToken" = NULL,
+            "passwordResetTokenExpiry" = NULL,
+            "updatedAt" = NOW()
+        WHERE id = $2
+    `, [hashedPassword, userId]);
 }

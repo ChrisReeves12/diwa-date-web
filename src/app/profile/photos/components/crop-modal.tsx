@@ -4,6 +4,7 @@ import './crop-modal.scss';
 import { useState, useCallback } from 'react';
 import { ImageCropper } from './image-cropper';
 import { CropArea, ASPECT_RATIOS, cropImage, getCropPreview } from '@/lib/image-processing';
+import { showAlert } from '@/util';
 
 interface CropModalProps {
   isOpen: boolean;
@@ -13,10 +14,10 @@ interface CropModalProps {
   initialAspectRatio?: number;
 }
 
-export function CropModal({ 
-  isOpen, 
-  imageFile, 
-  onClose, 
+export function CropModal({
+  isOpen,
+  imageFile,
+  onClose,
   onCropComplete,
   initialAspectRatio = ASPECT_RATIOS.SQUARE
 }: CropModalProps) {
@@ -28,7 +29,7 @@ export function CropModal({
 
   const handleCropChange = useCallback(async (newCropArea: CropArea) => {
     setCropArea(newCropArea);
-    
+
     // Generate preview
     if (imageFile) {
       try {
@@ -66,7 +67,7 @@ export function CropModal({
       onClose();
     } catch (error) {
       console.error('Failed to crop image:', error);
-      alert('Failed to crop image. Please try again.');
+      showAlert('Failed to crop image. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -86,7 +87,7 @@ export function CropModal({
       <div className="crop-modal">
         <div className="crop-modal-header">
           <h2>Crop Image</h2>
-          <button 
+          <button
             className="close-button"
             onClick={handleCancel}
             disabled={isProcessing}
@@ -151,15 +152,15 @@ export function CropModal({
                   </div>
                 )}
               </div>
-              
+
               <div className="crop-info">
                 <p>Crop Size: {Math.round(cropArea.width)} × {Math.round(cropArea.height)}px</p>
                 {selectedAspectRatio && (
-                  <p>Aspect Ratio: {selectedAspectRatio === 1 ? '1:1' : 
-                    selectedAspectRatio === 4/3 ? '4:3' :
-                    selectedAspectRatio === 3/4 ? '3:4' :
-                    selectedAspectRatio === 16/9 ? '16:9' :
-                    selectedAspectRatio === 9/16 ? '9:16' : 'Custom'}</p>
+                  <p>Aspect Ratio: {selectedAspectRatio === 1 ? '1:1' :
+                    selectedAspectRatio === 4 / 3 ? '4:3' :
+                      selectedAspectRatio === 3 / 4 ? '3:4' :
+                        selectedAspectRatio === 16 / 9 ? '16:9' :
+                          selectedAspectRatio === 9 / 16 ? '9:16' : 'Custom'}</p>
                 )}
               </div>
             </div>
@@ -167,14 +168,14 @@ export function CropModal({
         </div>
 
         <div className="crop-modal-footer">
-          <button 
+          <button
             className="btn-cancel"
             onClick={handleCancel}
             disabled={isProcessing}
           >
             Cancel
           </button>
-          <button 
+          <button
             className="btn-crop"
             onClick={handleCrop}
             disabled={isProcessing || !cropArea.width || !cropArea.height}

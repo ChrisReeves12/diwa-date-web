@@ -3,6 +3,7 @@ import { Suspense, use, useState, useEffect, useRef } from "react";
 import CenterScreenLoader from "@/common/center-screen-loader/center-screen-loader";
 import DashboardWrapper from "@/common/dashboard-wrapper/dashboard-wrapper";
 import { NotificationCenterData } from "@/types/notification-center-data.interface";
+import { showAlert } from '@/util';
 import { UserPreview } from "@/types/user-preview.interface";
 import UserProfilePreview from "@/common/user-profile-preview/user-profile-preview";
 import { InfoCircleIcon } from "react-line-awesome";
@@ -65,7 +66,7 @@ function LikesListing({ likesPromise }: LikesViewProps) {
             setUpdatedLikes(updatedLikeData.likes);
             setUpdatedHasMore(updatedLikeData.hasMore);
         } catch (e) {
-            alert('An error occurred while reloading your matches.');
+            showAlert('An error occurred while reloading your matches.');
         } finally {
             setIsLoading(false);
         }

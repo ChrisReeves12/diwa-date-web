@@ -5,8 +5,6 @@
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    background: url('/images/login_background.jpg') no-repeat center center fixed;
-    background-size: cover;
     padding: 2rem 0;
     padding-top: 18vh;
     position: relative;
@@ -18,7 +16,8 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.4);
+        background: #e6e6e6;
+        ;
         z-index: 1;
     }
 
@@ -42,7 +41,7 @@
     .form-container {
         background: rgba(255, 255, 255, 1);
         border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 5px 8px rgba(0, 0, 0, 0.2);
         overflow: hidden;
     }
 

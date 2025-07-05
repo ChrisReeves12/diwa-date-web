@@ -267,6 +267,8 @@ model users {
   resetToken                                     String?                       @db.VarChar(255)
   resetTokenExpiry                               DateTime?                     @db.Timestamp(6)
   newDesiredEmail                                String?                       @db.VarChar(255)
+  emailVerificationToken                         String?                       @db.VarChar(75)
+  emailVerificationTokenExpiry                   DateTime?                     @db.Timestamp(6)
   billingInformationEntries                      billingInformationEntries[]
   blockedUsers_blockedUsers_userIdTousers        blockedUsers[]                @relation("blockedUsers_userIdTousers")
   blockedUsers_blockedUsers_blockedUserIdTousers blockedUsers[]                @relation("blockedUsers_blockedUserIdTousers")

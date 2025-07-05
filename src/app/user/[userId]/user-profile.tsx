@@ -5,6 +5,7 @@ import { User } from "@/types";
 import { CurrentUserProvider } from "@/common/context/current-user-context";
 import SiteTopBar from "@/common/site-top-bar/site-top-bar";
 import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
+import { showAlert } from '@/util';
 import { UserPhoto } from "@/types/user-photo.type";
 import Link from 'next/link';
 import {
@@ -192,7 +193,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         try {
             const sendUserMatchResult = await sendUserMatch(Number(userProfile.user.id));
             if (typeof sendUserMatchResult === 'object' && 'error' in sendUserMatchResult) {
-                alert(sendUserMatchResult.error);
+                showAlert(sendUserMatchResult.error);
                 return;
             }
 
@@ -200,7 +201,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
 
             const result = await loadFullUserProfile(Number(userProfile.user.id));
             if (!("userProfileDetails" in result) || ("error" in result && result.error) || ("userProfileDetails" in result && !result.userProfileDetails)) {
-                alert(("error" in result && result.error) || 'An error occurred sending update. Please try again later.');
+                showAlert(("error" in result && result.error) || 'An error occurred sending update. Please try again later.');
                 return;
             }
 
@@ -219,7 +220,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
             await removeUserMatch(Number(userProfile.user.id));
             const result = await loadFullUserProfile(Number(userProfile.user.id));
             if ('error' in result || !result.userProfileDetails) {
-                alert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
+                showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
                 return;
             }
 
@@ -239,7 +240,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
             await muteUser(Number(userProfile.user.id));
             const result = await loadFullUserProfile(Number(userProfile.user.id));
             if ('error' in result || !result.userProfileDetails) {
-                alert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
+                showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
                 return;
             }
 
@@ -258,7 +259,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
             await blockUserAction(Number(userProfile.user.id));
             const result = await loadFullUserProfile(Number(userProfile.user.id));
             if ('error' in result || !result.userProfileDetails) {
-                alert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
+                showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
                 return;
             }
 
@@ -277,7 +278,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
             await unBlockUserAction(Number(userProfile.user.id));
             const result = await loadFullUserProfile(Number(userProfile.user.id));
             if ('error' in result || !result.userProfileDetails) {
-                alert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
+                showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
                 return;
             }
 
