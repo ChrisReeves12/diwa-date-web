@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { showAlert, userHasOnboarded } from '@/util';
 import Link from 'next/link';
 
-export default function InfoBar() {
+export default function InfoBar({ onHide }: { onHide?: () => void }) {
     const [isLoading, setIsLoading] = useState(false);
     const currentUser = useCurrentUser();
 
@@ -32,14 +32,18 @@ export default function InfoBar() {
     const onboardedResult = userHasOnboarded(currentUser);
 
     if (onboardedResult.hasOnboarded) {
+        if (onHide) {
+            onHide();
+        }
+
         return null;
     }
 
     const InfoContent = () => {
-        if (onboardedResult.issues.emailVerifiedAt) {
+        if (onboardedResult.issues.profileCompletedAt) {
             return (
-                <p><InfoCircleIcon /> Your profile will not be shown until you verify your email. <button disabled={isLoading}
-                    onClick={handleResendVerificationEmail} className='action-button'>{isLoading ? 'Please wait...' : 'Resend Email'}</button></p>
+                <p><InfoCircleIcon /> You will not be shown to other users until you have completed your profile. <Link
+                    href={'/onboarding'} className='action-button'>{isLoading ? 'Please wait...' : 'Complete Profile'}</Link></p>
             );
         }
 
@@ -47,6 +51,13 @@ export default function InfoBar() {
             return (
                 <p><InfoCircleIcon /> Your profile will not be shown until you have added at least 3 approved photos to your profile. <Link
                     href={'/profile/photos'} className='action-button'>{isLoading ? 'Please wait...' : 'Add Photos'}</Link></p>
+            );
+        }
+
+        if (onboardedResult.issues.emailVerifiedAt) {
+            return (
+                <p><InfoCircleIcon /> Your profile will not be shown until you verify your email. <button disabled={isLoading}
+                    onClick={handleResendVerificationEmail} className='action-button'>{isLoading ? 'Please wait...' : 'Resend Email'}</button></p>
             );
         }
     };

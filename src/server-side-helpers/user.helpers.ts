@@ -959,6 +959,7 @@ export async function getUserLikes(
         INNER JOIN "users" U ON U."id" = UM."userId"
         WHERE UM."recipientId" = $1 
           AND UM."status" = 'pending'
+          AND U."profileCompletedAt" IS NOT NULL
           AND U."id" NOT IN (
               SELECT MU."recipientId" 
               FROM "mutedUsers" MU 

@@ -88,4 +88,10 @@ export interface User {
   deactivatedAt?: Date;
   receivedLikeAt?: Date;
   hideOnlineStatus: boolean;
+  profileCompletedAt?: Date;
+  currentOnboardingSteps?: {
+    currentStep: number;
+    completedSteps: number[];
+    lastUpdated?: string;
+  };
 }

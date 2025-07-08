@@ -3,8 +3,9 @@
     background-color: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
     padding: 12px 0;
-    top: 72px;
+    top: 69px;
     position: sticky;
+    z-index: 100;
 
     .info-bar-content {
         max-width: 1200px;

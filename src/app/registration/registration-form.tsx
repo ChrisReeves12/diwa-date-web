@@ -144,7 +144,7 @@ export default function RegistrationForm() {
       const result = await registerAction(formData);
 
       if (result.success) {
-        router.push('/');
+        router.push('/onboarding');
       } else {
         if (result.errors) {
           setErrors(result.errors);

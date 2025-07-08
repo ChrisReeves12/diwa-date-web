@@ -28,13 +28,12 @@ export function registerAlertUpdater(updater: (state: AlertState) => void) {
  * be visible in search.
  * @param user
  */
-export function userHasOnboarded(user: Pick<User, 'numOfPhotos' | 'emailVerifiedAt'>) {
-    const issues = { emailVerifiedAt: false, numOfPhotos: false };
+export function userHasOnboarded(user: Pick<User, 'numOfPhotos' | 'emailVerifiedAt' | 'profileCompletedAt'>) {
+    const issues = { emailVerifiedAt: false, numOfPhotos: false, profileCompletedAt: false };
 
-    if (user.emailVerifiedAt && user.numOfPhotos >= 3) {
+    if (user.emailVerifiedAt && user.numOfPhotos >= 3 && user.profileCompletedAt) {
         return { hasOnboarded: true, issues };
     }
-
 
     if (!user.emailVerifiedAt) {
         issues.emailVerifiedAt = true;
@@ -42,6 +41,10 @@ export function userHasOnboarded(user: Pick<User, 'numOfPhotos' | 'emailVerified
 
     if (user.numOfPhotos < 3) {
         issues.numOfPhotos = true;
+    }
+
+    if (!user.profileCompletedAt) {
+        issues.profileCompletedAt = true;
     }
 
     return { hasOnboarded: false, issues };

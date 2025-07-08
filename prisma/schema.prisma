@@ -267,8 +267,12 @@ model users {
   resetToken                                     String?                       @db.VarChar(255)
   resetTokenExpiry                               DateTime?                     @db.Timestamp(6)
   newDesiredEmail                                String?                       @db.VarChar(255)
-  emailVerificationToken                         String?                       @db.VarChar(75)
+  emailVerificationToken                         String?                       @unique(map: "users_emailverificationtoken_uindex") @db.VarChar(75)
   emailVerificationTokenExpiry                   DateTime?                     @db.Timestamp(6)
+  passwordResetToken                             String?                       @db.VarChar(255)
+  passwordResetTokenExpiry                       DateTime?                     @db.Timestamp(6)
+  profileCompletedAt                             DateTime?                     @db.Timestamp(6)
+  currentOnboardingSteps                         Json?
   billingInformationEntries                      billingInformationEntries[]
   blockedUsers_blockedUsers_userIdTousers        blockedUsers[]                @relation("blockedUsers_userIdTousers")
   blockedUsers_blockedUsers_blockedUserIdTousers blockedUsers[]                @relation("blockedUsers_blockedUserIdTousers")
@@ -284,6 +288,7 @@ model users {
 
   @@index([createdAt(sort: Desc)], map: "users_createdat_index")
   @@index([updatedAt(sort: Desc)], map: "users_updatedat_index")
+  @@index([profileCompletedAt], map: "users_profilecompletedat_index")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

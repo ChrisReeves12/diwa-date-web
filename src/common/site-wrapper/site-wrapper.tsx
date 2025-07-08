@@ -9,7 +9,7 @@ import { Alert, Button } from '@mui/material';
 export default function SiteWrapper({ children, hideButtons = false, hideFlashMessage = false }: { children: ReactNode, hideButtons?: boolean, hideFlashMessage?: boolean }) {
     const [alertMessage, setAlertMessage] = useState<string | null>(null);
     const [alertType, setAlertType] = useState<'success' | 'warning' | undefined>();
-
+    const [hideInfoBar, setHideInfoBar] = useState(false);
     useLayoutEffect(() => {
         setAlertMessage(window.localStorage.getItem('FlashSuccessMessage') || window.localStorage.getItem('FlashWarningMessage'));
         setAlertType(window.localStorage.getItem('FlashSuccessMessage') ? 'success' : 'warning');
@@ -28,8 +28,8 @@ export default function SiteWrapper({ children, hideButtons = false, hideFlashMe
     }
 
     return (
-        <div className="site-wrapper">
-            <InfoBar />
+        <div className={`site-wrapper ${!hideInfoBar ? 'info-bar-shown' : ''}`}>
+            {!hideInfoBar && <InfoBar onHide={() => setHideInfoBar(true)} />}
             <SiteTopBar hideButtons={hideButtons} />
             {!hideFlashMessage && alertMessage && alertType &&
                 <div style={{ paddingTop: 30 }} className='container'>
