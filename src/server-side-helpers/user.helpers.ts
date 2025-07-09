@@ -648,6 +648,24 @@ export async function suspendUser(userId: number, suspend: boolean = true): Prom
 export async function sendUserMatchRequest(userId: number, recipientUserId: number, shouldCreateNotification: boolean = true): Promise<'pending' | 'matched' | {
     error: string
 }> {
+    // Check if the current user is onboarded and has enough photos
+    const currentUser = await getUser(userId);
+    if (!currentUser) {
+        return { error: 'User not found.' };
+    }
+
+    if (!currentUser.emailVerifiedAt) {
+        return { error: 'You must verify your email address before you can like other users.' };
+    }
+
+    if (!currentUser.profileCompletedAt) {
+        return { error: 'You must complete your profile before you can like other users.' };
+    }
+
+    if (currentUser.numOfPhotos < 3) {
+        return { error: 'You must have at least 3 photos uploaded to your profile before you can like other users.' };
+    }
+
     if (await isUserSuspended(recipientUserId)) {
         return { error: 'You cannot send a like to this user because they have been suspended.' }
     }
