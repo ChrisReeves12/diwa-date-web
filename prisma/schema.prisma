@@ -29,19 +29,37 @@ model billingInformationEntries {
 }
 
 model blockedUsers {
-  id                                      Int       @id(map: "blockedusers_pk") @default(autoincrement())
-  userId                                  Int
-  blockedUserId                           Int
-  createdAt                               DateTime? @db.Timestamp(6)
-  updatedAt                               DateTime? @db.Timestamp(6)
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  blockedUserId Int
+  createdAt     DateTime? @db.Timestamp(6)
+  updatedAt     DateTime? @db.Timestamp(6)
   users_blockedUsers_userIdTousers        users     @relation("blockedUsers_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "blockedusers_users_id_fk")
   users_blockedUsers_blockedUserIdTousers users     @relation("blockedUsers_blockedUserIdTousers", fields: [blockedUserId], references: [id], onDelete: Cascade, map: "blockedusers_users_id_fk_2")
 
   @@unique([userId, blockedUserId], map: "blockedusers_userid_blockeduserid_uindex")
-  @@index([blockedUserId], map: "blockedUsersBlockedUserIdForeign")
-  @@index([userId], map: "blockedUsersUserIdForeign")
+  @@index([userId], map: "blockedusers_userid_index")
+  @@index([blockedUserId], map: "blockedusers_blockeduserid_index")
   @@index([createdAt(sort: Desc)], map: "blockedusers_createdat_index")
   @@index([updatedAt(sort: Desc)], map: "blockedusers_updatedat_index")
+}
+
+model userReports {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  reportedUserId Int
+  reportContent  String   @db.Text
+  status         String   @default("pending") @db.VarChar(50)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now())
+
+  user         users @relation("userReports", fields: [userId], references: [id], onDelete: Cascade)
+  reportedUser users @relation("reportedUsers", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reportedUserId])
+  @@index([status])
+  @@index([userId])
+  @@index([reportedUserId])
 }
 
 model cachedLocations {
@@ -285,6 +303,8 @@ model users {
   subscriptionPlanEnrollments                    subscriptionPlanEnrollments[]
   userMatches_userMatches_userIdTousers          userMatches[]                 @relation("userMatches_userIdTousers")
   userMatches_userMatches_recipientIdTousers     userMatches[]                 @relation("userMatches_recipientIdTousers")
+  userReports_userReports_userIdTousers          userReports[]                 @relation("userReports")
+  userReports_userReports_reportedUserIdTousers  userReports[]                 @relation("reportedUsers")
 
   @@index([createdAt(sort: Desc)], map: "users_createdat_index")
   @@index([updatedAt(sort: Desc)], map: "users_updatedat_index")

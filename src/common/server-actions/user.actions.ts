@@ -255,3 +255,22 @@ export async function updateEmail(newEmail: string) {
         return { success: false, error: "Failed to send verification email. Please try again." };
     }
 }
+
+/**
+ * Server action to report a user
+ * @param reportedUserId The ID of the user being reported
+ * @param reportContent The reason for reporting
+ * @returns Success status and any error messages
+ */
+export async function reportUserAction(
+    reportedUserId: number,
+    reportContent: string
+) {
+    const currentUser = await getCurrentUser(await cookies());
+    if (!currentUser) {
+        return { success: false, error: "User not found" };
+    }
+
+    const { reportUser } = await import("@/server-side-helpers/user.helpers");
+    return await reportUser(currentUser.id, reportedUserId, reportContent);
+}

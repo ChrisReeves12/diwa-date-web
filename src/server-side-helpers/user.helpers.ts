@@ -1377,3 +1377,66 @@ export async function updatePersonalInformationForUser(currentUser: any, data: a
         return { success: false };
     }
 }
+
+/**
+ * Report a user for inappropriate content or behavior
+ * @param reportingUserId The ID of the user making the report
+ * @param reportedUserId The ID of the user being reported
+ * @param reportContent The reason for reporting
+ * @returns Success status and any error messages
+ */
+export async function reportUser(
+    reportingUserId: number,
+    reportedUserId: number,
+    reportContent: string
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        // Validation
+        if (reportingUserId === reportedUserId) {
+            return { success: false, error: "You cannot report yourself" };
+        }
+
+        // Validate report content length
+        const trimmedContent = reportContent.trim();
+        if (trimmedContent.length < 10) {
+            return { success: false, error: "Report description must be at least 10 characters long" };
+        }
+        if (trimmedContent.length > 1000) {
+            return { success: false, error: "Report description must be less than 1000 characters" };
+        }
+
+        // Check if the reported user exists
+        const reportedUser = await getUser(reportedUserId);
+        if (!reportedUser) {
+            return { success: false, error: "User not found" };
+        }
+
+        // Check if a report already exists
+        const existingReport = await pgDbPool.query(
+            `SELECT id FROM "userReports" WHERE "userId" = $1 AND "reportedUserId" = $2`,
+            [reportingUserId, reportedUserId]
+        );
+
+        if (existingReport.rows.length > 0) {
+            return { success: false, error: "You have already reported this user" };
+        }
+
+        // Create the report
+        await pgDbPool.query(
+            `INSERT INTO "userReports" ("userId", "reportedUserId", "reportContent", "status", "createdAt", "updatedAt")
+             VALUES ($1, $2, $3, 'pending', NOW(), NOW())`,
+            [reportingUserId, reportedUserId, trimmedContent]
+        );
+
+        // Remove any existing match between the users
+        await removeUserMatchRequest(reportingUserId, reportedUserId);
+
+        // Also mute the reported user to prevent them from matching again
+        await muteUserById(reportingUserId, reportedUserId);
+
+        return { success: true };
+    } catch (error: any) {
+        logError(error);
+        return { success: false, error: "Failed to submit report. Please try again." };
+    }
+}

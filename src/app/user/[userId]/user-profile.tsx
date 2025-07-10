@@ -29,6 +29,7 @@ import {
 } from '@/common/server-actions/user-profile.actions';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { isUserOnline } from '@/helpers/user.helpers';
+import ReportUserDialog from '@/common/report-user-dialog/report-user-dialog';
 
 interface UserProfileProps {
     userProfileDetail: UserProfileDetail,
@@ -42,6 +43,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
     const [isBlockingOrUnBlocking, setIsBlockingOrUnBlocking] = useState(false);
     const [showImageViewer, setShowImageViewer] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [showReportDialog, setShowReportDialog] = useState(false);
     const imageViewerRef = useRef<HTMLDivElement>(null);
     const { on, off, isConnected } = useWebSocket();
 
@@ -290,6 +292,11 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         }
     };
 
+    const onReportUserClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        setShowReportDialog(true);
+    };
+
     return (
         <CurrentUserProvider currentUser={currentUser}>
             <SiteTopBar />
@@ -462,7 +469,10 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                                     </button>
                                                 )}
 
-                                                <button className="report-user">
+                                                <button
+                                                    className="report-user"
+                                                    onClick={onReportUserClick}
+                                                >
                                                     <ExclamationTriangleIcon />
                                                     <div className="label">Report User</div>
                                                 </button>
@@ -557,6 +567,15 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                         </div>
                     </div>
                 )}
+
+                {/* Report User Dialog */}
+                <ReportUserDialog
+                    isOpen={showReportDialog}
+                    onClose={() => setShowReportDialog(false)}
+                    userId={Number(userProfile.user.id)}
+                    userName={userProfile.user.displayName}
+                    onSuccess={refetchUserProfile}
+                />
             </div>
         </CurrentUserProvider>
     );

@@ -10,6 +10,7 @@ import { UserPhoto } from "@/types/user-photo.type";
 import { AngleLeftIcon, AngleRightIcon } from "react-line-awesome";
 import { removeUserMatch, sendUserMatch, blockUserAction, unBlockUserAction, muteUser } from '../server-actions/user-profile.actions';
 import _ from 'lodash';
+import ReportUserDialog from '../report-user-dialog/report-user-dialog';
 
 interface UserProfilePreviewProps {
     userPreview: UserPreview,
@@ -25,6 +26,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [userMatchStatus, setUserMatchStatus] = useState<string | undefined>(userPreview.matchStatus);
     const [blockedThem, setBlockedThem] = useState<boolean | undefined>(userPreview.blockedThem);
+    const [showReportDialog, setShowReportDialog] = useState(false);
     const popoverRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const moreOptionsPopoverRef = useRef<HTMLDivElement>(null);
@@ -110,7 +112,8 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
     };
 
     const handleReport = () => {
-        console.log("Reported user:", userPreview.id);
+        setShowMoreOptionsPopover(false);
+        setShowReportDialog(true);
     };
 
     const openImageViewer = (index: number) => {
@@ -353,6 +356,15 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                     </div>
                 </div>
             )}
+
+            {/* Report User Dialog */}
+            <ReportUserDialog
+                isOpen={showReportDialog}
+                onClose={() => setShowReportDialog(false)}
+                userId={Number(userPreview.id)}
+                userName={userPreview.displayName}
+                onSuccess={onCallToRefresh}
+            />
         </div>
     );
 }
