@@ -1,11 +1,13 @@
 import SuspendUserCommand from "./commands/suspend-user.command";
 import SeedUsersCommand from "./commands/seed-users.command";
 import TestDeleteAccountCommand from "./commands/test-delete-account.command";
+import EvalUserSubscriptionsCommand from "./commands/eval-user-subscription.command";
 
 export async function executeCommand(aCommand?: string) {
     const commands: Record<string, any> = {
         'users:suspend': SuspendUserCommand,
         'users:seed': SeedUsersCommand,
+        'users:evaluate-subscriptions': EvalUserSubscriptionsCommand,
         'test:delete-account': TestDeleteAccountCommand,
     };
 

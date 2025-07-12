@@ -29,37 +29,36 @@ model billingInformationEntries {
 }
 
 model blockedUsers {
-  id            Int       @id @default(autoincrement())
-  userId        Int
-  blockedUserId Int
-  createdAt     DateTime? @db.Timestamp(6)
-  updatedAt     DateTime? @db.Timestamp(6)
+  id                                      Int       @id(map: "blockedusers_pk") @default(autoincrement())
+  userId                                  Int
+  blockedUserId                           Int
+  createdAt                               DateTime? @db.Timestamp(6)
+  updatedAt                               DateTime? @db.Timestamp(6)
   users_blockedUsers_userIdTousers        users     @relation("blockedUsers_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "blockedusers_users_id_fk")
   users_blockedUsers_blockedUserIdTousers users     @relation("blockedUsers_blockedUserIdTousers", fields: [blockedUserId], references: [id], onDelete: Cascade, map: "blockedusers_users_id_fk_2")
 
   @@unique([userId, blockedUserId], map: "blockedusers_userid_blockeduserid_uindex")
-  @@index([userId], map: "blockedusers_userid_index")
-  @@index([blockedUserId], map: "blockedusers_blockeduserid_index")
   @@index([createdAt(sort: Desc)], map: "blockedusers_createdat_index")
   @@index([updatedAt(sort: Desc)], map: "blockedusers_updatedat_index")
+  @@index([blockedUserId], map: "blockedUsersBlockedUserIdForeign")
+  @@index([userId], map: "blockedUsersUserIdForeign")
 }
 
 model userReports {
   id             Int      @id @default(autoincrement())
   userId         Int
   reportedUserId Int
-  reportContent  String   @db.Text
+  reportContent  String
   status         String   @default("pending") @db.VarChar(50)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @default(now())
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @default(now()) @db.Timestamptz(6)
+  reportedUser   users    @relation("reportedUsers", fields: [reportedUserId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user           users    @relation("userReports", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  user         users @relation("userReports", fields: [userId], references: [id], onDelete: Cascade)
-  reportedUser users @relation("reportedUsers", fields: [reportedUserId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, reportedUserId])
-  @@index([status])
-  @@index([userId])
-  @@index([reportedUserId])
+  @@unique([userId, reportedUserId], map: "idx_userReports_unique_user_report")
+  @@index([reportedUserId], map: "idx_userReports_reportedUserId")
+  @@index([status], map: "idx_userReports_status")
+  @@index([userId], map: "idx_userReports_userId")
 }
 
 model cachedLocations {
@@ -171,6 +170,9 @@ model subscriptionPlanEnrollments {
   endsAt             DateTime?         @db.Timestamp(6)
   createdAt          DateTime?         @db.Timestamp(6)
   updatedAt          DateTime?         @db.Timestamp(6)
+  price              Float?            @default(0)
+  chargeInterval     String?           @default("monthly") @db.VarChar(50)
+  priceUnit          String?           @default("USD") @db.VarChar(20)
   subscriptionPlans  subscriptionPlans @relation(fields: [subscriptionPlanId], references: [id], onDelete: Cascade, map: "subscriptionplanenrollments_subscriptionplans_id_fk")
   users              users             @relation(fields: [userId], references: [id], onDelete: Cascade, map: "subscriptionplanenrollments_users_id_fk")
 
@@ -184,11 +186,10 @@ model subscriptionPlans {
   id                          Int                           @id(map: "subscriptionplans_pk") @default(autoincrement())
   name                        String                        @db.VarChar(255)
   description                 String
-  pricingInterval             String                        @db.VarChar(255)
-  price                       Decimal                       @db.Decimal(10, 2)
-  pricingUnit                 String                        @db.VarChar(255)
   createdAt                   DateTime?                     @db.Timestamp(6)
   updatedAt                   DateTime?                     @db.Timestamp(6)
+  listPrice                   Float?                        @default(0)
+  listPriceUnit               String?                       @default("USD") @db.VarChar(20)
   subscriptionPlanEnrollments subscriptionPlanEnrollments[]
 
   @@index([createdAt(sort: Desc)], map: "subscriptionplans_createdat_index")
@@ -303,8 +304,8 @@ model users {
   subscriptionPlanEnrollments                    subscriptionPlanEnrollments[]
   userMatches_userMatches_userIdTousers          userMatches[]                 @relation("userMatches_userIdTousers")
   userMatches_userMatches_recipientIdTousers     userMatches[]                 @relation("userMatches_recipientIdTousers")
-  userReports_userReports_userIdTousers          userReports[]                 @relation("userReports")
   userReports_userReports_reportedUserIdTousers  userReports[]                 @relation("reportedUsers")
+  userReports_userReports_userIdTousers          userReports[]                 @relation("userReports")
 
   @@index([createdAt(sort: Desc)], map: "users_createdat_index")
   @@index([updatedAt(sort: Desc)], map: "users_updatedat_index")
