@@ -54,10 +54,11 @@ export default class EvalUserSubscriptionsCommand extends ConsoleCommand {
                 } else {
                     let paymentSucceeded = false;
                     let paymentTxnResult;
+                    const responseCode = paymentTxnResult?.authorizeNetResponse?.transactionResponse?.responseCode;
 
                     if (user.price > 0) {
                         paymentTxnResult = await chargeCustomerByBillingEntry(user.billingEntryId, user.price, user.planName);
-                        paymentSucceeded = paymentTxnResult?.authorizeNetResponse?.transactionResponse?.responseCode === '1';
+                        paymentSucceeded = responseCode === '1';
                     } else {
                         paymentSucceeded = true;
                     }
@@ -101,8 +102,6 @@ export default class EvalUserSubscriptionsCommand extends ConsoleCommand {
                             return 0;
                         }
                     } else {
-                        const responseCode = paymentTxnResult?.authorizeNetResponse?.transactionResponse?.responseCode;
-
                         // Payment is under review
                         if (responseCode === '4') {
                             await pgDbPool.query(`
@@ -131,7 +130,6 @@ export default class EvalUserSubscriptionsCommand extends ConsoleCommand {
                             // If the payment was declined for other reasons, remove subscription
                             await pgDbPool.query(`DELETE FROM "subscriptionPlanEnrollments" WHERE id = $1`, [user.enrollmentId]);
 
-                            // Send billing failure email to customer
                             const billingFailureHtml = this.generateBillingFailureEmail({
                                 customerEmail: user.email,
                                 planName: user.planName,
@@ -417,13 +415,11 @@ export default class EvalUserSubscriptionsCommand extends ConsoleCommand {
             </head>
             <body>
                 <div class="email-container">
-                    <div class="content">
-                        <div class="alert-badge">UNDER REVIEW</div>
-                        
+                    <div class="content"> 
                         <div class="message-section">
                             <h2>Payment Under Review</h2>
                             <p>Hello,</p>
-                            <p>We attempted to process your <strong>${planName} Membership</strong> renewal on <strong>${reviewDate}</strong>. Your payment is currently <span class="warning">under review</span> by our payment processor.</p>
+                            <p>We attempted to process your <strong>${planName} Membership</strong> renewal on <strong>${reviewDate}</strong>. Your payment is currently <strong>under review</strong> by our payment processor.</p>
                             <p>Your <strong>${planName} Membership</strong> will remain active while we review your payment. This review process typically takes 1-3 business days.</p>
                         </div>
                         

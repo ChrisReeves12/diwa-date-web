@@ -828,22 +828,6 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                     </div>
                                 )}
                             </form>
-
-                            {/* PayPal Option (Future Implementation) */}
-                            <div className="settings-section full-width">
-                                <h3>Alternative Payment Methods</h3>
-                                <div className="alternative-payment-methods">
-                                    <div className="payment-option disabled">
-                                        <div className="payment-option-content">
-                                            <h4>PayPal</h4>
-                                            <p>Pay securely with your PayPal account</p>
-                                            <button className="btn-secondary" disabled>
-                                                Coming Soon
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
