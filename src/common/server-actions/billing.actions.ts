@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import pgDbPool from "@/lib/postgres";
 import { revalidatePath } from "next/cache";
+import { createCustomerProfileWithPayment, createBasicCustomerProfile, deleteCustomerProfile, getCustomerPaymentProfile } from "@/server-side-helpers/billing.helpers";
 
 export interface BillingInformation {
     name: string;
@@ -22,6 +23,14 @@ export interface PaymentInformation {
     expiryYear: string;
     cvv: string;
     cardholderName: string;
+}
+
+/**
+ * Combined billing and payment information for Authorize.net integration
+ */
+export interface CombinedBillingAndPaymentInfo {
+    billingInfo: BillingInformation;
+    paymentInfo: PaymentInformation;
 }
 
 /**
@@ -150,17 +159,8 @@ export async function updatePaymentMethod(paymentInfo: PaymentInformation) {
             return { success: false, error: "Invalid CVV format" };
         }
 
-        // Determine card type
-        let cardType = 'Unknown';
-        if (/^4/.test(cardNumber)) {
-            cardType = 'Visa';
-        } else if (/^5[1-5]/.test(cardNumber)) {
-            cardType = 'MasterCard';
-        } else if (/^3[47]/.test(cardNumber)) {
-            cardType = 'American Express';
-        } else if (/^6/.test(cardNumber)) {
-            cardType = 'Discover';
-        }
+        // Card type will be determined from Authorize.net when integrated
+        const cardType = 'Unknown';
 
         // Get last 4 digits
         const last4 = cardNumber.slice(-4);
@@ -211,7 +211,202 @@ export async function updatePaymentMethod(paymentInfo: PaymentInformation) {
 }
 
 /**
- * Deletes the current user's payment method information
+ * Creates or updates billing information and payment method with Authorize.net integration
+ * @param combinedInfo The combined billing and payment information
+ * @returns Success status and any error messages
+ */
+export async function updateBillingAndPaymentWithAuthorizeNet(combinedInfo: CombinedBillingAndPaymentInfo) {
+    const currentUser = await getCurrentUser(await cookies());
+    if (!currentUser) {
+        return { success: false, error: "User not found" };
+    }
+
+    try {
+        const { billingInfo, paymentInfo } = combinedInfo;
+
+        // Validate billing information
+        if (!billingInfo.name?.trim()) {
+            return { success: false, error: "Name is required" };
+        }
+        if (!billingInfo.address1?.trim()) {
+            return { success: false, error: "Address is required" };
+        }
+        if (!billingInfo.city?.trim()) {
+            return { success: false, error: "City is required" };
+        }
+        if (!billingInfo.region?.trim()) {
+            return { success: false, error: "State/Region is required" };
+        }
+        if (!billingInfo.postalCode?.trim()) {
+            return { success: false, error: "Postal code is required" };
+        }
+        if (!billingInfo.country?.trim()) {
+            return { success: false, error: "Country is required" };
+        }
+
+        // Validate payment information
+        if (!paymentInfo.cardNumber?.trim()) {
+            return { success: false, error: "Card number is required" };
+        }
+        if (!paymentInfo.expiryMonth?.trim()) {
+            return { success: false, error: "Expiry month is required" };
+        }
+        if (!paymentInfo.expiryYear?.trim()) {
+            return { success: false, error: "Expiry year is required" };
+        }
+        if (!paymentInfo.cvv?.trim()) {
+            return { success: false, error: "CVV is required" };
+        }
+        if (!paymentInfo.cardholderName?.trim()) {
+            return { success: false, error: "Cardholder name is required" };
+        }
+
+        // Validate card number format
+        const cardNumber = paymentInfo.cardNumber.replace(/\s/g, '');
+        if (!/^\d{13,19}$/.test(cardNumber)) {
+            return { success: false, error: "Invalid card number format" };
+        }
+
+        // Validate expiry date
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth() + 1;
+        const expiryYear = parseInt(paymentInfo.expiryYear);
+        const expiryMonth = parseInt(paymentInfo.expiryMonth);
+
+        if (expiryYear < currentYear || (expiryYear === currentYear && expiryMonth < currentMonth)) {
+            return { success: false, error: "Card has expired" };
+        }
+
+        // Validate CVV
+        if (!/^\d{3,4}$/.test(paymentInfo.cvv)) {
+            return { success: false, error: "Invalid CVV format" };
+        }
+
+        // Delete existing entries
+        const existingBilling = await prisma.billingInformationEntries.findFirst({
+            where: { userId: currentUser.id }
+        });
+
+        // Delete from Authorize.net if customer profile exists
+        if (existingBilling?.customerProfileId) {
+            await deleteCustomerProfile(existingBilling.customerProfileId);
+        }
+
+        // Delete the billing entry from database
+        if (existingBilling) {
+            await prisma.billingInformationEntries.delete({
+                where: { id: existingBilling.id }
+            });
+        }
+
+        // Card type will be determined from Authorize.net payment profile
+        let cardType = 'Unknown';
+
+        // Get last 4 digits
+        const last4 = cardNumber.slice(-4);
+        let customerProfileId;
+        let customerPaymentProfileId;
+
+        try {
+            // Create customer profile with payment information in Authorize.net
+            const authorizeNetResponse = await createCustomerProfileWithPayment({
+                email: currentUser.email,
+                merchantCustomerId: `user_${currentUser.id}`,
+                description: `Customer profile for ${billingInfo.name}`,
+                creditCard: {
+                    cardNumber: cardNumber,
+                    expirationDate: `${expiryYear}-${expiryMonth.toString().padStart(2, '0')}`,
+                    cardCode: paymentInfo.cvv
+                },
+                billingAddress: {
+                    firstName: billingInfo.name.split(' ')[0] || billingInfo.name,
+                    lastName: billingInfo.name.split(' ').slice(1).join(' ') || '',
+                    address: billingInfo.address1,
+                    city: billingInfo.city,
+                    state: billingInfo.region,
+                    zip: billingInfo.postalCode,
+                    country: billingInfo.country
+                },
+                validationMode: process.env.NODE_ENV === 'production' ? 'liveMode' : 'testMode'
+            });
+
+            if (authorizeNetResponse.messages.resultCode !== 'Ok') {
+                const errorMessage = authorizeNetResponse.messages.message
+                    .map(m => m.text)
+                    .join(', ');
+                // Log the detailed error for debugging but show generic message to user
+                console.error('Payment gateway error:', errorMessage);
+                return { success: false, error: 'Unable to process payment information. Please check your payment details and try again.' };
+            }
+
+            customerProfileId = authorizeNetResponse.customerProfileId;
+            if (Array.isArray(authorizeNetResponse.customerPaymentProfileIdList) && authorizeNetResponse.customerPaymentProfileIdList.length > 0) {
+                customerPaymentProfileId = authorizeNetResponse.customerPaymentProfileIdList[0];
+            }
+        } catch (error) {
+            console.error('Authorize.net customer profile creation error:', error);
+            return { success: false, error: "Failed to process payment information. Please try again." };
+        }
+
+        // Get the card type
+        if (customerProfileId && customerPaymentProfileId) {
+            try {
+                const paymentProfileResponse = await getCustomerPaymentProfile({
+                    customerProfileId: customerProfileId,
+                    customerPaymentProfileId: customerPaymentProfileId,
+                    includeIssuerInfo: false
+                });
+
+                if (paymentProfileResponse.messages.resultCode === 'Ok' && paymentProfileResponse.paymentProfile?.payment?.creditCard?.cardType) {
+                    cardType = paymentProfileResponse.paymentProfile.payment.creditCard.cardType;
+                }
+            } catch (error) {
+                console.error('Failed to get card type from Authorize.net payment profile:', error);
+            }
+        }
+
+        // Prepare billing data
+        const billingData: any = {
+            userId: currentUser.id,
+            name: billingInfo.name.trim(),
+            address1: billingInfo.address1.trim(),
+            address2: billingInfo.address2?.trim() || null,
+            city: billingInfo.city.trim(),
+            region: billingInfo.region.trim(),
+            postalCode: billingInfo.postalCode.trim(),
+            country: billingInfo.country,
+            paymentMethod: cardType,
+            cclast4: last4,
+            customerProfileId: customerProfileId,
+            customerPaymentProfileId: customerPaymentProfileId,
+            updatedAt: new Date()
+        };
+
+        // Create new billing information
+        await prisma.billingInformationEntries.create({
+            data: {
+                ...billingData,
+                createdAt: new Date()
+            }
+        });
+
+        revalidatePath('/account/billing');
+        return { success: true };
+    } catch (error) {
+        console.error('Billing and payment update error:', error);
+
+        // Handle unique constraint violation for customerProfileId
+        if (error instanceof Error && 'code' in error && error.code === '23505' && 'constraint' in error && typeof error.constraint === 'string' && error.constraint.includes('customerProfileId')) {
+            return { success: false, error: "This payment method is already associated with another account." };
+        }
+
+        return { success: false, error: "Failed to update billing and payment information. Please try again." };
+    }
+}
+
+/**
+ * Deletes the current user's payment method information and customer profile from Authorize.net
  * @returns Success status and any error messages
  */
 export async function deletePaymentMethod() {
@@ -230,14 +425,25 @@ export async function deletePaymentMethod() {
             return { success: false, error: "No billing information found" };
         }
 
-        // Clear payment method fields
-        await prisma.billingInformationEntries.update({
-            where: { id: existingBilling.id },
-            data: {
-                paymentMethod: '',
-                cclast4: '',
-                updatedAt: new Date()
+        // Delete customer profile from Authorize.net if it exists
+        const customerProfileId = (existingBilling as any).customerProfileId;
+        if (customerProfileId) {
+            try {
+                const deleteResponse = await deleteCustomerProfile(customerProfileId);
+
+                if (deleteResponse.messages.resultCode !== 'Ok') {
+                    console.error('Failed to delete Authorize.net customer profile:', deleteResponse.messages.message);
+                    // Continue with local deletion even if Authorize.net deletion fails
+                }
+            } catch (error) {
+                console.error('Error deleting Authorize.net customer profile:', error);
+                // Continue with local deletion even if Authorize.net deletion fails
             }
+        }
+
+        // Clear billing entry
+        await prisma.billingInformationEntries.delete({
+            where: { id: existingBilling.id }
         });
 
         revalidatePath('/account/billing');

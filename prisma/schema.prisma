@@ -8,24 +8,27 @@ datasource db {
 }
 
 model billingInformationEntries {
-  id            Int       @id(map: "billinginformationentries_pk") @default(autoincrement())
-  userId        Int
-  name          String    @db.VarChar(255)
-  address1      String    @db.VarChar(255)
-  address2      String?   @db.VarChar(255)
-  city          String    @db.VarChar(255)
-  region        String    @db.VarChar(255)
-  postalCode    String    @db.VarChar(255)
-  country       String    @db.VarChar(255)
-  paymentMethod String    @db.VarChar(100)
-  cclast4       String    @db.VarChar(4)
-  createdAt     DateTime? @db.Timestamp(6)
-  updatedAt     DateTime? @db.Timestamp(6)
-  users         users     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "billinginformationentries_users_id_fk")
+  id                       Int       @id(map: "billinginformationentries_pk") @default(autoincrement())
+  userId                   Int
+  name                     String    @db.VarChar(255)
+  address1                 String    @db.VarChar(255)
+  address2                 String?   @db.VarChar(255)
+  city                     String    @db.VarChar(255)
+  region                   String    @db.VarChar(255)
+  postalCode               String    @db.VarChar(255)
+  country                  String    @db.VarChar(255)
+  paymentMethod            String    @db.VarChar(100)
+  cclast4                  String    @db.VarChar(4)
+  createdAt                DateTime? @db.Timestamp(6)
+  updatedAt                DateTime? @db.Timestamp(6)
+  customerProfileId        String?   @unique(map: "billinginformationentries_customerprofileid_uindex") @db.VarChar(100)
+  customerPaymentProfileId String?   @db.VarChar(100)
+  users                    users     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "billinginformationentries_users_id_fk")
 
   @@index([userId], map: "billingInformationEntriesUserIdForeign")
   @@index([createdAt(sort: Desc)], map: "billinginformationentries_createdat_index")
   @@index([updatedAt(sort: Desc)], map: "billinginformationentries_updatedat_index")
+  @@index([customerPaymentProfileId], map: "billinginformationentries_customerpaymentprofileid_index")
 }
 
 model blockedUsers {
@@ -173,6 +176,8 @@ model subscriptionPlanEnrollments {
   price              Float?            @default(0)
   chargeInterval     String?           @default("monthly") @db.VarChar(50)
   priceUnit          String?           @default("USD") @db.VarChar(20)
+  lastEvalAt         DateTime?         @db.Timestamp(6)
+  billingHolds       billingHolds[]
   subscriptionPlans  subscriptionPlans @relation(fields: [subscriptionPlanId], references: [id], onDelete: Cascade, map: "subscriptionplanenrollments_subscriptionplans_id_fk")
   users              users             @relation(fields: [userId], references: [id], onDelete: Cascade, map: "subscriptionplanenrollments_users_id_fk")
 
@@ -180,6 +185,7 @@ model subscriptionPlanEnrollments {
   @@index([userId], map: "subscriptionPlanEnrollmentsUserIdForeign")
   @@index([createdAt(sort: Desc)], map: "subscriptionplanenrollments_createdat_index")
   @@index([updatedAt(sort: Desc)], map: "subscriptionplanenrollments_updatedat_index")
+  @@index([lastEvalAt], map: "subscriptionplanenrollments_lastevalat_index")
 }
 
 model subscriptionPlans {
@@ -292,6 +298,7 @@ model users {
   passwordResetTokenExpiry                       DateTime?                     @db.Timestamp(6)
   profileCompletedAt                             DateTime?                     @db.Timestamp(6)
   currentOnboardingSteps                         Json?
+  billingHolds                                   billingHolds[]
   billingInformationEntries                      billingInformationEntries[]
   blockedUsers_blockedUsers_userIdTousers        blockedUsers[]                @relation("blockedUsers_userIdTousers")
   blockedUsers_blockedUsers_blockedUserIdTousers blockedUsers[]                @relation("blockedUsers_blockedUserIdTousers")
@@ -300,6 +307,7 @@ model users {
   mutedUsers_mutedUsers_recipientIdTousers       mutedUsers[]                  @relation("mutedUsers_recipientIdTousers")
   notifications_notifications_recipientIdTousers notifications[]               @relation("notifications_recipientIdTousers")
   notifications_notifications_userIdTousers      notifications[]               @relation("notifications_userIdTousers")
+  paymentTransactions                            paymentTransactions[]
   sessions                                       sessions[]
   subscriptionPlanEnrollments                    subscriptionPlanEnrollments[]
   userMatches_userMatches_userIdTousers          userMatches[]                 @relation("userMatches_userIdTousers")
@@ -319,4 +327,38 @@ model spatial_ref_sys {
   auth_srid Int?
   srtext    String? @db.VarChar(2048)
   proj4text String? @db.VarChar(2048)
+}
+
+model paymentTransactions {
+  id            Int       @id(map: "paymenttransactions_pk") @default(autoincrement())
+  userId        Int?
+  amount        Float?    @default(0)
+  transId       String?   @db.VarChar(100)
+  accountNumber String?   @db.VarChar(100)
+  updatedAt     DateTime? @db.Timestamp(6)
+  createdAt     DateTime? @db.Timestamp(6)
+  status        String?   @db.VarChar(100)
+  description   String?   @db.VarChar(200)
+  errors        Json?
+  apiResponse   Json?
+  users         users?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "paymenttransactions_users_id_fk")
+
+  @@index([userId], map: "paymenttransactions_userid_index")
+  @@index([transId], map: "paymenttransactions_transid_index")
+}
+
+model billingHolds {
+  id                          Int                         @id @default(autoincrement())
+  userId                      Int
+  enrollmentId                Int
+  reason                      String
+  responseCode                String?                     @db.VarChar(10)
+  amount                      Float?
+  planName                    String?                     @db.VarChar(255)
+  createdAt                   DateTime?                   @default(now()) @db.Timestamp(6)
+  updatedAt                   DateTime?                   @default(now()) @db.Timestamp(6)
+  resolvedAt                  DateTime?                   @db.Timestamp(6)
+  status                      String?                     @default("pending") @db.VarChar(20)
+  subscriptionPlanEnrollments subscriptionPlanEnrollments @relation(fields: [enrollmentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "billingHolds_subscriptionPlanEnrollments_id_fk")
+  users                       users                       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "billingHolds_users_id_fk")
 }

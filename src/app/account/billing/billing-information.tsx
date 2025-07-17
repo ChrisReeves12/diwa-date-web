@@ -9,7 +9,7 @@ import { AccountSettingsTabs } from "@/app/account/account-settings-tabs";
 import {
     updateBillingInformation, updatePaymentMethod, getBillingInformation, getSubscriptionPlans, enrollInSubscriptionPlan,
     isBillingInformationComplete, cancelSubscription, reactivateSubscription, getCurrentSubscriptionDetails,
-    deletePaymentMethod, type BillingInformation, type PaymentInformation
+    deletePaymentMethod, updateBillingAndPaymentWithAuthorizeNet, type BillingInformation, type PaymentInformation
 } from "@/common/server-actions/billing.actions";
 import { countries } from "@/config/countries";
 import React, { useState, useEffect } from "react";
@@ -196,31 +196,19 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
         setIsLoading(true);
 
         try {
-            // Update billing information
-            const billingResult = await updateBillingInformation(billingInfo);
-
-            // Check for errors
-            const errors: Record<string, string> = {};
-            if (!billingResult.success) {
-                errors.billingForm = billingResult.error || 'Failed to update billing information';
-            }
-
-            // Only update payment method if no payment method exists
+            // If no payment method exists, use the combined function for payment processing
             if (!existingBilling?.paymentMethod) {
-                const paymentResult = await updatePaymentMethod(paymentInfo);
-                if (!paymentResult.success) {
-                    errors.paymentForm = paymentResult.error || 'Failed to update payment method';
+                const result = await updateBillingAndPaymentWithAuthorizeNet({
+                    billingInfo,
+                    paymentInfo
+                });
+
+                if (!result.success) {
+                    setErrors({ form: result.error || 'Failed to update billing and payment information' });
+                    return;
                 }
-            }
 
-            if (Object.keys(errors).length > 0) {
-                setErrors(errors);
-                return;
-            }
-
-            let successMsg = 'Billing information updated successfully';
-            if (!existingBilling?.paymentMethod) {
-                successMsg = 'Billing information and payment method updated successfully';
+                setSuccessMessage('Billing information and payment method updated successfully.');
 
                 // Clear payment form for security
                 setPaymentInfo({
@@ -230,9 +218,17 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                     cvv: '',
                     cardholderName: ''
                 });
-            }
+            } else {
+                // If payment method exists, just update billing information
+                const billingResult = await updateBillingInformation(billingInfo);
 
-            setSuccessMessage(successMsg);
+                if (!billingResult.success) {
+                    setErrors({ billingForm: billingResult.error || 'Failed to update billing information' });
+                    return;
+                }
+
+                setSuccessMessage('Billing information updated successfully');
+            }
 
             // Reload billing information to get updated data
             const updatedBilling = await getBillingInformation();
@@ -350,16 +346,10 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
 
             setSuccessMessage('Payment method deleted successfully');
 
-            // Clear existing billing payment info
-            setExistingBilling(prev => prev ? {
-                ...prev,
-                paymentMethod: '',
-                cclast4: ''
-            } : null);
-
-            // Recheck billing completeness
             const billingComplete = await isBillingInformationComplete();
             setIsBillingComplete(billingComplete);
+
+            window.location.reload();
         } catch (error) {
             console.error('Delete payment method error:', error);
             setErrors({ paymentForm: 'Failed to delete payment method' });
@@ -424,7 +414,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                             <>
                                                 <div className="subscription-status">
                                                     <div className="status-badge active">
-                                                        <CheckCircleIcon/> Premium Member
+                                                        <CheckCircleIcon /> Premium Member
                                                     </div>
                                                     <p>You are currently enrolled in the <strong>{subscriptionDetails.planName}</strong> plan.</p>
 
@@ -432,7 +422,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                         /* Subscription scheduled to end */
                                                         <div className="cancellation-notice">
                                                             <div className="warning-message">
-                                                                <p><strong><ExclamationCircleIcon/> Your membership is scheduled to end on {new Date(subscriptionDetails.endsAt).toLocaleDateString()}.</strong></p>
+                                                                <p><strong><ExclamationCircleIcon /> Your membership is scheduled to end on {new Date(subscriptionDetails.endsAt).toLocaleDateString()}.</strong></p>
                                                                 <p>You will continue to have premium access until that date.</p>
                                                             </div>
                                                             <div className="reactivate-actions">
@@ -638,25 +628,6 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
 
                                         <div className="form-row">
                                             <div className="input-container">
-                                                <label htmlFor="country">Country</label>
-                                                <select
-                                                    id="country"
-                                                    name="country"
-                                                    value={billingInfo.country}
-                                                    onChange={(e) => setBillingInfo({ ...billingInfo, country: e.target.value })}
-                                                    required
-                                                >
-                                                    {countries.map((country) => (
-                                                        <option key={country.code} value={country.code}>
-                                                            {country.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        <div className="form-row">
-                                            <div className="input-container">
                                                 <label htmlFor="region">{getRegionLabel(billingInfo.country)}</label>
                                                 <input
                                                     type="text"
@@ -682,6 +653,25 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                     placeholder={getPostalCodeLabel(billingInfo.country)}
                                                     required
                                                 />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-row">
+                                            <div className="input-container">
+                                                <label htmlFor="country">Country</label>
+                                                <select
+                                                    id="country"
+                                                    name="country"
+                                                    value={billingInfo.country}
+                                                    onChange={(e) => setBillingInfo({ ...billingInfo, country: e.target.value })}
+                                                    required
+                                                >
+                                                    {countries.map((country) => (
+                                                        <option key={country.code} value={country.code}>
+                                                            {country.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
                                         </div>
                                     </div>
@@ -713,6 +703,9 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                     >
                                                         {isLoadingDeletePayment ? 'Deleting...' : <><TrashIcon /> Delete Payment Method</>}
                                                     </button>
+                                                    <p className="help-text">
+                                                        <small>This will permanently remove your payment method from this account.</small>
+                                                    </p>
                                                 </div>
                                             </div>
                                         ) : (

@@ -623,6 +623,7 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
                                             <li>Your matches and conversation history</li>
                                             <li>All messages sent and received</li>
                                             <li>Your subscription and billing information</li>
+                                            <li>Your payment methods and billing information</li>
                                             <li>Your account preferences and settings</li>
                                         </ul>
                                         <p><strong>Note:</strong> This action cannot be undone. You will need to create a new account if you wish to use the service again.</p>

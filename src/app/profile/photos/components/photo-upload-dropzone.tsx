@@ -10,11 +10,11 @@ interface PhotoUploadDropzoneProps {
   currentPhotoCount?: number;
 }
 
-export function PhotoUploadDropzone({ 
-  onFilesSelected, 
-  disabled = false, 
+export function PhotoUploadDropzone({
+  onFilesSelected,
+  disabled = false,
   maxPhotos = 10,
-  currentPhotoCount = 0 
+  currentPhotoCount = 0
 }: PhotoUploadDropzoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -27,22 +27,24 @@ export function PhotoUploadDropzone({
     const validFiles: File[] = [];
     const newErrors: string[] = [];
 
-    // Check if adding these files would exceed the limit
-    if (fileArray.length > remainingSlots) {
-      newErrors.push(`You can only upload ${remainingSlots} more photo${remainingSlots === 1 ? '' : 's'}. Maximum is ${maxPhotos} photos.`);
+    // Only process the first file for single file upload
+    const fileToProcess = fileArray[0];
+    if (!fileToProcess) return;
+
+    // Check if adding this file would exceed the limit
+    if (remainingSlots <= 0) {
+      newErrors.push(`You can only upload ${maxPhotos} photos maximum.`);
       setErrors(newErrors);
       return;
     }
 
-    // Validate each file
-    fileArray.forEach((file, index) => {
-      const validation = validateImageFile(file);
-      if (validation.isValid) {
-        validFiles.push(file);
-      } else {
-        newErrors.push(`File ${index + 1}: ${validation.error}`);
-      }
-    });
+    // Validate the file
+    const validation = validateImageFile(fileToProcess);
+    if (validation.isValid) {
+      validFiles.push(fileToProcess);
+    } else {
+      newErrors.push(validation.error || 'Invalid file');
+    }
 
     setErrors(newErrors);
 
@@ -66,12 +68,14 @@ export function PhotoUploadDropzone({
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
     if (disabled || isAtLimit) return;
 
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-      handleFiles(files);
+      // Only process the first file for single file upload
+      const firstFile = files[0];
+      handleFiles([firstFile]);
     }
   }, [disabled, isAtLimit, handleFiles]);
 
@@ -86,10 +90,9 @@ export function PhotoUploadDropzone({
 
   const handleClick = useCallback(() => {
     if (disabled || isAtLimit) return;
-    
+
     const input = document.createElement('input');
     input.type = 'file';
-    input.multiple = true;
     input.accept = 'image/jpeg,image/jpg,image/png,image/gif,image/webp';
     input.onchange = (e) => {
       const target = e.target as HTMLInputElement;
@@ -111,14 +114,14 @@ export function PhotoUploadDropzone({
       >
         <div className="dropzone-content">
           <div className="upload-icon">
-            <img 
-              src="/images/upload-dropzone-icon.png" 
-              alt="Upload" 
-              width={64} 
+            <img
+              src="/images/upload-dropzone-icon.png"
+              alt="Upload"
+              width={64}
               height={64}
             />
           </div>
-          
+
           {isAtLimit ? (
             <div className="limit-reached">
               <h3>Photo Limit Reached</h3>
@@ -127,10 +130,10 @@ export function PhotoUploadDropzone({
             </div>
           ) : (
             <div className="upload-instructions">
-              <h3>Upload Photos</h3>
-              <p>Drag and drop photos here, or click to select files</p>
+              <h3>Upload Photo</h3>
+              <p>Drag and drop a photo here, or click to select file</p>
               <p className="file-info">
-                JPEG, PNG, GIF, WebP • Max 15MB each • {remainingSlots} slot{remainingSlots === 1 ? '' : 's'} remaining
+                JPEG, PNG, GIF, WebP • Max 15MB • {remainingSlots} slot{remainingSlots === 1 ? '' : 's'} remaining
               </p>
             </div>
           )}

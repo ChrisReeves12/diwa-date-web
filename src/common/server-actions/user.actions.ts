@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { deleteSession, getSessionId } from "@/server-side-helpers/session.helpers";
 import { sendEmail } from "@/server-side-helpers/mail.helper";
+import { deleteCustomerProfile } from "@/server-side-helpers/billing.helpers";
 
 /**
  * Toggles the online status visibility for the current user.
@@ -109,6 +110,28 @@ export async function deleteAccount(password: string) {
     }
 
     try {
+        // Delete customer profile from Authorize.net if it exists
+        const existingBilling = await prisma.billingInformationEntries.findFirst({
+            where: { userId: currentUser.id }
+        });
+
+        if (existingBilling) {
+            const customerProfileId = (existingBilling as any).customerProfileId;
+            if (customerProfileId) {
+                try {
+                    const deleteResponse = await deleteCustomerProfile(customerProfileId);
+
+                    if (deleteResponse.messages.resultCode !== 'Ok') {
+                        console.error('Failed to delete Authorize.net customer profile during account deletion:', deleteResponse.messages.message);
+                        // Continue with account deletion even if Authorize.net deletion fails
+                    }
+                } catch (error) {
+                    console.error('Error deleting Authorize.net customer profile during account deletion:', error);
+                    // Continue with account deletion even if Authorize.net deletion fails
+                }
+            }
+        }
+
         // Get the current session ID to delete it after account deletion
         const sessionId = await getSessionId(cookieStore);
 

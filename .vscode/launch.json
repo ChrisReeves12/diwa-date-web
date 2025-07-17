@@ -10,6 +10,20 @@
         "<node_internals>/**"
       ],
       "restart": true
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "tsx",
+      "name": "Run CLI Command",
+      "program": "${workspaceFolder}/src/console/cli.ts",
+      "skipFiles": [
+        "<node_internals>/**",
+        "${workspaceFolder}/node_modules/**"
+      ],
+      "args": [
+        "users:evaluate-subscriptions"
+      ]
     }
   ]
 }

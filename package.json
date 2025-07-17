@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "ts-node -r tsconfig-paths/register --project tsconfig.server.json server.ts",
     "dev:turbo": "next dev --turbopack",
-    "dev-debug": "NODE_OPTIONS='--inspect' ts-node -r tsconfig-paths/register --project tsconfig.server.json server.ts",
+    "dev-debug": "NODE_OPTIONS='--inspect=9230' ts-node -r tsconfig-paths/register --project tsconfig.server.json server.ts",
     "build": "next build && tsc --project tsconfig.server.json && tsc-alias -p tsconfig.server.json",
     "start": "NODE_ENV=production node server.js",
     "lint": "next lint",
@@ -18,7 +18,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
-    "cli": "ts-node -r tsconfig-paths/register -P tsconfig.cli.json src/console/cli.ts",
+    "cli": "tsx src/console/cli.ts",
     "cli:build": "tsc -p tsconfig.cli.json && tsc-alias -p tsconfig.cli.json"
   },
   "dependencies": {
@@ -58,6 +58,7 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
     "uuid": "^11.1.0",
     "winston": "^3.17.0"
   },
