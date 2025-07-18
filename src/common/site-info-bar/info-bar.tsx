@@ -4,7 +4,7 @@ import './info-bar.scss';
 import { useCurrentUser } from '../context/current-user-context';
 import { InfoCircleIcon } from 'react-line-awesome';
 import { resendVerificationEmail } from './info-bar.actions';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { showAlert, userHasOnboarded } from '@/util';
 import Link from 'next/link';
 
@@ -31,11 +31,13 @@ export default function InfoBar({ onHide }: { onHide?: () => void }) {
 
     const onboardedResult = userHasOnboarded(currentUser);
 
-    if (onboardedResult.hasOnboarded) {
-        if (onHide) {
+    useEffect(() => {
+        if (onboardedResult.hasOnboarded && onHide) {
             onHide();
         }
+    }, [onboardedResult.hasOnboarded, onHide]);
 
+    if (onboardedResult.hasOnboarded) {
         return null;
     }
 
