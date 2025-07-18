@@ -7,14 +7,14 @@ import SiteWrapper from "@/common/site-wrapper/site-wrapper";
 import UserSubscriptionPlanDisplay from "@/common/user-subscription-plan-display/user-subscription-plan-display";
 import { AccountSettingsTabs } from "@/app/account/account-settings-tabs";
 import {
-    updateBillingInformation, updatePaymentMethod, getBillingInformation, getSubscriptionPlans, enrollInSubscriptionPlan,
+    updateBillingInformation, getBillingInformation, getSubscriptionPlans, enrollInSubscriptionPlan,
     isBillingInformationComplete, cancelSubscription, reactivateSubscription, getCurrentSubscriptionDetails,
     deletePaymentMethod, updateBillingAndPaymentWithAuthorizeNet, type BillingInformation, type PaymentInformation
 } from "@/common/server-actions/billing.actions";
 import { countries } from "@/config/countries";
 import React, { useState, useEffect } from "react";
 import "../account-settings.scss";
-import { CheckCircleIcon, ExclamationCircleIcon, TrashIcon, WarehouseIcon } from "react-line-awesome";
+import { CheckCircleIcon, ExclamationCircleIcon, TrashIcon } from "react-line-awesome";
 
 interface AccountSettingsProps {
     currentUser?: User & {
@@ -584,6 +584,25 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
 
                                         <div className="form-row">
                                             <div className="input-container">
+                                                <label htmlFor="country">Country</label>
+                                                <select
+                                                    id="country"
+                                                    name="country"
+                                                    value={billingInfo.country}
+                                                    onChange={(e) => setBillingInfo({ ...billingInfo, country: e.target.value })}
+                                                    required
+                                                >
+                                                    {countries.map((country) => (
+                                                        <option key={country.code} value={country.code}>
+                                                            {country.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div className="form-row">
+                                            <div className="input-container">
                                                 <label htmlFor="address1">Address Line 1</label>
                                                 <input
                                                     type="text"
@@ -653,25 +672,6 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                     placeholder={getPostalCodeLabel(billingInfo.country)}
                                                     required
                                                 />
-                                            </div>
-                                        </div>
-
-                                        <div className="form-row">
-                                            <div className="input-container">
-                                                <label htmlFor="country">Country</label>
-                                                <select
-                                                    id="country"
-                                                    name="country"
-                                                    value={billingInfo.country}
-                                                    onChange={(e) => setBillingInfo({ ...billingInfo, country: e.target.value })}
-                                                    required
-                                                >
-                                                    {countries.map((country) => (
-                                                        <option key={country.code} value={country.code}>
-                                                            {country.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
                                             </div>
                                         </div>
                                     </div>

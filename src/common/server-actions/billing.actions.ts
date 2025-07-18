@@ -5,7 +5,9 @@ import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import pgDbPool from "@/lib/postgres";
 import { revalidatePath } from "next/cache";
-import { createCustomerProfileWithPayment, createBasicCustomerProfile, deleteCustomerProfile, getCustomerPaymentProfile } from "@/server-side-helpers/billing.helpers";
+import { createCustomerProfileWithPayment, createBasicCustomerProfile, deleteCustomerProfile, getCustomerPaymentProfile, chargeCustomerByBillingEntry, generateReceiptHtml, generatePaymentReviewEmail } from "@/server-side-helpers/billing.helpers";
+import { sendEmail } from "@/server-side-helpers/mail.helper";
+import moment from "moment";
 
 export interface BillingInformation {
     name: string;
@@ -109,108 +111,6 @@ export async function updateBillingInformation(billingInfo: BillingInformation) 
 }
 
 /**
- * Updates the user's payment method (stubbed for now)
- * @param paymentInfo The payment information to process
- * @returns Success status and any error messages
- */
-export async function updatePaymentMethod(paymentInfo: PaymentInformation) {
-    const currentUser = await getCurrentUser(await cookies());
-    if (!currentUser) {
-        return { success: false, error: "User not found" };
-    }
-
-    try {
-        // Validate required fields
-        if (!paymentInfo.cardNumber?.trim()) {
-            return { success: false, error: "Card number is required" };
-        }
-        if (!paymentInfo.expiryMonth?.trim()) {
-            return { success: false, error: "Expiry month is required" };
-        }
-        if (!paymentInfo.expiryYear?.trim()) {
-            return { success: false, error: "Expiry year is required" };
-        }
-        if (!paymentInfo.cvv?.trim()) {
-            return { success: false, error: "CVV is required" };
-        }
-        if (!paymentInfo.cardholderName?.trim()) {
-            return { success: false, error: "Cardholder name is required" };
-        }
-
-        // Validate card number format (basic Luhn algorithm)
-        const cardNumber = paymentInfo.cardNumber.replace(/\s/g, '');
-        if (!/^\d{13,19}$/.test(cardNumber)) {
-            return { success: false, error: "Invalid card number format" };
-        }
-
-        // Validate expiry date
-        const currentDate = new Date();
-        const currentYear = currentDate.getFullYear();
-        const currentMonth = currentDate.getMonth() + 1;
-        const expiryYear = parseInt(paymentInfo.expiryYear);
-        const expiryMonth = parseInt(paymentInfo.expiryMonth);
-
-        if (expiryYear < currentYear || (expiryYear === currentYear && expiryMonth < currentMonth)) {
-            return { success: false, error: "Card has expired" };
-        }
-
-        // Validate CVV
-        if (!/^\d{3,4}$/.test(paymentInfo.cvv)) {
-            return { success: false, error: "Invalid CVV format" };
-        }
-
-        // Card type will be determined from Authorize.net when integrated
-        const cardType = 'Unknown';
-
-        // Get last 4 digits
-        const last4 = cardNumber.slice(-4);
-
-        // Check if user already has billing information
-        const existingBilling = await prisma.billingInformationEntries.findFirst({
-            where: { userId: currentUser.id }
-        });
-
-        const paymentData = {
-            paymentMethod: cardType,
-            cclast4: last4,
-            updatedAt: new Date()
-        };
-
-        if (existingBilling) {
-            // Update existing billing information with payment details
-            await prisma.billingInformationEntries.update({
-                where: { id: existingBilling.id },
-                data: paymentData
-            });
-        } else {
-            // Create new billing information with payment details
-            await prisma.billingInformationEntries.create({
-                data: {
-                    userId: currentUser.id,
-                    name: '',
-                    address1: '',
-                    city: '',
-                    region: '',
-                    postalCode: '',
-                    country: '',
-                    ...paymentData,
-                    createdAt: new Date()
-                }
-            });
-        }
-
-        // TODO: In the future, integrate with Authorize.net here
-        // For now, we just simulate successful payment method storage
-
-        revalidatePath('/account/billing');
-        return { success: true };
-    } catch (error) {
-        console.error('Payment method update error:', error);
-        return { success: false, error: "Failed to update payment method. Please try again." };
-    }
-}
-
-/**
  * Creates or updates billing information and payment method with Authorize.net integration
  * @param combinedInfo The combined billing and payment information
  * @returns Success status and any error messages
@@ -228,18 +128,23 @@ export async function updateBillingAndPaymentWithAuthorizeNet(combinedInfo: Comb
         if (!billingInfo.name?.trim()) {
             return { success: false, error: "Name is required" };
         }
+
         if (!billingInfo.address1?.trim()) {
             return { success: false, error: "Address is required" };
         }
+
         if (!billingInfo.city?.trim()) {
             return { success: false, error: "City is required" };
         }
+
         if (!billingInfo.region?.trim()) {
             return { success: false, error: "State/Region is required" };
         }
+
         if (!billingInfo.postalCode?.trim()) {
             return { success: false, error: "Postal code is required" };
         }
+
         if (!billingInfo.country?.trim()) {
             return { success: false, error: "Country is required" };
         }
@@ -248,15 +153,19 @@ export async function updateBillingAndPaymentWithAuthorizeNet(combinedInfo: Comb
         if (!paymentInfo.cardNumber?.trim()) {
             return { success: false, error: "Card number is required" };
         }
+
         if (!paymentInfo.expiryMonth?.trim()) {
             return { success: false, error: "Expiry month is required" };
         }
+
         if (!paymentInfo.expiryYear?.trim()) {
             return { success: false, error: "Expiry year is required" };
         }
+
         if (!paymentInfo.cvv?.trim()) {
             return { success: false, error: "CVV is required" };
         }
+
         if (!paymentInfo.cardholderName?.trim()) {
             return { success: false, error: "Cardholder name is required" };
         }
@@ -586,6 +495,64 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
             return { success: false, error: "You already have an active subscription" };
         }
 
+        // Get billing entry for payment processing
+        const billingEntry = await prisma.billingInformationEntries.findFirst({
+            where: { userId: currentUser.id }
+        });
+
+        if (!billingEntry) {
+            return { success: false, error: "Billing information not found" };
+        }
+
+        // Process payment
+        let paymentSucceeded = false;
+        let paymentTxnResult;
+        let receiptNo: string | undefined;
+        let responseCode: string | undefined;
+        let isPaymentUnderReview = false;
+
+        if (subscriptionPlan.listPrice > 0) {
+            try {
+                paymentTxnResult = await chargeCustomerByBillingEntry(
+                    billingEntry.id,
+                    subscriptionPlan.listPrice,
+                    subscriptionPlan.name
+                );
+
+                responseCode = paymentTxnResult?.authorizeNetResponse?.transactionResponse?.responseCode;
+                paymentSucceeded = responseCode === '1';
+                receiptNo = paymentTxnResult?.paymentTransaction?.transId;
+
+                // Handle payment under review (response code 4)
+                if (responseCode === '4') {
+                    paymentSucceeded = true;
+                    isPaymentUnderReview = true;
+                }
+
+                // Handle failed payments - return immediately without creating enrollment
+                if (!paymentSucceeded) {
+                    return {
+                        success: false,
+                        error: "Payment was declined. Please check your payment method and try again."
+                    };
+                }
+            } catch (error) {
+                console.error('Payment processing error:', error);
+                return {
+                    success: false,
+                    error: "Payment processing failed. Please try again."
+                };
+            }
+        } else {
+            // Free subscription
+            paymentSucceeded = true;
+        }
+
+        // Only proceed with enrollment if payment succeeded or is under review
+        if (!paymentSucceeded) {
+            return { success: false, error: "Payment failed. Please try again." };
+        }
+
         // Check if user has any existing subscription record (active or expired)
         const { rows: existingRows } = await pgDbPool.query(`
             SELECT id FROM "subscriptionPlanEnrollments" 
@@ -598,9 +565,11 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
         const nextPaymentDate = new Date();
         nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
 
+        let enrollmentId: number;
+
         if (existingRows.length > 0) {
             // Update existing enrollment record
-            const existingEnrollmentId = existingRows[0].id;
+            enrollmentId = existingRows[0].id;
 
             await pgDbPool.query(`
                 UPDATE "subscriptionPlanEnrollments" 
@@ -624,15 +593,16 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
                 'monthly',
                 subscriptionPlan.listPriceUnit || 'USD',
                 new Date(),
-                existingEnrollmentId
+                enrollmentId
             ]);
         } else {
             // Create new enrollment record
-            await pgDbPool.query(`
+            const { rows: insertedRows } = await pgDbPool.query(`
                 INSERT INTO "subscriptionPlanEnrollments" (
                     "userId", "subscriptionPlanId", "startedAt", "lastPaymentAt", "nextPaymentAt",
                     "price", "chargeInterval", "priceUnit", "createdAt", "updatedAt"
                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                RETURNING id
             `, [
                 currentUser.id,
                 subscriptionPlanId,
@@ -645,10 +615,62 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
                 new Date(),
                 new Date()
             ]);
+
+            enrollmentId = insertedRows[0].id;
         }
 
-        // TODO: In the future, integrate with payment processor here
-        // For now, we just simulate successful enrollment
+        // If payment is under review, insert billing hold record with the enrollment ID
+        if (isPaymentUnderReview) {
+            await pgDbPool.query(`
+                INSERT INTO "billingHolds" ("userId", "enrollmentId", "reason", "responseCode", "amount", "planName", "createdAt", "updatedAt")
+                VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            `, [currentUser.id, enrollmentId, 'Payment under review', responseCode, subscriptionPlan.listPrice, subscriptionPlan.name]);
+        }
+
+        // Send appropriate email notification
+        if (subscriptionPlan.listPrice > 0) {
+            try {
+                const receiptDate = moment().format('MMMM DD, YYYY');
+                const receiptPaidForTime = `${receiptDate} - ${moment().add(1, 'month').format('MMMM DD, YYYY')}`;
+                const receiptTotal = Number(subscriptionPlan.listPrice || 0).toFixed(2);
+                const receiptAmountPaid = Number(paymentTxnResult?.paymentTransaction?.amount || 0).toFixed(2);
+
+                let receiptPayMethod = 'Credit/Debit Card';
+                if (paymentTxnResult?.authorizeNetResponse?.transactionResponse?.accountType &&
+                    paymentTxnResult?.authorizeNetResponse?.transactionResponse?.accountNumber) {
+                    receiptPayMethod = `${paymentTxnResult.authorizeNetResponse.transactionResponse.accountType} - ${paymentTxnResult.authorizeNetResponse.transactionResponse.accountNumber}`;
+                }
+
+                if (isPaymentUnderReview) {
+                    // Send payment under review email
+                    const paymentReviewHtml = generatePaymentReviewEmail({
+                        customerEmail: currentUser.email,
+                        planName: subscriptionPlan.name,
+                        reviewDate: receiptDate,
+                        receiptPayMethod
+                    });
+
+                    await sendEmail([currentUser.email], `Notice: Payment under review for your Diwa Date membership`, paymentReviewHtml);
+                } else if (receiptNo) {
+                    // Send receipt email for successful payments
+                    const receiptHtml = generateReceiptHtml({
+                        receiptNo,
+                        receiptDate,
+                        customerEmail: currentUser.email,
+                        planName: subscriptionPlan.name,
+                        receiptPaidForTime,
+                        receiptTotal,
+                        receiptAmountPaid,
+                        receiptPayMethod
+                    });
+
+                    await sendEmail([currentUser.email], `Your receipt from Diwa Date [#${receiptNo}]`, receiptHtml);
+                }
+            } catch (emailError) {
+                console.error('Email notification error:', emailError);
+                // Don't fail the enrollment if email fails
+            }
+        }
 
         revalidatePath('/account/billing');
         return { success: true };
