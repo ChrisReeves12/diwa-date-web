@@ -7,10 +7,21 @@ import SiteWrapper from "@/common/site-wrapper/site-wrapper";
 import UserSubscriptionPlanDisplay from "@/common/user-subscription-plan-display/user-subscription-plan-display";
 import { AccountSettingsTabs } from "@/app/account/account-settings-tabs";
 import {
-    updateBillingInformation, getBillingInformation, getSubscriptionPlans, enrollInSubscriptionPlan,
-    isBillingInformationComplete, cancelSubscription, reactivateSubscription, getCurrentSubscriptionDetails,
-    deletePaymentMethod, updateBillingAndPaymentWithAuthorizeNet, type BillingInformation, type PaymentInformation
-} from "@/common/server-actions/billing.actions";
+    updateBillingInformation,
+    getBillingInformation,
+    getSubscriptionPlans,
+    enrollInSubscriptionPlan,
+    isBillingInformationComplete,
+    cancelSubscription,
+    reactivateSubscription,
+    getCurrentSubscriptionDetails,
+    deletePaymentMethod,
+    updateBillingAndPaymentWithAuthorizeNet,
+    type BillingInformation,
+    type PaymentInformation,
+    getRegionsForCountry
+} from "@/app/account/billing/billing.actions";
+import { isPostalCodeRequired } from "@/utils/postal-code-utils";
 import { countries } from "@/config/countries";
 import React, { useState, useEffect } from "react";
 import "../account-settings.scss";
@@ -70,7 +81,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
         city: '',
         region: '',
         postalCode: '',
-        country: 'US'
+        country: currentUser?.country || ''
     });
 
     // Payment information state
@@ -78,8 +89,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
         cardNumber: '',
         expiryMonth: '',
         expiryYear: '',
-        cvv: '',
-        cardholderName: ''
+        cvv: ''
     });
 
     // Existing billing info for display
@@ -95,6 +105,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
     const [isLoadingCancel, setIsLoadingCancel] = useState(false);
     const [isLoadingReactivate, setIsLoadingReactivate] = useState(false);
     const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+    const [states, setStates] = useState<Array<{code: string | null, name: string}>>([]);
 
     // Payment method deletion state
     const [isLoadingDeletePayment, setIsLoadingDeletePayment] = useState(false);
@@ -107,6 +118,17 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                 const billing = await getBillingInformation();
                 if (billing) {
                     setExistingBilling(billing);
+
+                    // Normalize country - convert code to name if necessary
+                    let countryValue = billing.country || currentUser?.country || '';
+                    if (countryValue.length === 2) {
+                        // It's a country code, convert to name
+                        const countryObj = countries.find(c => c.code === countryValue);
+                        if (countryObj) {
+                            countryValue = countryObj.name;
+                        }
+                    }
+
                     setBillingInfo({
                         name: billing.name || '',
                         address1: billing.address1 || '',
@@ -114,8 +136,25 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                         city: billing.city || '',
                         region: billing.region || '',
                         postalCode: billing.postalCode || '',
-                        country: billing.country || 'US'
+                        country: countryValue
                     });
+                }
+
+                // Load regions for the existing country
+                if (billingInfo.country) {
+                    // Check if billing.country is a code or a name
+                    let countryCode = billingInfo.country;
+
+                    // If it's a 2-letter code, keep it; otherwise find the code from name
+                    if (billingInfo.country.length > 2) {
+                        const countryObj = countries.find(c => c.name === billingInfo.country);
+                        if (countryObj) {
+                            countryCode = countryObj.code;
+                        }
+                    }
+
+                    const regions = await getRegionsForCountry(countryCode);
+                    setStates(regions.map(s => ({name: s.name, code: s.stateCode})));
                 }
 
                 // Load subscription plans
@@ -161,29 +200,22 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
         }
     };
 
-    // Get region label based on country
-    const getRegionLabel = (country: string) => {
-        switch (country) {
-            case 'US':
-            case 'CA':
-                return 'State/Province';
-            case 'GB':
-                return 'County';
-            case 'AU':
-                return 'State/Territory';
-            default:
-                return 'State/Region';
-        }
+    // Get region label based on country name
+    const getRegionLabel = (countryName: string) => {
+        const countryObj = countries.find((c: any) => c.name === countryName);
+        return countryObj?.regionLabel || 'State/Region';
     };
 
-    // Get postal code label based on country
-    const getPostalCodeLabel = (country: string) => {
-        switch (country) {
-            case 'US':
-                return 'ZIP Code';
-            case 'CA':
+    // Get postal code label based on country name
+    const getPostalCodeLabel = (countryName: string) => {
+        switch (countryName) {
+            case 'United States':
+                return 'Zip Code';
+            case 'Philippines':
+                return 'Zip/Postal Code';
+            case 'Canada':
                 return 'Postal Code';
-            case 'GB':
+            case 'United Kingdom':
                 return 'Postcode';
             default:
                 return 'Postal Code';
@@ -215,8 +247,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                     cardNumber: '',
                     expiryMonth: '',
                     expiryYear: '',
-                    cvv: '',
-                    cardholderName: ''
+                    cvv: ''
                 });
             } else {
                 // If payment method exists, just update billing information
@@ -522,7 +553,8 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                         <div className="dialog">
                                             <h4>Cancel Premium Membership</h4>
                                             <p>Are you sure you want to cancel your premium membership?</p>
-                                            <p>Your membership will remain active until your next billing date ({subscriptionDetails ? new Date(subscriptionDetails.nextPaymentAt).toLocaleDateString() : ''}) and then will automatically end.</p>
+                                            <p>Your membership will remain active until your next billing date
+                                                ({subscriptionDetails ? new Date(subscriptionDetails.nextPaymentAt).toLocaleDateString() : ''}) and then will automatically end.</p>
 
                                             <div className="dialog-actions">
                                                 <button
@@ -589,11 +621,28 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                     id="country"
                                                     name="country"
                                                     value={billingInfo.country}
-                                                    onChange={(e) => setBillingInfo({ ...billingInfo, country: e.target.value })}
+                                                    onChange={(e) => {
+                                                        setBillingInfo({ ...billingInfo, country: e.target.value, region: '' });
+
+                                                        // Load states
+                                                        if (e.target.value) {
+                                                            // Find the country code for the selected country name
+                                                            const selectedCountry = countries.find(c => c.name === e.target.value);
+                                                            if (selectedCountry) {
+                                                                getRegionsForCountry(selectedCountry.code)
+                                                                    .then((states) => {
+                                                                        setStates(states.map(s => ({name: s.name, code: s.stateCode})))
+                                                                    });
+                                                            }
+                                                        } else {
+                                                            setStates([]);
+                                                        }
+                                                    }}
                                                     required
                                                 >
+                                                    <option value=''>Select Country</option>
                                                     {countries.map((country) => (
-                                                        <option key={country.code} value={country.code}>
+                                                        <option key={country.code} value={country.name}>
                                                             {country.name}
                                                         </option>
                                                     ))}
@@ -645,24 +694,29 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                             </div>
                                         </div>
 
-                                        <div className="form-row">
-                                            <div className="input-container">
-                                                <label htmlFor="region">{getRegionLabel(billingInfo.country)}</label>
-                                                <input
-                                                    type="text"
-                                                    id="region"
-                                                    name="region"
-                                                    value={billingInfo.region}
-                                                    onChange={(e) => setBillingInfo({ ...billingInfo, region: e.target.value })}
-                                                    placeholder={getRegionLabel(billingInfo.country)}
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
+                                        {states.length > 0 &&
+                                            <div className="form-row">
+                                                <div className="input-container">
+                                                    <label htmlFor="region">{getRegionLabel(billingInfo.country)}</label>
+                                                    <select
+                                                        id="region"
+                                                        required
+                                                        name="region"
+                                                        value={billingInfo.region}
+                                                        onChange={(e) => setBillingInfo({ ...billingInfo, region: e.target.value })}
+                                                    >
+                                                        <option value="">Select {getRegionLabel(billingInfo.country)}</option>
+                                                        {states.map(state =>
+                                                            <option key={state.name} value={state.name}>{state.name}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>}
 
                                         <div className="form-row">
                                             <div className="input-container">
-                                                <label htmlFor="postalCode">{getPostalCodeLabel(billingInfo.country)}</label>
+                                                <label htmlFor="postalCode">
+                                                    {getPostalCodeLabel(billingInfo.country)}
+                                                </label>
                                                 <input
                                                     type="text"
                                                     id="postalCode"
@@ -670,8 +724,11 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                     value={billingInfo.postalCode}
                                                     onChange={(e) => setBillingInfo({ ...billingInfo, postalCode: e.target.value })}
                                                     placeholder={getPostalCodeLabel(billingInfo.country)}
-                                                    required
+                                                    required={isPostalCodeRequired(countries.find(c => c.name === billingInfo.country)?.code || '')}
                                                 />
+                                                {billingInfo.country && !isPostalCodeRequired(countries.find(c => c.name === billingInfo.country)?.code || '') && (
+                                                    <small className="help-text">Postal code is optional for this country</small>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -711,21 +768,6 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                         ) : (
                                             /* Show payment form if no payment method exists */
                                             <>
-                                                <div className="form-row">
-                                                    <div className="input-container">
-                                                        <label htmlFor="cardholderName">Cardholder Name</label>
-                                                        <input
-                                                            type="text"
-                                                            id="cardholderName"
-                                                            name="cardholderName"
-                                                            value={paymentInfo.cardholderName}
-                                                            onChange={(e) => setPaymentInfo({ ...paymentInfo, cardholderName: e.target.value })}
-                                                            placeholder="Name as it appears on card"
-                                                            required
-                                                        />
-                                                    </div>
-                                                </div>
-
                                                 <div className="form-row">
                                                     <div className="input-container">
                                                         <label htmlFor="cardNumber">Card Number</label>

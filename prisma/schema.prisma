@@ -362,3 +362,38 @@ model billingHolds {
   subscriptionPlanEnrollments subscriptionPlanEnrollments @relation(fields: [enrollmentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "billingHolds_subscriptionPlanEnrollments_id_fk")
   users                       users                       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "billingHolds_users_id_fk")
 }
+
+model countries {
+  id             Int      @id
+  name           String   @db.VarChar(255)
+  iso3           String?  @db.VarChar(3)
+  iso2           String?  @unique(map: "countries_iso2_uindex") @db.VarChar(2)
+  numericCode    String?  @db.VarChar(3)
+  phoneCode      String?  @db.VarChar(10)
+  capital        String?  @db.VarChar(255)
+  currency       String?  @db.VarChar(3)
+  currencyName   String?  @db.VarChar(255)
+  currencySymbol String?  @db.VarChar(10)
+  tld            String?  @db.VarChar(10)
+  native         String?  @db.VarChar(255)
+  region         String?  @db.VarChar(255)
+  subregion      String?  @db.VarChar(255)
+  latitude       Decimal? @db.Decimal(10, 8)
+  longitude      Decimal? @db.Decimal(11, 8)
+  emoji          String?  @db.VarChar(10)
+  hasStates      Boolean?
+  states         states[]
+}
+
+model states {
+  id        Int        @id
+  countryId Int?
+  name      String     @db.VarChar(255)
+  stateCode String?    @db.VarChar(10)
+  hasCities Boolean?
+  latitude  Decimal?   @db.Decimal(10, 8)
+  longitude Decimal?   @db.Decimal(11, 8)
+  countries countries? @relation(fields: [countryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([countryId], map: "states_countryid_index")
+}

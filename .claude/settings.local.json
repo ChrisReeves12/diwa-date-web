@@ -9,7 +9,8 @@
       "Bash(npm run dev:*)",
       "Bash(cp:*)",
       "Bash(npm start)",
-      "Bash(npx prisma:*)"
+      "Bash(npx prisma:*)",
+      "WebFetch(domain:www.ups.com)"
     ]
   },
   "enableAllProjectMcpServers": false

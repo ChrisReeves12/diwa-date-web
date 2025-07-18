@@ -5,9 +5,40 @@ import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import pgDbPool from "@/lib/postgres";
 import { revalidatePath } from "next/cache";
-import { createCustomerProfileWithPayment, createBasicCustomerProfile, deleteCustomerProfile, getCustomerPaymentProfile, chargeCustomerByBillingEntry, generateReceiptHtml, generatePaymentReviewEmail } from "@/server-side-helpers/billing.helpers";
+import {
+    createCustomerProfileWithPayment,
+    deleteCustomerProfile,
+    getCustomerPaymentProfile,
+    chargeCustomerByBillingEntry,
+    generateReceiptHtml,
+    generatePaymentReviewEmail, fetchRegionsForCountry
+} from "@/server-side-helpers/billing.helpers";
 import { sendEmail } from "@/server-side-helpers/mail.helper";
 import moment from "moment";
+import { isPostalCodeRequired as isPostalCodeRequiredUtil } from "@/utils/postal-code-utils";
+
+/**
+ * Check if a country requires a postal code (async version for server actions)
+ * @param countryNameOrCode - The country name or ISO 2-letter country code
+ * @returns true if postal code is required, false otherwise
+ */
+async function isPostalCodeRequired(countryNameOrCode: string): Promise<boolean> {
+    // If it's a 2-letter code, use it directly
+    if (countryNameOrCode.length === 2) {
+        return isPostalCodeRequiredUtil(countryNameOrCode);
+    }
+    
+    // Otherwise, try to find the country code from the name
+    const { countries } = await import('@/config/countries');
+    const country = countries.find(c => c.name === countryNameOrCode);
+    
+    if (country) {
+        return isPostalCodeRequiredUtil(country.code);
+    }
+    
+    // Default to false if country not found
+    return false;
+}
 
 export interface BillingInformation {
     name: string;
@@ -24,7 +55,6 @@ export interface PaymentInformation {
     expiryMonth: string;
     expiryYear: string;
     cvv: string;
-    cardholderName: string;
 }
 
 /**
@@ -60,7 +90,7 @@ export async function updateBillingInformation(billingInfo: BillingInformation) 
         if (!billingInfo.region?.trim()) {
             return { success: false, error: "State/Region is required" };
         }
-        if (!billingInfo.postalCode?.trim()) {
+        if (await isPostalCodeRequired(billingInfo.country) && !billingInfo.postalCode?.trim()) {
             return { success: false, error: "Postal code is required" };
         }
         if (!billingInfo.country?.trim()) {
@@ -111,6 +141,14 @@ export async function updateBillingInformation(billingInfo: BillingInformation) 
 }
 
 /**
+ * Get list of states for the given country
+ * @param country
+ */
+export async function getRegionsForCountry(country: string) {
+    return fetchRegionsForCountry(country);
+}
+
+/**
  * Creates or updates billing information and payment method with Authorize.net integration
  * @param combinedInfo The combined billing and payment information
  * @returns Success status and any error messages
@@ -141,7 +179,7 @@ export async function updateBillingAndPaymentWithAuthorizeNet(combinedInfo: Comb
             return { success: false, error: "State/Region is required" };
         }
 
-        if (!billingInfo.postalCode?.trim()) {
+        if (await isPostalCodeRequired(billingInfo.country) && !billingInfo.postalCode?.trim()) {
             return { success: false, error: "Postal code is required" };
         }
 
@@ -164,10 +202,6 @@ export async function updateBillingAndPaymentWithAuthorizeNet(combinedInfo: Comb
 
         if (!paymentInfo.cvv?.trim()) {
             return { success: false, error: "CVV is required" };
-        }
-
-        if (!paymentInfo.cardholderName?.trim()) {
-            return { success: false, error: "Cardholder name is required" };
         }
 
         // Validate card number format
@@ -439,7 +473,7 @@ export async function isBillingInformationComplete() {
             billingInfo.address1?.trim() &&
             billingInfo.city?.trim() &&
             billingInfo.region?.trim() &&
-            billingInfo.postalCode?.trim() &&
+            (await isPostalCodeRequired(billingInfo.country) ? billingInfo.postalCode?.trim() : true) &&
             billingInfo.country?.trim() &&
             billingInfo.paymentMethod?.trim() &&
             billingInfo.cclast4?.trim()

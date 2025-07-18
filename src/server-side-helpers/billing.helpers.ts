@@ -1,11 +1,11 @@
 /**
  * Billing helpers for Authorize.net payment processing
- * 
+ *
  * This module provides functions to interact with the Authorize.net API
  * for customer and payment management.
  */
 
-import { log, logError } from './logging.helpers';
+import { logError } from './logging.helpers';
 import { prisma } from '../lib/prisma';
 
 // Types for better type safety
@@ -226,7 +226,7 @@ function getAuthorizeNetCredentials(): AuthorizeNetCredentials {
 
 /**
  * Create a customer profile in Authorize.net
- * 
+ *
  * @param customerData - Customer profile data
  * @returns Promise with the API response
  */
@@ -315,31 +315,8 @@ export async function createCustomerProfile(
 }
 
 /**
- * Helper function to create a basic customer profile with minimal data
- * 
- * @param email - Customer email address
- * @param merchantCustomerId - Optional merchant-assigned customer ID
- * @param description - Optional description
- * @returns Promise with the API response
- */
-export async function createBasicCustomerProfile(
-    email: string,
-    merchantCustomerId?: string,
-    description?: string
-): Promise<AuthorizeNetResponse> {
-    return createCustomerProfile({
-        profile: {
-            merchantCustomerId: merchantCustomerId || `customer_${Date.now()}`,
-            description: description || 'Customer profile',
-            email: email
-        },
-        validationMode: 'none'
-    });
-}
-
-/**
  * Helper function to create a customer profile with payment information
- * 
+ *
  * @param customerData - Customer profile data including payment info
  * @returns Promise with the API response
  */
@@ -381,78 +358,8 @@ export async function createCustomerProfileWithPayment(
 }
 
 /**
- * Create a customer profile with payment information and store the profile IDs in the database
- * 
- * @param customerData - Customer profile data including payment info
- * @param billingInformationEntryId - ID of the billing information entry to update
- * @returns Promise with the API response and updated billing entry
- */
-export async function createCustomerProfileWithPaymentAndStore(
-    customerData: {
-        email: string;
-        merchantCustomerId?: string;
-        description?: string;
-        creditCard?: {
-            cardNumber: string;
-            expirationDate: string;
-            cardCode?: string;
-        };
-        billingAddress?: BillingAddress;
-        validationMode?: 'none' | 'testMode' | 'liveMode';
-    },
-    billingInformationEntryId: number
-): Promise<{
-    authorizeNetResponse: AuthorizeNetResponse;
-    updatedBillingEntry: any;
-}> {
-    try {
-        // Create the customer profile
-        const authorizeNetResponse = await createCustomerProfileWithPayment(customerData);
-
-        if (authorizeNetResponse.messages.resultCode !== 'Ok') {
-            throw new Error(`Failed to create customer profile: ${authorizeNetResponse.messages.message[0]?.text || 'Unknown error'}`);
-        }
-
-        if (!authorizeNetResponse.customerProfileId) {
-            throw new Error('No customer profile ID returned from Authorize.net');
-        }
-
-        // Extract the payment profile ID from the response
-        let customerPaymentProfileId: string | undefined;
-        if (authorizeNetResponse.customerPaymentProfileIdList && authorizeNetResponse.customerPaymentProfileIdList.length > 0) {
-            customerPaymentProfileId = authorizeNetResponse.customerPaymentProfileIdList[0];
-        }
-
-        // Update the billing information entry with the profile IDs
-        const updatedBillingEntry = await prisma.billingInformationEntries.update({
-            where: {
-                id: billingInformationEntryId
-            },
-            data: {
-                customerProfileId: authorizeNetResponse.customerProfileId,
-                customerPaymentProfileId: customerPaymentProfileId,
-                updatedAt: new Date()
-            } as any
-        });
-
-        return {
-            authorizeNetResponse,
-            updatedBillingEntry
-        };
-
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-        logError(
-            new Error(`Error creating customer profile with payment and storing: ${errorMessage}`)
-        );
-        throw error;
-    }
-}
-
-/**
  * Delete a customer profile from Authorize.net
- * 
+ *
  * @param customerProfileId - The customer profile ID to delete
  * @returns Promise with the API response
  */
@@ -498,7 +405,7 @@ export async function deleteCustomerProfile(customerProfileId: string): Promise<
 
 /**
  * Charge a customer profile using stored payment information
- * 
+ *
  * @param requestData - Transaction request data with profile information
  * @returns Promise with the API response
  */
@@ -537,9 +444,7 @@ export async function chargeCustomerProfile(
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const responseData: CreateTransactionResponse = await response.json();
-
-        return responseData;
+        return await response.json();
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
@@ -552,7 +457,7 @@ export async function chargeCustomerProfile(
 
 /**
  * Create a payment transaction record in the database
- * 
+ *
  * @param transactionData - Payment transaction data
  * @returns Promise with the created transaction record
  */
@@ -568,7 +473,7 @@ export async function createPaymentTransaction(transactionData: {
     transactionResponse: any
 }): Promise<any> {
     try {
-        const paymentTransaction = await prisma.paymentTransactions.create({
+        return await prisma.paymentTransactions.create({
             data: {
                 userId: transactionData.userId,
                 amount: transactionData.amount,
@@ -582,8 +487,6 @@ export async function createPaymentTransaction(transactionData: {
                 updatedAt: new Date()
             }
         });
-
-        return paymentTransaction;
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
@@ -596,7 +499,7 @@ export async function createPaymentTransaction(transactionData: {
 
 /**
  * Get customer profile details from Authorize.net
- * 
+ *
  * @param customerProfileId - The customer profile ID
  * @returns Promise with the customer profile details
  */
@@ -627,9 +530,7 @@ export async function getCustomerProfile(customerProfileId: string): Promise<Get
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const responseData: GetCustomerProfileResponse = await response.json();
-
-        return responseData;
+        return await response.json();
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
@@ -642,7 +543,7 @@ export async function getCustomerProfile(customerProfileId: string): Promise<Get
 
 /**
  * Get a specific customer payment profile from Authorize.net
- * 
+ *
  * @param requestData - Request data for getting a payment profile
  * @returns Promise with the payment profile details
  */
@@ -691,54 +592,8 @@ export async function getCustomerPaymentProfile(
 }
 
 /**
- * Get a customer payment profile by customerPaymentProfileId from database lookup
- * 
- * @param customerPaymentProfileId - The customer payment profile ID
- * @param includeIssuerInfo - Whether to include issuer information in the response
- * @returns Promise with the payment profile details
- */
-export async function getCustomerPaymentProfileById(
-    customerPaymentProfileId: string,
-    includeIssuerInfo: boolean = false
-): Promise<GetCustomerPaymentProfileResponse> {
-    try {
-        // Find the billing entry with this payment profile ID
-        const billingEntry = await prisma.billingInformationEntries.findFirst({
-            where: {
-                customerPaymentProfileId: customerPaymentProfileId
-            }
-        });
-
-        if (!billingEntry) {
-            throw new Error(`No billing entry found with payment profile ID: ${customerPaymentProfileId}`);
-        }
-
-        const customerProfileId = (billingEntry as any).customerProfileId;
-
-        if (!customerProfileId) {
-            throw new Error(`No customer profile ID found for payment profile: ${customerPaymentProfileId}`);
-        }
-
-        // Get the payment profile from Authorize.net
-        return await getCustomerPaymentProfile({
-            customerProfileId,
-            customerPaymentProfileId,
-            includeIssuerInfo
-        });
-
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-        logError(
-            new Error(`Error getting customer payment profile by ID: ${errorMessage}`)
-        );
-        throw error;
-    }
-}
-
-/**
  * Charge a customer by billing information entry ID
- * 
+ *
  * @param billingInformationEntryId - ID of the billing information entry
  * @param amount - Amount to charge
  * @param description - Optional description for the transaction
@@ -887,7 +742,7 @@ export async function chargeCustomerByBillingEntry(
 
 /**
  * Generate HTML receipt for successful payment
- * 
+ *
  * @param params - Receipt parameters
  * @returns HTML receipt string
  */
@@ -999,7 +854,7 @@ export function generateReceiptHtml(params: {
 
 /**
  * Generate HTML email for payment under review notifications
- * 
+ *
  * @param params - Email parameters
  * @returns HTML email string
  */
@@ -1108,13 +963,12 @@ export function generatePaymentReviewEmail(params: {
                 </div>
             </div>
         </body>
-        </html>
-    `;
+        </html>`;
 }
 
 /**
  * Generate HTML email for payment failure notifications
- * 
+ *
  * @param params - Email parameters
  * @returns HTML email string
  */
@@ -1222,6 +1076,38 @@ export function generateBillingFailureEmail(params: {
                 </div>
             </div>
         </body>
-        </html>
-    `;
-} 
+        </html>`;
+}
+
+/**
+ * Fetch regions (states) for a given country using its ISO2 code
+ *
+ * @param country - The ISO2 country code (e.g., "US", "CA", "GB")
+ * @returns states
+ */
+export async function fetchRegionsForCountry(country: string) {
+    try {
+        const countryRecord = await prisma.countries.findUnique({
+            where: {
+                iso2: country
+            }
+        });
+
+        if (!countryRecord) {
+            return [];
+        }
+
+        if (!countryRecord.hasStates) {
+            return [];
+        }
+
+        return await prisma.states.findMany({
+            where: {
+                countryId: countryRecord.id
+            }
+        });
+    } catch (error) {
+        logError(new Error(`Error fetching regions for country ${country}: ${error}`));
+        return [];
+    }
+}
