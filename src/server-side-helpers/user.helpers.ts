@@ -441,6 +441,41 @@ export function checkSubscriptionActive(user: { subscriptionPlanEnrollments?: Su
 }
 
 /**
+ * Get the active subscription enrollment for a user by their ID
+ * @param userId The user's ID
+ * @returns The active subscription enrollment or null if none found
+ */
+export async function getUserActiveSubscription(userId: number): Promise<SubscriptionPlanEnrollment | null> {
+    const subscription = await prisma.subscriptionPlanEnrollments.findFirst({
+        where: {
+            userId: userId,
+            startedAt: {
+                lte: new Date()
+            },
+            OR: [
+                { endsAt: null }, // Ongoing subscription
+                { endsAt: { gte: new Date() } } // Not yet expired
+            ]
+        },
+        include: {
+            subscriptionPlans: true
+        }
+    });
+
+    return subscription as SubscriptionPlanEnrollment | null;
+}
+
+/**
+ * Check if a user has an active premium subscription
+ * @param userId The user's ID
+ * @returns True if the user has an active premium subscription, false otherwise
+ */
+export async function isUserPremium(userId: number): Promise<boolean> {
+    const subscription = await getUserActiveSubscription(userId);
+    return !!subscription;
+}
+
+/**
  * Check if a user with the given email already exists
  * @param email The email to check
  * @returns True if a user with this email exists, false otherwise
@@ -937,6 +972,12 @@ export async function getUserLikes(
     page: number = 1,
     pageSize: number = 60
 ): Promise<{ hasMore: boolean; likes: UserPreview[] }> {
+
+    // Check if user has premium subscription
+    const isPremium = await isUserPremium(userId);
+    if (!isPremium) {
+        throw new Error('Premium membership required to see who likes you');
+    }
 
     const offset = (page - 1) * pageSize;
 

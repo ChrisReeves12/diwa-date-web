@@ -12,7 +12,9 @@
       "Bash(npx prisma:*)",
       "WebFetch(domain:www.ups.com)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "mcp__diwa-date-mcp__describe-db-table",
+      "mcp__diwa-date-mcp__execute-query"
     ]
   },
   "enableAllProjectMcpServers": false

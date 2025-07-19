@@ -1,6 +1,6 @@
 'use server';
 
-import { getUserLikes } from "@/server-side-helpers/user.helpers";
+import { getUserLikes, isUserPremium } from "@/server-side-helpers/user.helpers";
 import { getCurrentUser } from "@/server-side-helpers/user.helpers";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
@@ -25,6 +25,12 @@ export async function getLikes({
 
     if (!currentUser) {
         notFound();
+    }
+
+    // Check if user has premium subscription
+    const isPremium = await isUserPremium(Number(currentUser.id));
+    if (!isPremium) {
+        throw new Error('Premium membership required to see who likes you');
     }
 
     // Fetch likes with filtering and sorting
