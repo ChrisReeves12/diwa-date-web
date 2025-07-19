@@ -149,8 +149,10 @@
                                 font-weight: bold;
                                 font-size: 18px;
                                 line-height: 19px;
-                                padding-bottom: 6px;
-                                padding-top: 20px;
+                                padding-bottom: 0;
+                                padding-top: 0;
+                                margin-top: 0;
+                                margin-bottom: 5px;
                                 text-align: center;
 
                                 @include globals.media-min('screens.sm') {
@@ -160,6 +162,7 @@
                             }
 
                             p {
+                                margin: 0;
                                 padding: 0;
                                 font-size: 16px;
                                 text-shadow: none;
@@ -248,11 +251,11 @@
         min-height: 400px;
 
         @include globals.media-min('screens.md') {
-            padding-top: 50px;
+            padding-top: 30px;
         }
 
         @include globals.media-min('screens.xl') {
-            padding-top: 90px;
+            padding-top: 45px;
         }
 
         .container {

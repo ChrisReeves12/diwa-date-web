@@ -3,7 +3,7 @@
 .registration-site-container {
   min-height: 98%;
   padding-bottom: 74px;
-  background-color: #dcdcdc;
+  background: linear-gradient(164deg, #caebff 0%, #0995eb 100%);
 
   .radio-button-section {
     .choice-container {
@@ -58,7 +58,7 @@
 
       @include globals.media-min('screens.sm') {
         border-radius: 20px;
-        box-shadow: -1px 1px 5px rgba(0, 0, 0, 0.3);
+        box-shadow: -1px 1px 7px rgba(0, 0, 0, 0.3);
       }
 
       .form-row {

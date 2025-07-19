@@ -469,6 +469,7 @@ export async function createPaymentTransaction(transactionData: {
     accountNumber?: string;
     description?: string;
     status?: string;
+    paymentMethod?: string;
     errors?: Array<{ errorCode: string, errorText: string }>;
     transactionResponse: any
 }): Promise<any> {
@@ -481,6 +482,7 @@ export async function createPaymentTransaction(transactionData: {
                 accountNumber: transactionData.accountNumber,
                 description: transactionData.description,
                 status: transactionData.status || 'approved',
+                paymentMethod: transactionData.paymentMethod,
                 errors: transactionData.errors,
                 apiResponse: transactionData.transactionResponse,
                 createdAt: new Date(),
@@ -712,6 +714,13 @@ export async function chargeCustomerByBillingEntry(
                 status = 'unknown';
         }
 
+        // Get the payment method (card type)
+        let paymentMethod = billingEntry.paymentMethod;
+        
+        if (!paymentMethod || paymentMethod === '' || paymentMethod === 'Unknown') {
+            paymentMethod = authorizeNetResponse.transactionResponse.accountType || billingEntry.paymentMethod || 'Credit/Debit Card';
+        }
+
         // Always create payment transaction record, regardless of success or failure
         const paymentTransaction = await createPaymentTransaction({
             userId: billingEntry.userId,
@@ -721,6 +730,7 @@ export async function chargeCustomerByBillingEntry(
             accountNumber: authorizeNetResponse.transactionResponse.accountNumber,
             description,
             status: status,
+            paymentMethod: paymentMethod,
             errors: authorizeNetResponse.transactionResponse.errors,
             transactionResponse: authorizeNetResponse.transactionResponse
         });
@@ -1110,4 +1120,24 @@ export async function fetchRegionsForCountry(country: string) {
         logError(new Error(`Error fetching regions for country ${country}: ${error}`));
         return [];
     }
+}
+
+/**
+ * Find payment transaction by ID
+ * @param transactionId
+ * @param userId 
+ * @returns 
+ */
+export async function getPaymentTransaction(transactionId: string, userId: number) {
+   try {
+        return await prisma.paymentTransactions.findFirst({
+            where: {
+                transId: transactionId,
+                userId
+            }
+        });
+   } catch (error) {
+        logError(new Error(`Error getting payment transaction ${transactionId}: ${error}`));
+        return null;
+   }
 }

@@ -64,7 +64,7 @@ export default function GuestHome() {
                             />
                         </div>
                         <h4>Safe and Secure Online Dating Experience</h4>
-                        <p>We use AI and manual processes to ensure that profiles are real, with a zero-tolerance policy to
+                        <p>We use advanced AI and manual processes to ensure that profiles are real, with a zero-tolerance policy to
                             suspicious behavior.</p>
                     </div>
                     <div className="site-feature feature-two">
@@ -77,8 +77,7 @@ export default function GuestHome() {
                             />
                         </div>
                         <h4>Connect With Your Matches</h4>
-                        <p>Form meaningful connection. Meet, connect, and message singles you match with through chat,
-                            direct message, and video.</p>
+                        <p>Form meaningful connection. Meet, connect, and message singles you match with through chat and direct messages.</p>
                     </div>
                     <div className="site-feature feature-third">
                         <div className="site-feature-img-container">
@@ -90,7 +89,7 @@ export default function GuestHome() {
                             />
                         </div>
                         <h4>Simple, One Price Membership</h4>
-                        <p>We have a one price, simple membership plan. One affordable, monthly or weekly payment unlocks
+                        <p>We have a one price, simple membership plan. One affordable monthly payment unlocks
                             all membership features.</p>
                     </div>
                 </div>

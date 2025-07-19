@@ -1,0 +1,184 @@
+@use '@/styles/globals' as globals;
+
+.receipt-container {
+    max-width: 600px;
+    margin: 2rem auto;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+    padding: 2.5rem;
+    font-family: globals.$default-font;
+    color: #1f2937;
+
+    @include globals.media-min('screens.sm') {
+        padding: 3rem;
+    }
+
+    h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: globals.$slate;
+        margin: 0 0 1.5rem 0;
+        text-align: center;
+        letter-spacing: -0.025em;
+    }
+
+    hr {
+        border: none;
+        border-top: 2px solid #f3f4f6;
+        margin: 1.5rem 0;
+    }
+
+    .receipt-info {
+        margin-bottom: 2rem;
+
+        h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: globals.$slate;
+            margin: 0 0 1rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f9fafb;
+
+            &:last-child {
+                border-bottom: none;
+            }
+
+            .info-label {
+                font-size: 0.875rem;
+                color: #6b7280;
+                font-weight: 500;
+            }
+
+            .info-value {
+                font-size: 0.875rem;
+                color: #1f2937;
+                font-weight: 600;
+                text-align: right;
+            }
+        }
+    }
+
+    .transaction-details {
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+
+        h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: globals.$slate;
+            margin: 0 0 1.5rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px dashed #e5e7eb;
+
+            .item-details {
+                flex: 1;
+
+                .item-name {
+                    font-size: 1rem;
+                    font-weight: 600;
+                    color: #1f2937;
+                    margin-bottom: 0.25rem;
+                }
+            }
+
+            .item-price {
+                text-align: right;
+                margin-left: 2rem;
+
+                .label {
+                    font-size: 0.75rem;
+                    color: #6b7280;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    margin-bottom: 0.25rem;
+                }
+
+                .amount {
+                    font-size: 1.25rem;
+                    font-weight: 700;
+                    color: globals.$primary-blue;
+                }
+            }
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 0;
+            border-top: 2px solid globals.$primary-blue;
+            margin-top: 1.5rem;
+
+            .total-label {
+                font-size: 1.125rem;
+                font-weight: 600;
+                color: globals.$slate;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            .total-amount {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: globals.$primary-blue;
+            }
+        }
+
+        .payment-method {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+
+            h4 {
+                font-size: 0.875rem;
+                font-weight: 600;
+                color: #6b7280;
+                margin: 0 0 0.5rem 0;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            p {
+                font-size: 0.875rem;
+                color: #1f2937;
+                margin: 0;
+            }
+        }
+    }
+}
+
+// Print styles
+@media print {
+    .receipt-container {
+        box-shadow: none;
+        max-width: 100%;
+        margin: 0;
+        padding: 1rem;
+    }
+
+    .transaction-details {
+        background: #f9fafb !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

@@ -66,42 +66,48 @@ export default function ConversationsView({ currentUser, conversations: initialC
                     </div>
                 )}
                 <div className={`conversations-list ${isRefreshing ? 'refreshing' : ''}`}>
-                    {conversations.map((match) => {
-                        const markUnread = match.isUnread || !match.messageContent;
-                        return (
-                            <Link
-                                href={`/messages/${match.matchId}`}
-                                key={match.matchId}
-                                className="conversation-container">
-                                <div className="profile-container">
-                                    {markUnread &&
-                                        <div className="unread-message-indicator" />}
-                                    {match.isOnline && <div className="online-lamp"></div>}
-                                    <UserPhotoDisplay
-                                        alt={match.displayName ?? ''}
-                                        croppedImageData={match.mainPhotoCroppedImageData}
-                                        imageUrl={match.publicMainPhoto}
-                                        gender={match.gender}
-                                        width={50}
-                                        height={50}
-                                    />
-                                </div>
-                                <div className={"user-info-section " + (markUnread ? 'unread' : '')}>
-                                    <div className="user-name">{match.displayName}</div>
-                                    <div className="">
-                                        <div className={'last-message'}>
-                                            {match.messageContent ?
-                                                _.truncate(match.messageContent, { length: 85 }) :
-                                                `Start the chat with ${match.displayName}`}
-                                        </div>
-                                        <div className="last-sent">
-                                            Matched {match.matchCreatedAtHumanized}
+                    {conversations.length === 0 ? (
+                        <div className="no-conversations">
+                            <p>You currently have no messages.</p>
+                        </div>
+                    ) : (
+                        conversations.map((match) => {
+                            const markUnread = match.isUnread || !match.messageContent;
+                            return (
+                                <Link
+                                    href={`/messages/${match.matchId}`}
+                                    key={match.matchId}
+                                    className="conversation-container">
+                                    <div className="profile-container">
+                                        {markUnread &&
+                                            <div className="unread-message-indicator" />}
+                                        {match.isOnline && <div className="online-lamp"></div>}
+                                        <UserPhotoDisplay
+                                            alt={match.displayName ?? ''}
+                                            croppedImageData={match.mainPhotoCroppedImageData}
+                                            imageUrl={match.publicMainPhoto}
+                                            gender={match.gender}
+                                            width={50}
+                                            height={50}
+                                        />
+                                    </div>
+                                    <div className={"user-info-section " + (markUnread ? 'unread' : '')}>
+                                        <div className="user-name">{match.displayName}</div>
+                                        <div className="">
+                                            <div className={'last-message'}>
+                                                {match.messageContent ?
+                                                    _.truncate(match.messageContent, { length: 85 }) :
+                                                    `Start the chat with ${match.displayName}`}
+                                            </div>
+                                            <div className="last-sent">
+                                                Matched {match.matchCreatedAtHumanized}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </Link>
-                        );
-                    })}
+                                </Link>
+                            );
+                        })
+                    )}
                 </div>
             </div>
         </DashboardWrapper>

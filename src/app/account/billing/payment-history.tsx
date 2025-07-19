@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getPaymentHistory } from './billing.actions';
 import { EyeIcon } from 'react-line-awesome';
+import Link from 'next/link';
 
 interface PaymentTransaction {
     transId: string;
@@ -104,7 +105,9 @@ export function PaymentHistory() {
                             </div>
                         </div>
                         <div className="payment-cell receipt-col">
-                            <span className="view-receipt"><EyeIcon size='lg'/> View</span>
+                            <Link target='_blank' href={`/account/billing/receipt/${transaction.transId}`} className="view-receipt">
+                                <EyeIcon size='lg'/> View
+                            </Link>
                         </div>
                         <div className="payment-cell total-col">
                             {formatAmount(transaction.amount)}

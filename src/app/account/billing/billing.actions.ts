@@ -616,8 +616,9 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
                     "price" = $5,
                     "chargeInterval" = $6,
                     "priceUnit" = $7,
-                    "updatedAt" = $8
-                WHERE id = $9
+                    "updatedAt" = $8,
+                    "lastEvalAt" = $9
+                WHERE id = $10
             `, [
                 subscriptionPlanId,
                 startDate,
@@ -627,6 +628,7 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
                 'monthly',
                 subscriptionPlan.listPriceUnit || 'USD',
                 new Date(),
+                new Date(),
                 enrollmentId
             ]);
         } else {
@@ -634,8 +636,8 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
             const { rows: insertedRows } = await pgDbPool.query(`
                 INSERT INTO "subscriptionPlanEnrollments" (
                     "userId", "subscriptionPlanId", "startedAt", "lastPaymentAt", "nextPaymentAt",
-                    "price", "chargeInterval", "priceUnit", "createdAt", "updatedAt"
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                    "price", "chargeInterval", "priceUnit", "createdAt", "updatedAt", "lastEvalAt"
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 RETURNING id
             `, [
                 currentUser.id,
@@ -646,6 +648,7 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
                 subscriptionPlan.listPrice || 0,
                 'monthly',
                 subscriptionPlan.listPriceUnit || 'USD',
+                new Date(),
                 new Date(),
                 new Date()
             ]);
