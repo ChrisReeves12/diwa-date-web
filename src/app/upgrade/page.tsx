@@ -50,19 +50,25 @@ export default async function UpgradePage({ searchParams }: { searchParams: any 
                     <div className="feature-grid">
 
                         <div className="feature-card">
-                            <div className="feature-icon">💬</div>
+                            <div className="feature-icon">
+                                <img alt="Messages" title="Messages" src="/images/upgrade-message-blue.svg"/>
+                            </div>
                             <h3>Unlimited Messages</h3>
                             <p>Send as many messages as you want to your matches without any limits or restrictions.</p>
                         </div>
 
                         <div className="feature-card">
-                            <div className="feature-icon">🔍</div>
+                            <div className="feature-icon">
+                                <img alt="Search" title="Search" src="/images/upgrade-search-blue.svg"/>
+                            </div>
                             <h3>Advanced Search Filters</h3>
                             <p>Find your perfect match with detailed filters for education, interests, lifestyle preferences, and more.</p>
                         </div>
 
                         <div className="feature-card">
-                            <div className="feature-icon">🎧</div>
+                            <div className="feature-icon">
+                                <img alt="Support" title="Support" src="/images/upgrade-support-blue.svg"/>
+                            </div>
                             <h3>Priority Support</h3>
                             <p>Get faster response times and priority assistance from our dedicated support team.</p>
                         </div>
