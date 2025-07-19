@@ -496,11 +496,6 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                         <div className="subscription-plans">
                                             <div className="subscription-info">
                                                 <p>Upgrade to premium to unlock additional features and connect with more people.</p>
-                                                {!isBillingComplete && (
-                                                    <div className="warning-message">
-                                                        <p><strong>⚠️ Complete your billing information and payment method below before enrolling in a premium plan.</strong></p>
-                                                    </div>
-                                                )}
                                             </div>
 
                                             <div className="plan-options">
@@ -537,7 +532,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                         {isLoadingSubscription ? 'Processing...' : 'Enroll in Premium'}
                                                     </button>
                                                     {!isBillingComplete && (
-                                                        <p className="help-text">Please complete your billing information below first</p>
+                                                        <p className="help-text">Please add your payment method below.</p>
                                                     )}
                                                 </div>
                                             )}
