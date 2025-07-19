@@ -840,3 +840,37 @@ export async function getCurrentSubscriptionDetails() {
         return null;
     }
 }
+
+/**
+ * Gets the current user's payment history from the paymentTransactions table
+ * @returns Array of payment transactions ordered by date (newest first)
+ */
+export async function getPaymentHistory() {
+    const currentUser = await getCurrentUser(await cookies());
+    if (!currentUser) {
+        return [];
+    }
+
+    try {
+        const { rows } = await pgDbPool.query(`
+            SELECT 
+                id,
+                "transId",
+                amount,
+                description,
+                "accountNumber",
+                "createdAt",
+                "paymentMethod",
+                status
+            FROM "paymentTransactions"
+            WHERE "userId" = $1 
+            AND "createdAt" >= NOW() - INTERVAL '1 year'
+            ORDER BY "createdAt" DESC
+        `, [currentUser.id]);
+
+        return rows;
+    } catch (error) {
+        console.error('Get payment history error:', error);
+        return [];
+    }
+}

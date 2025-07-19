@@ -341,6 +341,7 @@ model paymentTransactions {
   description   String?   @db.VarChar(200)
   errors        Json?
   apiResponse   Json?
+  paymentMethod String?   @db.VarChar(30)
   users         users?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "paymenttransactions_users_id_fk")
 
   @@index([userId], map: "paymenttransactions_userid_index")

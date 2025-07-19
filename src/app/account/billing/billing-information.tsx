@@ -21,6 +21,7 @@ import {
     type PaymentInformation,
     getRegionsForCountry
 } from "@/app/account/billing/billing.actions";
+import { PaymentHistory } from "@/app/account/billing/payment-history";
 import { isPostalCodeRequired } from "@/utils/postal-code-utils";
 import { countries } from "@/config/countries";
 import React, { useState, useEffect } from "react";
@@ -865,6 +866,9 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                     </div>
                                 )}
                             </form>
+
+                            {/* Payment History Section */}
+                            <PaymentHistory />
                         </div>
                     </div>
                 </div>
