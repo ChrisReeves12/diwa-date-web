@@ -9,6 +9,7 @@ import _ from "lodash";
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useWebSocket } from "@/hooks/use-websocket";
+import { InfoCircleIcon } from "react-line-awesome";
 
 export default function ConversationsView({ currentUser, conversations: initialConversations }: {
     currentUser: User, conversations: ConversationMatch[]
@@ -68,7 +69,7 @@ export default function ConversationsView({ currentUser, conversations: initialC
                 <div className={`conversations-list ${isRefreshing ? 'refreshing' : ''}`}>
                     {conversations.length === 0 ? (
                         <div className="no-conversations">
-                            <p>You currently have no messages.</p>
+                            <p><InfoCircleIcon /> You currently have no messages.</p>
                         </div>
                     ) : (
                         conversations.map((match) => {

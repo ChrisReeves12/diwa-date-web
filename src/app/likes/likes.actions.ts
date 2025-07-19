@@ -27,12 +27,6 @@ export async function getLikes({
         notFound();
     }
 
-    // Check if user has premium subscription
-    const isPremium = await isUserPremium(Number(currentUser.id));
-    if (!isPremium) {
-        throw new Error('Premium membership required to see who likes you');
-    }
-
     // Fetch likes with filtering and sorting
     return await getUserLikes(
         Number(currentUser.id),

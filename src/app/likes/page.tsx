@@ -1,6 +1,6 @@
 import LikesView from "@/app/likes/likes-view";
 import { redirect } from "next/navigation";
-import { getCurrentUser, getUserLikes, isUserPremium } from "@/server-side-helpers/user.helpers";
+import { getCurrentUser, getUserLikes } from "@/server-side-helpers/user.helpers";
 import { cookies } from "next/headers";
 import './likes.scss';
 import { Metadata } from "next";
@@ -19,11 +19,6 @@ export default async function LikesPage({ searchParams }: { searchParams: any })
         redirect('/');
     }
 
-    // Check if user has premium subscription
-    const isPremium = await isUserPremium(Number(currentUser.id));
-    if (!isPremium) {
-        redirect('/upgrade?feature=likes');
-    }
 
     const lSearchParams = await searchParams;
 

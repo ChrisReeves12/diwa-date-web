@@ -42,21 +42,12 @@ export default async function UpgradePage({ searchParams }: { searchParams: any 
                 <div className="upgrade-header">
                     <h1>Unlock Premium Features</h1>
                     <p className="upgrade-subtitle">
-                        {feature === 'likes' 
-                            ? "You tried to see who likes you - that's a premium feature!"
-                            : "Take your dating experience to the next level"
-                        }
+                        Take your dating experience to the next level
                     </p>
                 </div>
 
                 <div className="premium-features">
                     <div className="feature-grid">
-                        <div className={`feature-card ${feature === 'likes' ? 'featured' : ''}`}>
-                            <div className="feature-icon">💖</div>
-                            <h3>See Who Likes You</h3>
-                            <p>Discover everyone who has already liked your profile and start meaningful conversations instantly.</p>
-                            {feature === 'likes' && <div className="feature-badge">You tried to access this!</div>}
-                        </div>
 
                         <div className="feature-card">
                             <div className="feature-icon">💬</div>
@@ -89,7 +80,6 @@ export default async function UpgradePage({ searchParams }: { searchParams: any 
                             </div>
                         </div>
                         <ul className="features-list">
-                            <li><CheckCircleIcon/> See who likes you</li>
                             <li><CheckCircleIcon/> Unlimited messages</li>
                             <li><CheckCircleIcon/> Advanced search filters</li>
                             <li><CheckCircleIcon/> Priority support</li>
@@ -125,15 +115,15 @@ export default async function UpgradePage({ searchParams }: { searchParams: any 
                             <div className="free-column"><CheckIcon/></div>
                             <div className="premium-column"><CheckIcon/></div>
                         </div>
-                        <div className="comparison-row highlight">
+                        <div className="comparison-row">
                             <div className="feature-name">See who likes you</div>
-                            <div className="free-column"><TimesIcon/></div>
+                            <div className="free-column"><CheckIcon/></div>
                             <div className="premium-column"><CheckIcon/></div>
                         </div>
-                        <div className="comparison-row">
-                            <div className="feature-name">Messages per day</div>
-                            <div className="free-column">5</div>
-                            <div className="premium-column">Unlimited</div>
+                        <div className="comparison-row highlight">
+                            <div className="feature-name">Send messages</div>
+                            <div className="free-column"><TimesIcon/></div>
+                            <div className="premium-column"><CheckIcon/></div>
                         </div>
                         <div className="comparison-row">
                             <div className="feature-name">Advanced filters</div>

@@ -972,16 +972,9 @@ export async function getUserLikes(
     page: number = 1,
     pageSize: number = 60
 ): Promise<{ hasMore: boolean; likes: UserPreview[] }> {
-
-    // Check if user has premium subscription
-    const isPremium = await isUserPremium(userId);
-    if (!isPremium) {
-        throw new Error('Premium membership required to see who likes you');
-    }
-
     const offset = (page - 1) * pageSize;
-
     let orderByClause: string;
+
     switch (sortBy) {
         case LikesSortBy.ReceivedAt:
             orderByClause = 'UM."createdAt" DESC, U."lastActiveAt" DESC';

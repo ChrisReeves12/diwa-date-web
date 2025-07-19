@@ -75,7 +75,7 @@ function LikesListing({ likesPromise }: LikesViewProps) {
     return (
         <div className="likes-view-container">
             {isLoading && <CenterScreenLoader />}
-            <div className="likes-filters-section">
+            {likes.length > 0 && <div className="likes-filters-section">
                 <div className="filter-section">
                     <div className="age-order-by-container">
                         <div className="filter">
@@ -105,10 +105,10 @@ function LikesListing({ likesPromise }: LikesViewProps) {
                         </button>
                     )}
                 </div>
-            </div>
+            </div>}
             <div className="user-likes-listing-container">
                 {likes.length === 0 &&
-                    <div className="no-likes-notice"><InfoCircleIcon /> You have no likes at this time.</div>}
+                    <div className="no-likes-notice"><InfoCircleIcon /> You currently have no received likes.</div>}
 
                 {likes.map((user: UserPreview) =>
                     <UserProfilePreview isInactive={isLoading} onCallToRefresh={() => reloadLikes()} key={user.id} userPreview={user} type={'like'} />)}
