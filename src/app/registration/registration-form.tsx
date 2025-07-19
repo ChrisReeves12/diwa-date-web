@@ -7,6 +7,7 @@ import SeekingMatchForm from '@/common/seeking-match-form/seeking-match-form';
 import { registrationTitle, registrationSubtitle, registrationPasswordHint } from '@/content/registration-content';
 import { Locality } from "@/types/locality.interface";
 import LocationSearch from "@/common/location-search/location-search";
+import MuiDatePicker from '@/common/mui-date-picker/mui-date-picker';
 import { registerAction } from './registration-form-actions';
 
 export default function RegistrationForm() {
@@ -280,21 +281,14 @@ export default function RegistrationForm() {
               </div>
 
               <div className="form-row">
-                <div className={`input-container ${errors.dateOfBirth && formSubmitted ? 'error' : ''}`}>
-                  <label htmlFor="dateOfBirth">Date of Birth</label>
-                  <input
-                    type="date"
-                    id="dateOfBirth"
-                    name="dateOfBirth"
-                    value={dateOfBirth}
-                    onChange={(e) => setDateOfBirth(e.target.value)}
-                    max={getMaxDate()}
-                    className={errors.dateOfBirth && formSubmitted ? 'error' : ''}
-                  />
-                  {errors.dateOfBirth && formSubmitted && (
-                    <div className="error-message">{errors.dateOfBirth}</div>
-                  )}
-                </div>
+                <MuiDatePicker
+                  value={dateOfBirth}
+                  onChange={setDateOfBirth}
+                  label="Date of Birth"
+                  maxDate={new Date(getMaxDate())}
+                  error={errors.dateOfBirth && formSubmitted ? errors.dateOfBirth : undefined}
+                  required
+                />
               </div>
               <div className="form-row">
                 <div className={`terms-of-service-container ${errors.terms && formSubmitted ? 'error' : ''}`}>

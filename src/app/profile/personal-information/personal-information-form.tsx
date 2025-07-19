@@ -8,6 +8,7 @@ import SeekingMatchForm from '@/common/seeking-match-form/seeking-match-form';
 import LocationSearch from '@/common/location-search/location-search';
 import MultiSelect from '@/common/multi-select/multi-select';
 import SingleSelect from '@/common/single-select/single-select';
+import MuiDatePicker from '@/common/mui-date-picker/mui-date-picker';
 import { updatePersonalInformation } from './personal-information-actions';
 import '../profile-settings.scss';
 
@@ -350,20 +351,15 @@ export function PersonalInformationForm({ currentUser }: PersonalInformationForm
                     </div>
 
                     <div className="form-row">
-                        <div className={`input-container ${errors.dateOfBirth ? 'error' : ''}`}>
-                            <label htmlFor="dateOfBirth">Date of Birth *</label>
-                            <input
-                                type="date"
-                                id="dateOfBirth"
-                                value={dateOfBirth}
-                                onChange={(e) => setDateOfBirth(e.target.value)}
-                                max={getMaxDate()}
-                                className={errors.dateOfBirth ? 'error' : ''}
-                            />
-                            {errors.dateOfBirth && (
-                                <div className="error-message">{errors.dateOfBirth}</div>
-                            )}
-                        </div>
+                        <MuiDatePicker
+                            value={dateOfBirth}
+                            onChange={setDateOfBirth}
+                            label="Date of Birth"
+                            maxDate={new Date(getMaxDate())}
+                            error={errors.dateOfBirth}
+                            required
+                            className="date-picker-narrow"
+                        />
                     </div>
 
                     <div className="form-row">
