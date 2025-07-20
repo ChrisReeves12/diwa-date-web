@@ -298,6 +298,7 @@ model users {
   passwordResetTokenExpiry                       DateTime?                     @db.Timestamp(6)
   profileCompletedAt                             DateTime?                     @db.Timestamp(6)
   currentOnboardingSteps                         Json?
+  isPremium                                      Boolean                       @default(false)
   billingHolds                                   billingHolds[]
   billingInformationEntries                      billingInformationEntries[]
   blockedUsers_blockedUsers_userIdTousers        blockedUsers[]                @relation("blockedUsers_userIdTousers")

@@ -655,6 +655,13 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
 
             enrollmentId = insertedRows[0].id;
         }
+        
+        await pgDbPool.query(`
+            UPDATE "users" 
+            SET "isPremium" = true, 
+                "updatedAt" = NOW() 
+            WHERE id = $1
+        `, [currentUser.id]);
 
         // If payment is under review, insert billing hold record with the enrollment ID
         if (isPaymentUnderReview) {

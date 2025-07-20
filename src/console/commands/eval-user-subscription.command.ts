@@ -51,6 +51,7 @@ export default class EvalUserSubscriptionsCommand extends ConsoleCommand {
                 console.log(`Evaluating subscription for user ${user.id} (${user.email})`);
                 if (user.subscriptionStatus === 'expired' || !user.billingEntryId) {
                     await pgDbPool.query(`DELETE FROM "subscriptionPlanEnrollments" WHERE "id" = $1`, [user.enrollmentId]);
+                    await pgDbPool.query(`UPDATE "users" SET "isPremium" = false, "updatedAt" = NOW() WHERE id = $1`, [user.id]);
                 } else {
                     let paymentSucceeded = false;
                     let paymentTxnResult;
@@ -130,6 +131,7 @@ export default class EvalUserSubscriptionsCommand extends ConsoleCommand {
                         } else {
                             // If the payment was declined for other reasons, remove subscription
                             await pgDbPool.query(`DELETE FROM "subscriptionPlanEnrollments" WHERE id = $1`, [user.enrollmentId]);
+                            await pgDbPool.query(`UPDATE "users" SET "isPremium" = false, "updatedAt" = NOW() WHERE id = $1`, [user.id]);
 
                             const billingFailureHtml = generateBillingFailureEmail({
                                 customerEmail: user.email,
