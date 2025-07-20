@@ -119,7 +119,7 @@ export async function blockUser(userId: number, blockedUserId: number) {
         return true; // Already blocked
     }
 
-    // Create new block record
+    // Create a new block record
     const blockTimestamp = new Date();
     await prisma.blockedUsers.create({
         data: {
@@ -1217,7 +1217,7 @@ export async function findUserByPasswordResetToken(resetToken: string) {
  * @param email
  */
 export async function generatePasswordResetToken(email: string) {
-    // Check if user exists
+    // Check if a user exists
     const user = await prisma.users.findUnique({
         where: { email: email.toLowerCase() }
     });

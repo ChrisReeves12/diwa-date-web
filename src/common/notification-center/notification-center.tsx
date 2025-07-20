@@ -254,17 +254,17 @@ export default function NotificationCenter() {
                     hasNewNotification={hasNewNotification}
                 />
                 <div className="profile-user">
-                    <button 
+                    <button
                         ref={profileButtonRef}
                         onClick={(e) => {
-                            // Use the ref instead of the event target to ensure stable anchor reference
+                            // Use the ref instead of the event target to ensure a stable anchor reference
                             if (profileButtonRef.current) {
-                                popovers.profileUser.handleClick({ 
-                                    ...e, 
-                                    currentTarget: profileButtonRef.current 
+                                popovers.profileUser.handleClick({
+                                    ...e,
+                                    currentTarget: profileButtonRef.current
                                 } as React.MouseEvent<HTMLElement>);
                             }
-                        }} 
+                        }}
                         className="profile-container">
                         <UserPhotoDisplay gender={currentUser.gender}
                             croppedImageData={currentUser.mainPhotoCroppedImageData}

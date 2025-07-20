@@ -162,7 +162,7 @@ export async function sendMessage(
             return messageResult;
         });
 
-        // Send real-time message notification to recipient
+        // Send real-time message notification to the recipient
         try {
             const senderUser = await getUser(userId);
             if (senderUser) {
@@ -332,7 +332,7 @@ export async function getMessagesForMatch(
  *
  * @param matchId The ID of the match.
  * @param currentUserId The ID of the current user.
- * @returns Match details with other user's profile information
+ * @returns Match details with the other user's profile information
  */
 export async function getMatchDetails(
     matchId: number,
@@ -452,7 +452,7 @@ export async function markMessagesAsRead(
         }
 
         const now = new Date();
-        
+
         // Get the other user's ID from the match
         const otherUserId = match.userId === userId ? match.recipientId : match.userId;
 
