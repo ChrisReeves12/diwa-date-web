@@ -1,6 +1,13 @@
 import prisma from "@/lib/prisma";
 import { User, UserPhoto } from "@/types";
-import { getPublicUserDetails, getUser, getUserProfileDetail, calculateUserAge, refreshLastActive } from "./user.helpers";
+import {
+    getPublicUserDetails,
+    getUser,
+    getUserProfileDetail,
+    calculateUserAge,
+    refreshLastActive,
+    canUserMessage
+} from "./user.helpers";
 import { isUserOnline } from "@/helpers/user.helpers";
 import { CroppedImageData } from "@/types/cropped-image-data.interface";
 import { humanizeTimeDiff } from "./time.helpers";
@@ -36,7 +43,7 @@ export type ConversationMatch = DbConversation & Pick<User, "photos" | "mainPhot
 /**
  * Get conversation matches for user.
  * @param userId
- * @returns 
+ * @returns
  */
 export async function getConversationsFromMatches(userId: number): Promise<ConversationMatch[]> {
     const matches = await prisma.$queryRaw<DbConversation[]>`
@@ -113,6 +120,15 @@ export async function sendMessage(
     if (await isUserBlocked(recipientId, userId)) {
         return {
             error: 'You have been blocked by this user.',
+            statusCode: 403
+        };
+    }
+
+    // Check if sender can message the recipient based on premium status
+    const permissionResult = await canUserMessage(userId, recipientId);
+    if (!permissionResult.canSend) {
+        return {
+            error: permissionResult.errorMessage || 'You cannot message this user.',
             statusCode: 403
         };
     }

@@ -73,6 +73,11 @@ type DbLike = {
     age: number;
 };
 
+export interface MessagingPermissionResult {
+    canSend: boolean
+    errorMessage?: string
+}
+
 /**
  * Get a user by their ID
  * @param id The user's ID
@@ -823,6 +828,64 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
     });
 
     return 'pending';
+}
+
+/**
+ * Check if a user can send a message to another user based on premium status.
+ * Rules:
+ * - Free users can only message premium users
+ * - Premium users can message anyone (premium or free)
+ *
+ * @param senderId - ID of the user sending the message
+ * @param recipientId - ID of the user receiving the message
+ * @returns Permission result with ability to send and optional error message
+ */
+export async function canUserMessage(senderId: number, recipientId: number): Promise<MessagingPermissionResult> {
+    try {
+        // Get both users' premium status in one query
+        const usersResult = await pgDbPool.query(
+            `SELECT id, "isPremium" FROM users WHERE id = ANY($1)`,
+            [[senderId, recipientId]]
+        )
+
+        const users = usersResult.rows
+        const sender = users.find(u => u.id === senderId)
+        const recipient = users.find(u => u.id === recipientId)
+
+        if (!sender || !recipient) {
+            return {
+                canSend: false,
+                errorMessage: 'User not found.'
+            }
+        }
+
+        // Premium users can message anyone
+        if (sender.ispremium) {
+            return {
+                canSend: true
+            }
+        }
+
+        // Free users can only message premium users
+        if (!sender.ispremium && recipient.ispremium) {
+            return {
+                canSend: true
+            }
+        }
+
+        // Free user trying to message another free user - blocked
+        return {
+            canSend: false,
+            errorMessage: 'You can only message premium members. Upgrade to Premium to message this user.'
+        }
+
+    } catch (error) {
+        console.error('Error checking messaging permission:', error)
+        return {
+            canSend: false,
+            errorMessage: 'Unable to verify messaging permissions. Please try again.'
+        }
+    }
 }
 
 /**

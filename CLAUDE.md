@@ -5,3 +5,7 @@ We do use Prisma for some database transactions, but we don't use any of their m
 # Guides
 
 - For a guide on how we do console command creation, refer to docs/console-command-creation.md
+
+# Query Guidelines
+
+- In raw queries, surround all field names with double quotes, to ensure camel-cased field names stay in tact 
