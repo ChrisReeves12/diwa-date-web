@@ -26,38 +26,63 @@
     flex: 1;
     height: 100%;
 
-      .info-photo-count-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
+    .info-photo-count-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
 
-        .info-container {
-          .display-name-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 4px;
+      .info-container {
+        .display-name-container {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 4px;
 
-            .user-display-name {
-              font-weight: bold;
-              color: globals.$primary-blue;
-              display: block;
+          .user-display-name {
+            font-weight: bold;
+            color: globals.$primary-blue;
+            display: block;
 
-              @include globals.dark-mode() {
-                color: globals.$primary-blue-dark;
-              }
-            }
-
-            .online-lamp {
-              width: 10px;
-              height: 10px;
-              background-color: #4CAF50;
-              border-radius: 50%;
-              border: 1px solid #ffffff;
+            @include globals.dark-mode() {
+              color: globals.$primary-blue-dark;
             }
           }
 
-          .they-liked-me {
+          .online-lamp {
+            width: 10px;
+            height: 10px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            border: 1px solid #ffffff;
+          }
+
+          .premium-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            background: linear-gradient(135deg, #6ec5f7 0%, #0092e4 100%);
+            border-radius: 50%;
+            color: #ffffff;
+            font-size: 15px;
+            transition: transform 0.2s ease;
+
+            &:hover {
+              transform: scale(1.1);
+            }
+
+            i {
+              filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+            }
+
+            @include globals.dark-mode() {
+              background: linear-gradient(135deg, #6ec5f7 0%, #0092e4 100%);
+            }
+          }
+        }
+
+        .they-liked-me {
           color: globals.$primary-blue;
           display: flex;
           align-items: center;
@@ -67,6 +92,13 @@
           @include globals.dark-mode() {
             color: globals.$primary-blue-dark;
           }
+        }
+
+        .premium-label {
+          padding-top: 4px;
+          font-weight: bold;
+          font-size: 15px;
+          color: globals.$primary-blue;
         }
       }
 

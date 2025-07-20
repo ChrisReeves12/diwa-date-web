@@ -4,7 +4,18 @@ import { UserPreview } from "@/types/user-preview.interface";
 import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
 import { userProfileLink, showAlert } from "@/util";
 import Image from "next/image";
-import { BanIcon, CommentsIcon, ExclamationTriangleIcon, HeartBrokenIcon, HeartIcon, TimesIcon, UnlockIcon, UserCircleIcon } from "react-line-awesome";
+import {
+    BanIcon,
+    CommentsIcon,
+    ExclamationTriangleIcon,
+    HeartBrokenIcon,
+    HeartIcon,
+    TimesIcon,
+    UnlockIcon,
+    UserCircleIcon,
+    CrownIcon,
+    TrophyIcon
+} from "react-line-awesome";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { UserPhoto } from "@/types/user-photo.type";
 import { AngleLeftIcon, AngleRightIcon } from "react-line-awesome";
@@ -193,6 +204,11 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                             <a className="user-display-name" href={userProfileLink(userPreview)}>
                                 {userPreview.displayName}
                             </a>
+                            {userPreview.isPremium && (
+                                <div className="premium-badge" title="Premium Member">
+                                    <TrophyIcon/>
+                                </div>
+                            )}
                             {userPreview.isOnline && <div className="online-lamp" title="Online now"></div>}
                         </div>
                         <div className="info-line age">Age: {userPreview.age}</div>
@@ -208,6 +224,8 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                                 Liked you
                             </div>
                         )}
+                        {userPreview.isPremium &&
+                            <div className="info-line premium-label">Premium Member</div>}
                     </div>
                     <div className="photo-count-container">
                         <button

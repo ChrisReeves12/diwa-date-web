@@ -49,6 +49,7 @@ type UserForProfileDetail = Pick<User,
     | "ethnicities"
     | "lastActiveAt"
     | "hideOnlineStatus"
+    | "isPremium"
 >
 
 type DbLike = {
@@ -65,6 +66,7 @@ type DbLike = {
     longitude: number;
     country: string;
     createdAt: Date;
+    isPremium: boolean;
     matchId: number;
     matchStatus: string;
     receivedLikeAt: Date;
@@ -929,6 +931,7 @@ export async function getBlockedUsers(userId: number): Promise<UserPreview[]> {
             U."longitude",
             U."country",
             U."createdAt",
+            U."isPremium",
             BU."createdAt" AS "blockedAt",
             Calculate_Age(U."dateOfBirth") AS "age"
         FROM "blockedUsers" BU
@@ -1003,6 +1006,7 @@ export async function getUserLikes(
             U."longitude",
             U."country",
             U."createdAt",
+            U."isPremium",
             UM."id" AS "matchId",
             UM."status" AS "matchStatus",
             UM."createdAt" AS "receivedLikeAt",

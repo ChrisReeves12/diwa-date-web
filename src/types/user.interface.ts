@@ -94,4 +94,5 @@ export interface User {
     completedSteps: number[];
     lastUpdated?: string;
   };
+  isPremium: boolean;
 }

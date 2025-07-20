@@ -13,6 +13,7 @@ export interface UserProfileDetail {
         | "bio"
         | "lastActiveAt"
         | "hideOnlineStatus"
+        | "isPremium"
     >;
     theyBlockedMe: boolean;
     suspendedAt?: Date;

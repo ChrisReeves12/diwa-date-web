@@ -29,6 +29,7 @@ type DbUserSearchResult = {
     blockedThem?: boolean;
     theyLikedMe?: boolean;
     hideOnlineStatus: boolean;
+    isPremium: boolean;
 };
 
 /**
@@ -102,7 +103,8 @@ export async function searchUsers(currentUser: Omit<User, 'password'>, params: {
                    U."createdAt",
                    U."seekingGender",
                    U."locationName",
-                   U."hideOnlineStatus"
+                   U."hideOnlineStatus",
+                   U."isPremium"
             FROM "users" U
             WHERE U."deactivatedAt" IS NULL
               AND U."suspendedAt" IS NULL

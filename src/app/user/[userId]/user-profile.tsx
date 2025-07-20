@@ -15,7 +15,7 @@ import {
     CheckCircleIcon,
     CommentsIcon, ExclamationTriangleIcon,
     HeartBrokenIcon,
-    HeartIcon, ImageIcon, MapMarkerIcon, StarIcon, TimesIcon, UnlockIcon, UserCircleIcon
+    HeartIcon, ImageIcon, MapMarkerIcon, StarIcon, TimesIcon, TrophyIcon, UnlockIcon, UserCircleIcon
 } from "react-line-awesome";
 import _ from 'lodash';
 import { UserProfileDetail } from "@/types/user-profile-detail.interface";
@@ -327,8 +327,18 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                 </a>
 
                                 <div className="user-basic-info-section">
-                                    <h1 className="user-display-name">{userProfile.user.displayName}</h1>
+                                    <div className="display-name-container">
+                                        <h1 className="user-display-name">{userProfile.user.displayName}</h1>
+                                        {userProfile.user.isPremium && (
+                                            <div className="premium-badge" title="Premium Member">
+                                                <TrophyIcon />
+                                            </div>
+                                        )}
+                                    </div>
                                     <h4 className="user-age">{userProfile.user.age} Year Old {userProfile.user.gender === 'male' ? 'Man' : 'Woman'}</h4>
+                                    {userProfile.user.isPremium && (
+                                        <div className="premium-label">Premium Member</div>
+                                    )}
                                     {userProfile.matchIsTowardsMe && userProfile.matchStatus === 'pending' ? (
                                         <h5 className="user-like-label">{userProfile.user.gender === 'male' ? 'He' : 'She'} Likes You</h5>
                                     ) : null}
