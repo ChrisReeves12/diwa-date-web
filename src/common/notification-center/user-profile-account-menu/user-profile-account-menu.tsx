@@ -60,12 +60,14 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
     <div className="user-profile-account-menu-container">
       {currentUser && (
         <div className="profile-photo-name-section">
-          <UserPhotoDisplay
-            gender={currentUser.gender}
-            alt={currentUser.displayName}
-            croppedImageData={currentUser.mainPhotoCroppedImageData}
-            imageUrl={currentUser.publicMainPhoto}
-          />
+          <Link href={`/user/${currentUser.id}`} onClick={handleSelectionMade}>
+            <UserPhotoDisplay
+              gender={currentUser.gender}
+              alt={currentUser.displayName}
+              croppedImageData={currentUser.mainPhotoCroppedImageData}
+              imageUrl={currentUser.publicMainPhoto}
+            />
+          </Link>
           <div className="name-online-status-section">
             <h5>{currentUser.displayName}</h5>
             <button className="online-status" onClick={handleToggleOnlineStatus}>

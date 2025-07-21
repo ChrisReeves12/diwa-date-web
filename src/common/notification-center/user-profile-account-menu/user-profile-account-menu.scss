@@ -21,6 +21,13 @@
 
     a {
       margin-right: 12px;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+      border-radius: 50%;
+      
+      &:hover {
+        opacity: 0.8;
+      }
     }
 
     .name-online-status-section {
