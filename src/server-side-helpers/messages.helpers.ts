@@ -390,6 +390,15 @@ export async function getMatchDetails(
             };
         }
 
+        // Check if current user can message the other user based on premium status
+        const permissionResult = await canUserMessage(currentUserId, otherUser.id);
+        if (!permissionResult.canSend) {
+            return {
+                error: permissionResult.errorMessage || 'You cannot message this user.',
+                statusCode: 403
+            };
+        }
+
         // Get detailed profile information for the other user
         const otherUserPublicDetail = getPublicUserDetails(otherUser);
 

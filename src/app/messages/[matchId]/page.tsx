@@ -28,6 +28,11 @@ export default async function MessageConversationPage({ params }: { params: Prom
     const matchDetailsResult = await getMatchDetails(matchIdNumber, currentUser.id);
 
     if (matchDetailsResult.error) {
+        // If it's a 403 error (permission denied), redirect to upgrade page
+        if (matchDetailsResult.statusCode === 403) {
+            redirect('/upgrade');
+        }
+        // For other errors, redirect to messages list
         redirect('/messages');
     }
 
