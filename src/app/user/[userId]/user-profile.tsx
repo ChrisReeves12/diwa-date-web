@@ -406,8 +406,10 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                             </div>
                                         </div>
 
-                                        <div className="buttons-container">
-                                            {userProfile.matchStatus === 'pending' && !userProfile.matchIsTowardsMe ? (
+                                        {/* Don't show buttons when viewing your own profile */}
+                                        {userProfile.user.id !== currentUser.id && (
+                                            <div className="buttons-container">
+                                                {userProfile.matchStatus === 'pending' && !userProfile.matchIsTowardsMe ? (
                                                 <button
                                                     disabled={isUpdatingMatch}
                                                     onClick={onCancelMatchClick}
@@ -487,7 +489,8 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                                     <div className="label">Report User</div>
                                                 </button>
                                             </div>
-                                        </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

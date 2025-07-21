@@ -213,8 +213,8 @@ export async function getUserProfileDetail(currentUserId: number, user: UserForP
 
                 SELECT EXISTS(SELECT 1 FROM "TheyBlockedMeIds" WHERE "userId" = $6)             AS "theyBlockedMe",
                        EXISTS(SELECT 1 FROM "IBlockedThemIds" WHERE "blockedUserId" = $7)      AS "blockedThem",
-                       (SELECT "status" FROM "MyMatches" WHERE "recipientId" = $8 OR "userId" = $9) AS "matchStatus",
-                       (SELECT "id" FROM "MyMatches" WHERE "recipientId" = $10 OR "userId" = $11)     AS "matchId",
+                       (SELECT "status" FROM "MyMatches" WHERE "recipientId" = $8 OR "userId" = $9 LIMIT 1) AS "matchStatus",
+                       (SELECT "id" FROM "MyMatches" WHERE "recipientId" = $10 OR "userId" = $11 LIMIT 1)     AS "matchId",
                        EXISTS(SELECT 1 FROM "MyMatches" WHERE "userId" = $12)                    AS "matchIsTowardsMe"`,
         [
             currentUserId,
