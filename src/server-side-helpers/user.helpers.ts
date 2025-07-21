@@ -1143,6 +1143,27 @@ export async function getFullUserProfile(userId: number, currentUserId: number):
         return { error: 'You have been blocked by this user.', statusCode: 403 };
     }
 
+    // Check gender preferences - allow users to view their own profile
+    if (userId !== currentUserId) {
+        const currentUser = await getUser(currentUserId);
+        if (!currentUser) {
+            return { error: 'Current user not found.', statusCode: 401 };
+        }
+
+        // Check if target user's seekingGender includes current user's gender
+        if (user.seekingGender && currentUser.gender) {
+            const isGenderMatch = user.seekingGender === 'both' || 
+                                 user.seekingGender === currentUser.gender;
+            
+            if (!isGenderMatch) {
+                return { 
+                    error: `This profile has indicated they are seeking ${user.seekingGender} and your profile indicates you are ${currentUser.gender}.`, 
+                    statusCode: 403 
+                };
+            }
+        }
+    }
+
     // Add public user details (including processed photo URLs) to the user object
     const userWithPublicDetails = Object.assign({}, user, getPublicUserDetails(user));
 
