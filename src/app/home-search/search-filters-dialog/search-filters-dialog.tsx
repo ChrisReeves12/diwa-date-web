@@ -35,17 +35,17 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
     const [seekingMinHeight, setSeekingMinHeight] = useState<number>(currentUser.seekingMinHeight || businessConfig.defaults.minHeight);
     const [seekingMaxHeight, setSeekingMaxHeight] = useState<number>(currentUser.seekingMaxHeight || businessConfig.defaults.maxHeight);
     const [seekingNumOfPhotos, setSeekingNumOfPhotos] = useState<number>(currentUser.seekingNumOfPhotos || businessConfig.defaults.numOfPhotos);
-    const [ethnicPreferences, setEthnicPreferences] = useState<string[] | undefined>(currentUser.ethnicPreferences);
-    const [religiousPreferences, setReligiousPreferences] = useState<string[] | undefined>(currentUser.religiousPreferences);
-    const [languagePreferences, setLanguagePreferences] = useState<string[] | undefined>(currentUser.languagePreferences);
-    const [interestPreferences, setInterestPreferences] = useState<string[] | undefined>(currentUser.interestPreferences);
-    const [maritalStatusPreferences, setMaritalStatusPreferences] = useState<string[] | undefined>(currentUser.maritalStatusPreferences);
-    const [bodyTypePreferences, setBodyTypePreferences] = useState<string[] | undefined>(currentUser.bodyTypePreferences);
-    const [hasChildrenPreferences, setHasChildrenPreferences] = useState<string[] | undefined>(currentUser.hasChildrenPreferences);
-    const [wantsChildrenPreferences, setWantsChildrenPreferences] = useState<string[] | undefined>(currentUser.wantsChildrenPreferences);
-    const [educationPreferences, setEducationPreferences] = useState<string[] | undefined>(currentUser.educationPreferences);
-    const [smokingPreferences, setSmokingPreferences] = useState<string[] | undefined>(currentUser.smokingPreferences);
-    const [drinkingPreferences, setDrinkingPreferences] = useState<string[] | undefined>(currentUser.drinkingPreferences);
+    const [ethnicPreferences, setEthnicPreferences] = useState<string[] | undefined>(currentUser.isPremium ? currentUser.ethnicPreferences : []);
+    const [religiousPreferences, setReligiousPreferences] = useState<string[] | undefined>(currentUser.isPremium ? currentUser.religiousPreferences : []);
+    const [languagePreferences, setLanguagePreferences] = useState<string[] | undefined>(currentUser.isPremium ? currentUser.languagePreferences : []);
+    const [interestPreferences, setInterestPreferences] = useState<string[] | undefined>(currentUser.isPremium ? currentUser.interestPreferences : []);
+    const [maritalStatusPreferences, setMaritalStatusPreferences] = useState<string[] | undefined>(currentUser.isPremium ? currentUser.maritalStatusPreferences : []);
+    const [bodyTypePreferences, setBodyTypePreferences] = useState<string[] | undefined>(currentUser.isPremium ? currentUser.bodyTypePreferences : []);
+    const [hasChildrenPreferences, setHasChildrenPreferences] = useState<string[] | undefined>(currentUser.isPremium ? currentUser.hasChildrenPreferences : []);
+    const [wantsChildrenPreferences, setWantsChildrenPreferences] = useState<string[] | undefined>(currentUser.isPremium ? currentUser.wantsChildrenPreferences : []);
+    const [educationPreferences, setEducationPreferences] = useState<string[] | undefined>(currentUser.isPremium ? currentUser.educationPreferences : []);
+    const [smokingPreferences, setSmokingPreferences] = useState<string[] | undefined>(currentUser.isPremium ? currentUser.smokingPreferences : []);
+    const [drinkingPreferences, setDrinkingPreferences] = useState<string[] | undefined>(currentUser.isPremium ? currentUser.drinkingPreferences : []);
     const [seekingCountries, setSeekingCountries] = useState<string[] | undefined>(currentUser.seekingCountries);
     const [seekingDistanceOrigin, setSeekingDistanceOrigin] = useState<SearchFromOrigin>((currentUser.seekingDistanceOrigin || SearchFromOrigin.CurrentLocation) as SearchFromOrigin);
     const [seekingMaxDistance, setSeekingMaxDistance] = useState<number>(currentUser.seekingMaxDistance || businessConfig.defaults.maxDistance);
@@ -171,329 +171,358 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                                 singleSearchLocation={singleSearchLocation}
                                 onRemove={() => setSingleSearchLocation(undefined)} />}
                     </div>
-                    <div className="input-container">
-                        <label>Body Type</label>
-                        <FormGroup row className="inline-checkboxes">
-                            <FormControlLabel
-                                control={<Checkbox
-                                    onChange={(e: any) => {
-                                        if (e.target.checked) {
-                                            setBodyTypePreferences([]);
-                                        }
-                                    }}
-                                    checked={!bodyTypePreferences?.length} />}
-                                label="Any" />
-                            {_.toPairs(businessConfig.options.bodyTypes).map((bodyType) =>
-                                <FormControlLabel key={bodyType[0]}
-                                    control={<Checkbox
-                                        onChange={(e: any) => {
-                                            if (e.target.checked) {
-                                                setBodyTypePreferences((prevState) =>
-                                                    [...(prevState || []), bodyType[0]]);
-                                            } else {
-                                                setBodyTypePreferences((prevState) =>
-                                                    (prevState || []).filter(aBodyType => aBodyType !== bodyType[0])
-                                                );
-                                            }
-                                        }}
-                                        checked={bodyTypePreferences?.includes(bodyType[0]) ?? false} />}
-                                    label={bodyType[1]} />)}
-                        </FormGroup>
-                    </div>
-                    <div className="input-container">
-                        <label>Language</label>
-                        <FormGroup row className="inline-checkboxes">
-                            <FormControlLabel
-                                control={<Checkbox
-                                    onChange={(e: any) => {
-                                        if (e.target.checked) {
-                                            setLanguagePreferences([]);
-                                        }
-                                    }}
-                                    checked={!languagePreferences?.length} />}
-                                label="Any" />
-                            {_.toPairs(businessConfig.options.languages).map((language) =>
-                                <FormControlLabel key={language[0]}
-                                    control={<Checkbox
-                                        onChange={(e: any) => {
-                                            if (e.target.checked) {
-                                                setLanguagePreferences((prevState) =>
-                                                    [...(prevState || []), language[0]]);
-                                            } else {
-                                                setLanguagePreferences((prevState) =>
-                                                    (prevState || []).filter(aLanguage => aLanguage !== language[0])
-                                                );
-                                            }
-                                        }}
-                                        checked={languagePreferences?.includes(language[0]) ?? false} />}
-                                    label={language[1]} />)}
-                        </FormGroup>
-                    </div>
-                    <div className="input-container">
-                        <label>Education Level</label>
-                        <FormGroup row className="inline-checkboxes">
-                            <FormControlLabel
-                                control={<Checkbox
-                                    onChange={(e: any) => {
-                                        if (e.target.checked) {
-                                            setEducationPreferences([]);
-                                        }
-                                    }}
-                                    checked={!educationPreferences?.length} />}
-                                label="Any" />
-                            {_.toPairs(businessConfig.options.educationLevels).map((education) =>
-                                <FormControlLabel key={education[0]}
-                                    control={<Checkbox
-                                        onChange={(e: any) => {
-                                            if (e.target.checked) {
-                                                setEducationPreferences((prevState) =>
-                                                    [...(prevState || []), education[0]]);
-                                            } else {
-                                                setEducationPreferences((prevState) =>
-                                                    (prevState || []).filter(anEducation => anEducation !== education[0])
-                                                );
-                                            }
-                                        }}
-                                        checked={educationPreferences?.includes(education[0]) ?? false} />}
-                                    label={education[1]} />)}
-                        </FormGroup>
-                    </div>
-                    <div className="input-container">
-                        <label>Ethnicity</label>
-                        <FormGroup row className="inline-checkboxes">
-                            <FormControlLabel
-                                control={<Checkbox
-                                    onChange={(e: any) => {
-                                        if (e.target.checked) {
-                                            setEthnicPreferences([]);
-                                        }
-                                    }}
-                                    checked={!ethnicPreferences?.length} />}
-                                label="Any" />
-                            {_.toPairs(businessConfig.options.ethnicities).map((ethnicity) =>
-                                <FormControlLabel key={ethnicity[0]}
-                                    control={<Checkbox
-                                        onChange={(e: any) => {
-                                            if (e.target.checked) {
-                                                setEthnicPreferences((prevState) =>
-                                                    [...(prevState || []), ethnicity[0]]);
-                                            } else {
-                                                setEthnicPreferences((prevState) =>
-                                                    (prevState || []).filter(anEthnicity => anEthnicity !== ethnicity[0])
-                                                );
-                                            }
-                                        }}
-                                        checked={ethnicPreferences?.includes(ethnicity[0]) ?? false} />}
-                                    label={ethnicity[1]} />)}
-                        </FormGroup>
-                    </div>
-                    <div className="input-container">
-                        <label>Marital Status</label>
-                        <FormGroup row className="inline-checkboxes">
-                            <FormControlLabel
-                                control={<Checkbox
-                                    onChange={(e: any) => {
-                                        if (e.target.checked) {
-                                            setMaritalStatusPreferences([]);
-                                        }
-                                    }}
-                                    checked={!maritalStatusPreferences?.length} />}
-                                label="Any" />
-                            {_.toPairs(businessConfig.options.maritalStatuses).map((maritalStatus) =>
-                                <FormControlLabel key={maritalStatus[0]}
-                                    control={<Checkbox
-                                        onChange={(e: any) => {
-                                            if (e.target.checked) {
-                                                setMaritalStatusPreferences((prevState) =>
-                                                    [...(prevState || []), maritalStatus[0]]);
-                                            } else {
-                                                setMaritalStatusPreferences((prevState) =>
-                                                    (prevState || []).filter(aMaritalStatus => aMaritalStatus !== maritalStatus[0])
-                                                );
-                                            }
-                                        }}
-                                        checked={maritalStatusPreferences?.includes(maritalStatus[0]) ?? false} />}
-                                    label={maritalStatus[1]} />)}
-                        </FormGroup>
-                    </div>
-                    <div className="input-container">
-                        <label>Religion</label>
-                        <FormGroup row className="inline-checkboxes">
-                            <FormControlLabel
-                                control={<Checkbox
-                                    onChange={(e: any) => {
-                                        if (e.target.checked) {
-                                            setReligiousPreferences([]);
-                                        }
-                                    }}
-                                    checked={!religiousPreferences?.length} />}
-                                label="Any" />
-                            {_.toPairs(businessConfig.options.religions).map((religion) =>
-                                <FormControlLabel key={religion[0]}
-                                    control={<Checkbox
-                                        onChange={(e: any) => {
-                                            if (e.target.checked) {
-                                                setReligiousPreferences((prevState) =>
-                                                    [...(prevState || []), religion[0]]);
-                                            } else {
-                                                setReligiousPreferences((prevState) =>
-                                                    (prevState || []).filter(aReligion => aReligion !== religion[0])
-                                                );
-                                            }
-                                        }}
-                                        checked={religiousPreferences?.includes(religion[0]) ?? false} />}
-                                    label={religion[1]} />)}
-                        </FormGroup>
-                    </div>
-                    <div className="input-container">
-                        <label>Has Children</label>
-                        <FormGroup row className="inline-checkboxes">
-                            <FormControlLabel
-                                control={<Checkbox
-                                    onChange={(e: any) => {
-                                        if (e.target.checked) {
-                                            setHasChildrenPreferences([]);
-                                        }
-                                    }}
-                                    checked={!hasChildrenPreferences?.length} />}
-                                label="Any" />
-                            {_.toPairs(businessConfig.options.hasChildrenStatuses).map((hasChildren) =>
-                                <FormControlLabel key={hasChildren[0]}
-                                    control={<Checkbox
-                                        onChange={(e: any) => {
-                                            if (e.target.checked) {
-                                                setHasChildrenPreferences((prevState) =>
-                                                    [...(prevState || []), hasChildren[0]]);
-                                            } else {
-                                                setHasChildrenPreferences((prevState) =>
-                                                    (prevState || []).filter(aHasChildren => aHasChildren !== hasChildren[0])
-                                                );
-                                            }
-                                        }}
-                                        checked={hasChildrenPreferences?.includes(hasChildren[0]) ?? false} />}
-                                    label={hasChildren[1]} />)}
-                        </FormGroup>
-                    </div>
-                    <div className="row-container">
-                        <div className="column">
-                            <label>Drinking</label>
-                            <FormGroup className="vertical-checkboxes">
+                    {!currentUser.isPremium && (
+                        <div className="premium-notification-banner">
+                            <p>The following filters are only available to premium users.</p>
+                            <a href="/upgrade" className="upgrade-link">Upgrade to Premium</a>
+                        </div>
+                    )}
+                    <div className="premium-search-filters">
+                        <div className="input-container">
+                            <label>Body Type</label>
+                            <FormGroup row className="inline-checkboxes">
                                 <FormControlLabel
                                     control={<Checkbox
                                         onChange={(e: any) => {
                                             if (e.target.checked) {
-                                                setDrinkingPreferences([]);
+                                                setBodyTypePreferences([]);
                                             }
                                         }}
-                                        checked={!drinkingPreferences?.length} />}
+                                        checked={!bodyTypePreferences?.length}
+                                        disabled={!currentUser.isPremium} />}
                                     label="Any" />
-                                {_.toPairs(businessConfig.options.drinkingStatuses).map((drinking) =>
-                                    <FormControlLabel key={drinking[0]}
-                                        control={<Checkbox
-                                            onChange={(e: any) => {
-                                                if (e.target.checked) {
-                                                    setDrinkingPreferences((prevState) =>
-                                                        [...(prevState || []), drinking[0]]);
-                                                } else {
-                                                    setDrinkingPreferences((prevState) =>
-                                                        (prevState || []).filter(aDrinking => aDrinking !== drinking[0])
-                                                    );
-                                                }
-                                            }}
-                                            checked={drinkingPreferences?.includes(drinking[0]) ?? false} />}
-                                        label={drinking[1]} />)}
+                                {_.toPairs(businessConfig.options.bodyTypes).map((bodyType) =>
+                                    <FormControlLabel key={bodyType[0]}
+                                                      control={<Checkbox
+                                                          onChange={(e: any) => {
+                                                              if (e.target.checked) {
+                                                                  setBodyTypePreferences((prevState) =>
+                                                                      [...(prevState || []), bodyType[0]]);
+                                                              } else {
+                                                                  setBodyTypePreferences((prevState) =>
+                                                                      (prevState || []).filter(aBodyType => aBodyType !== bodyType[0])
+                                                                  );
+                                                              }
+                                                          }}
+                                                          checked={bodyTypePreferences?.includes(bodyType[0]) ?? false}
+                                                          disabled={!currentUser.isPremium} />}
+                                                      label={bodyType[1]} />)}
                             </FormGroup>
                         </div>
-
-                        <div className="column">
-                            <label>Smoking</label>
-                            <FormGroup className="vertical-checkboxes">
+                        <div className="input-container">
+                            <label>Language</label>
+                            <FormGroup row className="inline-checkboxes">
                                 <FormControlLabel
                                     control={<Checkbox
                                         onChange={(e: any) => {
                                             if (e.target.checked) {
-                                                setSmokingPreferences([]);
+                                                setLanguagePreferences([]);
                                             }
                                         }}
-                                        checked={!smokingPreferences?.length} />}
+                                        checked={!languagePreferences?.length}
+                                        disabled={!currentUser.isPremium} />}
                                     label="Any" />
-                                {_.toPairs(businessConfig.options.smokingStatuses).map((smoking) =>
-                                    <FormControlLabel key={smoking[0]}
-                                        control={<Checkbox
-                                            onChange={(e: any) => {
-                                                if (e.target.checked) {
-                                                    setSmokingPreferences((prevState) =>
-                                                        [...(prevState || []), smoking[0]]);
-                                                } else {
-                                                    setSmokingPreferences((prevState) =>
-                                                        (prevState || []).filter(aSmoking => aSmoking !== smoking[0])
-                                                    );
-                                                }
-                                            }}
-                                            checked={smokingPreferences?.includes(smoking[0]) ?? false} />}
-                                        label={smoking[1]} />)}
+                                {_.toPairs(businessConfig.options.languages).map((language) =>
+                                    <FormControlLabel key={language[0]}
+                                                      control={<Checkbox
+                                                          onChange={(e: any) => {
+                                                              if (e.target.checked) {
+                                                                  setLanguagePreferences((prevState) =>
+                                                                      [...(prevState || []), language[0]]);
+                                                              } else {
+                                                                  setLanguagePreferences((prevState) =>
+                                                                      (prevState || []).filter(aLanguage => aLanguage !== language[0])
+                                                                  );
+                                                              }
+                                                          }}
+                                                          checked={languagePreferences?.includes(language[0]) ?? false}
+                                                          disabled={!currentUser.isPremium} />}
+                                                      label={language[1]} />)}
                             </FormGroup>
                         </div>
-
-                        <div className="column">
-                            <label>Wants Children</label>
-                            <FormGroup className="vertical-checkboxes">
+                        <div className="input-container">
+                            <label>Education Level</label>
+                            <FormGroup row className="inline-checkboxes">
                                 <FormControlLabel
                                     control={<Checkbox
                                         onChange={(e: any) => {
                                             if (e.target.checked) {
-                                                setWantsChildrenPreferences([]);
+                                                setEducationPreferences([]);
                                             }
                                         }}
-                                        checked={!wantsChildrenPreferences?.length} />}
+                                        checked={!educationPreferences?.length}
+                                        disabled={!currentUser.isPremium} />}
                                     label="Any" />
-                                {_.toPairs(businessConfig.options.wantsChildrenStatuses).map((wantsChildren) =>
-                                    <FormControlLabel key={wantsChildren[0]}
-                                        control={<Checkbox
-                                            onChange={(e: any) => {
-                                                if (e.target.checked) {
-                                                    setWantsChildrenPreferences((prevState) =>
-                                                        [...(prevState || []), wantsChildren[0]]);
-                                                } else {
-                                                    setWantsChildrenPreferences((prevState) =>
-                                                        (prevState || []).filter(aWantsChildren => aWantsChildren !== wantsChildren[0])
-                                                    );
-                                                }
-                                            }}
-                                            checked={wantsChildrenPreferences?.includes(wantsChildren[0]) ?? false} />}
-                                        label={wantsChildren[1]} />)}
+                                {_.toPairs(businessConfig.options.educationLevels).map((education) =>
+                                    <FormControlLabel key={education[0]}
+                                                      control={<Checkbox
+                                                          onChange={(e: any) => {
+                                                              if (e.target.checked) {
+                                                                  setEducationPreferences((prevState) =>
+                                                                      [...(prevState || []), education[0]]);
+                                                              } else {
+                                                                  setEducationPreferences((prevState) =>
+                                                                      (prevState || []).filter(anEducation => anEducation !== education[0])
+                                                                  );
+                                                              }
+                                                          }}
+                                                          checked={educationPreferences?.includes(education[0]) ?? false}
+                                                          disabled={!currentUser.isPremium} />}
+                                                      label={education[1]} />)}
                             </FormGroup>
                         </div>
-                    </div>
-
-                    <div className="input-container">
-                        <label>Interests</label>
-                        <FormGroup row className="inline-checkboxes">
-                            <FormControlLabel
-                                control={<Checkbox
-                                    onChange={(e: any) => {
-                                        if (e.target.checked) {
-                                            setInterestPreferences([]);
-                                        }
-                                    }}
-                                    checked={!interestPreferences?.length} />}
-                                label="Any" />
-                            {_.toPairs(businessConfig.options.interests).map((interest) =>
-                                <FormControlLabel key={interest[0]}
+                        <div className="input-container">
+                            <label>Ethnicity</label>
+                            <FormGroup row className="inline-checkboxes">
+                                <FormControlLabel
                                     control={<Checkbox
                                         onChange={(e: any) => {
                                             if (e.target.checked) {
-                                                setInterestPreferences((prevState) =>
-                                                    [...(prevState || []), interest[0]]);
-                                            } else {
-                                                setInterestPreferences((prevState) =>
-                                                    (prevState || []).filter(anInterest => anInterest !== interest[0])
-                                                );
+                                                setEthnicPreferences([]);
                                             }
                                         }}
-                                        checked={interestPreferences?.includes(interest[0]) ?? false} />}
-                                    label={`${interest[1].emoji} ${interest[1].label}`} />)}
-                        </FormGroup>
+                                        checked={!ethnicPreferences?.length}
+                                        disabled={!currentUser.isPremium} />}
+                                    label="Any" />
+                                {_.toPairs(businessConfig.options.ethnicities).map((ethnicity) =>
+                                    <FormControlLabel key={ethnicity[0]}
+                                                      control={<Checkbox
+                                                          onChange={(e: any) => {
+                                                              if (e.target.checked) {
+                                                                  setEthnicPreferences((prevState) =>
+                                                                      [...(prevState || []), ethnicity[0]]);
+                                                              } else {
+                                                                  setEthnicPreferences((prevState) =>
+                                                                      (prevState || []).filter(anEthnicity => anEthnicity !== ethnicity[0])
+                                                                  );
+                                                              }
+                                                          }}
+                                                          checked={ethnicPreferences?.includes(ethnicity[0]) ?? false}
+                                                          disabled={!currentUser.isPremium} />}
+                                                      label={ethnicity[1]} />)}
+                            </FormGroup>
+                        </div>
+                        <div className="input-container">
+                            <label>Marital Status</label>
+                            <FormGroup row className="inline-checkboxes">
+                                <FormControlLabel
+                                    control={<Checkbox
+                                        onChange={(e: any) => {
+                                            if (e.target.checked) {
+                                                setMaritalStatusPreferences([]);
+                                            }
+                                        }}
+                                        checked={!maritalStatusPreferences?.length}
+                                        disabled={!currentUser.isPremium} />}
+                                    label="Any" />
+                                {_.toPairs(businessConfig.options.maritalStatuses).map((maritalStatus) =>
+                                    <FormControlLabel key={maritalStatus[0]}
+                                                      control={<Checkbox
+                                                          onChange={(e: any) => {
+                                                              if (e.target.checked) {
+                                                                  setMaritalStatusPreferences((prevState) =>
+                                                                      [...(prevState || []), maritalStatus[0]]);
+                                                              } else {
+                                                                  setMaritalStatusPreferences((prevState) =>
+                                                                      (prevState || []).filter(aMaritalStatus => aMaritalStatus !== maritalStatus[0])
+                                                                  );
+                                                              }
+                                                          }}
+                                                          checked={maritalStatusPreferences?.includes(maritalStatus[0]) ?? false}
+                                                          disabled={!currentUser.isPremium} />}
+                                                      label={maritalStatus[1]} />)}
+                            </FormGroup>
+                        </div>
+                        <div className="input-container">
+                            <label>Religion</label>
+                            <FormGroup row className="inline-checkboxes">
+                                <FormControlLabel
+                                    control={<Checkbox
+                                        onChange={(e: any) => {
+                                            if (e.target.checked) {
+                                                setReligiousPreferences([]);
+                                            }
+                                        }}
+                                        checked={!religiousPreferences?.length}
+                                        disabled={!currentUser.isPremium} />}
+                                    label="Any" />
+                                {_.toPairs(businessConfig.options.religions).map((religion) =>
+                                    <FormControlLabel key={religion[0]}
+                                                      control={<Checkbox
+                                                          onChange={(e: any) => {
+                                                              if (e.target.checked) {
+                                                                  setReligiousPreferences((prevState) =>
+                                                                      [...(prevState || []), religion[0]]);
+                                                              } else {
+                                                                  setReligiousPreferences((prevState) =>
+                                                                      (prevState || []).filter(aReligion => aReligion !== religion[0])
+                                                                  );
+                                                              }
+                                                          }}
+                                                          checked={religiousPreferences?.includes(religion[0]) ?? false}
+                                                          disabled={!currentUser.isPremium} />}
+                                                      label={religion[1]} />)}
+                            </FormGroup>
+                        </div>
+                        <div className="input-container">
+                            <label>Has Children</label>
+                            <FormGroup row className="inline-checkboxes">
+                                <FormControlLabel
+                                    control={<Checkbox
+                                        onChange={(e: any) => {
+                                            if (e.target.checked) {
+                                                setHasChildrenPreferences([]);
+                                            }
+                                        }}
+                                        checked={!hasChildrenPreferences?.length}
+                                        disabled={!currentUser.isPremium} />}
+                                    label="Any" />
+                                {_.toPairs(businessConfig.options.hasChildrenStatuses).map((hasChildren) =>
+                                    <FormControlLabel key={hasChildren[0]}
+                                                      control={<Checkbox
+                                                          onChange={(e: any) => {
+                                                              if (e.target.checked) {
+                                                                  setHasChildrenPreferences((prevState) =>
+                                                                      [...(prevState || []), hasChildren[0]]);
+                                                              } else {
+                                                                  setHasChildrenPreferences((prevState) =>
+                                                                      (prevState || []).filter(aHasChildren => aHasChildren !== hasChildren[0])
+                                                                  );
+                                                              }
+                                                          }}
+                                                          checked={hasChildrenPreferences?.includes(hasChildren[0]) ?? false}
+                                                          disabled={!currentUser.isPremium} />}
+                                                      label={hasChildren[1]} />)}
+                            </FormGroup>
+                        </div>
+                        <div className="row-container">
+                            <div className="column">
+                                <label>Drinking</label>
+                                <FormGroup className="vertical-checkboxes">
+                                    <FormControlLabel
+                                        control={<Checkbox
+                                            onChange={(e: any) => {
+                                                if (e.target.checked) {
+                                                    setDrinkingPreferences([]);
+                                                }
+                                            }}
+                                            checked={!drinkingPreferences?.length}
+                                            disabled={!currentUser.isPremium} />}
+                                        label="Any" />
+                                    {_.toPairs(businessConfig.options.drinkingStatuses).map((drinking) =>
+                                        <FormControlLabel key={drinking[0]}
+                                                          control={<Checkbox
+                                                              onChange={(e: any) => {
+                                                                  if (e.target.checked) {
+                                                                      setDrinkingPreferences((prevState) =>
+                                                                          [...(prevState || []), drinking[0]]);
+                                                                  } else {
+                                                                      setDrinkingPreferences((prevState) =>
+                                                                          (prevState || []).filter(aDrinking => aDrinking !== drinking[0])
+                                                                      );
+                                                                  }
+                                                              }}
+                                                              checked={drinkingPreferences?.includes(drinking[0]) ?? false}
+                                                              disabled={!currentUser.isPremium} />}
+                                                          label={drinking[1]} />)}
+                                </FormGroup>
+                            </div>
+
+                            <div className="column">
+                                <label>Smoking</label>
+                                <FormGroup className="vertical-checkboxes">
+                                    <FormControlLabel
+                                        control={<Checkbox
+                                            onChange={(e: any) => {
+                                                if (e.target.checked) {
+                                                    setSmokingPreferences([]);
+                                                }
+                                            }}
+                                            checked={!smokingPreferences?.length}
+                                            disabled={!currentUser.isPremium} />}
+                                        label="Any" />
+                                    {_.toPairs(businessConfig.options.smokingStatuses).map((smoking) =>
+                                        <FormControlLabel key={smoking[0]}
+                                                          control={<Checkbox
+                                                              onChange={(e: any) => {
+                                                                  if (e.target.checked) {
+                                                                      setSmokingPreferences((prevState) =>
+                                                                          [...(prevState || []), smoking[0]]);
+                                                                  } else {
+                                                                      setSmokingPreferences((prevState) =>
+                                                                          (prevState || []).filter(aSmoking => aSmoking !== smoking[0])
+                                                                      );
+                                                                  }
+                                                              }}
+                                                              checked={smokingPreferences?.includes(smoking[0]) ?? false}
+                                                              disabled={!currentUser.isPremium} />}
+                                                          label={smoking[1]} />)}
+                                </FormGroup>
+                            </div>
+
+                            <div className="column">
+                                <label>Wants Children</label>
+                                <FormGroup className="vertical-checkboxes">
+                                    <FormControlLabel
+                                        control={<Checkbox
+                                            onChange={(e: any) => {
+                                                if (e.target.checked) {
+                                                    setWantsChildrenPreferences([]);
+                                                }
+                                            }}
+                                            checked={!wantsChildrenPreferences?.length}
+                                            disabled={!currentUser.isPremium} />}
+                                        label="Any" />
+                                    {_.toPairs(businessConfig.options.wantsChildrenStatuses).map((wantsChildren) =>
+                                        <FormControlLabel key={wantsChildren[0]}
+                                                          control={<Checkbox
+                                                              onChange={(e: any) => {
+                                                                  if (e.target.checked) {
+                                                                      setWantsChildrenPreferences((prevState) =>
+                                                                          [...(prevState || []), wantsChildren[0]]);
+                                                                  } else {
+                                                                      setWantsChildrenPreferences((prevState) =>
+                                                                          (prevState || []).filter(aWantsChildren => aWantsChildren !== wantsChildren[0])
+                                                                      );
+                                                                  }
+                                                              }}
+                                                              checked={wantsChildrenPreferences?.includes(wantsChildren[0]) ?? false}
+                                                              disabled={!currentUser.isPremium} />}
+                                                          label={wantsChildren[1]} />)}
+                                </FormGroup>
+                            </div>
+                        </div>
+                        <div className="input-container">
+                            <label>Interests</label>
+                            <FormGroup row className="inline-checkboxes">
+                                <FormControlLabel
+                                    control={<Checkbox
+                                        onChange={(e: any) => {
+                                            if (e.target.checked) {
+                                                setInterestPreferences([]);
+                                            }
+                                        }}
+                                        checked={!interestPreferences?.length}
+                                        disabled={!currentUser.isPremium} />}
+                                    label="Any" />
+                                {_.toPairs(businessConfig.options.interests).map((interest) =>
+                                    <FormControlLabel key={interest[0]}
+                                                      control={<Checkbox
+                                                          onChange={(e: any) => {
+                                                              if (e.target.checked) {
+                                                                  setInterestPreferences((prevState) =>
+                                                                      [...(prevState || []), interest[0]]);
+                                                              } else {
+                                                                  setInterestPreferences((prevState) =>
+                                                                      (prevState || []).filter(anInterest => anInterest !== interest[0])
+                                                                  );
+                                                              }
+                                                          }}
+                                                          checked={interestPreferences?.includes(interest[0]) ?? false}
+                                                          disabled={!currentUser.isPremium} />}
+                                                      label={`${interest[1].emoji} ${interest[1].label}`} />)}
+                            </FormGroup>
+                        </div>
                     </div>
                 </div>
                 <div className="button-container">

@@ -83,8 +83,27 @@ export async function searchUsers(currentUser: Omit<User, 'password'>, params: {
         "drinking"
     ];
 
+    // Enforce premium restrictions server-side for non-premium users
+    let searchUser = currentUser;
+    if (!currentUser.isPremium) {
+        searchUser = {
+            ...currentUser,
+            bodyTypePreferences: [],
+            languagePreferences: [],
+            ethnicPreferences: [],
+            religiousPreferences: [],
+            interestPreferences: [],
+            maritalStatusPreferences: [],
+            smokingPreferences: [],
+            drinkingPreferences: [],
+            hasChildrenPreferences: [],
+            wantsChildrenPreferences: [],
+            educationPreferences: []
+        };
+    }
+
     for (const searchPreferenceLabel of searchPreferenceLabels) {
-        const predicate = createEnumeratedPredicate(searchPreferenceLabel, currentUser);
+        const predicate = createEnumeratedPredicate(searchPreferenceLabel, searchUser);
         if (!predicate) continue;
 
         enumeratedQueries.push(`AND ${predicate}`);

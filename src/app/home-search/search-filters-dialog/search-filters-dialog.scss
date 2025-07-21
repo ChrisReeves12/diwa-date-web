@@ -171,6 +171,44 @@
       }
     }
 
+    .premium-notification-banner {
+      background-color: #f0f8ff;
+      border: 1px solid #4a90e2;
+      border-radius: 4px;
+      padding: 1rem;
+      margin-bottom: 1.6rem;
+      
+      p {
+        margin: 0 0 0.5rem 0;
+        color: #333;
+        font-size: 14px;
+      }
+      
+      .upgrade-link {
+        color: #4a90e2;
+        text-decoration: none;
+        font-weight: bold;
+        
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+
+    .premium-search-filters {
+      .MuiCheckbox-root.Mui-disabled {
+        opacity: 0.5;
+      }
+      
+      .MuiFormControlLabel-root.Mui-disabled {
+        opacity: 0.6;
+        
+        .MuiFormControlLabel-label {
+          color: #999;
+        }
+      }
+    }
+
   }
 
   .button-container {
