@@ -16,7 +16,7 @@ export default async function MessageConversationsPage() {
     const currentUser = await getCurrentUser(await cookies());
 
     if (!currentUser) {
-        redirect('/');
+        redirect('/login?redirect=/messages');
     }
 
     return <ConversationsView

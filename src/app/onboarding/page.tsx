@@ -7,7 +7,7 @@ export default async function OnboardingPage() {
     const currentUser = await getCurrentUser(await cookies());
 
     if (!currentUser) {
-        redirect('/login');
+        redirect('/login?redirect=/onboarding');
     }
 
     // If user already completed onboarding, redirect to home

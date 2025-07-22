@@ -16,7 +16,7 @@ export default async function PersonalInformationPage() {
     const currentUser = await getCurrentUser(await cookies());
 
     if (!currentUser) {
-        redirect('/login');
+        redirect('/login?redirect=/profile/personal-information');
     }
 
     return (

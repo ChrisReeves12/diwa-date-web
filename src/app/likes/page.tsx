@@ -16,7 +16,7 @@ export default async function LikesPage({ searchParams }: { searchParams: any })
     const currentUser = await getCurrentUser(await cookies());
 
     if (!currentUser) {
-        redirect('/');
+        redirect('/login?redirect=/likes');
     }
 
 

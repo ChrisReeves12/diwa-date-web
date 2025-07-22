@@ -20,7 +20,7 @@ export async function removeUserMatch(recipientId: number) {
     try {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
-            redirect('/');
+            redirect('/login');
         } else {
             refreshLastActive(currentUser).then();
         }
@@ -39,7 +39,7 @@ export async function muteUser(recipientId: number) {
     try {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
-            redirect('/');
+            redirect('/login');
         } else {
             refreshLastActive(currentUser).then();
         }
@@ -73,7 +73,7 @@ export async function unMuteUser(recipientId: number) {
     try {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
-            redirect('/');
+            redirect('/login');
         } else {
             refreshLastActive(currentUser).then();
         }
@@ -97,7 +97,7 @@ export async function sendUserMatch(recipientId: number, shouldCreateNotificatio
     try {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
-            redirect('/');
+            redirect('/login');
         } else {
             refreshLastActive(currentUser).then();
         }
@@ -118,7 +118,7 @@ export async function blockUserAction(blockedUserId: number): Promise<boolean> {
     try {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
-            redirect('/');
+            redirect('/login');
         } else {
             refreshLastActive(currentUser).then();
         }
@@ -139,7 +139,7 @@ export async function unBlockUserAction(blockedUserId: number): Promise<boolean>
     try {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
-            redirect('/');
+            redirect('/login');
         } else {
             refreshLastActive(currentUser).then();
         }

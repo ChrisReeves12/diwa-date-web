@@ -17,7 +17,9 @@
       "mcp__diwa-date-mcp__execute-query",
       "Bash(npm install:*)",
       "Bash(cat:*)",
-      "mcp__diwa-date-mcp__list-db-tables"
+      "mcp__diwa-date-mcp__list-db-tables",
+      "Bash(node:*)",
+      "Bash(curl:*)"
     ]
   },
   "enableAllProjectMcpServers": false

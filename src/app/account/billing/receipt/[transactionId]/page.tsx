@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/server-side-helpers/user.helpers";
 import "./receipt.scss";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { getPaymentTransaction } from "@/server-side-helpers/billing.helpers";
 import moment from "moment";
@@ -16,12 +17,16 @@ export default async function ReceiptPage({ params }: any) {
     const currentUser = await getCurrentUser(await cookies());
     const lParams = await params;
     const { transactionId } = lParams;
-    
+
     if (!currentUser) {
-        redirect('/');
+        redirect('/login?redirect=/account/billing');
     }
 
     const paymentTransaction = await getPaymentTransaction(transactionId, currentUser.id);
+    if (!paymentTransaction) {
+        notFound();
+    }
+
     const { amount, accountNumber, status, description, paymentMethod, transId, createdAt } = paymentTransaction as any;
     const receiptDate = moment(createdAt).format('MMMM D, YYYY');
 
@@ -48,10 +53,10 @@ export default async function ReceiptPage({ params }: any) {
                     <span className="info-value">{currentUser.email}</span>
                 </div>
             </div>
-            
+
             <div className="transaction-details">
                 <h3>Transaction Details</h3>
-                
+
                 <div className="item-row">
                     <div className="item-details">
                         <div className="item-name">{description} Membership (1 Month)</div>
@@ -61,12 +66,12 @@ export default async function ReceiptPage({ params }: any) {
                         <div className="amount">${amount}</div>
                     </div>
                 </div>
-                
+
                 <div className="total-row">
                     <span className="total-label">Total Paid:</span>
                     <span className="total-amount">${amount}</span>
                 </div>
-                
+
                 <div className="payment-method">
                     <h4>Payment Method</h4>
                     <p>{paymentMethod} {accountNumber}</p>

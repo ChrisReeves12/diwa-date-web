@@ -2,7 +2,7 @@
 
 import './login.scss';
 import React, { useLayoutEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { loginTitle, loginSubtitle } from '@/content/login-content';
 import { loginAction } from './login.actions';
@@ -11,6 +11,8 @@ import { Alert, Button } from '@mui/material';
 
 export default function LoginForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectTo = searchParams.get('redirect');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -57,8 +59,8 @@ export default function LoginForm() {
                 return;
             }
 
-            // Login successful
-            router.push('/');
+            // Login successful - redirect to intended page or home
+            router.push(redirectTo || '/');
             router.refresh();
         } catch (error) {
             console.error('Login error:', error);

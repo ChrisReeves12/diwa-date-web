@@ -16,7 +16,7 @@ import { createSearchPromise } from "@/server-side-helpers/search.helpers";
 export async function getUpdatedSearchResults(page: number, sortBy: SearchSortBy) {
     const currentUser = await getCurrentUser(await cookies());
     if (!currentUser) {
-        redirect('/');
+        redirect('/login');
     }
 
     return createSearchPromise(currentUser, { page, sortBy });
@@ -31,7 +31,7 @@ export async function updateUserSearchPreferences(searchPrefs: Partial<SearchPar
     try {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
-            redirect('/');
+            redirect('/login');
         }
 
         await prisma.users.update({

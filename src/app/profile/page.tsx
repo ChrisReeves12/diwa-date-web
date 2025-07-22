@@ -15,7 +15,7 @@ export default async function ProfileSettingsPage() {
     const currentUser = await getCurrentUser(await cookies());
 
     if (!currentUser) {
-        redirect('/');
+        redirect('/login?redirect=/profile');
     }
 
     return (

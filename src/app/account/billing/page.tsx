@@ -15,7 +15,7 @@ export default async function BillingInformationPage() {
     const currentUser = await getCurrentUser(await cookies());
 
     if (!currentUser) {
-        redirect('/');
+        redirect('/login?redirect=/account/billing');
     }
 
     return (

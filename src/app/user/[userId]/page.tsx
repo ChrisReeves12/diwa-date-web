@@ -4,7 +4,7 @@ import {
 } from "@/server-side-helpers/user.helpers";
 import { redirect } from "next/navigation";
 import UserProfile from "./user-profile";
-import GenderRestrictionMessage from "./gender-restriction-message";
+import ProfileAccessError from "./profile-access-error";
 import { cookies } from "next/headers";
 import './user-profile.scss';
 import { Metadata } from "next";
@@ -64,19 +64,19 @@ export default async function UserProfilePage({ params }: any) {
     const { userId } = await params;
 
     if (!currentUser) {
-        redirect('/');
+        redirect(`/login?redirect=/user/${userId}`);
     }
 
     const userProfileResult = await getUserProfile(userId);
 
     if (!("userProfileDetails" in userProfileResult) || ("error" in userProfileResult && userProfileResult.error) || ("userProfileDetails" in userProfileResult && !userProfileResult.userProfileDetails)) {
         // Check if this is a gender restriction error (403 status with specific message pattern)
-        if ("error" in userProfileResult && userProfileResult.statusCode === 403 && 
+        if ("error" in userProfileResult && userProfileResult.statusCode === 403 &&
             userProfileResult.error?.includes("seeking") && userProfileResult.error?.includes("indicates")) {
-            return <GenderRestrictionMessage errorMessage={userProfileResult.error} />;
+            return <ProfileAccessError title={'Profile Access Restricted'} errorMessage={userProfileResult.error} />;
         }
-        
-        return <div>Error: {userProfileResult.error || "Profile not found"}</div>;
+
+        return <ProfileAccessError title={'Profile Not Found'} errorMessage={userProfileResult.error} />;
     }
 
     return (

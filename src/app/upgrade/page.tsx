@@ -16,7 +16,7 @@ export default async function UpgradePage({ searchParams }: { searchParams: any 
     const currentUser = await getCurrentUser(await cookies());
 
     if (!currentUser) {
-        redirect('/');
+        redirect('/login?redirect=/upgrade');
     }
 
     // Check if user is already premium - redirect to billing if so

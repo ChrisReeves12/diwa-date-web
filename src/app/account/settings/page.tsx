@@ -15,7 +15,7 @@ export default async function GeneralSettingsPage() {
     const currentUser = await getCurrentUser(await cookies());
 
     if (!currentUser) {
-        redirect('/');
+        redirect('/login?redirect=/account/settings');
     }
 
     return (
