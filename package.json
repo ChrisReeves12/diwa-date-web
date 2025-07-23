@@ -7,7 +7,7 @@
     "dev:turbo": "next dev --turbopack",
     "dev-debug": "NODE_OPTIONS='--inspect=9230' ts-node -r tsconfig-paths/register --project tsconfig.server.json server.ts",
     "build": "next build && tsc --project tsconfig.server.json && tsc-alias -p tsconfig.server.json",
-    "start": "NODE_ENV=production node server.js",
+    "start": "NODE_ENV=production node dist/server.js",
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
