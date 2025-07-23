@@ -14,7 +14,6 @@ services:
     environment:
       # Container-specific overrides for database connectivity
       - DATABASE_URL=postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@diwa-date-db:5432/diwa_date
-      - POSTGRES_HOST=diwa-date-db
       - REDIS_HOST=redis
       - RABBITMQ_HOST=rabbitmq
       - NODE_ENV=production
