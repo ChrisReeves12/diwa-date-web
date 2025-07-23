@@ -1,4 +1,5 @@
 {
     "explorer.autoReveal": false,
-    "workbench.tree.expandMode": "doubleClick"
+    "workbench.tree.expandMode": "doubleClick",
+    "workbench.list.openMode": "doubleClick"
 }

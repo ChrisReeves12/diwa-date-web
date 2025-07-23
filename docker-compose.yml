@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # Node.js Application Container
+  app:
+    image: node:latest
+    container_name: diwa-date-app
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      # Container-specific overrides for database connectivity
+      - DATABASE_URL=postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@diwa-date-db:5432/diwa_date
+      - POSTGRES_HOST=diwa-date-db
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
+      - NODE_ENV=production
+    command: >
+      bash -c "
+        npm install &&
+        npm run build &&
+        npm run start
+      "
+    depends_on:
+      diwa-date-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - diwa-network
+    restart: unless-stopped
+
+  # PostgreSQL with PostGIS Container
+  diwa-date-db:
+    image: postgis/postgis:17-3.4
+    container_name: diwa-date-db
+    environment:
+      - POSTGRES_DB=diwa_date
+      - POSTGRES_USER=${POSTGRES_USERNAME}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USERNAME} -d diwa_date"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - diwa-network
+    restart: unless-stopped
+
+  # Redis Container
+  redis:
+    image: redis:latest
+    container_name: diwa-date-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    networks:
+      - diwa-network
+    restart: unless-stopped
+
+  # RabbitMQ Container
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: diwa-date-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USERNAME}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+      - RABBITMQ_DEFAULT_VHOST=/
+    ports:
+      - "5672:5672"    # AMQP port
+      - "15672:15672"  # Management UI port
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 60s
+    networks:
+      - diwa-network
+    restart: unless-stopped
+
+# Named Volumes for Data Persistence
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+# Custom Network
+networks:
+  diwa-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
