@@ -30,7 +30,7 @@ services:
         condition: service_healthy
     networks:
       - diwa-network
-    restart: unless-stopped
+    #restart: unless-stopped
 
   # PostgreSQL with PostGIS Container
   diwa-date-db:
