@@ -19,7 +19,7 @@ services:
       - NODE_ENV=production
     command: >
       bash -c "
-        npm install
+        npm install --include=dev && npm run build
       "
     depends_on:
       diwa-date-db:
