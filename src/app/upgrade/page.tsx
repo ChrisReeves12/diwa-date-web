@@ -148,15 +148,15 @@ export default async function UpgradePage({ searchParams }: { searchParams: any 
                     <h2>What Our Premium Members Say</h2>
                     <div className="testimonials-grid">
                         <div className="testimonial">
-                            <p>"Being able to see who liked me first made all the difference. I found my soulmate within a week!"</p>
+                            <p>&quot;Being able to see who liked me first made all the difference. I found my soulmate within a week!&quot;</p>
                             <div className="testimonial-author">- Sarah, 28</div>
                         </div>
                         <div className="testimonial">
-                            <p>"The advanced filters helped me find someone who truly shares my interests and values."</p>
+                            <p>&quot;The advanced filters helped me find someone who truly shares my interests and values.&quot;</p>
                             <div className="testimonial-author">- Michael, 32</div>
                         </div>
                         <div className="testimonial">
-                            <p>"Unlimited messaging meant I could really get to know my matches before meeting."</p>
+                            <p>&quot;Unlimited messaging meant I could really get to know my matches before meeting.&quot;</p>
                             <div className="testimonial-author">- Emma, 26</div>
                         </div>
                     </div>
@@ -164,7 +164,7 @@ export default async function UpgradePage({ searchParams }: { searchParams: any 
 
                 <div className="final-cta">
                     <h2>Ready to Find Your Perfect Match?</h2>
-                    <p>Join thousands of premium members who've found love on Diwa Date</p>
+                    <p>Join thousands of premium members who&apos;ve found love on Diwa Date</p>
                     <a href="/account/billing" className="upgrade-btn primary large">
                         Start Your Premium Journey
                     </a>

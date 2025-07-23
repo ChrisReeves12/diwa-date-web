@@ -12,6 +12,14 @@ export default function InfoBar({ onHide }: { onHide?: () => void }) {
     const [isLoading, setIsLoading] = useState(false);
     const currentUser = useCurrentUser();
 
+    const onboardedResult = currentUser ? userHasOnboarded(currentUser) : null;
+
+    useEffect(() => {
+        if (onboardedResult?.hasOnboarded && onHide) {
+            onHide();
+        }
+    }, [onboardedResult?.hasOnboarded, onHide]);
+
     if (!currentUser) {
         return null;
     }
@@ -29,34 +37,26 @@ export default function InfoBar({ onHide }: { onHide?: () => void }) {
         }
     }
 
-    const onboardedResult = userHasOnboarded(currentUser);
-
-    useEffect(() => {
-        if (onboardedResult.hasOnboarded && onHide) {
-            onHide();
-        }
-    }, [onboardedResult.hasOnboarded, onHide]);
-
-    if (onboardedResult.hasOnboarded) {
+    if (onboardedResult?.hasOnboarded) {
         return null;
     }
 
     const InfoContent = () => {
-        if (onboardedResult.issues.profileCompletedAt) {
+        if (onboardedResult?.issues.profileCompletedAt) {
             return (
                 <p><InfoCircleIcon /> You will not be shown to other users until you have completed your profile. <Link
                     href={'/onboarding'} className='action-button'>{isLoading ? 'Please wait...' : 'Complete Profile'}</Link></p>
             );
         }
 
-        if (onboardedResult.issues.numOfPhotos) {
+        if (onboardedResult?.issues.numOfPhotos) {
             return (
                 <p><InfoCircleIcon /> Your profile will not be shown until you have added at least 3 approved photos to your profile. <Link
                     href={'/profile/photos'} className='action-button'>{isLoading ? 'Please wait...' : 'Add Photos'}</Link></p>
             );
         }
 
-        if (onboardedResult.issues.emailVerifiedAt) {
+        if (onboardedResult?.issues.emailVerifiedAt) {
             return (
                 <p><InfoCircleIcon /> Your profile will not be shown until you verify your email. <button disabled={isLoading}
                     onClick={handleResendVerificationEmail} className='action-button'>{isLoading ? 'Please wait...' : 'Resend Email'}</button></p>
