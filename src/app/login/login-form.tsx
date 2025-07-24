@@ -168,7 +168,7 @@ export default function LoginForm() {
                                         className="btn-primary"
                                         type="submit"
                                         disabled={isLoading}>
-                                        Sign In
+                                        {isLoading ? <i className="las la-spinner"></i> : <span>Sign In</span>}
                                     </button>
                                     <div className={`loader ${isLoading ? 'is-loading' : ''}`}>
                                         <i className="las la-spinner"></i>
