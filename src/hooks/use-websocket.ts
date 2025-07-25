@@ -4,6 +4,7 @@ import {
     ServerToClientEvents,
     ClientToServerEvents
 } from '@/websocket/types/websocket-events.types';
+import { getClientWebSocketConfig } from '@/websocket/config/websocket.config';
 
 type WebSocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
@@ -18,18 +19,14 @@ export function useWebSocket() {
             return;
         }
 
-        // Get the base URL for the socket connection
-        const baseURL = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
+        // Get WebSocket configuration
+        const { url, options } = getClientWebSocketConfig();
 
-        console.log('Initializing WebSocket connection to:', baseURL);
+        console.log('Initializing WebSocket connection to:', url);
 
         // Initialize socket connection
-        const socket = io(baseURL, {
-            withCredentials: true,
-            transports: ['websocket', 'polling'],
-            reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000,
+        const socket = io(url, {
+            ...options,
             timeout: 20000,
             forceNew: true,
             // Ensure cookies are sent with the connection

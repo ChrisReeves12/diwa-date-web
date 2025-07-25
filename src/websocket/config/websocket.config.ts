@@ -23,4 +23,21 @@ export const getWebSocketConfig = () => {
         pingInterval: 25000,
         transports: ['websocket', 'polling'] as const
     };
+};
+
+export const getClientWebSocketConfig = () => {
+    // Use environment variable for websocket server URL
+    const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'http://localhost:3001';
+    
+    return {
+        url: wsUrl,
+        options: {
+            withCredentials: true,
+            transports: ['websocket', 'polling'] as const,
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            reconnectionAttempts: 5
+        }
+    };
 }; 

@@ -20,7 +20,8 @@
       "mcp__diwa-date-mcp__list-db-tables",
       "Bash(node:*)",
       "Bash(curl:*)",
-      "Bash(npm run start:*)"
+      "Bash(npm run start:*)",
+      "Bash(git rm:*)"
     ]
   },
   "enableAllProjectMcpServers": false
