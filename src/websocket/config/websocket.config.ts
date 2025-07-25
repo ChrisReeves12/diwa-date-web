@@ -21,7 +21,7 @@ export const getWebSocketConfig = () => {
         },
         pingTimeout: 60000,
         pingInterval: 25000,
-        transports: ['websocket', 'polling'] as const
+        transports: ['websocket', 'polling']
     };
 };
 
@@ -33,7 +33,7 @@ export const getClientWebSocketConfig = () => {
         url: wsUrl,
         options: {
             withCredentials: true,
-            transports: ['websocket', 'polling'] as const,
+            transports: ['websocket', 'polling'],
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
