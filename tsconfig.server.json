@@ -25,7 +25,7 @@
         }
     },
     "include": [
-        "server.ts",
+        "server-nextjs.ts",
         "src/websocket/**/*.ts"
     ],
     "exclude": [
