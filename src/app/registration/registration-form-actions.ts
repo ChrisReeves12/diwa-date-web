@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { checkUserExists, hashPassword, sendVerificationEmailToUser } from '@/server-side-helpers/user.helpers';
 import { UserRegistrationData, ValidationErrors, User, SearchFromOrigin } from '@/types';
-import prisma from '@/lib/prisma';
+import { prismaWrite } from '@/lib/prisma';
 import { createSession } from '@/server-side-helpers/session.helpers';
 import { businessConfig } from "@/config/business";
 import { logError } from '@/server-side-helpers/logging.helpers';
@@ -77,7 +77,7 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
     };
 
     // Store user in database with geoPoint
-    const newUserResult = await prisma.$queryRaw<{ id: number }[]>`
+    const newUserResult = await prismaWrite.$queryRaw<{ id: number }[]>`
       INSERT INTO users (
         "firstName", "lastName", "email", "password", "displayName", "dateOfBirth",
         "gender", "timezone", "createdAt", "seekingGender", "seekingNumOfPhotos",

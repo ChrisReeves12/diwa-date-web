@@ -6,7 +6,7 @@ import _ from "lodash";
 import { LocalityViewport } from "@/types/locality-viewport.interface";
 import { getPublicUserDetails } from "@/server-side-helpers/user.helpers";
 import { isUserOnline } from "@/helpers/user.helpers";
-import pgDbPool from "@/lib/postgres";
+import { pgDbReadPool } from "@/lib/postgres";
 import { SearchResponse } from "@/types/search-response.interface";
 import { humanizeTimeDiff } from "@/server-side-helpers/time.helpers";
 
@@ -109,7 +109,7 @@ export async function searchUsers(currentUser: Omit<User, 'password'>, params: {
         enumeratedQueries.push(`AND ${predicate}`);
     }
 
-    const searchResults = await pgDbPool.query<DbUserSearchResult>(`
+    const searchResults = await pgDbReadPool.query<DbUserSearchResult>(`
         WITH SelectedUsers AS (
             SELECT U."id",
                    U."gender",

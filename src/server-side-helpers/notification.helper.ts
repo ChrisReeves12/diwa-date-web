@@ -1,4 +1,4 @@
-import prisma from '@/lib/prisma';
+import { prismaRead, prismaWrite } from '@/lib/prisma';
 import { User, UserPhoto } from "@/types";
 import {
     appendMediaRootToImage,
@@ -55,7 +55,7 @@ type DbNotification = {
  * @returns
  */
 export async function getPendingMatches(user: User): Promise<NotificationPendingMatch[]> {
-    const pendingMatches: DbPendingMatch[] = await prisma.$queryRaw`
+    const pendingMatches: DbPendingMatch[] = await prismaRead.$queryRaw`
         SELECT 
             UM."id" as "matchId",
             UM."createdAt" as "receivedAt",
@@ -138,7 +138,7 @@ export async function getNotificationCenterData(currentUser: User): Promise<Noti
  * @returns
  */
 export async function getReceivedMessages(user: User): Promise<NotificationReceivedMessage[]> {
-    const results = await prisma.$queryRaw`
+    const results = await prismaRead.$queryRaw`
         SELECT S.* FROM (
             SELECT M.*,
                 U."displayName",
@@ -180,12 +180,12 @@ export async function getReceivedMessages(user: User): Promise<NotificationRecei
  * @returns A promise that resolves to the total count of pending matches after filtering.
  */
 export async function countAllPendingMatches(user: User): Promise<number> {
-    const mutedUsersPromise = prisma.mutedUsers.findMany({
+    const mutedUsersPromise = prismaRead.mutedUsers.findMany({
         select: { recipientId: true },
         where: { userId: user.id }
     });
 
-    const blockedUsersPromise = prisma.blockedUsers.findMany({
+    const blockedUsersPromise = prismaRead.blockedUsers.findMany({
         select: { blockedUserId: true },
         where: { userId: user.id }
     });
@@ -200,7 +200,7 @@ export async function countAllPendingMatches(user: User): Promise<number> {
         ...blockedUsers.map((bu: any) => bu.blockedUserId)
     ];
 
-    return prisma.userMatches.count({
+    return prismaRead.userMatches.count({
         where: {
             recipientId: user.id,
             status: 'pending',
@@ -217,7 +217,7 @@ export async function countAllPendingMatches(user: User): Promise<number> {
  * @returns A promise that resolves to the total count of unique senders.
  */
 export async function countAllMessages(user: User): Promise<number> {
-    const result = await prisma.$queryRaw<{ totalCount: number }[]>`
+    const result = await prismaRead.$queryRaw<{ totalCount: number }[]>`
         SELECT COUNT(DISTINCT M."userId") as "totalCount"
         FROM "messages" M
         WHERE M."recipientId" = ${user.id}
@@ -238,7 +238,7 @@ export async function countAllMessages(user: User): Promise<number> {
  * @returns A promise that resolves to an array of the top 5 most recent notifications.
  */
 export async function getPendingNotifications(user: User): Promise<Notification[]> {
-    const notifications = await prisma.notifications.findMany({
+    const notifications = await prismaRead.notifications.findMany({
         where: {
             recipientId: user.id
         },
@@ -296,7 +296,7 @@ export async function markNotificationsAsRead(userId: number, receivedNotificati
         typeof notification.id === 'string' ? parseInt(notification.id) : notification.id
     );
 
-    await prisma.notifications.updateMany({
+    await prismaWrite.notifications.updateMany({
         where: {
             id: {
                 in: notificationIds
@@ -316,7 +316,7 @@ export async function markNotificationsAsRead(userId: number, receivedNotificati
  * @returns A promise that resolves to the total count of unread notifications.
  */
 export async function countAllNotifications(user: { id: number }): Promise<number> {
-    return prisma.notifications.count({
+    return prismaRead.notifications.count({
         where: {
             recipientId: user.id,
             readAt: null

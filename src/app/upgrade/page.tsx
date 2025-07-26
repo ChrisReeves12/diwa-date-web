@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { Metadata } from "next";
 import "./upgrade.scss";
 import { CheckCircleIcon, CheckIcon, TimesIcon } from "react-line-awesome";
-import prisma from "@/lib/prisma";
+import { prismaRead } from "@/lib/prisma";
 
 export async function generateMetadata(): Promise<Metadata> {
     return {
@@ -29,7 +29,7 @@ export default async function UpgradePage({ searchParams }: { searchParams: any 
     const feature = lSearchParams.feature; // e.g., 'likes'
 
     // Fetch the first subscription plan from the database
-    const subscriptionPlan = await prisma.subscriptionPlans.findFirst({
+    const subscriptionPlan = await prismaRead.subscriptionPlans.findFirst({
         orderBy: { id: 'asc' }
     });
 

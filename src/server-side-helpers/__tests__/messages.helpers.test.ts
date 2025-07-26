@@ -3,7 +3,7 @@
  */
 
 import { sendMessage } from '../messages.helpers';
-import prisma from '@/lib/prisma';
+import { prismaRead, prismaWrite } from '@/lib/prisma';
 import { hashPassword } from '../user.helpers';
 
 describe('sendMessage Integration Tests', () => {
@@ -15,7 +15,7 @@ describe('sendMessage Integration Tests', () => {
         // Create test users
         const hashedPassword = await hashPassword('TestPassword123!');
 
-        testUser1 = await prisma.users.create({
+        testUser1 = await prismaWrite.users.create({
             data: {
                 firstName: 'Test',
                 lastName: 'User1',
@@ -40,7 +40,7 @@ describe('sendMessage Integration Tests', () => {
             }
         });
 
-        testUser2 = await prisma.users.create({
+        testUser2 = await prismaWrite.users.create({
             data: {
                 firstName: 'Test',
                 lastName: 'User2',
@@ -66,7 +66,7 @@ describe('sendMessage Integration Tests', () => {
         });
 
         // Create a test match between the users
-        testMatch = await prisma.userMatches.create({
+        testMatch = await prismaWrite.userMatches.create({
             data: {
                 userId: testUser1.id,
                 recipientId: testUser2.id,
@@ -80,35 +80,35 @@ describe('sendMessage Integration Tests', () => {
 
     afterAll(async () => {
         // Clean up test data
-        await prisma.messages.deleteMany({
+        await prismaWrite.messages.deleteMany({
             where: { matchId: testMatch.id }
         });
 
         if (testMatch) {
-            await prisma.userMatches.delete({
+            await prismaWrite.userMatches.delete({
                 where: { id: testMatch.id }
             });
         }
 
         if (testUser1) {
-            await prisma.users.delete({
+            await prismaWrite.users.delete({
                 where: { id: testUser1.id }
             });
         }
 
         if (testUser2) {
-            await prisma.users.delete({
+            await prismaWrite.users.delete({
                 where: { id: testUser2.id }
             });
         }
 
         // Close Prisma connection
-        await prisma.$disconnect();
+        await prismaWrite.$disconnect();
     });
 
     beforeEach(async () => {
         // Clean up any messages from previous tests
-        await prisma.messages.deleteMany({
+        await prismaWrite.messages.deleteMany({
             where: { matchId: testMatch.id }
         });
     });
@@ -139,7 +139,7 @@ describe('sendMessage Integration Tests', () => {
         expect(messageData.timestamp).toBeDefined();
 
         // Verify the message exists in the database
-        const messageInDb = await prisma.messages.findUnique({
+        const messageInDb = await prismaRead.messages.findUnique({
             where: { id: messageData.id }
         });
 
@@ -162,7 +162,7 @@ describe('sendMessage Integration Tests', () => {
         expect(messageInDb!.updatedAt!.getTime()).toBeGreaterThan(fiveSecondsAgo.getTime());
 
         // Verify the userMatches timestamp was updated
-        const updatedMatch = await prisma.userMatches.findUnique({
+        const updatedMatch = await prismaRead.userMatches.findUnique({
             where: { id: testMatch.id }
         });
 
@@ -176,7 +176,7 @@ describe('sendMessage Integration Tests', () => {
         const message2 = 'Second message';
 
         // Get the initial match timestamp
-        const initialMatch = await prisma.userMatches.findUnique({
+        const initialMatch = await prismaRead.userMatches.findUnique({
             where: { id: testMatch.id }
         });
         const initialTimestamp = initialMatch!.updatedAtTimestamp;
@@ -193,7 +193,7 @@ describe('sendMessage Integration Tests', () => {
         expect(result1.data).toBeDefined();
 
         // Verify match timestamp was updated after first message
-        const matchAfterFirst = await prisma.userMatches.findUnique({
+        const matchAfterFirst = await prismaRead.userMatches.findUnique({
             where: { id: testMatch.id }
         });
         expect(Number(matchAfterFirst!.updatedAtTimestamp)).toBeGreaterThan(Number(initialTimestamp));
@@ -213,13 +213,13 @@ describe('sendMessage Integration Tests', () => {
         expect(result2.data).toBeDefined();
 
         // Verify match timestamp was updated again after second message
-        const matchAfterSecond = await prisma.userMatches.findUnique({
+        const matchAfterSecond = await prismaRead.userMatches.findUnique({
             where: { id: testMatch.id }
         });
         expect(Number(matchAfterSecond!.updatedAtTimestamp)).toBeGreaterThan(Number(matchAfterFirst!.updatedAtTimestamp));
 
         // Verify both messages exist
-        const messagesInDb = await prisma.messages.findMany({
+        const messagesInDb = await prismaRead.messages.findMany({
             where: { matchId: testMatch.id },
             orderBy: { timestamp: 'asc' }
         });
@@ -266,12 +266,12 @@ describe('sendMessage Integration Tests', () => {
         const messageData = result.data;
 
         // Get the updated match
-        const updatedMatch = await prisma.userMatches.findUnique({
+        const updatedMatch = await prismaRead.userMatches.findUnique({
             where: { id: testMatch.id }
         });
 
         // Verify the message has createdAt and updatedAt timestamps
-        const messageInDb = await prisma.messages.findUnique({
+        const messageInDb = await prismaRead.messages.findUnique({
             where: { id: messageData.id }
         });
 
@@ -290,7 +290,7 @@ describe('sendMessage Integration Tests', () => {
 
     it('should return error when trying to send message to suspended user', async () => {
         // Suspend testUser2
-        await prisma.users.update({
+        await prismaWrite.users.update({
             where: { id: testUser2.id },
             data: { suspendedAt: new Date() }
         });
@@ -307,7 +307,7 @@ describe('sendMessage Integration Tests', () => {
         expect(result.data).toBeUndefined();
 
         // Clean up - unsuspend user
-        await prisma.users.update({
+        await prismaWrite.users.update({
             where: { id: testUser2.id },
             data: { suspendedAt: null }
         });
@@ -315,7 +315,7 @@ describe('sendMessage Integration Tests', () => {
 
     it('should return error when sender is blocked by recipient', async () => {
         // Block testUser1 by testUser2
-        await prisma.blockedUsers.create({
+        await prismaWrite.blockedUsers.create({
             data: {
                 userId: testUser2.id,
                 blockedUserId: testUser1.id
@@ -334,7 +334,7 @@ describe('sendMessage Integration Tests', () => {
         expect(result.data).toBeUndefined();
 
         // Clean up - remove block
-        await prisma.blockedUsers.deleteMany({
+        await prismaWrite.blockedUsers.deleteMany({
             where: {
                 userId: testUser2.id,
                 blockedUserId: testUser1.id
@@ -356,4 +356,4 @@ describe('sendMessage Integration Tests', () => {
         expect(result.error).toBe('Failed to send message. Please try again later.');
         expect(result.data).toBeUndefined();
     });
-}); 
+});

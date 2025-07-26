@@ -1,9 +1,8 @@
-import prisma from "@/lib/prisma";
+import { prismaRead, prismaWrite } from "@/lib/prisma";
 import { User, UserPhoto } from "@/types";
 import {
     getPublicUserDetails,
     getUser,
-    getUserProfileDetail,
     calculateUserAge,
     refreshLastActive,
     canUserMessage
@@ -46,7 +45,7 @@ export type ConversationMatch = DbConversation & Pick<User, "photos" | "mainPhot
  * @returns
  */
 export async function getConversationsFromMatches(userId: number): Promise<ConversationMatch[]> {
-    const matches = await prisma.$queryRaw<DbConversation[]>`
+    const matches = await prismaRead.$queryRaw<DbConversation[]>`
         WITH MatchesWithUserIds AS (
             SELECT
                 UM."id",
@@ -134,7 +133,7 @@ export async function sendMessage(
     }
 
     try {
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prismaWrite.$transaction(async (tx) => {
             const now = new Date();
             const timestamp = Date.now();
 
@@ -217,7 +216,7 @@ export async function getMessagesForMatch(
         const { limit = pageSize, cursor, direction = 'before' } = options;
 
         // First verify that the user is part of this match
-        const match = await prisma.userMatches.findFirst({
+        const match = await prismaRead.userMatches.findFirst({
             where: {
                 id: matchId,
                 OR: [
@@ -260,7 +259,7 @@ export async function getMessagesForMatch(
         }
 
         // Get all messages for this match with sender information, excluding blocked/suspended users
-        const messages = await prisma.messages.findMany({
+        const messages = await prismaRead.messages.findMany({
             where,
             include: {
                 users: true
@@ -340,7 +339,7 @@ export async function getMatchDetails(
 ): Promise<{ error?: string; statusCode: number; data?: any }> {
     try {
         // Get the match and other user details
-        const match = await prisma.userMatches.findFirst({
+        const match = await prismaRead.userMatches.findFirst({
             where: {
                 id: matchId,
                 OR: [
@@ -442,7 +441,7 @@ export async function markMessagesAsRead(
 ): Promise<{ error?: string; statusCode: number; data?: any }> {
     try {
         // First verify that the user is part of this match
-        const match = await prisma.userMatches.findFirst({
+        const match = await prismaRead.userMatches.findFirst({
             where: {
                 id: matchId,
                 OR: [
@@ -467,7 +466,7 @@ export async function markMessagesAsRead(
 
         // Mark all unread messages in this match as read for the current user
         // Only mark messages where the current user is the recipient and readAt is null
-        const updateResult = await prisma.messages.updateMany({
+        const updateResult = await prismaWrite.messages.updateMany({
             where: {
                 matchId: matchId,
                 recipientId: userId,
@@ -486,7 +485,7 @@ export async function markMessagesAsRead(
                 await refreshLastActive(readingUser);
             }
 
-            const latestMessage = await prisma.messages.findFirst({
+            const latestMessage = await prismaRead.messages.findFirst({
                 where: {
                     matchId: matchId,
                     recipientId: userId
@@ -529,7 +528,7 @@ export async function markMessagesAsRead(
  */
 export async function markMatchesAsRead(currentUserId: number, conversations: ConversationMatch[]) {
     const matchIds = conversations.map(conversation => conversation.matchId);
-    const updateResult = await prisma.userMatches.updateMany({
+    const updateResult = await prismaWrite.userMatches.updateMany({
         where: {
             id: {
                 in: matchIds
@@ -542,7 +541,7 @@ export async function markMatchesAsRead(currentUserId: number, conversations: Co
     });
 
     // Remove notifications
-    await prisma.$queryRaw`DELETE FROM "notifications" 
+    await prismaWrite.$queryRaw`DELETE FROM "notifications" 
         WHERE (data #>> '{matchId}')::integer = ANY (${matchIds}) AND "recipientId" = ${currentUserId}`;
 
     return updateResult;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/server-side-helpers/user.helpers';
 import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
+import { prismaWrite } from '@/lib/prisma';
 import { UserPhoto } from '@/types/user-photo.type';
 
 export async function POST(request: NextRequest) {
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Update user's photos in database
-    await prisma.users.update({
+    await prismaWrite.users.update({
       where: { id: currentUser.id },
       data: { 
         photos: updatedPhotos as any

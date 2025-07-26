@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from "@/server-side-helpers/user.helpers";
 import { redirect } from "next/navigation";
-import prisma from "@/lib/prisma";
+import { prismaRead, prismaWrite } from "@/lib/prisma";
 import { SearchParameters, SearchSortBy } from "@/types/search-parameters.interface";
 import { logError } from "@/server-side-helpers/logging.helpers";
 import { cookies } from "next/headers";
@@ -34,7 +34,7 @@ export async function updateUserSearchPreferences(searchPrefs: Partial<SearchPar
             redirect('/login');
         }
 
-        await prisma.users.update({
+        await prismaWrite.users.update({
             where: { id: currentUser.id },
             data: {
                 seekingMinAge: searchPrefs.seekingMinAge || currentUser.seekingMinAge,

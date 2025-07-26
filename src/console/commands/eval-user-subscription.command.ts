@@ -1,5 +1,5 @@
 import ConsoleCommand from "@/console/commands/console.command";
-import pgDbPool from "@/lib/postgres";
+import { pgDbReadPool, pgDbWritePool } from "@/lib/postgres";
 import { Command } from "commander";
 import { chargeCustomerByBillingEntry, generateReceiptHtml, generatePaymentReviewEmail, generateBillingFailureEmail } from "@/server-side-helpers/billing.helpers";
 import { sendEmail } from "@/server-side-helpers/mail.helper";
@@ -20,7 +20,7 @@ export default class EvalUserSubscriptionsCommand extends ConsoleCommand {
         const batchSize = 1000;
 
         while (true) {
-            const users = await pgDbPool.query(
+            const users = await pgDbReadPool.query(
                 `SELECT DISTINCT ON (u.id)
                     spe."id" as "enrollmentId",  
                     spe."lastPaymentAt",
@@ -50,8 +50,8 @@ export default class EvalUserSubscriptionsCommand extends ConsoleCommand {
             for (const user of users.rows) {
                 console.log(`Evaluating subscription for user ${user.id} (${user.email})`);
                 if (user.subscriptionStatus === 'expired' || !user.billingEntryId) {
-                    await pgDbPool.query(`DELETE FROM "subscriptionPlanEnrollments" WHERE "id" = $1`, [user.enrollmentId]);
-                    await pgDbPool.query(`UPDATE "users" SET "isPremium" = false, "updatedAt" = NOW() WHERE id = $1`, [user.id]);
+                    await pgDbWritePool.query(`DELETE FROM "subscriptionPlanEnrollments" WHERE "id" = $1`, [user.enrollmentId]);
+                    await pgDbWritePool.query(`UPDATE "users" SET "isPremium" = false, "updatedAt" = NOW() WHERE id = $1`, [user.id]);
                 } else {
                     let paymentSucceeded = false;
                     let paymentTxnResult;
@@ -79,7 +79,7 @@ export default class EvalUserSubscriptionsCommand extends ConsoleCommand {
                     }
 
                     if (paymentSucceeded) {
-                        await pgDbPool
+                        await pgDbWritePool
                             .query(`UPDATE "subscriptionPlanEnrollments" 
                                     SET "lastPaymentAt" = CURRENT_DATE, 
                                         "lastEvalAt" = CURRENT_TIMESTAMP,
@@ -106,13 +106,13 @@ export default class EvalUserSubscriptionsCommand extends ConsoleCommand {
                     } else {
                         // Payment is under review
                         if (responseCode === '4') {
-                            await pgDbPool.query(`
+                            await pgDbWritePool.query(`
                                 INSERT INTO "billingHolds" ("userId", "enrollmentId", "reason", "responseCode", "amount", "planName", "createdAt", "updatedAt")
                                 VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                             `, [user.id, user.enrollmentId, 'Payment under review', responseCode, user.price, user.planName]);
 
-                            // Update lastEvalAt to 2 days from current date
-                            await pgDbPool.query(`
+                            // Update lastEvalAt to 2 days from the current date
+                            await pgDbWritePool.query(`
                                 UPDATE "subscriptionPlanEnrollments" 
                                 SET "lastEvalAt" = CURRENT_TIMESTAMP + INTERVAL '2 days',
                                     "updatedAt" = CURRENT_TIMESTAMP
@@ -129,9 +129,9 @@ export default class EvalUserSubscriptionsCommand extends ConsoleCommand {
 
                             await sendEmail([user.email], `Notice: Payment under review for your Diwa Date membership`, paymentReviewHtml);
                         } else {
-                            // If the payment was declined for other reasons, remove subscription
-                            await pgDbPool.query(`DELETE FROM "subscriptionPlanEnrollments" WHERE id = $1`, [user.enrollmentId]);
-                            await pgDbPool.query(`UPDATE "users" SET "isPremium" = false, "updatedAt" = NOW() WHERE id = $1`, [user.id]);
+                            // If the payment was declined for other reasons, remove the subscription
+                            await pgDbWritePool.query(`DELETE FROM "subscriptionPlanEnrollments" WHERE id = $1`, [user.enrollmentId]);
+                            await pgDbWritePool.query(`UPDATE "users" SET "isPremium" = false, "updatedAt" = NOW() WHERE id = $1`, [user.id]);
 
                             const billingFailureHtml = generateBillingFailureEmail({
                                 customerEmail: user.email,

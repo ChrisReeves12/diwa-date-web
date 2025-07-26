@@ -2,7 +2,7 @@
 
 import { getCurrentUser, hashPassword, comparePasswords, getBlockedUsers, unBlockUser, generateEmailUpdateUrl } from "@/server-side-helpers/user.helpers";
 import { cookies } from "next/headers";
-import prisma from "@/lib/prisma";
+import { prismaRead, prismaWrite } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { deleteSession, getSessionId } from "@/server-side-helpers/session.helpers";
 import { sendEmail } from "@/server-side-helpers/mail.helper";
@@ -18,7 +18,7 @@ export async function toggleOnlineStatus(hideOnlineStatus: boolean) {
         throw new Error("User not found");
     }
 
-    await prisma.users.update({
+    await prismaWrite.users.update({
         where: { id: currentUser.id },
         data: { hideOnlineStatus }
     });
@@ -40,7 +40,7 @@ export async function updatePassword(currentPassword: string, newPassword: strin
     }
 
     // Get the user's current password hash from the database
-    const userWithPassword = await prisma.users.findUnique({
+    const userWithPassword = await prismaRead.users.findUnique({
         where: { id: currentUser.id },
         select: { password: true }
     });
@@ -68,7 +68,7 @@ export async function updatePassword(currentPassword: string, newPassword: strin
     const hashedNewPassword = await hashPassword(newPassword);
 
     // Update the password in the database
-    await prisma.users.update({
+    await prismaWrite.users.update({
         where: { id: currentUser.id },
         data: {
             password: hashedNewPassword,
@@ -94,7 +94,7 @@ export async function deleteAccount(password: string) {
     }
 
     // Get the user's current password hash from the database
-    const userWithPassword = await prisma.users.findUnique({
+    const userWithPassword = await prismaRead.users.findUnique({
         where: { id: currentUser.id },
         select: { password: true }
     });
@@ -111,7 +111,7 @@ export async function deleteAccount(password: string) {
 
     try {
         // Delete customer profile from Authorize.net if it exists
-        const existingBilling = await prisma.billingInformationEntries.findFirst({
+        const existingBilling = await prismaRead.billingInformationEntries.findFirst({
             where: { userId: currentUser.id }
         });
 
@@ -137,7 +137,7 @@ export async function deleteAccount(password: string) {
 
         // Delete the user account - this will cascade delete all related records
         // due to the onDelete: Cascade constraints in the database schema
-        await prisma.users.delete({
+        await prismaWrite.users.delete({
             where: { id: currentUser.id }
         });
 
@@ -164,7 +164,7 @@ export async function toggleAccountDeactivation(deactivate: boolean) {
         return { success: false, error: "User not found" };
     }
 
-    await prisma.users.update({
+    await prismaWrite.users.update({
         where: { id: currentUser.id },
         data: {
             deactivatedAt: deactivate ? new Date() : null,
@@ -237,7 +237,7 @@ export async function updateEmail(newEmail: string) {
         }
 
         // Check if email is already in use by another user
-        const existingUser = await prisma.users.findFirst({
+        const existingUser = await prismaRead.users.findFirst({
             where: {
                 email: newEmail.toLowerCase(),
                 id: { not: currentUser.id }

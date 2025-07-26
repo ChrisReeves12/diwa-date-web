@@ -1,4 +1,4 @@
-import prisma from '@/lib/prisma';
+import { prismaRead, prismaWrite } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { User, AuthResult, UserPhoto, UserPreview, SubscriptionPlanEnrollment } from '../types';
 import moment from "moment";
@@ -13,7 +13,7 @@ import { businessConfig } from "@/config/business";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 import { logError } from "@/server-side-helpers/logging.helpers";
 import { LikesSortBy } from "@/types/likes-sort-by.enum";
-import pgDbPool from "@/lib/postgres";
+import { pgDbReadPool, pgDbWritePool } from "@/lib/postgres";
 import { humanizeTimeDiff } from "@/server-side-helpers/time.helpers";
 import { UserProfileDetail } from '@/types/user-profile-detail.interface';
 import {
@@ -24,6 +24,9 @@ import {
     emitUserUnblocked
 } from '@/server-side-helpers/notification-emitter.helper';
 import { sendEmail } from './mail.helper';
+import { createGenderLabels } from '@/helpers/user.helpers';
+import { generateCryptoRandomString } from "@/util";
+import { NextResponse } from 'next/server';
 
 type UserForProfileDetail = Pick<User,
     | "id"
@@ -84,7 +87,7 @@ export interface MessagingPermissionResult {
  * @returns The user object without the password or null if not found
  */
 export async function getUser(id: number): Promise<User | null> {
-    const user = await prisma.users.findUnique({
+    const user = await prismaRead.users.findUnique({
         where: {
             id: id
         }
@@ -108,7 +111,7 @@ export async function getUser(id: number): Promise<User | null> {
  */
 export async function blockUser(userId: number, blockedUserId: number) {
     // Check if already blocked
-    const existingBlock = await prisma.blockedUsers.findFirst({
+    const existingBlock = await prismaRead.blockedUsers.findFirst({
         where: {
             userId: userId,
             blockedUserId: blockedUserId
@@ -121,7 +124,7 @@ export async function blockUser(userId: number, blockedUserId: number) {
 
     // Create a new block record
     const blockTimestamp = new Date();
-    await prisma.blockedUsers.create({
+    await prismaWrite.blockedUsers.create({
         data: {
             userId: userId,
             blockedUserId: blockedUserId
@@ -150,7 +153,7 @@ export async function blockUser(userId: number, blockedUserId: number) {
  */
 export async function unBlockUser(userId: number, blockedUserId: number) {
     // Delete block record if exists
-    await prisma.blockedUsers.deleteMany({
+    await prismaWrite.blockedUsers.deleteMany({
         where: {
             userId: userId,
             blockedUserId: blockedUserId
@@ -178,11 +181,10 @@ export async function unBlockUser(userId: number, blockedUserId: number) {
 export async function refreshLastActive(user: User) {
     try {
         await Promise.all([
-            prisma.users.update({
+            prismaWrite.users.update({
                 where: { id: user.id },
                 data: { lastActiveAt: new Date() }
             }),
-            // updateUserSearchDocument(Number(user.id), {doc: {last_active_at: new Date()}})
         ]);
     } catch (error: any) {
         logError(error);
@@ -195,7 +197,7 @@ export async function refreshLastActive(user: User) {
  * @param user
  */
 export async function getUserProfileDetail(currentUserId: number, user: UserForProfileDetail) {
-    const { rows: profileDetailResults } = await pgDbPool.query(`
+    const { rows: profileDetailResults } = await pgDbReadPool.query(`
                 WITH "TheyBlockedMeIds" AS (SELECT "BU"."userId"
                                             FROM "blockedUsers" "BU"
                                             WHERE "BU"."blockedUserId" = $1),
@@ -269,10 +271,6 @@ export async function getUserProfileDetail(currentUserId: number, user: UserForP
     };
 }
 
-import { createGenderLabels } from '@/helpers/user.helpers';
-import { generateCryptoRandomString } from "@/util";
-import { NextResponse } from 'next/server';
-
 /**
  * Authenticate a user with email and password
  * @param email The user's email
@@ -285,7 +283,7 @@ export async function authenticateUser(
     password: string,
     response?: NextResponse
 ): Promise<AuthResult> {
-    const user = await prisma.users.findUnique({
+    const user = await prismaRead.users.findUnique({
         where: {
             email
         }
@@ -341,7 +339,7 @@ export async function getCurrentUser(cookieStore: ReadonlyRequestCookies) {
     }
 
     // Get the user from the database
-    const result = await prisma.users.findUnique({
+    const result = await prismaRead.users.findUnique({
         where: {
             id: typeof sessionData.userId === 'string' ? Number(sessionData.userId) : sessionData.userId,
             suspendedAt: null
@@ -373,7 +371,7 @@ export async function getCurrentUser(cookieStore: ReadonlyRequestCookies) {
  * @returns
  */
 export async function verifyUserEmail(token: string, currentUserId: number) {
-    const { rows: users } = await pgDbPool.query(
+    const { rows: users } = await pgDbReadPool.query(
         `SELECT * FROM users WHERE "emailVerificationToken" = $1 AND "emailVerificationTokenExpiry" > NOW() LIMIT 1`,
         [token]
     );
@@ -384,7 +382,7 @@ export async function verifyUserEmail(token: string, currentUserId: number) {
         return { error: 'Unauthorized', status: 401 };
     }
 
-    await pgDbPool.query(
+    await pgDbWritePool.query(
         `UPDATE users 
          SET "emailVerifiedAt" = NOW(),
              "emailVerificationToken" = NULL,
@@ -453,7 +451,7 @@ export function checkSubscriptionActive(user: { subscriptionPlanEnrollments?: Su
  * @returns The active subscription enrollment or null if none found
  */
 export async function getUserActiveSubscription(userId: number): Promise<SubscriptionPlanEnrollment | null> {
-    const subscription = await prisma.subscriptionPlanEnrollments.findFirst({
+    const subscription = await prismaRead.subscriptionPlanEnrollments.findFirst({
         where: {
             userId: userId,
             startedAt: {
@@ -488,7 +486,7 @@ export async function isUserPremium(userId: number): Promise<boolean> {
  * @returns True if a user with this email exists, false otherwise
  */
 export async function checkUserExists(email: string): Promise<boolean> {
-    const user = await prisma.users.findUnique({
+    const user = await prismaRead.users.findUnique({
         where: {
             email: email.toLowerCase()
         }
@@ -504,7 +502,7 @@ export async function checkUserExists(email: string): Promise<boolean> {
  */
 export async function generateEmailUpdateUrl(userId: number, newEmail: string) {
     const token = generateCryptoRandomString(32);
-    await pgDbPool.query(`UPDATE "users" SET "resetToken" = $1, 
+    await pgDbWritePool.query(`UPDATE "users" SET "resetToken" = $1, 
                                              "resetTokenExpiry" = NOW() + INTERVAL '20 minutes', 
                                              "newDesiredEmail" = $2,
                                              "updatedAt" = NOW() WHERE id = $3`, [token, newEmail.toLowerCase(), userId]);
@@ -518,7 +516,7 @@ export async function generateEmailUpdateUrl(userId: number, newEmail: string) {
  * @param newEmail
  */
 export async function updateUserEmail(userId: number, newEmail: string) {
-    await pgDbPool.query(`
+    await pgDbWritePool.query(`
         UPDATE "users" 
         SET "email" = $1,
             "newDesiredEmail" = NULL,
@@ -630,7 +628,7 @@ export function getPublicUserDetails(user: Pick<User, "mainPhoto" | "photos"> & 
  * @param userId
  */
 export async function isUserSuspended(userId: number) {
-    const result = await pgDbPool.query(`SELECT ("suspendedAt" IS NOT NULL) AS "isSuspended"
+    const result = await pgDbReadPool.query(`SELECT ("suspendedAt" IS NOT NULL) AS "isSuspended"
                                                FROM users
                                                WHERE id = $1`, [userId]);
 
@@ -642,7 +640,7 @@ export async function isUserSuspended(userId: number) {
  * @param resetToken
  */
 export async function findUserByResetToken(resetToken: string) {
-    const result = await pgDbPool.query<Pick<User, "id" | "newDesiredEmail" | "password">>(`SELECT id, "newDesiredEmail", "password" FROM "users" WHERE "resetToken" = $1 
+    const result = await pgDbReadPool.query<Pick<User, "id" | "newDesiredEmail" | "password">>(`SELECT id, "newDesiredEmail", "password" FROM "users" WHERE "resetToken" = $1 
                         AND "resetTokenExpiry" IS NOT NULL AND "resetTokenExpiry" > NOW() LIMIT 1`, [resetToken]);
 
     if (result.rows.length > 0) {
@@ -661,7 +659,7 @@ export async function suspendUser(userId: number, suspend: boolean = true): Prom
         const suspendedAtValue = suspend ? new Date() : null;
 
         // Update the user record in the database
-        await prisma.users.update({
+        await prismaWrite.users.update({
             where: {
                 id: userId
             },
@@ -717,7 +715,7 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
     }
 
     // Check if a match already exists
-    const existingMatch = await prisma.userMatches.findFirst({
+    const existingMatch = await prismaRead.userMatches.findFirst({
         where: {
             OR: [
                 {
@@ -735,7 +733,7 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
     // If there's an existing match where the current user is the recipient,
     // this means the other user already liked them, so we should confirm the match
     if (existingMatch && Number(existingMatch.recipientId) === userId && existingMatch.status === 'pending') {
-        await prisma.userMatches.update({
+        await prismaWrite.userMatches.update({
             where: {
                 id: existingMatch.id
             },
@@ -748,7 +746,7 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
 
         // Create a notification for the original match initiator (the user who sent the original match request)
         if (shouldCreateNotification) {
-            const notification = await prisma.notifications.create({
+            const notification = await prismaWrite.notifications.create({
                 data: {
                     userId: userId, // The user who confirmed the match
                     recipientId: existingMatch.userId, // The user who originally initiated the match
@@ -789,7 +787,7 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
     }
 
     // Create a new match with pending status
-    const newMatch = await prisma.userMatches.create({
+    const newMatch = await prismaWrite.userMatches.create({
         data: {
             userId: userId,
             recipientId: recipientUserId,
@@ -820,7 +818,7 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
         console.error('Failed to emit pending like notification:', wsError);
     }
 
-    await prisma.mutedUsers.deleteMany({
+    await prismaWrite.mutedUsers.deleteMany({
         where: {
             userId: recipientUserId,
             recipientId: userId
@@ -843,7 +841,7 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
 export async function canUserMessage(senderId: number, recipientId: number): Promise<MessagingPermissionResult> {
     try {
         // Get both users' premium status in one query
-        const usersResult = await pgDbPool.query(
+        const usersResult = await pgDbReadPool.query(
             `SELECT id, "isPremium" FROM users WHERE id = ANY($1)`,
             [[senderId, recipientId]]
         )
@@ -895,7 +893,7 @@ export async function canUserMessage(senderId: number, recipientId: number): Pro
  */
 export async function removeUserMatchRequest(userId: number, recipientUserId: number): Promise<void> {
     // First get the match information before deleting for WebSocket notification
-    const existingMatch = await prisma.userMatches.findFirst({
+    const existingMatch = await prismaRead.userMatches.findFirst({
         where: {
             OR: [
                 {
@@ -911,7 +909,7 @@ export async function removeUserMatchRequest(userId: number, recipientUserId: nu
     });
 
     // Delete any match between these users
-    await prisma.userMatches.deleteMany({
+    await prismaWrite.userMatches.deleteMany({
         where: {
             OR: [
                 {
@@ -951,7 +949,7 @@ export async function removeUserMatchRequest(userId: number, recipientUserId: nu
  */
 export async function muteUserById(userId: number, recipientUserId: number): Promise<boolean> {
     // Check if there is a mutedUser record by userId and recipientId
-    const existingMuted = await prisma.mutedUsers.findFirst({
+    const existingMuted = await prismaRead.mutedUsers.findFirst({
         where: {
             userId: userId,
             recipientId: recipientUserId
@@ -960,7 +958,7 @@ export async function muteUserById(userId: number, recipientUserId: number): Pro
 
     // If there is no record, insert one
     if (!existingMuted) {
-        await prisma.mutedUsers.create({
+        await prismaWrite.mutedUsers.create({
             data: {
                 userId: userId,
                 recipientId: recipientUserId,
@@ -979,7 +977,7 @@ export async function muteUserById(userId: number, recipientUserId: number): Pro
  * @returns Array of blocked user details
  */
 export async function getBlockedUsers(userId: number): Promise<UserPreview[]> {
-    const results = await pgDbPool.query(`
+    const results = await pgDbReadPool.query(`
         SELECT 
             U."id",
             U."displayName",
@@ -1018,7 +1016,7 @@ export async function getBlockedUsers(userId: number): Promise<UserPreview[]> {
  * @param blockedUserId
  */
 export async function isUserBlocked(userId: number, blockedUserId: number) {
-    const result = await pgDbPool.query(`SELECT EXISTS(SELECT 1 FROM "blockedUsers" WHERE "userId" = $1 AND "blockedUserId" = $2) as "isBlocked"`,
+    const result = await pgDbReadPool.query(`SELECT EXISTS(SELECT 1 FROM "blockedUsers" WHERE "userId" = $1 AND "blockedUserId" = $2) as "isBlocked"`,
         [userId, blockedUserId]);
 
     return _.get(result.rows, [0, 'isBlocked'], false);
@@ -1054,7 +1052,7 @@ export async function getUserLikes(
             break;
     }
 
-    const results = await pgDbPool.query<DbLike>(`
+    const results = await pgDbReadPool.query<DbLike>(`
         SELECT 
             U."id",
             U."displayName",
@@ -1113,7 +1111,7 @@ export async function getUserLikes(
  * @returns True if the operation was successful
  */
 export async function unMuteUserById(userId: number, recipientUserId: number): Promise<boolean> {
-    await prisma.mutedUsers.deleteMany({
+    await prismaWrite.mutedUsers.deleteMany({
         where: {
             userId: userId,
             recipientId: recipientUserId
@@ -1152,13 +1150,13 @@ export async function getFullUserProfile(userId: number, currentUserId: number):
 
         // Check if target user's seekingGender includes current user's gender
         if (user.seekingGender && currentUser.gender) {
-            const isGenderMatch = user.seekingGender === 'both' || 
+            const isGenderMatch = user.seekingGender === 'both' ||
                                  user.seekingGender === currentUser.gender;
-            
+
             if (!isGenderMatch) {
-                return { 
-                    error: `This profile has indicated they are seeking ${user.seekingGender} and your profile indicates you are ${currentUser.gender}.`, 
-                    statusCode: 403 
+                return {
+                    error: `This profile has indicated they are seeking ${user.seekingGender} and your profile indicates you are ${currentUser.gender}.`,
+                    statusCode: 403
                 };
             }
         }
@@ -1178,9 +1176,10 @@ export async function getFullUserProfile(userId: number, currentUserId: number):
  */
 export async function sendVerificationEmailToUser(userId: number): Promise<boolean> {
     // Get the user from the database
-    const user = await prisma.users.findUnique({
+    const user = await prismaRead.users.findUnique({
         where: { id: userId }
     });
+
     if (!user || !user.email) {
         return false;
     }
@@ -1188,7 +1187,7 @@ export async function sendVerificationEmailToUser(userId: number): Promise<boole
     // Generate a verification token
     const token = generateCryptoRandomString(32);
     // Store the token and expiry in the database
-    await pgDbPool.query(
+    await pgDbWritePool.query(
         `UPDATE users 
          SET "emailVerificationToken" = $1,
              "emailVerificationTokenExpiry" = NOW() + INTERVAL '20 minutes'
@@ -1219,7 +1218,7 @@ export async function sendVerificationEmailToUser(userId: number): Promise<boole
  * @param resetToken
  */
 export async function findUserByPasswordResetToken(resetToken: string) {
-    const result = await pgDbPool.query<Pick<User, "id" | "email" | "firstName" | "lastName">>(`
+    const result = await pgDbReadPool.query<Pick<User, "id" | "email" | "firstName" | "lastName">>(`
         SELECT id, email, "firstName", "lastName" 
         FROM "users" 
         WHERE "passwordResetToken" = $1 
@@ -1239,7 +1238,7 @@ export async function findUserByPasswordResetToken(resetToken: string) {
  */
 export async function generatePasswordResetToken(email: string) {
     // Check if a user exists
-    const user = await prisma.users.findUnique({
+    const user = await prismaRead.users.findUnique({
         where: { email: email.toLowerCase() }
     });
 
@@ -1250,8 +1249,8 @@ export async function generatePasswordResetToken(email: string) {
     // Generate reset token
     const token = generateCryptoRandomString(32);
 
-    // Store token and expiry in database
-    await pgDbPool.query(`
+    // Store token and expiry in the database
+    await pgDbWritePool.query(`
         UPDATE "users" 
         SET "passwordResetToken" = $1, 
             "passwordResetTokenExpiry" = NOW() + INTERVAL '20 minutes', 
@@ -1293,7 +1292,7 @@ export async function generatePasswordResetToken(email: string) {
 export async function updateUserPassword(userId: number, newPassword: string) {
     const hashedPassword = await hashPassword(newPassword);
 
-    await pgDbPool.query(`
+    await pgDbWritePool.query(`
         UPDATE "users" 
         SET "password" = $1,
             "passwordResetToken" = NULL,
@@ -1440,7 +1439,7 @@ export async function updatePersonalInformationForUser(currentUser: any, data: a
             updateData.profileCompletedAt = null;
         } else {
             // Only set profileCompletedAt if it was previously null
-            const user = await prisma.users.findUnique({
+            const user = await prismaRead.users.findUnique({
                 where: { id: currentUser.id },
                 select: { profileCompletedAt: true }
             });
@@ -1452,7 +1451,7 @@ export async function updatePersonalInformationForUser(currentUser: any, data: a
 
         // Update the user in the database
         if (data.location && data.location.coordinates) {
-            await prisma.$executeRaw`
+            await prismaWrite.$executeRaw`
                 UPDATE users 
                 SET 
                     "displayName" = ${updateData.displayName},
@@ -1487,7 +1486,7 @@ export async function updatePersonalInformationForUser(currentUser: any, data: a
             `;
         } else {
             // Update without geoPoint changes
-            await prisma.users.update({
+            await prismaWrite.users.update({
                 where: { id: currentUser.id },
                 data: updateData
             });
@@ -1534,7 +1533,7 @@ export async function reportUser(
         }
 
         // Check if a report already exists
-        const existingReport = await pgDbPool.query(
+        const existingReport = await pgDbReadPool.query(
             `SELECT id FROM "userReports" WHERE "userId" = $1 AND "reportedUserId" = $2`,
             [reportingUserId, reportedUserId]
         );
@@ -1544,7 +1543,7 @@ export async function reportUser(
         }
 
         // Create the report
-        await pgDbPool.query(
+        await pgDbWritePool.query(
             `INSERT INTO "userReports" ("userId", "reportedUserId", "reportContent", "status", "createdAt", "updatedAt")
              VALUES ($1, $2, $3, 'pending', NOW(), NOW())`,
             [reportingUserId, reportedUserId, trimmedContent]

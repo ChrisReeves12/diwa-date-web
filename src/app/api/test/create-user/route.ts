@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prismaWrite } from '@/lib/prisma';
 import { hashPassword, checkUserExists } from '@/server-side-helpers/user.helpers';
 import { SearchFromOrigin } from '@/types';
 import { businessConfig } from '@/config/business';
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
         };
 
         // Create user in database
-        const newUser = await prisma.users.create({
+        const newUser = await prismaWrite.users.create({
             data: createData as never
         });
 

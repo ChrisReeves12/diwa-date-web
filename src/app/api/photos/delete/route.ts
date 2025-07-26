@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/server-side-helpers/user.helpers';
 import { cookies } from 'next/headers';
-import prisma from '@/lib/prisma';
+import { prismaRead, prismaWrite } from '@/lib/prisma';
 import { UserPhoto } from '@/types/user-photo.type';
 import { deleteFileFromS3 } from '@/lib/s3';
 
@@ -20,7 +20,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get current user photos
-    const user = await prisma.users.findUnique({
+    const user = await prismaRead.users.findUnique({
       where: { id: currentUser.id },
       select: { photos: true, numOfPhotos: true, mainPhoto: true }
     });
@@ -53,7 +53,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Update user in database
-    await prisma.users.update({
+    await prismaWrite.users.update({
       where: { id: currentUser.id },
       data: {
         photos: updatedPhotos as unknown as any,

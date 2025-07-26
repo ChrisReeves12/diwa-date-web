@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/server-side-helpers/user.helpers';
 import { cookies } from 'next/headers';
-import prisma from '@/lib/prisma';
+import { prismaRead, prismaWrite } from '@/lib/prisma';
 import { UserPhoto } from '@/types/user-photo.type';
 
 export async function POST(request: NextRequest) {
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get current user photos
-    const user = await prisma.users.findUnique({
+    const user = await prismaRead.users.findUnique({
       where: { id: currentUser.id },
       select: { photos: true, mainPhoto: true }
     });
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const newMainPhoto = reorderedPhotos.length > 0 ? reorderedPhotos[0].path : null;
 
     // Update user in database
-    await prisma.users.update({
+    await prismaWrite.users.update({
       where: { id: currentUser.id },
       data: {
         photos: reorderedPhotos as unknown as any,

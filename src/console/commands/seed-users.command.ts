@@ -2,7 +2,7 @@ import ConsoleCommand from "./console.command";
 import { Command } from "commander";
 import { faker } from '@faker-js/faker';
 import { businessConfig } from "@/config/business";
-import pgDbPool from "@/lib/postgres";
+import { pgDbReadPool, pgDbWritePool } from "@/lib/postgres";
 import bcrypt from 'bcryptjs';
 import { SearchFromOrigin } from "@/types/user.interface";
 
@@ -39,7 +39,7 @@ export default class SeedUsersCommand extends ConsoleCommand {
 
         try {
             // Fetch cached locations
-            const locationsResult = await pgDbPool.query('SELECT * FROM "cachedLocations"');
+            const locationsResult = await pgDbReadPool.query('SELECT * FROM "cachedLocations"');
             const cachedLocations: CachedLocation[] = locationsResult.rows;
 
             if (cachedLocations.length === 0) {
@@ -290,6 +290,6 @@ export default class SeedUsersCommand extends ConsoleCommand {
             userData.emailVerifiedAt, userData.isUnderReview, userData.deactivatedAt
         ];
 
-        await pgDbPool.query(query, values);
+        await pgDbWritePool.query(query, values);
     }
 } 

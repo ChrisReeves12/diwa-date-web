@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { generateUserPhotoKey, getFileExtension, isValidImageType, isValidFileSize } from '@/lib/s3';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
-import { prisma } from '@/lib/prisma';
+import { prismaWrite } from '@/lib/prisma';
 import { UserPhoto } from '@/types/user-photo.type';
 
 // S3 client configuration
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     const newMainPhoto = isMainPhoto ? newPhotoPath : currentUser.mainPhoto;
 
     // Update user's photos in database
-    await prisma.users.update({
+    await prismaWrite.users.update({
       where: { id: currentUser.id },
       data: { 
         photos: updatedPhotos as any,

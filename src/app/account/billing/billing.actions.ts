@@ -2,8 +2,8 @@
 
 import { getCurrentUser } from "@/server-side-helpers/user.helpers";
 import { cookies } from "next/headers";
-import prisma from "@/lib/prisma";
-import pgDbPool from "@/lib/postgres";
+import { prismaRead, prismaWrite } from "@/lib/prisma";
+import { pgDbReadPool, pgDbWritePool } from "@/lib/postgres";
 import { revalidatePath } from "next/cache";
 import {
     createCustomerProfileWithPayment,
@@ -98,7 +98,7 @@ export async function updateBillingInformation(billingInfo: BillingInformation) 
         }
 
         // Check if user already has billing information
-        const existingBilling = await prisma.billingInformationEntries.findFirst({
+        const existingBilling = await prismaRead.billingInformationEntries.findFirst({
             where: { userId: currentUser.id }
         });
 
@@ -118,13 +118,13 @@ export async function updateBillingInformation(billingInfo: BillingInformation) 
 
         if (existingBilling) {
             // Update existing billing information
-            await prisma.billingInformationEntries.update({
+            await prismaWrite.billingInformationEntries.update({
                 where: { id: existingBilling.id },
                 data: billingData
             });
         } else {
             // Create new billing information
-            await prisma.billingInformationEntries.create({
+            await prismaWrite.billingInformationEntries.create({
                 data: {
                     ...billingData,
                     createdAt: new Date()
@@ -227,7 +227,7 @@ export async function updateBillingAndPaymentWithAuthorizeNet(combinedInfo: Comb
         }
 
         // Delete existing entries
-        const existingBilling = await prisma.billingInformationEntries.findFirst({
+        const existingBilling = await prismaRead.billingInformationEntries.findFirst({
             where: { userId: currentUser.id }
         });
 
@@ -238,7 +238,7 @@ export async function updateBillingAndPaymentWithAuthorizeNet(combinedInfo: Comb
 
         // Delete the billing entry from database
         if (existingBilling) {
-            await prisma.billingInformationEntries.delete({
+            await prismaWrite.billingInformationEntries.delete({
                 where: { id: existingBilling.id }
             });
         }
@@ -327,7 +327,7 @@ export async function updateBillingAndPaymentWithAuthorizeNet(combinedInfo: Comb
         };
 
         // Create new billing information
-        await prisma.billingInformationEntries.create({
+        await prismaWrite.billingInformationEntries.create({
             data: {
                 ...billingData,
                 createdAt: new Date()
@@ -360,7 +360,7 @@ export async function deletePaymentMethod() {
 
     try {
         // Find existing billing information
-        const existingBilling = await prisma.billingInformationEntries.findFirst({
+        const existingBilling = await prismaRead.billingInformationEntries.findFirst({
             where: { userId: currentUser.id }
         });
 
@@ -385,7 +385,7 @@ export async function deletePaymentMethod() {
         }
 
         // Clear billing entry
-        await prisma.billingInformationEntries.delete({
+        await prismaWrite.billingInformationEntries.delete({
             where: { id: existingBilling.id }
         });
 
@@ -408,7 +408,7 @@ export async function getBillingInformation() {
     }
 
     try {
-        const billingInfo = await prisma.billingInformationEntries.findFirst({
+        const billingInfo = await prismaRead.billingInformationEntries.findFirst({
             where: { userId: currentUser.id },
             select: {
                 name: true,
@@ -436,7 +436,7 @@ export async function getBillingInformation() {
  */
 export async function getSubscriptionPlans() {
     try {
-        const { rows } = await pgDbPool.query(`
+        const { rows } = await pgDbReadPool.query(`
             SELECT id, name, description, "listPrice", "listPriceUnit", "createdAt", "updatedAt"
             FROM "subscriptionPlans" 
             ORDER BY "listPrice" ASC
@@ -459,7 +459,7 @@ export async function isBillingInformationComplete() {
     }
 
     try {
-        const billingInfo = await prisma.billingInformationEntries.findFirst({
+        const billingInfo = await prismaRead.billingInformationEntries.findFirst({
             where: { userId: currentUser.id }
         });
 
@@ -506,7 +506,7 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
         }
 
         // Check if the subscription plan exists
-        const { rows: planRows } = await pgDbPool.query(`
+        const { rows: planRows } = await pgDbReadPool.query(`
             SELECT id, name, "listPrice", "listPriceUnit" 
             FROM "subscriptionPlans" 
             WHERE id = $1
@@ -519,7 +519,7 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
         const subscriptionPlan = planRows[0];
 
         // Check if user already has an active subscription
-        const { rows: activeRows } = await pgDbPool.query(`
+        const { rows: activeRows } = await pgDbReadPool.query(`
             SELECT id FROM "subscriptionPlanEnrollments" 
             WHERE "userId" = $1 
             AND ("endsAt" IS NULL OR "endsAt" > NOW())
@@ -530,7 +530,7 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
         }
 
         // Get billing entry for payment processing
-        const billingEntry = await prisma.billingInformationEntries.findFirst({
+        const billingEntry = await prismaRead.billingInformationEntries.findFirst({
             where: { userId: currentUser.id }
         });
 
@@ -588,7 +588,7 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
         }
 
         // Check if user has any existing subscription record (active or expired)
-        const { rows: existingRows } = await pgDbPool.query(`
+        const { rows: existingRows } = await pgDbReadPool.query(`
             SELECT id FROM "subscriptionPlanEnrollments" 
             WHERE "userId" = $1 
             ORDER BY "createdAt" DESC
@@ -605,7 +605,7 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
             // Update existing enrollment record
             enrollmentId = existingRows[0].id;
 
-            await pgDbPool.query(`
+            await pgDbWritePool.query(`
                 UPDATE "subscriptionPlanEnrollments" 
                 SET 
                     "subscriptionPlanId" = $1,
@@ -633,7 +633,7 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
             ]);
         } else {
             // Create new enrollment record
-            const { rows: insertedRows } = await pgDbPool.query(`
+            const { rows: insertedRows } = await pgDbWritePool.query(`
                 INSERT INTO "subscriptionPlanEnrollments" (
                     "userId", "subscriptionPlanId", "startedAt", "lastPaymentAt", "nextPaymentAt",
                     "price", "chargeInterval", "priceUnit", "createdAt", "updatedAt", "lastEvalAt"
@@ -656,7 +656,7 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
             enrollmentId = insertedRows[0].id;
         }
         
-        await pgDbPool.query(`
+        await pgDbWritePool.query(`
             UPDATE "users" 
             SET "isPremium" = true, 
                 "updatedAt" = NOW() 
@@ -665,7 +665,7 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
 
         // If payment is under review, insert billing hold record with the enrollment ID
         if (isPaymentUnderReview) {
-            await pgDbPool.query(`
+            await pgDbWritePool.query(`
                 INSERT INTO "billingHolds" ("userId", "enrollmentId", "reason", "responseCode", "amount", "planName", "createdAt", "updatedAt")
                 VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             `, [currentUser.id, enrollmentId, 'Payment under review', responseCode, subscriptionPlan.listPrice, subscriptionPlan.name]);
@@ -736,7 +736,7 @@ export async function cancelSubscription() {
 
     try {
         // Find the user's active subscription
-        const { rows: enrollmentRows } = await pgDbPool.query(`
+        const { rows: enrollmentRows } = await pgDbReadPool.query(`
             SELECT id, "nextPaymentAt" FROM "subscriptionPlanEnrollments" 
             WHERE "userId" = $1 
             AND ("endsAt" IS NULL OR "endsAt" > NOW())
@@ -751,7 +751,7 @@ export async function cancelSubscription() {
         const enrollment = enrollmentRows[0];
 
         // Set endsAt to the nextPaymentAt date
-        await pgDbPool.query(`
+        await pgDbWritePool.query(`
             UPDATE "subscriptionPlanEnrollments" 
             SET "endsAt" = $1, "updatedAt" = NOW() 
             WHERE id = $2
@@ -786,7 +786,7 @@ export async function reactivateSubscription() {
         }
 
         // Find the user's subscription that's scheduled to end
-        const { rows: enrollmentRows } = await pgDbPool.query(`
+        const { rows: enrollmentRows } = await pgDbReadPool.query(`
             SELECT id FROM "subscriptionPlanEnrollments" 
             WHERE "userId" = $1 
             AND "endsAt" IS NOT NULL 
@@ -802,7 +802,7 @@ export async function reactivateSubscription() {
         const enrollment = enrollmentRows[0];
 
         // Remove the endsAt date to reactivate
-        await pgDbPool.query(`
+        await pgDbWritePool.query(`
             UPDATE "subscriptionPlanEnrollments" 
             SET "endsAt" = NULL, "updatedAt" = NOW() 
             WHERE id = $1
@@ -827,7 +827,7 @@ export async function getCurrentSubscriptionDetails() {
     }
 
     try {
-        const { rows } = await pgDbPool.query(`
+        const { rows } = await pgDbReadPool.query(`
             SELECT 
                 spe.id,
                 spe."endsAt",
@@ -862,7 +862,7 @@ export async function getPaymentHistory() {
     }
 
     try {
-        const { rows } = await pgDbPool.query(`
+        const { rows } = await pgDbReadPool.query(`
             SELECT 
                 id,
                 "transId",

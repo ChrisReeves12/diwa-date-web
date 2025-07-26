@@ -11,7 +11,7 @@ import {
 } from '@/server-side-helpers/messages.helpers';
 import { getCurrentUser } from '@/server-side-helpers/user.helpers';
 import { cookies } from 'next/headers';
-import prisma from '@/lib/prisma';
+import { prismaRead } from '@/lib/prisma';
 
 /**
  * Get all conversations for the current user.
@@ -122,7 +122,7 @@ export async function sendChatMessage(matchId: string, content: string) {
 
         // We need to determine the recipient ID from the match
         // This requires getting match details first
-        const match = await prisma.userMatches.findFirst({
+        const match = await prismaRead.userMatches.findFirst({
             where: {
                 id: matchIdNumber,
                 OR: [

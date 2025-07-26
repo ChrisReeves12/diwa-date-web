@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prismaWrite } from '@/lib/prisma';
 
 export async function DELETE(request: NextRequest) {
     // Only allow in development/test environments
@@ -16,7 +16,7 @@ export async function DELETE(request: NextRequest) {
         }
 
         // Delete user by email
-        await prisma.users.deleteMany({
+        await prismaWrite.users.deleteMany({
             where: {
                 email: email
             }

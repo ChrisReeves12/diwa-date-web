@@ -6,7 +6,7 @@
  */
 
 import { logError } from './logging.helpers';
-import { prisma } from '../lib/prisma';
+import { prismaRead, prismaWrite } from '@/lib/prisma';
 
 // Types for better type safety
 export interface AuthorizeNetCredentials {
@@ -474,7 +474,7 @@ export async function createPaymentTransaction(transactionData: {
     transactionResponse: any
 }): Promise<any> {
     try {
-        return await prisma.paymentTransactions.create({
+        return await prismaWrite.paymentTransactions.create({
             data: {
                 userId: transactionData.userId,
                 amount: transactionData.amount,
@@ -611,7 +611,7 @@ export async function chargeCustomerByBillingEntry(
 }> {
     try {
         // Get the billing information entry with customer profile ID
-        const billingEntry = await prisma.billingInformationEntries.findUnique({
+        const billingEntry = await prismaRead.billingInformationEntries.findUnique({
             where: {
                 id: billingInformationEntryId
             },
@@ -651,7 +651,7 @@ export async function chargeCustomerByBillingEntry(
             finalPaymentProfileId = paymentProfile.customerPaymentProfileId;
 
             // Update the billing entry with the payment profile ID for future use
-            await prisma.billingInformationEntries.update({
+            await prismaWrite.billingInformationEntries.update({
                 where: {
                     id: billingInformationEntryId
                 },
@@ -716,7 +716,7 @@ export async function chargeCustomerByBillingEntry(
 
         // Get the payment method (card type)
         let paymentMethod = billingEntry.paymentMethod;
-        
+
         if (!paymentMethod || paymentMethod === '' || paymentMethod === 'Unknown') {
             paymentMethod = authorizeNetResponse.transactionResponse.accountType || billingEntry.paymentMethod || 'Credit/Debit Card';
         }
@@ -1097,7 +1097,7 @@ export function generateBillingFailureEmail(params: {
  */
 export async function fetchRegionsForCountry(country: string) {
     try {
-        const countryRecord = await prisma.countries.findUnique({
+        const countryRecord = await prismaRead.countries.findUnique({
             where: {
                 iso2: country
             }
@@ -1111,7 +1111,7 @@ export async function fetchRegionsForCountry(country: string) {
             return [];
         }
 
-        return await prisma.states.findMany({
+        return await prismaRead.states.findMany({
             where: {
                 countryId: countryRecord.id
             }
@@ -1125,12 +1125,12 @@ export async function fetchRegionsForCountry(country: string) {
 /**
  * Find payment transaction by ID
  * @param transactionId
- * @param userId 
- * @returns 
+ * @param userId
+ * @returns
  */
 export async function getPaymentTransaction(transactionId: string, userId: number) {
    try {
-        return await prisma.paymentTransactions.findFirst({
+        return await prismaRead.paymentTransactions.findFirst({
             where: {
                 transId: transactionId,
                 userId

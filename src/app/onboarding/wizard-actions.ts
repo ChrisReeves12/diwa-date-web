@@ -4,8 +4,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/server-side-helpers/user.helpers';
 import { WizardData } from './wizard-container';
-import { prisma } from '@/lib/prisma';
-import pgDbPool from '@/lib/postgres';
+import { prismaWrite } from '@/lib/prisma';
+import { pgDbWritePool } from '@/lib/postgres';
 
 export async function saveWizardProgress(data: Partial<WizardData>) {
     const currentUser = await getCurrentUser(await cookies());
@@ -16,7 +16,7 @@ export async function saveWizardProgress(data: Partial<WizardData>) {
 
     try {
         // Update user with wizard progress
-        await prisma.users.update({
+        await prismaWrite.users.update({
             where: { id: currentUser.id },
             data: {
                 displayName: data.displayName || undefined,
@@ -63,7 +63,7 @@ export async function updateOnboardingProgress(currentStep: number, completedSte
         console.log('🔍 DEBUG: About to save onboarding steps:', onboardingSteps);
 
         // Use raw SQL to update the currentOnboardingSteps field
-        await pgDbPool.query(
+        await pgDbWritePool.query(
             'UPDATE users SET "currentOnboardingSteps" = $1, "updatedAt" = NOW() WHERE id = $2',
             [JSON.stringify(onboardingSteps), currentUser.id]
         );
@@ -90,7 +90,7 @@ export async function completeWizard(data: WizardData) {
         }
 
         // Update user with complete wizard data and mark profile as complete
-        await prisma.users.update({
+        await prismaWrite.users.update({
             where: { id: currentUser.id },
             data: {
                 displayName: data.displayName,
@@ -113,7 +113,7 @@ export async function completeWizard(data: WizardData) {
         });
 
         // Clear onboarding progress since wizard is complete
-        await pgDbPool.query(
+        await pgDbWritePool.query(
             'UPDATE users SET "currentOnboardingSteps" = NULL WHERE id = $1',
             [currentUser.id]
         );
