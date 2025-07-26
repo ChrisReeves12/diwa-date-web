@@ -2,7 +2,6 @@
 
 import { getCurrentUser } from "@/server-side-helpers/user.helpers";
 import { cookies } from "next/headers";
-import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Locality } from "@/types/locality.interface";
 import { updatePersonalInformationForUser } from "@/server-side-helpers/user.helpers";
