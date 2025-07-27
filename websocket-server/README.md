@@ -7,7 +7,7 @@ Standalone WebSocket and RabbitMQ server for handling real-time communications a
 This server provides:
 - WebSocket connections via Socket.IO
 - RabbitMQ message brokering for multi-server communication
-- Session-based authentication via the NextJS app
+- Session-based authentication via Redis
 - Health check endpoint
 
 ## Setup
@@ -41,8 +41,12 @@ npm start
 
 - `WEBSOCKET_PORT`: Port for the WebSocket server (default: 3001)
 - `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins
-- `SESSION_VALIDATION_URL`: URL to validate sessions with the NextJS app
 - `SESSION_COOKIE_NAME`: Name of the session cookie
+- `REDIS_HOST`: Redis server host
+- `REDIS_PORT`: Redis server port
+- `REDIS_PASSWORD`: Redis password
+- `REDIS_KEY_PREFIX`: Redis key prefix
+- `REDIS_TLS`: Enable Redis TLS connection
 - `RABBITMQ_HOST`: RabbitMQ server host
 - `RABBITMQ_PORT`: RabbitMQ server port
 - `RABBITMQ_USERNAME`: RabbitMQ username

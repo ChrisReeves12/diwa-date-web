@@ -39,7 +39,7 @@ async function startServer() {
         });
 
         // Initialize Auth Service
-        authService = new AuthService(config.auth.sessionValidationUrl);
+        authService = new AuthService();
         console.log('Auth service initialized');
 
         // Initialize RabbitMQ

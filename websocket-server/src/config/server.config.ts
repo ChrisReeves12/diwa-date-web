@@ -7,7 +7,6 @@ export interface ServerConfig {
         credentials: boolean;
     };
     auth: {
-        sessionValidationUrl: string;
         sessionCookieName: string;
     };
 }
@@ -20,7 +19,6 @@ export const getServerConfig = (): ServerConfig => {
             credentials: true
         },
         auth: {
-            sessionValidationUrl: process.env.SESSION_VALIDATION_URL || 'http://localhost:3000/api/auth/validate-session',
             sessionCookieName: process.env.SESSION_COOKIE_NAME || 'session_id'
         }
     };

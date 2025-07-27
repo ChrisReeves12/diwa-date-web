@@ -1,18 +1,15 @@
-interface SessionData {
+import { getSessionData } from '../helpers/session.helpers';
+
+interface AuthSessionData {
     userId: string;
     sessionId: string;
 }
 
 export class AuthService {
-    private sessionValidationUrl: string;
-    private sessionCache: Map<string, { data: SessionData | null; expiry: number }> = new Map();
+    private sessionCache: Map<string, { data: AuthSessionData | null; expiry: number }> = new Map();
     private cacheTimeout = 5 * 60 * 1000; // 5 minutes
 
-    constructor(sessionValidationUrl: string) {
-        this.sessionValidationUrl = sessionValidationUrl;
-    }
-
-    async validateSession(sessionToken: string): Promise<SessionData | null> {
+    async validateSession(sessionToken: string): Promise<AuthSessionData | null> {
         // Check cache first
         const cached = this.sessionCache.get(sessionToken);
         if (cached && cached.expiry > Date.now()) {
@@ -20,24 +17,21 @@ export class AuthService {
         }
 
         try {
-            // Make request to the NextJS app to validate the session
-            const response = await fetch(this.sessionValidationUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Internal-Request': 'true'
-                },
-                body: JSON.stringify({ sessionToken })
-            });
-
-            if (!response.ok) {
+            // Get session data directly from Redis
+            const sessionData = await getSessionData(sessionToken);
+            
+            if (!sessionData || !sessionData.userId) {
                 this.sessionCache.set(sessionToken, { data: null, expiry: Date.now() + this.cacheTimeout });
                 return null;
             }
 
-            const data = await response.json() as SessionData;
-            this.sessionCache.set(sessionToken, { data, expiry: Date.now() + this.cacheTimeout });
-            return data;
+            const authData: AuthSessionData = {
+                userId: sessionData.userId,
+                sessionId: sessionToken
+            };
+
+            this.sessionCache.set(sessionToken, { data: authData, expiry: Date.now() + this.cacheTimeout });
+            return authData;
         } catch (error) {
             console.error('Error validating session:', error);
             return null;

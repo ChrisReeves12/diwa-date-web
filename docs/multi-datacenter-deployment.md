@@ -20,15 +20,29 @@ This guide explains how to deploy the Diwa Date application across multiple data
                     │  WebSocket Server       │
                     │        +                │
                     │    RabbitMQ Server     │
+                    │        +                │
+                    │     Redis Server       │
                     │                         │
                     └─────────────────────────┘
 ```
 
 ## Deployment Steps
 
-### 1. Deploy RabbitMQ Server
+### 1. Deploy Redis Server
 
-First, deploy RabbitMQ in your central location:
+First, deploy Redis in your central location for session storage:
+
+```bash
+# Using Docker
+docker run -d --name redis \
+  -p 6379:6379 \
+  -e REDIS_PASSWORD=your-secure-redis-password \
+  redis:7-alpine redis-server --requirepass your-secure-redis-password
+```
+
+### 2. Deploy RabbitMQ Server
+
+Next, deploy RabbitMQ in your central location:
 
 ```bash
 # Using Docker
@@ -40,7 +54,7 @@ docker run -d --name rabbitmq \
   rabbitmq:3-management
 ```
 
-### 2. Deploy WebSocket Server
+### 3. Deploy WebSocket Server
 
 Deploy the standalone WebSocket server in the same central location:
 
@@ -52,7 +66,12 @@ npm run build
 # Set environment variables
 export WEBSOCKET_PORT=3001
 export ALLOWED_ORIGINS=https://app1.diwa-date.com,https://app2.diwa-date.com,https://app3.diwa-date.com
-export SESSION_VALIDATION_URL=https://api.diwa-date.com/api/auth/validate-session
+export SESSION_COOKIE_NAME=session_id
+export REDIS_HOST=localhost
+export REDIS_PORT=6379
+export REDIS_PASSWORD=your-secure-redis-password
+export REDIS_KEY_PREFIX=diwa_date
+export REDIS_TLS=false
 export RABBITMQ_HOST=localhost
 export RABBITMQ_USERNAME=admin
 export RABBITMQ_PASSWORD=your-secure-password
@@ -61,7 +80,7 @@ export RABBITMQ_PASSWORD=your-secure-password
 npm start
 ```
 
-### 3. Configure NextJS Applications
+### 4. Configure NextJS Applications
 
 For each NextJS application instance in different datacenters:
 
@@ -80,7 +99,7 @@ npm run build
 npm start
 ```
 
-### 4. Configure Load Balancer
+### 5. Configure Load Balancer
 
 Set up your load balancer to:
 - Route WebSocket traffic to the central WebSocket server
@@ -122,18 +141,19 @@ server {
 }
 ```
 
-### 5. Security Considerations
+### 6. Security Considerations
 
 1. **SSL/TLS**: Always use HTTPS for production deployments
-2. **Firewall**: Restrict RabbitMQ ports to only allow connections from the WebSocket server
-3. **Authentication**: Ensure the session validation endpoint is secured and only accessible internally
+2. **Firewall**: Restrict RabbitMQ and Redis ports to only allow connections from the WebSocket server
+3. **Redis Security**: Use strong passwords and consider Redis AUTH and TLS
 4. **CORS**: Configure CORS to only allow your application domains
 
-### 6. Monitoring
+### 7. Monitoring
 
 Monitor the following metrics:
 - WebSocket connection count
 - RabbitMQ queue sizes
+- Redis connection status and memory usage
 - Message delivery rates
 - Server health endpoints
 
@@ -142,10 +162,11 @@ Access the health check endpoint:
 GET https://ws.diwa-date.com/health
 ```
 
-### 7. Scaling Considerations
+### 8. Scaling Considerations
 
-- **WebSocket Server**: Can be horizontally scaled with a load balancer and shared RabbitMQ
+- **WebSocket Server**: Can be horizontally scaled with a load balancer and shared RabbitMQ/Redis
 - **RabbitMQ**: Consider clustering for high availability
+- **Redis**: Use Redis Cluster or Redis Sentinel for high availability and scaling
 - **NextJS Apps**: Scale independently in each datacenter based on regional traffic
 
 ## Testing the Setup
