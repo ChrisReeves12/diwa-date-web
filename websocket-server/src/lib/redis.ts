@@ -71,7 +71,7 @@ export function getRedisClient(): Redis {
 }
 
 const redisProxy = new Proxy({} as Redis, {
-  get(target, prop, receiver) {
+  get(_, prop) {
     const client = getRedisClient();
     return Reflect.get(client, prop, client);
   }
