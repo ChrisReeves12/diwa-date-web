@@ -1,6 +1,9 @@
 import { createServer } from 'http';
 import { parse } from 'url';
 import next from 'next';
+import { RabbitMQService } from './src/websocket/services/rabbitmq.service';
+import { SocketIOService } from './src/websocket/services/socketio.service';
+import { getRabbitMQConfig } from './src/websocket/config/websocket.config';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -13,6 +16,10 @@ const port = parseInt(process.env.PORT || '3000', 10);
 // Initialize Next.js app
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
+
+// Global instances
+let rabbitMQService: RabbitMQService;
+let socketIOService: SocketIOService;
 
 async function startServer() {
     try {
@@ -31,6 +38,24 @@ async function startServer() {
             }
         });
 
+        // Initialize RabbitMQ
+        console.log('Initializing RabbitMQ connection...');
+        const rabbitMQConfig = getRabbitMQConfig();
+        rabbitMQService = RabbitMQService.getInstance(rabbitMQConfig);
+        await rabbitMQService.connect();
+        console.log('RabbitMQ connected successfully');
+
+        // Initialize Socket.IO
+        console.log('Initializing Socket.IO server...');
+        socketIOService = new SocketIOService(server, rabbitMQService);
+        console.log('Socket.IO server initialized');
+
+        // Make services available globally
+        (global as any).websocketServices = {
+            rabbitMQ: rabbitMQService,
+            socketIO: socketIOService
+        };
+
         // Start listening
         server.listen(port, () => {
             console.log(`> Ready on http://${hostname}:${port}`);
@@ -48,7 +73,31 @@ async function startServer() {
 
 async function shutdown() {
     console.log('Shutting down gracefully...');
-    process.exit(0);
+    
+    try {
+        // Disconnect from RabbitMQ
+        if (rabbitMQService) {
+            await rabbitMQService.disconnect();
+            console.log('RabbitMQ disconnected');
+        }
+
+        // Close Socket.IO connections
+        if (socketIOService) {
+            const io = socketIOService.getIO();
+            await new Promise<void>((resolve) => {
+                io.close(() => {
+                    console.log('Socket.IO server closed');
+                    resolve();
+                });
+            });
+        }
+
+        console.log('Shutdown complete');
+        process.exit(0);
+    } catch (error) {
+        console.error('Error during shutdown:', error);
+        process.exit(1);
+    }
 }
 
 // Start the server
