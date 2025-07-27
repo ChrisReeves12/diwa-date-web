@@ -8,8 +8,6 @@ import { getServerConfig, getRabbitMQConfig } from './config/server.config';
 // Load environment variables
 dotenv.config();
 
-console.log(process.env);
-
 let rabbitMQService: RabbitMQService;
 let socketIOService: SocketIOService;
 let authService: AuthService;
