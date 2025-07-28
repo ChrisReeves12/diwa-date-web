@@ -40,7 +40,7 @@ export type ConversationMatch = DbConversation & Pick<User, "photos" | "mainPhot
 }
 
 /**
- * Get conversation matches for user.
+ * Get conversation matches for a user.
  * @param userId
  * @returns
  */
@@ -92,7 +92,7 @@ export async function getConversationsFromMatches(userId: number): Promise<Conve
 
         return Object.assign({}, matchUser, publicUserDetails);
     });
-};
+}
 
 /**
  * Sends a message from one user to another.
@@ -166,7 +166,7 @@ export async function sendMessage(
             const senderUser = await getUser(userId);
             if (senderUser) {
                 await refreshLastActive(senderUser);
-                await emitNewMessageNotification(String(recipientId), {
+                await emitNewMessageNotification(recipientId, {
                     id: String(result.id),
                     matchId: String(matchId),
                     content: message,
@@ -497,7 +497,7 @@ export async function markMessagesAsRead(
 
             if (latestMessage) {
                 // Emit read status to the sender
-                await emitMessageRead(String(otherUserId), {
+                await emitMessageRead(otherUserId, {
                     messageId: String(latestMessage.id),
                     conversationId: String(matchId),
                     readBy: String(userId),

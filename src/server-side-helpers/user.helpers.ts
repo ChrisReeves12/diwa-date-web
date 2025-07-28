@@ -133,7 +133,7 @@ export async function blockUser(userId: number, blockedUserId: number) {
 
     // Emit WebSocket event to the blocked user
     try {
-        await emitUserBlocked(String(blockedUserId), {
+        await emitUserBlocked(blockedUserId, {
             blockedUserId: blockedUserId,
             blockedBy: userId,
             timestamp: blockTimestamp
@@ -162,7 +162,7 @@ export async function unBlockUser(userId: number, blockedUserId: number) {
 
     // Emit WebSocket event to the unblocked user
     try {
-        await emitUserUnblocked(String(blockedUserId), {
+        await emitUserUnblocked(blockedUserId, {
             unblockedUserId: blockedUserId,
             unblockedBy: userId,
             timestamp: new Date()
@@ -757,12 +757,12 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
                 }
             });
 
-            // Send real-time notification for confirmed match
+            // Send real-time notification for a confirmed match
             try {
                 // Get sender info for the notification
                 const senderUser = await getUser(userId);
                 if (senderUser) {
-                    await emitNewNotification(String(existingMatch.userId), {
+                    await emitNewNotification(existingMatch.userId, {
                         id: notification.id,
                         sender: {
                             id: senderUser.id,
@@ -802,7 +802,7 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
     try {
         const senderUser = await getUser(userId);
         if (senderUser) {
-            await emitNewMatchNotification(String(recipientUserId), {
+            await emitNewMatchNotification(recipientUserId, {
                 id: newMatch.id,
                 sender: {
                     id: senderUser.id,
@@ -930,7 +930,7 @@ export async function removeUserMatchRequest(userId: number, recipientUserId: nu
             // Determine who the other user is (not the one cancelling)
             const otherUserId = existingMatch.userId === userId ? existingMatch.recipientId : existingMatch.userId;
 
-            await emitMatchCancelled(String(otherUserId), {
+            await emitMatchCancelled(otherUserId, {
                 matchId: existingMatch.id,
                 cancelledBy: userId
             });

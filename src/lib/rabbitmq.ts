@@ -1,17 +1,106 @@
 // const amqplib = require('amqplib');
 import amqplib from 'amqplib';
 import { v4 as uuidv4 } from 'uuid';
-import {
-    RabbitMQConfig,
-    RabbitMQMessage,
-    EXCHANGES,
-    UserMessage,
-    BroadcastMessage,
-    RoomMessage
-} from '../types/rabbitmq.types';
 
-export class RabbitMQService {
-    private static instance: RabbitMQService;
+// RabbitMQ Types and Configurations
+
+export enum ExchangeType {
+    DIRECT = 'direct',
+    TOPIC = 'topic',
+    FANOUT = 'fanout',
+    HEADERS = 'headers'
+}
+
+export interface ExchangeConfig {
+    name: string;
+    type: ExchangeType;
+    durable: boolean;
+    autoDelete?: boolean;
+}
+
+export interface QueueConfig {
+    name: string;
+    durable: boolean;
+    exclusive?: boolean;
+    autoDelete?: boolean;
+    messageTtl?: number;
+    maxLength?: number;
+}
+
+// Exchange configurations
+export const EXCHANGES = {
+    USER_DIRECT: {
+        name: 'user.direct',
+        type: ExchangeType.DIRECT,
+        durable: true
+    },
+    EVENTS_TOPIC: {
+        name: 'events.topic',
+        type: ExchangeType.TOPIC,
+        durable: true
+    },
+    PRESENCE_FANOUT: {
+        name: 'presence.fanout',
+        type: ExchangeType.FANOUT,
+        durable: false
+    }
+} as const;
+
+// Message types that will be sent through RabbitMQ
+export interface BaseMessage {
+    id: string;
+    timestamp: Date;
+    serverId: string;
+}
+
+export interface UserMessage extends BaseMessage {
+    userId: string;
+    type: 'notification' | 'message' | 'match' | 'presence';
+    payload: any;
+}
+
+export interface BroadcastMessage extends BaseMessage {
+    type: 'presence_update' | 'server_announcement';
+    payload: any;
+}
+
+export interface RoomMessage extends BaseMessage {
+    roomId: string;
+    type: 'room_event';
+    payload: any;
+}
+
+export type RabbitMQMessage = UserMessage | BroadcastMessage | RoomMessage;
+
+// Routing key patterns
+export const ROUTING_PATTERNS = {
+    USER_SPECIFIC: 'user.{userId}',
+    NOTIFICATION: 'notification.{userId}',
+    MESSAGE: 'message.{conversationId}',
+    MATCH: 'match.{userId}',
+    PRESENCE: 'presence.{action}',
+    ROOM: 'room.{roomId}.{event}'
+} as const;
+
+// Queue binding configurations
+export interface QueueBinding {
+    exchange: string;
+    routingPattern: string;
+}
+
+// Connection configuration
+export interface RabbitMQConfig {
+    host: string;
+    port: number;
+    username: string;
+    password: string;
+    vhost?: string;
+    heartbeat?: number;
+    connectionTimeout?: number;
+}
+
+export class Rabbitmq {
+    private static instance: Rabbitmq;
     private connection: any = null;
     private channel: any = null;
     private config: RabbitMQConfig;
@@ -21,24 +110,32 @@ export class RabbitMQService {
     private reconnectTimeout: NodeJS.Timeout | null = null;
     private isReconnecting: boolean = false;
 
-    private constructor(config: RabbitMQConfig) {
-        this.config = config;
+    private constructor(config?: RabbitMQConfig) {
+        this.config = config || {
+            host: process.env.RABBITMQ_HOST as string,
+            port: Number(process.env.RABBITMQ_PORT),
+            username: process.env.RABBITMQ_USERNAME as string,
+            password: process.env.RABBITMQ_PASSWORD as string
+        };
+
         this.serverId = `ws-server-${uuidv4()}`;
         this.serverQueue = `websocket.server.${this.serverId}`;
     }
 
-    public static getInstance(config?: RabbitMQConfig): RabbitMQService {
-        if (!RabbitMQService.instance) {
-            if (!config) {
-                throw new Error('RabbitMQ configuration is required for initialization');
-            }
-            RabbitMQService.instance = new RabbitMQService(config);
+    public static getInstance(config?: RabbitMQConfig): Rabbitmq {
+        if (!Rabbitmq.instance) {
+            Rabbitmq.instance = new Rabbitmq(config);
         }
-        return RabbitMQService.instance;
+
+        return Rabbitmq.instance;
     }
 
     public async connect(): Promise<void> {
         try {
+            if (this.connection) {
+                return;
+            }
+
             const url = `amqp://${this.config.username}:${this.config.password}@${this.config.host}:${this.config.port}`;
 
             this.connection = await amqplib.connect(url, {
@@ -183,12 +280,12 @@ export class RabbitMQService {
         );
     }
 
-    public async publishToUser(userId: string, message: any): Promise<void> {
+    public async publishToUser(userId: number, message: any): Promise<void> {
         const userMessage: UserMessage = {
             id: uuidv4(),
             timestamp: new Date(),
             serverId: this.serverId,
-            userId,
+            userId: userId.toString(),
             type: message.type,
             payload: message.payload
         };
@@ -353,4 +450,4 @@ export class RabbitMQService {
     public isConnected(): boolean {
         return !!(this.connection && this.channel);
     }
-} 
+}

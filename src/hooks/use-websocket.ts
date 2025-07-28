@@ -3,8 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import {
     ServerToClientEvents,
     ClientToServerEvents
-} from '@/websocket/types/websocket-events.types';
-import { getClientWebSocketConfig } from '@/websocket/config/websocket.config';
+} from '@/types/websocket-events.types';
 
 type WebSocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
@@ -14,13 +13,23 @@ export function useWebSocket() {
     const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
 
     useEffect(() => {
-        // Don't initialize socket if we're on the server side
+        // Don't initialize the socket if we're on the server side
         if (typeof window === 'undefined') {
             return;
         }
 
         // Get WebSocket configuration
-        const { url, options } = getClientWebSocketConfig();
+        const { url, options } = {
+            url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'http://localhost:3001',
+            options: {
+                withCredentials: true,
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                reconnectionAttempts: 5
+            }
+        };
 
         console.log('Initializing WebSocket connection to:', url);
 
@@ -56,25 +65,6 @@ export function useWebSocket() {
             console.error('Error details:', error);
             setStatus('error');
             setIsConnected(false);
-
-            // If authentication failed, log additional info
-            if (error.message === 'Authentication required' || error.message === 'Invalid session') {
-                console.error('Authentication failed. Please check:');
-                console.error('1. You are logged in');
-                console.error('2. session-token cookie is present');
-                console.error('3. Session is still valid');
-
-                // Check if session cookie exists
-                const cookies = document.cookie.split(';');
-                const sessionCookieName = 'session_id'; // This should match SESSION_COOKIE_NAME from your backend
-                const sessionCookie = cookies.find(cookie => cookie.trim().startsWith(`${sessionCookieName}=`));
-                if (!sessionCookie) {
-                    console.error(`No ${sessionCookieName} cookie found. User may not be logged in.`);
-                    console.error('Available cookies:', cookies.map(c => c.trim().split('=')[0]));
-                } else {
-                    console.log('Session cookie exists:', sessionCookie.trim());
-                }
-            }
         });
 
         socket.on('connection:success', (data) => {
@@ -152,13 +142,11 @@ export function useWebSocket() {
 
     // Join a room
     const joinRoom = useCallback((roomId: string) => {
-        console.log(`Joining room: ${roomId}`);
         emit('room:join', { roomId });
     }, [emit]);
 
     // Leave a room
     const leaveRoom = useCallback((roomId: string) => {
-        console.log(`Leaving room: ${roomId}`);
         emit('room:leave', { roomId });
     }, [emit]);
 
@@ -201,4 +189,4 @@ export function useWebSocket() {
         markNotificationRead,
         getOnlineUsers
     };
-} 
+}
