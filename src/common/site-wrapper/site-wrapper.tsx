@@ -45,6 +45,7 @@ export default function SiteWrapper({ children, hideButtons = false, hideFlashMe
                     </Alert>
                 </div>}
             {children}
+            <div>{process.env.NEXT_PUBLIC_SERVER_LOCATION}</div>
         </div>
     );
 }
