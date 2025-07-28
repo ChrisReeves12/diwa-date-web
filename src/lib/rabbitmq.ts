@@ -1,6 +1,8 @@
 // const amqplib = require('amqplib');
 import amqplib from 'amqplib';
 import { v4 as uuidv4 } from 'uuid';
+import redis from './redis';
+import { getRedisKey } from '@/server-side-helpers/cache.helpers';
 
 // RabbitMQ Types and Configurations
 
@@ -187,10 +189,14 @@ export class Rabbitmq {
     private async setupServerQueue(): Promise<void> {
         if (!this.channel) throw new Error('Channel not initialized');
 
+        this.serverQueue = await redis.get(getRedisKey('server-queue')) || '';
+        if (!this.serverQueue) {
+            throw new Error('Could not get server queue name.');
+        }
+
         // Create server-specific queue
         await this.channel.assertQueue(this.serverQueue, {
             durable: false,
-            exclusive: true,
             autoDelete: true
         });
 
