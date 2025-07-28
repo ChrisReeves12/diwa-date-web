@@ -18,82 +18,109 @@ export function useWebSocket() {
             return;
         }
 
-        // Get WebSocket configuration
-        const { url, options } = {
-            url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'http://localhost:3001',
-            options: {
-                withCredentials: true,
-                transports: ['websocket', 'polling'],
-                reconnection: true,
-                reconnectionDelay: 1000,
-                reconnectionDelayMax: 5000,
-                reconnectionAttempts: 5
+        const initializeSocket = async () => {
+            try {
+                // Fetch WebSocket auth token
+                const tokenResponse = await fetch('/api/auth/websocket-token', {
+                    credentials: 'include'
+                });
+
+                if (!tokenResponse.ok) {
+                    console.error('Failed to get WebSocket auth token');
+                    setStatus('error');
+                    return;
+                }
+
+                const { token } = await tokenResponse.json();
+
+                // Get WebSocket configuration
+                const { url, options } = {
+                    url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'http://localhost:3001',
+                    options: {
+                        withCredentials: true,
+                        transports: ['websocket', 'polling'],
+                        reconnection: true,
+                        reconnectionDelay: 1000,
+                        reconnectionDelayMax: 5000,
+                        reconnectionAttempts: 5
+                    }
+                };
+
+                console.log('Initializing WebSocket connection to:', url);
+
+                // Initialize socket connection
+                const socket = io(url, {
+                    ...options,
+                    timeout: 20000,
+                    forceNew: true,
+                    auth: {
+                        token: token
+                    },
+                    extraHeaders: {
+                        'Access-Control-Allow-Credentials': 'true'
+                    }
+                });
+
+                socketRef.current = socket;
+                setStatus('connecting');
+
+                // Connection event handlers
+                socket.on('connect', () => {
+                    console.log('WebSocket connected with ID:', socket.id);
+                    setStatus('connected');
+                    setIsConnected(true);
+                });
+
+                socket.on('disconnect', (reason) => {
+                    console.log('WebSocket disconnected. Reason:', reason);
+                    setStatus('disconnected');
+                    setIsConnected(false);
+                });
+
+                socket.on('connect_error', (error) => {
+                    console.error('WebSocket connection error:', error.message);
+                    console.error('Error details:', error);
+                    setStatus('error');
+                    setIsConnected(false);
+                });
+
+                socket.on('connection:success', (data) => {
+                    console.log('WebSocket authenticated successfully:', data);
+                });
+
+                // Add reconnection attempt logging
+                socket.on('reconnect', (attemptNumber) => {
+                    console.log('WebSocket reconnected after', attemptNumber, 'attempts');
+                });
+
+                socket.on('reconnect_attempt', (attemptNumber) => {
+                    console.log('WebSocket reconnection attempt:', attemptNumber);
+                });
+
+                socket.on('reconnect_error', (error) => {
+                    console.error('WebSocket reconnection error:', error);
+                });
+
+                socket.on('reconnect_failed', () => {
+                    console.error('WebSocket reconnection failed after max attempts');
+                    setStatus('error');
+                });
+            } catch (error) {
+                console.error('Failed to initialize WebSocket:', error);
+                setStatus('error');
             }
         };
 
-        console.log('Initializing WebSocket connection to:', url);
-
-        // Initialize socket connection
-        const socket = io(url, {
-            ...options,
-            timeout: 20000,
-            forceNew: true,
-            extraHeaders: {
-                'Access-Control-Allow-Credentials': 'true'
-            }
-        });
-
-        socketRef.current = socket;
-        setStatus('connecting');
-
-        // Connection event handlers
-        socket.on('connect', () => {
-            console.log('WebSocket connected with ID:', socket.id);
-            setStatus('connected');
-            setIsConnected(true);
-        });
-
-        socket.on('disconnect', (reason) => {
-            console.log('WebSocket disconnected. Reason:', reason);
-            setStatus('disconnected');
-            setIsConnected(false);
-        });
-
-        socket.on('connect_error', (error) => {
-            console.error('WebSocket connection error:', error.message);
-            console.error('Error details:', error);
-            setStatus('error');
-            setIsConnected(false);
-        });
-
-        socket.on('connection:success', (data) => {
-            console.log('WebSocket authenticated successfully:', data);
-        });
-
-        // Add reconnection attempt logging
-        socket.on('reconnect', (attemptNumber) => {
-            console.log('WebSocket reconnected after', attemptNumber, 'attempts');
-        });
-
-        socket.on('reconnect_attempt', (attemptNumber) => {
-            console.log('WebSocket reconnection attempt:', attemptNumber);
-        });
-
-        socket.on('reconnect_error', (error) => {
-            console.error('WebSocket reconnection error:', error);
-        });
-
-        socket.on('reconnect_failed', () => {
-            console.error('WebSocket reconnection failed after max attempts');
-            setStatus('error');
-        });
+        initializeSocket();
 
         // Cleanup on unmount
         return () => {
             console.log('Cleaning up WebSocket connection');
-            socket.removeAllListeners();
-            socket.close();
-            socketRef.current = null;
+            if (socketRef.current) {
+                socketRef.current.removeAllListeners();
+                socketRef.current.close();
+                socketRef.current = null;
+            }
             setStatus('disconnected');
             setIsConnected(false);
         };

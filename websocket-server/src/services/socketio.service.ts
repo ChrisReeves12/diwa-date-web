@@ -37,19 +37,30 @@ export class SocketIOService {
     private setupMiddleware(config: ServerConfig): void {
         this.io.use(async (socket, next) => {
             try {
-                const cookieHeader = socket.handshake.headers.cookie || '';
-                const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
-                    const [key, value] = cookie.trim().split('=');
-                    if (key && value) {
-                        acc[key] = decodeURIComponent(value);
-                    }
-                    return acc;
-                }, {} as Record<string, string>);
+                let sessionToken: string | undefined;
 
-                const sessionToken = cookies[config.auth.sessionCookieName];
+                // First, try to get token from auth object (Socket.IO auth)
+                if (socket.handshake.auth && socket.handshake.auth.token) {
+                    sessionToken = socket.handshake.auth.token;
+                } else {
+                    // Fallback to cookies if available
+                    const cookieHeader = socket.handshake.headers.cookie || '';
+                    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+                        const [key, value] = cookie.trim().split('=');
+                        if (key && value) {
+                            acc[key] = decodeURIComponent(value);
+                        }
+                        return acc;
+                    }, {} as Record<string, string>);
+
+                    sessionToken = cookies[config.auth.sessionCookieName];
+                    if (sessionToken) {
+                        console.log('Using session token from cookies');
+                    }
+                }
 
                 if (!sessionToken) {
-                    console.log('No session token found');
+                    console.log('No session token found in auth or cookies');
                     return next(new Error('Authentication required'));
                 }
 
