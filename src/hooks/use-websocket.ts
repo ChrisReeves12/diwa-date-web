@@ -38,7 +38,6 @@ export function useWebSocket() {
             ...options,
             timeout: 20000,
             forceNew: true,
-            // Ensure cookies are sent with the connection
             extraHeaders: {
                 'Access-Control-Allow-Credentials': 'true'
             }
