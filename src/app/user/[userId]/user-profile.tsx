@@ -30,6 +30,7 @@ import {
 import { useWebSocket } from '@/hooks/use-websocket';
 import { isUserOnline } from '@/helpers/user.helpers';
 import ReportUserDialog from '@/common/report-user-dialog/report-user-dialog';
+import { CircularProgress } from '@mui/material';
 
 interface UserProfileProps {
     userProfileDetail: UserProfileDetail,
@@ -192,104 +193,118 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
     const onRequestMatchClick = async (e: React.MouseEvent) => {
         e.preventDefault();
         setIsUpdatingMatch(true);
-        try {
-            const sendUserMatchResult = await sendUserMatch(Number(userProfile.user.id));
-            if (typeof sendUserMatchResult === 'object' && 'error' in sendUserMatchResult) {
-                showAlert(sendUserMatchResult.error);
-                return;
+
+        setTimeout(async () => {
+            try {
+                const sendUserMatchResult = await sendUserMatch(Number(userProfile.user.id));
+                if (typeof sendUserMatchResult === 'object' && 'error' in sendUserMatchResult) {
+                    showAlert(sendUserMatchResult.error);
+                    return;
+                }
+
+                await unMuteUser(Number(userProfile.user.id));
+
+                const result = await loadFullUserProfile(Number(userProfile.user.id));
+                if (!("userProfileDetails" in result) || ("error" in result && result.error) || ("userProfileDetails" in result && !result.userProfileDetails)) {
+                    showAlert(("error" in result && result.error) || 'An error occurred sending update. Please try again later.');
+                    return;
+                }
+
+                setUserProfile(result.userProfileDetails);
+            } catch (error) {
+                console.error('Error sending match request:', error);
+            } finally {
+                setIsUpdatingMatch(false);
             }
-
-            await unMuteUser(Number(userProfile.user.id));
-
-            const result = await loadFullUserProfile(Number(userProfile.user.id));
-            if (!("userProfileDetails" in result) || ("error" in result && result.error) || ("userProfileDetails" in result && !result.userProfileDetails)) {
-                showAlert(("error" in result && result.error) || 'An error occurred sending update. Please try again later.');
-                return;
-            }
-
-            setUserProfile(result.userProfileDetails);
-        } catch (error) {
-            console.error('Error sending match request:', error);
-        } finally {
-            setIsUpdatingMatch(false);
-        }
+        }, 500);
     };
 
     const onCancelMatchClick = async (e: React.MouseEvent) => {
         e.preventDefault();
         setIsUpdatingMatch(true);
-        try {
-            await removeUserMatch(Number(userProfile.user.id));
-            const result = await loadFullUserProfile(Number(userProfile.user.id));
-            if ('error' in result || !result.userProfileDetails) {
-                showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
-                return;
-            }
 
-            setUserProfile(result.userProfileDetails);
-        } catch (error) {
-            console.error('Error canceling match request:', error);
-        } finally {
-            setIsUpdatingMatch(false);
-        }
+        setTimeout(async () => {
+            try {
+                await removeUserMatch(Number(userProfile.user.id));
+                const result = await loadFullUserProfile(Number(userProfile.user.id));
+                if ('error' in result || !result.userProfileDetails) {
+                    showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
+                    return;
+                }
+
+                setUserProfile(result.userProfileDetails);
+            } catch (error) {
+                console.error('Error canceling match request:', error);
+            } finally {
+                setIsUpdatingMatch(false);
+            }
+        }, 500);
     };
 
     const onIgnoreMatchClick = async (e: React.MouseEvent) => {
         e.preventDefault();
-
         setIsUpdatingMatch(true);
-        try {
-            await muteUser(Number(userProfile.user.id));
-            const result = await loadFullUserProfile(Number(userProfile.user.id));
-            if ('error' in result || !result.userProfileDetails) {
-                showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
-                return;
-            }
 
-            setUserProfile(result.userProfileDetails);
-        } catch (error) {
-            console.error('Error rejecting match request:', error);
-        } finally {
-            setIsUpdatingMatch(false);
-        }
+        setTimeout(async () => {
+            try {
+                await muteUser(Number(userProfile.user.id));
+                const result = await loadFullUserProfile(Number(userProfile.user.id));
+                if ('error' in result || !result.userProfileDetails) {
+                    showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
+                    return;
+                }
+
+                setUserProfile(result.userProfileDetails);
+            } catch (error) {
+                console.error('Error rejecting match request:', error);
+            } finally {
+                setIsUpdatingMatch(false);
+            }
+        }, 500);
     };
 
     const onBlockUserClick = async (e: React.MouseEvent) => {
         e.preventDefault();
         setIsBlockingOrUnBlocking(true);
-        try {
-            await blockUserAction(Number(userProfile.user.id));
-            const result = await loadFullUserProfile(Number(userProfile.user.id));
-            if ('error' in result || !result.userProfileDetails) {
-                showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
-                return;
-            }
 
-            setUserProfile(result.userProfileDetails);
-        } catch (error) {
-            console.error('Error blocking user:', error);
-        } finally {
-            setIsBlockingOrUnBlocking(false);
-        }
+        setTimeout(async () => {
+            try {
+                await blockUserAction(Number(userProfile.user.id));
+                const result = await loadFullUserProfile(Number(userProfile.user.id));
+                if ('error' in result || !result.userProfileDetails) {
+                    showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
+                    return;
+                }
+
+                setUserProfile(result.userProfileDetails);
+            } catch (error) {
+                console.error('Error blocking user:', error);
+            } finally {
+                setIsBlockingOrUnBlocking(false);
+            }
+        }, 500);
     };
 
     const onUnBlockUserClick = async (e: React.MouseEvent) => {
         e.preventDefault();
         setIsBlockingOrUnBlocking(true);
-        try {
-            await unBlockUserAction(Number(userProfile.user.id));
-            const result = await loadFullUserProfile(Number(userProfile.user.id));
-            if ('error' in result || !result.userProfileDetails) {
-                showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
-                return;
-            }
 
-            setUserProfile(result.userProfileDetails);
-        } catch (error) {
-            console.error('Error unblocking user:', error);
-        } finally {
-            setIsBlockingOrUnBlocking(false);
-        }
+        setTimeout(async () => {
+            try {
+                await unBlockUserAction(Number(userProfile.user.id));
+                const result = await loadFullUserProfile(Number(userProfile.user.id));
+                if ('error' in result || !result.userProfileDetails) {
+                    showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
+                    return;
+                }
+
+                setUserProfile(result.userProfileDetails);
+            } catch (error) {
+                console.error('Error unblocking user:', error);
+            } finally {
+                setIsBlockingOrUnBlocking(false);
+            }
+        }, 500);
     };
 
     const onReportUserClick = (e: React.MouseEvent) => {
@@ -410,85 +425,96 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                         {userProfile.user.id !== currentUser.id && (
                                             <div className="buttons-container">
                                                 {userProfile.matchStatus === 'pending' && !userProfile.matchIsTowardsMe ? (
-                                                <button
-                                                    disabled={isUpdatingMatch}
-                                                    onClick={onCancelMatchClick}
-                                                    className="request-match">
-                                                    <HeartBrokenIcon />
-                                                    <div className="label">Cancel Match Request</div>
-                                                </button>
-                                            ) : userProfile.matchStatus === 'pending' && userProfile.matchIsTowardsMe ? (
-                                                <>
+                                                    <button
+                                                        disabled={isUpdatingMatch}
+                                                        onClick={onCancelMatchClick}
+                                                        className="request-match">
+                                                        {isUpdatingMatch ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
+                                                            <HeartBrokenIcon />
+                                                            <div className="label">Cancel Match Request</div>
+                                                        </>}
+                                                    </button>
+                                                ) : userProfile.matchStatus === 'pending' && userProfile.matchIsTowardsMe ? (
+                                                    <>
+                                                        <button
+                                                            disabled={isUpdatingMatch}
+                                                            onClick={onRequestMatchClick}
+                                                            className="request-match"
+                                                        >
+                                                            {isUpdatingMatch ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
+                                                                <HeartIcon />
+                                                                <div className="label">Accept Match</div>
+                                                            </>}
+                                                        </button>
+                                                        <button
+                                                            disabled={isUpdatingMatch}
+                                                            onClick={onIgnoreMatchClick}
+                                                            className="reject-match"
+                                                        >
+                                                            {isUpdatingMatch ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
+                                                                <TimesIcon />
+                                                                <div className="label">Pass</div>
+                                                            </>}
+                                                        </button>
+                                                    </>
+                                                ) : userProfile.matchStatus === 'matched' ? (
+                                                    <>
+                                                        <div className="matched">
+                                                            <CheckCircleIcon />
+                                                            <div className="label">Matched</div>
+                                                        </div>
+
+                                                        {userProfile.matchId && (
+                                                            <Link href={`/messages/${userProfile.matchId}`} className="request-match">
+                                                                <CommentsIcon />
+                                                                <div className="label">Send Message</div>
+                                                            </Link>
+                                                        )}
+                                                    </>
+                                                ) : (
                                                     <button
                                                         disabled={isUpdatingMatch}
                                                         onClick={onRequestMatchClick}
-                                                        className="request-match"
-                                                    >
-                                                        <HeartIcon />
-                                                        <div className="label">Accept Match</div>
-                                                    </button>
-                                                    <button
-                                                        disabled={isUpdatingMatch}
-                                                        onClick={onIgnoreMatchClick}
-                                                        className="reject-match"
-                                                    >
-                                                        <TimesIcon />
-                                                        <div className="label">Pass</div>
-                                                    </button>
-                                                </>
-                                            ) : userProfile.matchStatus === 'matched' ? (
-                                                <>
-                                                    <div className="matched">
-                                                        <CheckCircleIcon />
-                                                        <div className="label">Matched</div>
-                                                    </div>
-
-                                                    {userProfile.matchId && (
-                                                        <Link href={`/messages/${userProfile.matchId}`} className="request-match">
-                                                            <CommentsIcon />
-                                                            <div className="label">Send Message</div>
-                                                        </Link>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <button
-                                                    disabled={isUpdatingMatch}
-                                                    onClick={onRequestMatchClick}
-                                                    className="request-match"
-                                                >
-                                                    <HeartIcon />
-                                                    <div className="label">Like</div>
-                                                </button>
-                                            )}
-
-                                            <div className="cancel-block-button-container">
-                                                {!userProfile.blockedThem ? (
-                                                    <button
-                                                        disabled={isBlockingOrUnBlocking}
-                                                        onClick={onBlockUserClick}
-                                                        className="block-user"
-                                                    >
-                                                        <BanIcon />
-                                                        <div className="label">Block User</div>
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        disabled={isBlockingOrUnBlocking}
-                                                        onClick={onUnBlockUserClick}
-                                                        className="block-user">
-                                                        <UnlockIcon />
-                                                        <div className="label">Unblock User</div>
+                                                        className="request-match">
+                                                        {isUpdatingMatch ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
+                                                            <HeartIcon />
+                                                            <div className="label">Like</div>
+                                                        </>}
                                                     </button>
                                                 )}
 
-                                                <button
-                                                    className="report-user"
-                                                    onClick={onReportUserClick}
-                                                >
-                                                    <ExclamationTriangleIcon />
-                                                    <div className="label">Report User</div>
-                                                </button>
-                                            </div>
+                                                <div className="cancel-block-button-container">
+                                                    {!userProfile.blockedThem ? (
+                                                        <button
+                                                            disabled={isBlockingOrUnBlocking}
+                                                            onClick={onBlockUserClick}
+                                                            className="block-user"
+                                                        >
+                                                            {isBlockingOrUnBlocking ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
+                                                                <BanIcon />
+                                                                <div className="label">Block User</div>
+                                                            </>}
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            disabled={isBlockingOrUnBlocking}
+                                                            onClick={onUnBlockUserClick}
+                                                            className="block-user">
+                                                            {isBlockingOrUnBlocking ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
+                                                                <UnlockIcon />
+                                                                <div className="label">Unblock User</div>
+                                                            </>}
+                                                        </button>
+                                                    )}
+
+                                                    <button
+                                                        className="report-user"
+                                                        onClick={onReportUserClick}
+                                                    >
+                                                        <ExclamationTriangleIcon />
+                                                        <div className="label">Report User</div>
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                     </div>

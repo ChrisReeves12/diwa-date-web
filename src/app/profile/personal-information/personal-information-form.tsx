@@ -161,51 +161,53 @@ export function PersonalInformationForm({ currentUser }: PersonalInformationForm
         setIsLoading(true);
         setSuccessMessage('');
 
-        try {
-            const formData = {
-                displayName,
-                firstName,
-                lastName,
-                dateOfBirth,
-                bio,
-                location: selectedLocation,
-                userGender,
-                seekingGender,
-                height: height ? parseInt(height) : undefined,
-                bodyType,
-                ethnicities,
-                religions,
-                education,
-                languages,
-                maritalStatus,
-                hasChildren,
-                wantsChildren,
-                drinking,
-                smoking,
-                interests
-            };
+        setTimeout(async () => {
+            try {
+                const formData = {
+                    displayName,
+                    firstName,
+                    lastName,
+                    dateOfBirth,
+                    bio,
+                    location: selectedLocation,
+                    userGender,
+                    seekingGender,
+                    height: height ? parseInt(height) : undefined,
+                    bodyType,
+                    ethnicities,
+                    religions,
+                    education,
+                    languages,
+                    maritalStatus,
+                    hasChildren,
+                    wantsChildren,
+                    drinking,
+                    smoking,
+                    interests
+                };
 
-            const result = await updatePersonalInformation(formData);
+                const result = await updatePersonalInformation(formData);
 
-            if (result.success) {
-                setSuccessMessage('Profile updated successfully!');
-                setErrors({});
+                if (result.success) {
+                    setSuccessMessage('Profile updated successfully!');
+                    setErrors({});
 
-                // Scroll to the very top of the page after successful update
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } else {
-                if (result.errors) {
-                    setErrors(result.errors);
-                } else {
-                    setErrors({ form: 'Update failed' });
+                    // Scroll to the very top of the page after successful update
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else if ('errors' in result) {
+                    if (result.errors) {
+                        setErrors(result.errors);
+                    } else {
+                        setErrors({ form: 'Update failed' });
+                    }
                 }
+            } catch (error) {
+                console.error('Update error:', error);
+                setErrors({ form: 'An unexpected error occurred' });
+            } finally {
+                setIsLoading(false);
             }
-        } catch (error) {
-            console.error('Update error:', error);
-            setErrors({ form: 'An unexpected error occurred' });
-        } finally {
-            setIsLoading(false);
-        }
+        }, 500);
     };
 
     useEffect(() => {

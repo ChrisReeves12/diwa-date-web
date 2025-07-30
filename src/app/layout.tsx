@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "@/styles/globals.scss";
 import GlobalAlertProvider from "@/common/alert-dialog/global-alert-provider";
+import { ThemeProvider } from '@mui/material/styles';
+import { theme } from '@/theme/theme';
 
 export const metadata: Metadata = {
   title: `${process.env.APP_NAME} | ${process.env.APP_TAGLINE}`,
@@ -31,9 +33,11 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <GlobalAlertProvider>
-          {children}
-        </GlobalAlertProvider>
+        <ThemeProvider theme={theme}>
+          <GlobalAlertProvider>
+            {children}
+          </GlobalAlertProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

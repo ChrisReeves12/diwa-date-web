@@ -214,8 +214,7 @@
         }
 
         &:disabled {
-            background: #ccc;
-            cursor: not-allowed;
+            cursor: inherit;
             transform: none;
             box-shadow: none;
         }

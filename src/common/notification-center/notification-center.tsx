@@ -31,6 +31,7 @@ export default function NotificationCenter() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [newNotificationAnimations, setNewNotificationAnimations] = useState<NewNotificationAnimation>({});
+    const [itemLoadingStates, setItemLoadingStates] = useState<{[key: string]: boolean}>({});
     const popovers = useNotificationPopovers();
     const router = useRouter();
     const pathname = usePathname();
@@ -299,15 +300,30 @@ export default function NotificationCenter() {
                     receivedAtMessage: `Received ${pendingMatch.receivedAtHumanized}`,
                     infoSectionUrl: userProfileLink(pendingMatch.sender),
                     userPhotoUrl: userProfileLink(pendingMatch.sender),
+                    isLoading: itemLoadingStates[pendingMatch.id] || false,
                     onLike: () => {
-                        sendUserMatch(pendingMatch.sender.id).then(() => {
-                            return loadNotificationCenterData(currentUser);
-                        }).then((aData) => setNotificationsData(aData));
+                        setItemLoadingStates(prev => ({ ...prev, [pendingMatch.id]: true }));
+                        setTimeout(async () => {
+                            try {
+                                await sendUserMatch(pendingMatch.sender.id);
+                                const aData = await loadNotificationCenterData(currentUser);
+                                setNotificationsData(aData);
+                            } finally {
+                                setItemLoadingStates(prev => ({ ...prev, [pendingMatch.id]: false }));
+                            }
+                        }, 500);
                     },
                     onPass: () => {
-                        muteUser(pendingMatch.sender.id).then(() => {
-                            return loadNotificationCenterData(currentUser);
-                        }).then((aData) => setNotificationsData(aData));
+                        setItemLoadingStates(prev => ({ ...prev, [pendingMatch.id]: true }));
+                        setTimeout(async () => {
+                            try {
+                                await muteUser(pendingMatch.sender.id);
+                                const aData = await loadNotificationCenterData(currentUser);
+                                setNotificationsData(aData);
+                            } finally {
+                                setItemLoadingStates(prev => ({ ...prev, [pendingMatch.id]: false }));
+                            }
+                        }, 500);
                     },
                     type: "likes"
                 }))}

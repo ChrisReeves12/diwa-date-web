@@ -106,7 +106,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
     const [isLoadingCancel, setIsLoadingCancel] = useState(false);
     const [isLoadingReactivate, setIsLoadingReactivate] = useState(false);
     const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
-    const [states, setStates] = useState<Array<{code: string | null, name: string}>>([]);
+    const [states, setStates] = useState<Array<{ code: string | null, name: string }>>([]);
 
     // Payment method deletion state
     const [isLoadingDeletePayment, setIsLoadingDeletePayment] = useState(false);
@@ -155,7 +155,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                     }
 
                     const regions = await getRegionsForCountry(countryCode);
-                    setStates(regions.map(s => ({name: s.name, code: s.stateCode})));
+                    setStates(regions.map(s => ({ name: s.name, code: s.stateCode })));
                 }
 
                 // Load subscription plans
@@ -228,55 +228,57 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
         setSuccessMessage('');
         setIsLoading(true);
 
-        try {
-            // If no payment method exists, use the combined function for payment processing
-            if (!existingBilling?.paymentMethod) {
-                const result = await updateBillingAndPaymentWithAuthorizeNet({
-                    billingInfo,
-                    paymentInfo
-                });
+        setTimeout(async () => {
+            try {
+                // If no payment method exists, use the combined function for payment processing
+                if (!existingBilling?.paymentMethod) {
+                    const result = await updateBillingAndPaymentWithAuthorizeNet({
+                        billingInfo,
+                        paymentInfo
+                    });
 
-                if (!result.success) {
-                    setErrors({ form: result.error || 'Failed to update billing and payment information' });
-                    return;
+                    if (!result.success) {
+                        setErrors({ form: result.error || 'Failed to update billing and payment information' });
+                        return;
+                    }
+
+                    setSuccessMessage('Billing information and payment method updated successfully.');
+
+                    // Clear payment form for security
+                    setPaymentInfo({
+                        cardNumber: '',
+                        expiryMonth: '',
+                        expiryYear: '',
+                        cvv: ''
+                    });
+                } else {
+                    // If payment method exists, just update billing information
+                    const billingResult = await updateBillingInformation(billingInfo);
+
+                    if (!billingResult.success) {
+                        setErrors({ billingForm: billingResult.error || 'Failed to update billing information' });
+                        return;
+                    }
+
+                    setSuccessMessage('Billing information updated successfully');
                 }
 
-                setSuccessMessage('Billing information and payment method updated successfully.');
-
-                // Clear payment form for security
-                setPaymentInfo({
-                    cardNumber: '',
-                    expiryMonth: '',
-                    expiryYear: '',
-                    cvv: ''
-                });
-            } else {
-                // If payment method exists, just update billing information
-                const billingResult = await updateBillingInformation(billingInfo);
-
-                if (!billingResult.success) {
-                    setErrors({ billingForm: billingResult.error || 'Failed to update billing information' });
-                    return;
+                // Reload billing information to get updated data
+                const updatedBilling = await getBillingInformation();
+                if (updatedBilling) {
+                    setExistingBilling(updatedBilling);
                 }
 
-                setSuccessMessage('Billing information updated successfully');
+                // Recheck billing completeness
+                const billingComplete = await isBillingInformationComplete();
+                setIsBillingComplete(billingComplete);
+            } catch (error) {
+                console.error('Billing and payment update error:', error);
+                setErrors({ form: 'An unexpected error occurred' });
+            } finally {
+                setIsLoading(false);
             }
-
-            // Reload billing information to get updated data
-            const updatedBilling = await getBillingInformation();
-            if (updatedBilling) {
-                setExistingBilling(updatedBilling);
-            }
-
-            // Recheck billing completeness
-            const billingComplete = await isBillingInformationComplete();
-            setIsBillingComplete(billingComplete);
-        } catch (error) {
-            console.error('Billing and payment update error:', error);
-            setErrors({ form: 'An unexpected error occurred' });
-        } finally {
-            setIsLoading(false);
-        }
+        }, 500);
     };
 
     const handleSubscriptionEnrollment = async () => {
@@ -289,25 +291,27 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
         setSuccessMessage('');
         setIsLoadingSubscription(true);
 
-        try {
-            const result = await enrollInSubscriptionPlan(selectedPlanId);
+        setTimeout(async () => {
+            try {
+                const result = await enrollInSubscriptionPlan(selectedPlanId);
 
-            if (!result.success) {
-                setErrors({ subscriptionForm: result.error || 'Failed to enroll in subscription plan' });
-                return;
+                if (!result.success) {
+                    setErrors({ subscriptionForm: result.error || 'Failed to enroll in subscription plan' });
+                    return;
+                }
+
+                setSuccessMessage('Successfully enrolled in premium membership!');
+                setSelectedPlanId(null);
+
+                // Force a page reload to update the user's subscription status
+                window.location.reload();
+            } catch (error) {
+                console.error('Subscription enrollment error:', error);
+                setErrors({ subscriptionForm: 'An unexpected error occurred' });
+            } finally {
+                setIsLoadingSubscription(false);
             }
-
-            setSuccessMessage('Successfully enrolled in premium membership!');
-            setSelectedPlanId(null);
-
-            // Force a page reload to update the user's subscription status
-            window.location.reload();
-        } catch (error) {
-            console.error('Subscription enrollment error:', error);
-            setErrors({ subscriptionForm: 'An unexpected error occurred' });
-        } finally {
-            setIsLoadingSubscription(false);
-        }
+        }, 500);
     };
 
     const handleCancelSubscription = async () => {
@@ -315,26 +319,28 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
         setSuccessMessage('');
         setIsLoadingCancel(true);
 
-        try {
-            const result = await cancelSubscription();
+        setTimeout(async () => {
+            try {
+                const result = await cancelSubscription();
 
-            if (!result.success) {
-                setErrors({ subscriptionForm: result.error || 'Failed to cancel subscription' });
-                return;
+                if (!result.success) {
+                    setErrors({ subscriptionForm: result.error || 'Failed to cancel subscription' });
+                    return;
+                }
+
+                setSuccessMessage('Your subscription has been cancelled and will end at your next billing date.');
+                setShowCancelConfirmation(false);
+
+                // Reload subscription details
+                const updatedDetails = await getCurrentSubscriptionDetails();
+                setSubscriptionDetails(updatedDetails);
+            } catch (error) {
+                console.error('Subscription cancellation error:', error);
+                setErrors({ subscriptionForm: 'An unexpected error occurred' });
+            } finally {
+                setIsLoadingCancel(false);
             }
-
-            setSuccessMessage('Your subscription has been cancelled and will end at your next billing date.');
-            setShowCancelConfirmation(false);
-
-            // Reload subscription details
-            const updatedDetails = await getCurrentSubscriptionDetails();
-            setSubscriptionDetails(updatedDetails);
-        } catch (error) {
-            console.error('Subscription cancellation error:', error);
-            setErrors({ subscriptionForm: 'An unexpected error occurred' });
-        } finally {
-            setIsLoadingCancel(false);
-        }
+        }, 500);
     };
 
     const handleReactivateSubscription = async () => {
@@ -342,25 +348,27 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
         setSuccessMessage('');
         setIsLoadingReactivate(true);
 
-        try {
-            const result = await reactivateSubscription();
+        setTimeout(async () => {
+            try {
+                const result = await reactivateSubscription();
 
-            if (!result.success) {
-                setErrors({ subscriptionForm: result.error || 'Failed to reactivate subscription' });
-                return;
+                if (!result.success) {
+                    setErrors({ subscriptionForm: result.error || 'Failed to reactivate subscription' });
+                    return;
+                }
+
+                setSuccessMessage('Your subscription has been reactivated and will continue automatically.');
+
+                // Reload subscription details
+                const updatedDetails = await getCurrentSubscriptionDetails();
+                setSubscriptionDetails(updatedDetails);
+            } catch (error) {
+                console.error('Subscription reactivation error:', error);
+                setErrors({ subscriptionForm: 'An unexpected error occurred' });
+            } finally {
+                setIsLoadingReactivate(false);
             }
-
-            setSuccessMessage('Your subscription has been reactivated and will continue automatically.');
-
-            // Reload subscription details
-            const updatedDetails = await getCurrentSubscriptionDetails();
-            setSubscriptionDetails(updatedDetails);
-        } catch (error) {
-            console.error('Subscription reactivation error:', error);
-            setErrors({ subscriptionForm: 'An unexpected error occurred' });
-        } finally {
-            setIsLoadingReactivate(false);
-        }
+        }, 500);
     };
 
     const handleDeletePayment = async () => {
@@ -368,26 +376,28 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
         setErrors({});
         setSuccessMessage('');
 
-        try {
-            const result = await deletePaymentMethod();
+        setTimeout(async () => {
+            try {
+                const result = await deletePaymentMethod();
 
-            if (!result.success) {
-                setErrors({ paymentForm: result.error || 'Failed to delete payment method' });
-                return;
+                if (!result.success) {
+                    setErrors({ paymentForm: result.error || 'Failed to delete payment method' });
+                    return;
+                }
+
+                setSuccessMessage('Payment method deleted successfully');
+
+                const billingComplete = await isBillingInformationComplete();
+                setIsBillingComplete(billingComplete);
+
+                window.location.reload();
+            } catch (error) {
+                console.error('Delete payment method error:', error);
+                setErrors({ paymentForm: 'Failed to delete payment method' });
+            } finally {
+                setIsLoadingDeletePayment(false);
             }
-
-            setSuccessMessage('Payment method deleted successfully');
-
-            const billingComplete = await isBillingInformationComplete();
-            setIsBillingComplete(billingComplete);
-
-            window.location.reload();
-        } catch (error) {
-            console.error('Delete payment method error:', error);
-            setErrors({ paymentForm: 'Failed to delete payment method' });
-        } finally {
-            setIsLoadingDeletePayment(false);
-        }
+        }, 500);
     };
 
     if (isLoadingBillingInfo) {
@@ -627,7 +637,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                             if (selectedCountry) {
                                                                 getRegionsForCountry(selectedCountry.code)
                                                                     .then((states) => {
-                                                                        setStates(states.map(s => ({name: s.name, code: s.stateCode})))
+                                                                        setStates(states.map(s => ({ name: s.name, code: s.stateCode })))
                                                                     });
                                                             }
                                                         } else {

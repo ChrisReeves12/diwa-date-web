@@ -7,7 +7,8 @@ import Image from 'next/image';
 import { loginTitle, loginSubtitle } from '@/content/login-content';
 import { loginAction } from './login.actions';
 import Link from 'next/link';
-import { Alert, Button } from '@mui/material';
+import { Alert, Button, CircularProgress } from '@mui/material';
+import { SpinnerIcon } from "react-line-awesome";
 
 export default function LoginForm() {
     const router = useRouter();
@@ -43,33 +44,38 @@ export default function LoginForm() {
         setErrors({});
         setIsLoading(true);
 
-        try {
-            // Add email and password to the form data
-            formData.set('email', email);
-            formData.set('password', password);
+        setTimeout(async () => {
+            try {
+                // Add email and password to the form data
+                formData.set('email', email);
+                formData.set('password', password);
 
-            // Call the server action
-            const result = await loginAction(formData);
+                // Call the server action
+                const result = await loginAction(formData);
 
-            if (!result.success) {
-                // Authentication failed
+                if (!result.success) {
+                    // Authentication failed
+                    setErrors({
+                        form: result.message || 'Invalid email or password'
+                    });
+
+                    setIsLoading(false);
+                    return;
+                }
+
+                // Login successful - redirect to intended page or home
+                router.push(redirectTo || '/');
+                router.refresh();
+            } catch (error) {
+                console.error('Login error:', error);
                 setErrors({
-                    form: result.message || 'Invalid email or password'
+                    form: 'An unexpected error occurred'
                 });
-                return;
+
+                setIsLoading(false);
             }
 
-            // Login successful - redirect to intended page or home
-            router.push(redirectTo || '/');
-            router.refresh();
-        } catch (error) {
-            console.error('Login error:', error);
-            setErrors({
-                form: 'An unexpected error occurred'
-            });
-        } finally {
-            setIsLoading(false);
-        }
+        }, 500);
     };
 
     const togglePasswordVisibility = () => {
@@ -98,8 +104,7 @@ export default function LoginForm() {
                                         <Button onClick={onCloseAlert} color="inherit" size="small">
                                             Dismiss
                                         </Button>
-                                    }
-                                >
+                                    }>
                                     {alertMessage}
                                 </Alert>
                             </div>}
@@ -164,15 +169,11 @@ export default function LoginForm() {
 
                             <div className="submit-button-wrapper">
                                 <div className="form-row form-row-loader-container">
-                                    <button
+                                    {isLoading ? <CircularProgress sx={{color: "primary.main" }} /> : <button
                                         className="btn-primary"
-                                        type="submit"
-                                        disabled={isLoading}>
-                                        {isLoading ? <i className="las la-spinner"></i> : <span>Sign In</span>}
-                                    </button>
-                                    <div className={`loader ${isLoading ? 'is-loading' : ''}`}>
-                                        <i className="las la-spinner"></i>
-                                    </div>
+                                        type="submit">
+                                        Sign In
+                                    </button>}
                                 </div>
                             </div>
                         </form>

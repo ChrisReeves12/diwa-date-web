@@ -5,6 +5,7 @@ import { HeartIcon, TimesIcon } from "react-line-awesome";
 import Link from 'next/link';
 import { decodeHtmlEntities } from '@/util';
 import { User } from "@/types";
+import { CircularProgress } from "@mui/material";
 
 type NotificationType = 'notifications' | 'likes' | 'messages';
 
@@ -27,11 +28,12 @@ interface NotificationListItemProps {
     userPhotoUrl: string,
     infoSectionUrl: string,
     onLike?: () => void,
-    onPass?: () => void
+    onPass?: () => void,
+    isLoading?: boolean
 }
 
 function NotificationListItem({ senderUser, content, receivedAtMessage,
-    numberOfMessages, userPhotoUrl, infoSectionUrl, onLike, onPass, type }: NotificationListItemProps) {
+    numberOfMessages, userPhotoUrl, infoSectionUrl, onLike, onPass, type, isLoading = false }: NotificationListItemProps) {
     return (
         <div className="notification-list-item">
             <div className="user-photo">
@@ -70,14 +72,14 @@ function NotificationListItem({ senderUser, content, receivedAtMessage,
                 {['messages', 'likes'].includes(type) &&
                     <div className="button-section">
                         {type === 'likes' &&
-                            <>
-                                {onLike && <button onClick={() => onLike()} className="like">
+                            (isLoading ? <CircularProgress size={24} sx={{color: "primary"}}/> : <>
+                                {onLike && <button onClick={() => onLike()} className="like" disabled={isLoading}>
                                     <HeartIcon />
                                 </button>}
-                                {onPass && <button onClick={() => onPass()} className="pass">
+                                {onPass && <button onClick={() => onPass()} className="pass" disabled={isLoading}>
                                     <TimesIcon />
                                 </button>}
-                            </>}
+                            </>)}
                         {type === 'messages' && numberOfMessages && numberOfMessages > 1 &&
                             <div className="num-of-messages">{numberOfMessages > 99 ? '99+' : numberOfMessages}</div>}
                     </div>}

@@ -16,12 +16,14 @@ import {
     CrownIcon,
     TrophyIcon
 } from "react-line-awesome";
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { UserPhoto } from "@/types/user-photo.type";
 import { AngleLeftIcon, AngleRightIcon } from "react-line-awesome";
 import { removeUserMatch, sendUserMatch, blockUserAction, unBlockUserAction, muteUser } from '../server-actions/user-profile.actions';
 import _ from 'lodash';
 import ReportUserDialog from '../report-user-dialog/report-user-dialog';
+import Link from "next/link";
+import { CircularProgress } from "@mui/material";
 
 interface UserProfilePreviewProps {
     userPreview: UserPreview,
@@ -38,6 +40,8 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
     const [userMatchStatus, setUserMatchStatus] = useState<string | undefined>(userPreview.matchStatus);
     const [blockedThem, setBlockedThem] = useState<boolean | undefined>(userPreview.blockedThem);
     const [showReportDialog, setShowReportDialog] = useState(false);
+    const [isLikeLoading, setIsLikeLoading] = useState(false);
+    const [isBlockLoading, setIsBlockLoading] = useState(false);
     const popoverRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const moreOptionsPopoverRef = useRef<HTMLDivElement>(null);
@@ -98,28 +102,42 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
     };
 
     const handleLike = async () => {
-        if (userMatchStatus === 'pending' && !userPreview.theyLikedMe) {
-            await removeUserMatch(Number(userPreview.id));
-            setUserMatchStatus(undefined);
-        } else {
-            const sendUserMatchResult = await sendUserMatch(Number(userPreview.id));
-            if (typeof sendUserMatchResult === 'object' && "error" in sendUserMatchResult) {
-                showAlert(sendUserMatchResult.error);
-                return;
+        setIsLikeLoading(true);
+
+        setTimeout(async () => {
+            if (userMatchStatus === 'pending' && !userPreview.theyLikedMe) {
+                await removeUserMatch(Number(userPreview.id));
+                setUserMatchStatus(undefined);
+            } else {
+                const sendUserMatchResult = await sendUserMatch(Number(userPreview.id));
+                if (typeof sendUserMatchResult === 'object' && "error" in sendUserMatchResult) {
+                    showAlert(sendUserMatchResult.error);
+                    return;
+                }
+
+                setUserMatchStatus(sendUserMatchResult);
             }
 
-            setUserMatchStatus(sendUserMatchResult);
-        }
+            setIsLikeLoading(false);
+        }, 500);
     };
 
     const handleBlock = async () => {
-        if (blockedThem) {
-            await unBlockUserAction(Number(userPreview.id));
-            setBlockedThem(false);
-        } else {
-            await blockUserAction(Number(userPreview.id));
-            setBlockedThem(true);
-        }
+        setIsBlockLoading(true);
+
+        setTimeout(async () => {
+            try {
+                if (blockedThem) {
+                    await unBlockUserAction(Number(userPreview.id));
+                    setBlockedThem(false);
+                } else {
+                    await blockUserAction(Number(userPreview.id));
+                    setBlockedThem(true);
+                }
+            } finally {
+                setIsBlockLoading(false);
+            }
+        }, 500);
     };
 
     const handleReport = () => {
@@ -206,7 +224,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                             </a>
                             {userPreview.isPremium && (
                                 <div className="premium-badge" title="Premium Member">
-                                    <TrophyIcon/>
+                                    <TrophyIcon />
                                 </div>
                             )}
                             {userPreview.isOnline && <div className="online-lamp" title="Online now"></div>}
@@ -284,16 +302,26 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                                 {type === 'search' && <>
                                     {userMatchStatus === 'matched' ?
                                         <a href=""><CommentsIcon /> Send Message</a> :
-                                        <button onClick={handleLike}>
-                                            {userPreview.theyLikedMe ?
-                                                <><HeartIcon /> Accept Match</> :
-                                                userMatchStatus === 'pending' ?
-                                                    <><HeartBrokenIcon /> Remove Like</> :
-                                                    <><HeartIcon /> Like</>}
-                                        </button>
+                                        (isLikeLoading ?
+                                            <div style={{ paddingLeft: 20, paddingTop: 5, paddingBottom: 5 }}>
+                                                <CircularProgress size={20} sx={{ color: "primary.light" }} />
+                                            </div> :
+                                            <button onClick={handleLike}>
+                                                {userPreview.theyLikedMe ?
+                                                    <><HeartIcon /> Accept Match</> :
+                                                    userMatchStatus === 'pending' ?
+                                                        <><HeartBrokenIcon /> Remove Like</> :
+                                                        <><HeartIcon /> Like</>}
+                                            </button>)
                                     }
                                 </>}
-                                <button onClick={handleBlock}>{blockedThem ? <><UnlockIcon /> Unblock</> : <><BanIcon /> Block</>}</button>
+                                {isBlockLoading ? (
+                                    <div style={{ paddingLeft: 20, paddingTop: 5, paddingBottom: 5 }}>
+                                        <CircularProgress size={20} sx={{ color: "primary.light" }} />
+                                    </div>
+                                ) : (
+                                    <button onClick={handleBlock}>{blockedThem ? <><UnlockIcon /> Unblock</> : <><BanIcon /> Block</>}</button>
+                                )}
                                 <button onClick={handleReport}><ExclamationTriangleIcon /> Report</button>
                             </div>
                         )}
@@ -301,23 +329,30 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                     <div className="action-buttons-container">
                         {type === 'search' ?
                             (userMatchStatus !== 'matched' ?
-                                <button
+                                (isLikeLoading ? <CircularProgress size={24} sx={{ color: "primary.light" }} /> : <button
                                     className={"like-button" + (userMatchStatus === 'pending' && !userPreview.theyLikedMe ? " liked" : "")}
                                     title={userPreview.theyLikedMe ? "Accept Match" : userMatchStatus === 'pending' ? "Remove Like" : "Like"}
                                     onClick={async () => {
-                                        if (userMatchStatus === 'pending' && !userPreview.theyLikedMe) {
-                                            await removeUserMatch(Number(userPreview.id));
-                                            setUserMatchStatus(undefined);
-                                        } else {
-                                            const sendUserMatchResult = await sendUserMatch(Number(userPreview.id));
-                                            if (typeof sendUserMatchResult === 'object' && "error" in sendUserMatchResult) {
-                                                showAlert(sendUserMatchResult.error);
-                                                return;
+                                        setIsLikeLoading(true);
+
+                                        setTimeout(async () => {
+                                            if (userMatchStatus === 'pending' && !userPreview.theyLikedMe) {
+                                                await removeUserMatch(Number(userPreview.id));
+                                                setUserMatchStatus(undefined);
+                                            } else {
+                                                const sendUserMatchResult = await sendUserMatch(Number(userPreview.id));
+                                                if (typeof sendUserMatchResult === 'object' && "error" in sendUserMatchResult) {
+                                                    showAlert(sendUserMatchResult.error);
+                                                    return;
+                                                }
+
+                                                setUserMatchStatus(sendUserMatchResult);
                                             }
 
-                                            setUserMatchStatus(sendUserMatchResult);
-                                        }
-                                    }}><HeartIcon /></button> : <a className="message-link" href=""><CommentsIcon /></a>
+                                            setIsLikeLoading(false);
+                                        }, 500);
+                                    }}>
+                                    <HeartIcon /></button>) : <Link className="message-link" href=""><CommentsIcon /></Link>
                             ) :
                             <div className="match-buttons">
                                 <button onClick={async () => {

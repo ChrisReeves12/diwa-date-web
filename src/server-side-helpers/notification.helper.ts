@@ -70,12 +70,12 @@ export async function getPendingMatches(user: User): Promise<NotificationPending
             Calculate_Age(U."dateOfBirth") AS "age",
             U."lastActiveAt" 
         FROM "userMatches" UM
-            INNER JOIN "users" U ON U."id" = UM."userId"
-            INNER JOIN "users" R ON R."id" = UM."recipientId"
+            INNER JOIN "users" U ON U."id" = UM."userId" AND U."suspendedAt" IS NULL
             LEFT JOIN "mutedUsers" MU ON MU."userId" = ${user.id} AND MU."recipientId" = UM."userId"
             LEFT JOIN "blockedUsers" BU ON BU."blockedUserId" = ${user.id} AND MU."userId" = BU."userId"
         WHERE MU."recipientId" IS NULL AND BU."blockedUserId" IS NULL AND UM."status" = 'pending'
           AND U."profileCompletedAt" IS NOT NULL
+          AND UM."recipientId" = ${user.id}
         ORDER BY UM."createdAt" DESC LIMIT 5
     `;
 
