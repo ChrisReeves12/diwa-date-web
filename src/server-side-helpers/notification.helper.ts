@@ -120,7 +120,8 @@ export async function getNotificationCenterData(currentUser: User): Promise<Noti
         countAllPendingMatches(currentUser),
         countAllMessages(currentUser),
         countAllNotifications(currentUser)
-    ]).then(([pendingMatches, receivedMessages, receivedNotifications, pendingMatchesCount, receivedMessagesCount, notificationCount]) => {
+    ]).then(([pendingMatches, receivedMessages, receivedNotifications,
+                                   pendingMatchesCount, receivedMessagesCount, notificationCount]) => {
         return {
             pendingMatches,
             receivedMessages,
@@ -285,7 +286,7 @@ export async function getPendingNotifications(user: User): Promise<Notification[
 /**
  * Mark notifications as read.
  * @param userId
- * @param receivedNotifications 
+ * @param receivedNotifications
  */
 export async function markNotificationsAsRead(userId: number, receivedNotifications: Notification[]) {
     if (receivedNotifications.length === 0) {
