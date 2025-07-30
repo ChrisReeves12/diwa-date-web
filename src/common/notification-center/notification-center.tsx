@@ -308,6 +308,9 @@ export default function NotificationCenter() {
                                 await sendUserMatch(pendingMatch.sender.id);
                                 const aData = await loadNotificationCenterData(currentUser);
                                 setNotificationsData(aData);
+                                if (aData.pendingMatches?.length === 0) {
+                                    popovers.likes.handleClose();
+                                }
                             } finally {
                                 setItemLoadingStates(prev => ({ ...prev, [pendingMatch.id]: false }));
                             }
@@ -320,6 +323,9 @@ export default function NotificationCenter() {
                                 await muteUser(pendingMatch.sender.id);
                                 const aData = await loadNotificationCenterData(currentUser);
                                 setNotificationsData(aData);
+                                if (aData.pendingMatches?.length === 0) {
+                                    popovers.likes.handleClose();
+                                }
                             } finally {
                                 setItemLoadingStates(prev => ({ ...prev, [pendingMatch.id]: false }));
                             }
