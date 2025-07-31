@@ -394,7 +394,7 @@ export async function getMatchDetails(
         if (!permissionResult.canSend) {
             return {
                 error: permissionResult.errorMessage || 'You cannot message this user.',
-                statusCode: 403
+                statusCode: 418
             };
         }
 

@@ -857,26 +857,9 @@ export async function canUserMessage(senderId: number, recipientId: number): Pro
             }
         }
 
-        // Premium users can message anyone
-        if (sender.ispremium) {
-            return {
-                canSend: true
-            }
-        }
-
-        // Free users can only message premium users
-        if (!sender.ispremium && recipient.ispremium) {
-            return {
-                canSend: true
-            }
-        }
-
-        // Free user trying to message another free user - blocked
         return {
-            canSend: false,
-            errorMessage: 'You can only message premium members. Upgrade to Premium to message this user.'
+            canSend: sender.isPremium || recipient.isPremium
         }
-
     } catch (error) {
         console.error('Error checking messaging permission:', error)
         return {
@@ -1151,7 +1134,7 @@ export async function getFullUserProfile(userId: number, currentUserId: number):
         // Check if target user's seekingGender includes current user's gender
         if (user.seekingGender && currentUser.gender) {
             const isGenderMatch = user.seekingGender === 'both' ||
-                                 user.seekingGender === currentUser.gender;
+                user.seekingGender === currentUser.gender;
 
             if (!isGenderMatch) {
                 return {

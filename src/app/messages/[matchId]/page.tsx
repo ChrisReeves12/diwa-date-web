@@ -28,7 +28,7 @@ export default async function MessageConversationPage({ params }: { params: Prom
     const matchDetailsResult = await getMatchDetails(matchIdNumber, currentUser.id);
 
     if (matchDetailsResult.error) {
-        if (matchDetailsResult.statusCode === 403) {
+        if (matchDetailsResult.statusCode === 418) {
             redirect('/upgrade');
         }
 
