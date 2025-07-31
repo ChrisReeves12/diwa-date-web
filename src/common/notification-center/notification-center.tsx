@@ -2,7 +2,7 @@
 
 import './notification-center.scss';
 import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
-import { Popover } from '@mui/material';
+import { CircularProgress, Popover } from '@mui/material';
 import UserProfileAccountMenu from './user-profile-account-menu/user-profile-account-menu';
 import * as React from 'react';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -31,7 +31,7 @@ export default function NotificationCenter() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [newNotificationAnimations, setNewNotificationAnimations] = useState<NewNotificationAnimation>({});
-    const [itemLoadingStates, setItemLoadingStates] = useState<{[key: string]: boolean}>({});
+    const [itemLoadingStates, setItemLoadingStates] = useState<{ [key: string]: boolean }>({});
     const popovers = useNotificationPopovers();
     const router = useRouter();
     const pathname = usePathname();
@@ -216,7 +216,10 @@ export default function NotificationCenter() {
 
     if (isLoading) {
         return (
-            <div>Please wait...</div>
+            <div className="notification-center-loading-container">
+                <CircularProgress size={25} sx={{ color: "primary" }} />
+                <div className="loading-label">Loading...</div>
+            </div>
         );
     }
 
@@ -345,7 +348,7 @@ export default function NotificationCenter() {
                 title="Messages"
                 listItems={(notificationsData?.receivedMessages || []).map(receivedMessage => ({
                     id: receivedMessage.id,
-                    content: _.truncate(receivedMessage.content),
+                    content: receivedMessage.type === 'message' ? _.truncate(receivedMessage.content) : `Chat with ${receivedMessage.displayName}`,
                     senderUser: {
                         displayName: receivedMessage.displayName,
                         gender: receivedMessage.userGender,
@@ -353,7 +356,7 @@ export default function NotificationCenter() {
                         mainPhotoCroppedImageData: receivedMessage.mainPhotoCroppedImageData,
                         age: receivedMessage.age
                     },
-                    receivedAtMessage: `Sent ${receivedMessage.sentAtHumanized}`,
+                    receivedAtMessage: `${receivedMessage.type === 'message' ? 'Sent' : 'Matched'} ${receivedMessage.sentAtHumanized}`,
                     infoSectionUrl: `/messages/${receivedMessage.matchId}`,
                     userPhotoUrl: userProfileLink({ id: receivedMessage.userId }),
                     numberOfMessages: receivedMessage.msgCount,

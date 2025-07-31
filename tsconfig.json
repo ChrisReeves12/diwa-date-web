@@ -18,7 +18,6 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "noUnusedLocals": false,
-    "suppressImplicitAnyIndexErrors": true,
     "incremental": true,
     "plugins": [
       {

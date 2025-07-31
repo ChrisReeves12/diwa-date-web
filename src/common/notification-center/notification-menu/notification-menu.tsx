@@ -72,7 +72,7 @@ function NotificationListItem({ senderUser, content, receivedAtMessage,
                 {['messages', 'likes'].includes(type) &&
                     <div className="button-section">
                         {type === 'likes' &&
-                            (isLoading ? <CircularProgress size={24} sx={{color: "primary"}}/> : <>
+                            (isLoading ? <CircularProgress size={24} sx={{ color: "primary" }} /> : <>
                                 {onLike && <button onClick={() => onLike()} className="like" disabled={isLoading}>
                                     <HeartIcon />
                                 </button>}
@@ -80,8 +80,8 @@ function NotificationListItem({ senderUser, content, receivedAtMessage,
                                     <TimesIcon />
                                 </button>}
                             </>)}
-                        {type === 'messages' && numberOfMessages && numberOfMessages > 1 &&
-                            <div className="num-of-messages">{numberOfMessages > 99 ? '99+' : numberOfMessages}</div>}
+                        {type === 'messages' && (numberOfMessages || 0) > 1 &&
+                            <div className="num-of-messages">{(numberOfMessages || 0) > 99 ? '99+' : numberOfMessages}</div>}
                     </div>}
             </div>
         </div>

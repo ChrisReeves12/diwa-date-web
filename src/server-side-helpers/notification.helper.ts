@@ -121,7 +121,7 @@ export async function getNotificationCenterData(currentUser: User): Promise<Noti
         countAllMessages(currentUser),
         countAllNotifications(currentUser)
     ]).then(([pendingMatches, receivedMessages, receivedNotifications,
-                                   pendingMatchesCount, receivedMessagesCount, notificationCount]) => {
+        pendingMatchesCount, receivedMessagesCount, notificationCount]) => {
         return {
             pendingMatches,
             receivedMessages,
@@ -140,34 +140,80 @@ export async function getNotificationCenterData(currentUser: User): Promise<Noti
  */
 export async function getReceivedMessages(user: User): Promise<NotificationReceivedMessage[]> {
     const results = await prismaRead.$queryRaw`
-        SELECT S.* FROM (
-            SELECT M.*,
+        WITH "receivedMessages" AS (
+            SELECT S.* FROM (
+                SELECT
+                    'message' AS "type",
+                    M.*,
+                    U."displayName",
+                    U."mainPhoto",
+                    U."photos",
+                    Calculate_Age(U."dateOfBirth") AS "age",
+                    U."lastActiveAt",
+                    U."suspendedAt",
+                    U."locationName",
+                    U."gender" AS "userGender",
+                    LEAST(COUNT(M.id) OVER (PARTITION BY M."userId"), 100) AS "msgCount",
+                    CASE WHEN MAX(M."timestamp") OVER (PARTITION BY M."userId") = M."timestamp" THEN 1 ELSE 0 END AS "isLatest",
+                    MAX(M."createdAt") OVER (PARTITION BY M."userId") AS "latestCreatedAt"
+                FROM "messages" M
+                    JOIN "users" U ON M."userId" = U.id AND U."suspendedAt" IS NULL AND M."userId"
+                        NOT IN (SELECT "blockedUserId" FROM "blockedUsers" _BU WHERE _BU."userId" = ${user.id})
+                WHERE M."recipientId" = ${user.id} AND M."readAt" IS NULL) S
+            WHERE S."isLatest" = 1
+        ),
+
+        "receivedMatches" AS (
+            SELECT
+                'match' AS "type",
+                UM."id",
+                UM."id" AS "matchId",
+                '' AS "content",
+                UM."acknowledgedAt" AS "readAt",
+                NOW() AS "notificationAckAt",
+                UM."userId",
+                UM."recipientId",
+                UM."updatedAtTimestamp" AS "timestamp",
+                UM."createdAt",
+                UM."updatedAt",
                 U."displayName",
                 U."mainPhoto",
                 U."photos",
-                Calculate_Age(U."dateOfBirth") AS "age",
+                CALCULATE_AGE(U."dateOfBirth") AS "age",
                 U."lastActiveAt",
                 U."suspendedAt",
                 U."locationName",
                 U."gender" AS "userGender",
-                LEAST(COUNT(M.id) OVER (PARTITION BY M."userId"), 100) AS "msgCount",
-                CASE WHEN MAX(M."timestamp") OVER (PARTITION BY M."userId") = M."timestamp" THEN 1 ELSE 0 END AS "isLatest"
-            FROM "messages" M
-                JOIN "users" U ON M."userId" = U.id AND M."userId" NOT IN (SELECT "blockedUserId" FROM "blockedUsers" _BU WHERE _BU."userId" = ${user.id})
-            WHERE M."recipientId" = ${user.id} AND M."readAt" IS NULL) S
-        WHERE S."isLatest" = 1
-        ORDER BY S."timestamp" DESC LIMIT 5
-    `;
+                0 AS "msgCount",
+                0 AS "isLatest",
+                UM."createdAt" AS "latestCreatedAt"
+            FROM "userMatches" UM
+            LEFT JOIN "blockedUsers" BU ON
+                (BU."blockedUserId" = ${user.id} AND BU."userId" IN (UM."userId", UM."recipientId")) OR
+                (BU."userId" = ${user.id} AND BU."blockedUserId" IN (UM."userId", UM."recipientId"))
+            INNER JOIN "users" U ON U."id" = CASE WHEN UM."userId" = ${user.id} THEN UM."recipientId" ELSE UM."userId" END
+            WHERE UM."status" = 'matched' AND UM."acknowledgedAt" IS NULL
+                AND BU."id" IS NULL
+                AND U."suspendedAt" IS NULL
+                AND (UM."recipientId" = ${user.id} OR UM."userId" = ${user.id})
+                AND NOT EXISTS(SELECT 1 FROM "messages" M WHERE M."matchId" = UM."id")
+        ),
 
-    return (results as NotificationReceivedMessage[]).map(m => {
+        "combinedRows" AS (
+            SELECT * FROM "receivedMessages" UNION ALL SELECT * FROM "receivedMatches"
+        )
+
+        SELECT * FROM "combinedRows" ORDER BY "latestCreatedAt" DESC LIMIT 5`;
+
+    return (results as any[]).map(m => {
         const retVal = {
             ...m,
             ...{
-                photos: Array.isArray(m.photos) ? m.photos.map(p => appendMediaRootToImage(p)) : [],
+                photos: Array.isArray(m.photos) ? m.photos.map((p: UserPhoto) => appendMediaRootToImage(p)) : [],
                 publicMainPhoto: m.mainPhoto ? appendMediaRootToImageUrl(m.mainPhoto) : undefined,
                 mainPhotoCroppedImageData: getMainCroppedImageData(m),
-                msgCount: Number(m.msgCount),
-                sentAtHumanized: humanizeTimeDiff(m.createdAt)
+                msgCount: m.type === 'message' ? Number(m.msgCount) : 0,
+                sentAtHumanized: humanizeTimeDiff(m.latestCreatedAt)
             }
         };
 
@@ -219,11 +265,29 @@ export async function countAllPendingMatches(user: User): Promise<number> {
  */
 export async function countAllMessages(user: User): Promise<number> {
     const result = await prismaRead.$queryRaw<{ totalCount: number }[]>`
-        SELECT COUNT(DISTINCT M."userId") as "totalCount"
-        FROM "messages" M
-        WHERE M."recipientId" = ${user.id}
-          AND M."readAt" IS NULL
-          AND M."userId" NOT IN (SELECT "blockedUserId" FROM "blockedUsers" _BU WHERE _BU."userId" = ${user.id})
+        WITH "messageCountResult" AS (
+            SELECT COUNT(DISTINCT M."userId") as "messageCount"
+                FROM "messages" M
+            WHERE M."recipientId" = ${user.id}
+            AND M."readAt" IS NULL
+            AND M."userId" NOT IN (SELECT "blockedUserId" FROM "blockedUsers" _BU WHERE _BU."userId" = ${user.id})),
+
+            "noMessageUnreadMatchCountResult" AS (
+                SELECT COUNT(DISTINCT(UM."id")) as "unreadMatchCount"
+                    FROM "userMatches" UM
+                LEFT JOIN "blockedUsers" BU ON
+                    (BU."blockedUserId" = ${user.id} AND BU."userId" IN (UM."userId", UM."recipientId")) OR
+                    (BU."userId" = ${user.id} AND BU."blockedUserId" IN (UM."userId", UM."recipientId"))
+                INNER JOIN "users" U ON U."id" = CASE WHEN UM."userId" = ${user.id} THEN UM."recipientId" ELSE UM."userId" END
+                WHERE UM."status" = 'matched' AND UM."acknowledgedAt" IS NULL
+                    AND BU."id" IS NULL
+                    AND U."suspendedAt" IS NULL
+                    AND (UM."recipientId" = ${user.id} OR UM."userId" = ${user.id})
+                    AND NOT EXISTS(SELECT 1 FROM "messages" M WHERE M."matchId" = UM."id")
+            )
+
+        SELECT ((SELECT "messageCount" FROM "messageCountResult") +
+                (SELECT "unreadMatchCount" FROM "noMessageUnreadMatchCountResult")) as "totalCount"
     `;
 
     if (result && result.length > 0 && result[0].totalCount !== undefined) {

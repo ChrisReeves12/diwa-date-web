@@ -19,6 +19,7 @@ export interface NotificationPendingMatch {
 
 export interface NotificationReceivedMessage {
   id: string;
+  type: 'message' | 'match';
   matchId: string;
   content: string;
   readAt?: Date;
