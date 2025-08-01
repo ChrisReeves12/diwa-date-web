@@ -348,7 +348,7 @@ export default function NotificationCenter() {
                 title="Messages"
                 listItems={(notificationsData?.receivedMessages || []).map(receivedMessage => ({
                     id: receivedMessage.id,
-                    content: receivedMessage.type === 'message' ? _.truncate(receivedMessage.content) : `Chat with ${receivedMessage.displayName}`,
+                    content: receivedMessage.type === 'message' ? _.truncate(receivedMessage.content) : `Start the chat with ${receivedMessage.displayName}`,
                     senderUser: {
                         displayName: receivedMessage.displayName,
                         gender: receivedMessage.userGender,
