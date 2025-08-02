@@ -180,12 +180,10 @@ export async function unBlockUser(userId: number, blockedUserId: number) {
  */
 export async function refreshLastActive(user: User) {
     try {
-        await Promise.all([
-            prismaWrite.users.update({
-                where: { id: user.id },
-                data: { lastActiveAt: new Date() }
-            }),
-        ]);
+        return prismaWrite.users.update({
+            where: { id: user.id },
+            data: { lastActiveAt: new Date() }
+        });
     } catch (error: any) {
         logError(error);
     }
@@ -306,7 +304,7 @@ export async function authenticateUser(
         };
     }
 
-    await refreshLastActive(user as unknown as User);
+    refreshLastActive(user as unknown as User).then().catch(console.error);
 
     // Create a session for the user
     const sessionId = await createSession(

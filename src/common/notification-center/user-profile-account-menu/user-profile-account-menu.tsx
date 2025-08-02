@@ -11,6 +11,7 @@ import { toggleOnlineStatus } from '@/common/server-actions/user.actions';
 import { useState } from 'react';
 import { isUserOnline } from '@/helpers/user.helpers';
 import { showAlert } from '@/util';
+import { Switch } from '@mui/material';
 
 interface UserProfileAccountMenuProps {
   onSelectionMade?: () => void;
@@ -22,11 +23,11 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
   const [isOnline, setIsOnline] = useState(currentUser?.lastActiveAt ? isUserOnline(currentUser.lastActiveAt, currentUser.hideOnlineStatus) : false);
   const [hideOnlineStatus, setHideOnlineStatus] = useState(currentUser?.hideOnlineStatus || false);
 
-  const handleToggleOnlineStatus = async (e: React.MouseEvent) => {
+  const handleToggleOnlineStatus = async (e: React.ChangeEvent<HTMLInputElement>) => {
     // Prevent event bubbling to avoid closing the popover
     e.stopPropagation();
 
-    const newHideOnlineStatus = !hideOnlineStatus;
+    const newHideOnlineStatus = !e.target.checked;
     setHideOnlineStatus(newHideOnlineStatus);
     await toggleOnlineStatus(newHideOnlineStatus);
     setIsOnline(currentUser?.lastActiveAt ? isUserOnline(currentUser.lastActiveAt, newHideOnlineStatus) : false);
@@ -70,15 +71,19 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
           </Link>
           <div className="name-online-status-section">
             <h5>{currentUser.displayName}</h5>
-            <button className="online-status" onClick={handleToggleOnlineStatus}>
+            <div className="online-status">
               <div className="online-lamp-section">
-                <div className={`online-lamp ${isOnline ? 'online' : 'offline'}`}></div>
-                <div className="online-status-label">{isOnline ? 'Online Now' : 'Offline'}</div>
+                <div className={`online-lamp ${!hideOnlineStatus ? 'online' : 'offline'}`}></div>
+                <div className="online-status-label">{!hideOnlineStatus ? 'Online' : 'Offline'}</div>
               </div>
               <div className="online-status-selector">
-                <i className="las la-angle-down"></i>
+                <Switch
+                  checked={!hideOnlineStatus}
+                  onChange={handleToggleOnlineStatus}
+                  size="small"
+                />
               </div>
-            </button>
+            </div>
           </div>
         </div>
       )}

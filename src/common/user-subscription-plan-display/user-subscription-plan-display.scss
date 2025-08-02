@@ -23,6 +23,16 @@
     text-align: center;
     width: 100%;
 
+    .upgrade-link {
+      margin-left: 10px;
+      padding: 4px 12px;
+      border-radius: 3px;
+      color: white;
+      background-color: globals.$primary-blue;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
     @include globals.dark-mode {
       color: globals.$primary-blue-dark;
     }

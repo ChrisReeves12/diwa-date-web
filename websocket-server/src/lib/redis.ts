@@ -25,24 +25,16 @@ export function getRedisClient(): Redis {
         console.log(`[Redis] Retrying connection... Attempt ${times}, delay: ${delay}ms`);
         return delay;
       },
-        
+
       maxRetriesPerRequest: 3,
       enableOfflineQueue: true,
       connectTimeout: 10000,
       enableReadyCheck: false,
       showFriendlyErrorStack: process.env.NODE_ENV !== 'production'
     };
-    
-    console.log('[Redis] Connecting with config:', {
-      host: redisConfig.host,
-      port: redisConfig.port,
-      hasPassword: !!redisConfig.password,
-      keyPrefix: redisConfig.keyPrefix,
-      tls: !!redisConfig.tls
-    });
-    
+
     redis = new Redis(redisConfig);
-    
+
     redis.on('connect', () => {
       console.log('[Redis] Connected successfully');
     });

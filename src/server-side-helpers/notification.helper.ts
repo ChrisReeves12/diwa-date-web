@@ -7,8 +7,7 @@ import {
     getMainCroppedImageData,
     getPublicUserDetails
 } from './user.helpers';
-import _ from 'lodash';
-import { NotificationPendingMatch, NotificationReceivedMessage, Notification, NotificationUser } from '@/types/notification-response.interface';
+import { NotificationPendingMatch, NotificationReceivedMessage, Notification } from '@/types/notification-response.interface';
 import { NotificationCenterData } from "@/types/notification-center-data.interface";
 import { humanizeTimeDiff } from "@/server-side-helpers/time.helpers";
 

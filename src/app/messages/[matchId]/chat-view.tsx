@@ -7,7 +7,7 @@ import Link from "next/link";
 import DashboardWrapper from "@/common/dashboard-wrapper/dashboard-wrapper";
 import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
 import { User } from "@/types";
-import { getChatMessages, sendChatMessage, getChatMatchDetails, markChatAsRead } from "../messages.actions";
+import { getChatMessages, sendChatMessage, markChatAsRead } from "../messages.actions";
 import { useWebSocket } from '@/hooks/use-websocket';
 import { isToday, formatChatDate } from '@/server-side-helpers/time.helpers';
 import { isUserOnline } from '@/helpers/user.helpers';
@@ -120,7 +120,11 @@ export default function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                 const oldScrollHeight = messageList?.scrollHeight || 0;
                 const oldScrollTop = messageList?.scrollTop || 0;
 
-                setMessages(prev => [...(result.data || []), ...prev]);
+                setMessages(prev => {
+                    const existingIds = new Set(prev.map(msg => msg.id));
+                    const newMessages = (result.data || []).filter(msg => !existingIds.has(msg.id));
+                    return [...newMessages, ...prev];
+                });
 
                 // Restore scroll position after DOM update
                 if (messageList) {
@@ -255,8 +259,12 @@ export default function ChatView({ currentUser, matchDetails }: ChatViewProps) {
 
             getChatMessages(matchId, options).then(result => {
                 if (result.data && result.data.length > 0) {
-                    setMessages(prev => [...prev, ...(result.data || [])]);
-                    
+                    setMessages(prev => {
+                        const existingIds = new Set(prev.map(msg => msg.id));
+                        const newMessages = (result.data || []).filter(msg => !existingIds.has(msg.id));
+                        return [...prev, ...newMessages];
+                    });
+
                     const messageList = messageListRef.current;
                     if (messageList && messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight < 200) {
                         setTimeout(() => scrollToBottom(), 100);
@@ -324,7 +332,7 @@ export default function ChatView({ currentUser, matchDetails }: ChatViewProps) {
         }
 
         setIsTyping(true);
-        emit('message:typing:start', { 
+        emit('message:typing:start', {
             conversationId: matchId.toString()
         });
 
@@ -334,7 +342,7 @@ export default function ChatView({ currentUser, matchDetails }: ChatViewProps) {
 
         const timeout = setTimeout(() => {
             setIsTyping(false);
-            emit('message:typing:stop', { 
+            emit('message:typing:stop', {
                 conversationId: matchId.toString()
             });
         }, 2000);
@@ -348,7 +356,7 @@ export default function ChatView({ currentUser, matchDetails }: ChatViewProps) {
             clearTimeout(typingTimeout);
         }
         setIsTyping(false);
-        emit('message:typing:stop', { 
+        emit('message:typing:stop', {
             conversationId: matchId.toString()
         });
     }, [emit, matchId, typingTimeout]);
@@ -404,7 +412,11 @@ export default function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                     : {};
                 const updatedMessages = await getChatMessages(matchId, options);
                 if (updatedMessages.data) {
-                    setMessages(prev => [...prev, ...(updatedMessages.data || [])]);
+                    setMessages(prev => {
+                        const existingIds = new Set(prev.map(msg => msg.id));
+                        const newMessages = (updatedMessages.data || []).filter(msg => !existingIds.has(msg.id));
+                        return [...prev, ...newMessages];
+                    });
                     setTimeout(() => scrollToBottom(), 100);
                 }
             }
@@ -498,11 +510,11 @@ export default function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                             {/* Group messages by date */}
                             {(() => {
                                 const messagesByDate = new Map<string, ChatMessage[]>();
-                                
+
                                 messages.forEach(message => {
                                     const date = new Date(message.createdAt);
                                     const dateKey = isToday(date) ? 'Today' : formatChatDate(date);
-                                    
+
                                     if (!messagesByDate.has(dateKey)) {
                                         messagesByDate.set(dateKey, []);
                                     }
@@ -542,8 +554,8 @@ export default function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                                                     </div>
                                                 </div>
                                                 {/* Show seen indicator for the last message from current user */}
-                                                {message.isFromCurrentUser && 
-                                                 message.id === messages[messages.length - 1]?.id && 
+                                                {message.isFromCurrentUser &&
+                                                 message.id === messages[messages.length - 1]?.id &&
                                                  message.readAt && (
                                                     <div className="seen-indicator">
                                                         <span className="seen-text">Seen</span>

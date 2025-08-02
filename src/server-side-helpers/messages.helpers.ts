@@ -165,7 +165,7 @@ export async function sendMessage(
         try {
             const senderUser = await getUser(userId);
             if (senderUser) {
-                await refreshLastActive(senderUser);
+                refreshLastActive(senderUser).then().catch(console.error);
                 await emitNewMessageNotification(recipientId, {
                     id: String(result.id),
                     matchId: String(matchId),
@@ -482,7 +482,7 @@ export async function markMessagesAsRead(
         if (updateResult.count > 0) {
             const readingUser = await getUser(userId);
             if (readingUser) {
-                await refreshLastActive(readingUser);
+                refreshLastActive(readingUser).then().catch(console.error);
             }
 
             const latestMessage = await prismaRead.messages.findFirst({
