@@ -175,35 +175,6 @@ export function PhotosManagement({ currentUser }: PhotosManagementProps) {
         }
     };
 
-    const uploadToS3 = async (file: File, uploadUrl: string, uploadId: string): Promise<void> => {
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-
-            xhr.upload.addEventListener('progress', (event) => {
-                if (event.lengthComputable) {
-                    const progress = (event.loaded / event.total) * 100;
-                    updateUploadStatus(uploadId, { progress });
-                }
-            });
-
-            xhr.addEventListener('load', () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    resolve();
-                } else {
-                    reject(new Error(`Upload failed with status ${xhr.status}`));
-                }
-            });
-
-            xhr.addEventListener('error', () => {
-                reject(new Error('Upload failed'));
-            });
-
-            xhr.open('PUT', uploadUrl);
-            xhr.setRequestHeader('Content-Type', file.type);
-            xhr.send(file);
-        });
-    };
-
     const updateUploadStatus = (uploadId: string, updates: Partial<UploadProgress>) => {
         setUploads(prev => prev.map(upload =>
             upload.id === uploadId ? { ...upload, ...updates } : upload

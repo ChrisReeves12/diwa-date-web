@@ -23,7 +23,7 @@ export default function GuestHome() {
     return (
         <SiteWrapper>
             <div className="guest-home-wrapper">
-                <div className="hero-section">
+                <div style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_IMAGE_ROOT || ''}/images/home_hero_background.webp')`}} className="hero-section">
                     <div className="dark-gradient"></div>
                     <div className="hero-content">
                         <div className="seeking-form-section">
@@ -100,10 +100,10 @@ export default function GuestHome() {
                             <p>{aboutContent}</p>
                         </div>
                         <div className="cartoon-container">
-                            <Image
+                            <img
                                 alt="Cartoon"
                                 title="Diwa Date"
-                                src="/images/cartoon.webp"
+                                src={`${process.env.NEXT_PUBLIC_IMAGE_ROOT || ''}/images/cartoon.webp`}
                                 width={400}
                                 height={300}
                             />

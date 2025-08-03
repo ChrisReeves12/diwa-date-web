@@ -6,17 +6,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 import { prismaWrite } from '@/lib/prisma';
 import { UserPhoto } from '@/types/user-photo.type';
-
-// S3 client configuration
-const s3Client = new S3Client({
-  region: process.env.S3_DEFAULT_REGION!,
-  credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-  },
-  endpoint: process.env.S3_ENDPOINT,
-  forcePathStyle: process.env.S3_USE_PATH_STYLE_ENDPOINT === 'true',
-});
+import { businessConfig } from "@/config/business";
 
 const BUCKET_NAME = process.env.S3_BUCKET!;
 
@@ -68,16 +58,32 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload to S3 with public-read ACL for CDN access
-    const uploadCommand = new PutObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: s3Key,
-      Body: buffer,
-      ContentType: file.type,
-      ACL: 'public-read',
-    });
+    // Upload to S3
+    const promises = [];
+    for (const s3Bucket of businessConfig.s3Buckets) {
+      const s3Client = new S3Client({
+        region: s3Bucket.region,
+        credentials: {
+          accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+        },
+        endpoint: s3Bucket.endpoint,
+        forcePathStyle: false,
+      });
 
-    await s3Client.send(uploadCommand);
+      // Upload to S3 with public-read ACL for CDN access
+      const uploadCommand = new PutObjectCommand({
+        Bucket: s3Bucket.bucketName,
+        Key: s3Key,
+        Body: buffer,
+        ContentType: file.type,
+        ACL: 'public-read',
+      });
+
+      promises.push(s3Client.send(uploadCommand));
+    }
+
+    await Promise.all(promises);
 
     // Create new photo object
     const newPhoto: UserPhoto = {

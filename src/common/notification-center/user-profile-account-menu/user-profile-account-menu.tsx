@@ -88,6 +88,18 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
         </div>
       )}
       <div className="profile-menu-section">
+        <Link href="/profile" className="menu-item" onClick={handleSelectionMade}>
+          <div className="icon">
+            <Image
+                width={35}
+                height={35}
+                style={{ scale: 1.5 }}
+                src="/images/user.svg"
+                alt="Profile Settings"
+            />
+          </div>
+          <div className="label">Profile Settings</div>
+        </Link>
         <Link href="/account/settings" className="menu-item" onClick={handleSelectionMade}>
           <div className="icon">
             <Image
@@ -99,18 +111,6 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
             />
           </div>
           <div className="label">Account Settings</div>
-        </Link>
-        <Link href="/profile" className="menu-item" onClick={handleSelectionMade}>
-          <div className="icon">
-            <Image
-              width={35}
-              height={35}
-              style={{ scale: 1.5 }}
-              src="/images/user.svg"
-              alt="Profile Settings"
-            />
-          </div>
-          <div className="label">Profile Settings</div>
         </Link>
       </div>
       <div className="sign-out-button-section">

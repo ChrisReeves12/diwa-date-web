@@ -274,5 +274,18 @@ export const businessConfig = {
             'America/New_York': 'Eastern Standard Time (US)',
             'America/Chicago': 'Central Standard Time (US)',
         }
-    }
+    },
+
+    s3Buckets: [
+        {
+            bucketName: 'diwa-date-prod-sfo',
+            region: 'sfo3',
+            endpoint: 'https://sfo3.digitaloceanspaces.com'
+        },
+        {
+            bucketName: 'diwa-date-prod-sgp',
+            region: 'sgp1',
+            endpoint: 'https://sgp1.digitaloceanspaces.com'
+        }
+    ],
 }

@@ -328,7 +328,7 @@ export default function RegistrationForm() {
               </div>
             </form>
           </div>
-          <div className="image-container"></div>
+          <div style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_IMAGE_ROOT || ''}/images/registration_photo1.webp')`}} className="image-container"></div>
         </div>
       </div>
     </div>
