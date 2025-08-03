@@ -20,11 +20,11 @@
   color: $primary-blue;
   margin: 0;
   line-height: 1;
-  
+
   @include media-min('screens.sm') {
     font-size: 8rem;
   }
-  
+
   @include dark-mode {
     color: $primary-blue-dark;
   }
@@ -35,11 +35,11 @@
   font-weight: 600;
   margin: 1rem 0;
   color: #333;
-  
+
   @include media-min('screens.sm') {
     font-size: 2.5rem;
   }
-  
+
   @include dark-mode {
     color: #fff;
   }
@@ -50,7 +50,7 @@
   color: #666;
   margin: 1.5rem 0 2.5rem;
   line-height: 1.6;
-  
+
   @include dark-mode {
     color: #ccc;
   }
@@ -61,7 +61,7 @@
   gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
-  
+
   .btn-primary,
   .btn-secondary {
     text-decoration: none;
@@ -69,10 +69,10 @@
     min-width: 120px;
     text-align: center;
   }
-  
+
   .btn-primary {
     background-color: $primary-blue;
-    
+
     &:hover {
       background-color: darken($primary-blue, 10%);
     }

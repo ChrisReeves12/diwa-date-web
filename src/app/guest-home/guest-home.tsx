@@ -103,7 +103,7 @@ export default function GuestHome() {
                             <Image
                                 alt="Cartoon"
                                 title="Diwa Date"
-                                src="/images/cartoon.jpg"
+                                src="/images/cartoon.webp"
                                 width={400}
                                 height={300}
                             />
