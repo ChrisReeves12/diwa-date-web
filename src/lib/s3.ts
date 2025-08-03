@@ -1,61 +1,87 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, PutObjectAclCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { businessConfig } from '@/config/business';
 
-// S3 client configuration
-const s3Client = new S3Client({
-  region: process.env.S3_DEFAULT_REGION!,
-  credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-  },
-  endpoint: process.env.S3_ENDPOINT,
-  forcePathStyle: process.env.S3_USE_PATH_STYLE_ENDPOINT === 'true',
-});
-
-const BUCKET_NAME = process.env.S3_BUCKET!;
+// Function to create S3 clients for all regions
+function createS3Clients(): { client: S3Client; bucketName: string }[] {
+  return businessConfig.s3Buckets.map(bucket => ({
+    client: new S3Client({
+      region: bucket.region,
+      credentials: {
+        accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+      },
+      endpoint: bucket.endpoint,
+      forcePathStyle: false,
+    }),
+    bucketName: bucket.bucketName
+  }));
+}
 
 /**
- * Generate a presigned URL for uploading a file to S3
+ * Generate a presigned URL for uploading a file to S3 (uses primary region)
  */
 export async function generatePresignedUploadUrl(
   key: string,
   contentType: string,
-  expiresIn: number = 3600 // 1 hour default
+  expiresIn: number = 3600
 ): Promise<string> {
+  const primaryBucket = businessConfig.s3Buckets[0];
+  const client = new S3Client({
+    region: primaryBucket.region,
+    credentials: {
+      accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+    },
+    endpoint: primaryBucket.endpoint,
+    forcePathStyle: false,
+  });
+  
   const command = new PutObjectCommand({
-    Bucket: BUCKET_NAME,
+    Bucket: primaryBucket.bucketName,
     Key: key,
     ContentType: contentType,
   });
 
-  return await getSignedUrl(s3Client, command, { expiresIn });
+  return await getSignedUrl(client, command, { expiresIn });
 }
 
 /**
- * Generate a presigned URL for downloading/viewing a file from S3
+ * Generate a presigned URL for downloading/viewing a file from S3 (uses primary region)
  */
 export async function generatePresignedDownloadUrl(
   key: string,
   expiresIn: number = 3600 // 1 hour default
 ): Promise<string> {
+  const primaryBucket = businessConfig.s3Buckets[0];
+  const client = new S3Client({
+    region: primaryBucket.region,
+    credentials: {
+      accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+    },
+    endpoint: primaryBucket.endpoint,
+    forcePathStyle: false,
+  });
+
   const command = new GetObjectCommand({
-    Bucket: BUCKET_NAME,
+    Bucket: primaryBucket.bucketName,
     Key: key,
   });
 
-  return await getSignedUrl(s3Client, command, { expiresIn });
+  return await getSignedUrl(client, command, { expiresIn });
 }
 
 /**
- * Delete a file from S3
+ * Delete a file from S3 (deletes from all regions)
  */
 export async function deleteFileFromS3(key: string): Promise<void> {
-  const command = new DeleteObjectCommand({
-    Bucket: BUCKET_NAME,
-    Key: key,
+  const s3Configs = createS3Clients();
+  const promises = s3Configs.map(({ client, bucketName }) => {
+    const command = new DeleteObjectCommand({ Bucket: bucketName, Key: key });
+    return client.send(command);
   });
-
-  await s3Client.send(command);
+  await Promise.all(promises);
 }
 
 /**
@@ -95,14 +121,17 @@ export function isValidFileSize(size: number): boolean {
 }
 
 /**
- * Update ACL of existing S3 object to make it public-read
+ * Update ACL of existing S3 object to make it public-read (updates all regions)
  */
 export async function makeObjectPublic(key: string): Promise<void> {
-  const command = new PutObjectAclCommand({
-    Bucket: BUCKET_NAME,
-    Key: key,
-    ACL: 'public-read',
+  const s3Configs = createS3Clients();
+  const promises = s3Configs.map(({ client, bucketName }) => {
+    const command = new PutObjectAclCommand({ 
+      Bucket: bucketName, 
+      Key: key, 
+      ACL: 'public-read' 
+    });
+    return client.send(command);
   });
-
-  await s3Client.send(command);
+  await Promise.all(promises);
 }

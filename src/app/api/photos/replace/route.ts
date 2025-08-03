@@ -6,19 +6,8 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client
 import { v4 as uuidv4 } from 'uuid';
 import { prismaWrite } from '@/lib/prisma';
 import { UserPhoto } from '@/types/user-photo.type';
+import { businessConfig } from '@/config/business';
 
-// S3 client configuration
-const s3Client = new S3Client({
-  region: process.env.S3_DEFAULT_REGION!,
-  credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-  },
-  endpoint: process.env.S3_ENDPOINT,
-  forcePathStyle: process.env.S3_USE_PATH_STYLE_ENDPOINT === 'true',
-});
-
-const BUCKET_NAME = process.env.S3_BUCKET!;
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,26 +66,54 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload new image to S3
-    const uploadCommand = new PutObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: newS3Key,
-      Body: buffer,
-      ContentType: file.type,
-      ACL: 'public-read', // Required for DigitalOcean Spaces CDN access
-    });
+    // Upload new image to S3 (dual-region)
+    const promises = [];
+    for (const s3Bucket of businessConfig.s3Buckets) {
+      const s3Client = new S3Client({
+        region: s3Bucket.region,
+        credentials: {
+          accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+        },
+        endpoint: s3Bucket.endpoint,
+        forcePathStyle: false,
+      });
 
-    await s3Client.send(uploadCommand);
+      const uploadCommand = new PutObjectCommand({
+        Bucket: s3Bucket.bucketName,
+        Key: newS3Key,
+        Body: buffer,
+        ContentType: file.type,
+        ACL: 'public-read',
+      });
+
+      promises.push(s3Client.send(uploadCommand));
+    }
+    await Promise.all(promises);
 
     // Delete the old image from S3 (if it's not a random/fake image)
     if (!originalPhotoPath.startsWith('random')) {
       try {
         const oldS3Key = originalPhotoPath;
-        const deleteCommand = new DeleteObjectCommand({
-          Bucket: BUCKET_NAME,
-          Key: oldS3Key,
-        });
-        await s3Client.send(deleteCommand);
+        const deletePromises = [];
+        for (const s3Bucket of businessConfig.s3Buckets) {
+          const s3Client = new S3Client({
+            region: s3Bucket.region,
+            credentials: {
+              accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+              secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+            },
+            endpoint: s3Bucket.endpoint,
+            forcePathStyle: false,
+          });
+
+          const deleteCommand = new DeleteObjectCommand({
+            Bucket: s3Bucket.bucketName,
+            Key: oldS3Key,
+          });
+          deletePromises.push(s3Client.send(deleteCommand));
+        }
+        await Promise.all(deletePromises);
       } catch (deleteError) {
         console.warn('Failed to delete old image from S3:', deleteError);
         // Continue with the replacement even if deletion fails
