@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { v4 as uuidv4 } from 'uuid';
 import redis from '@/lib/redis';
-import { User, SessionData } from '../types';
+import { User, SessionData, SessionRequestData, SessionInsertData } from '../types';
 import { getRedisKey } from './cache.helpers';
 import crypto from "crypto";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
+import { createSessionRecord } from './session-db.helpers';
 
 // Session constants
 const SESSION_ROTATION_TIME = parseInt(process.env.SESSION_ROTATION_TIME_MIN || '2') * 60;
@@ -23,25 +24,46 @@ function createSessionCookieString() {
  * Create a new session for a user
  * @param user The user object to store in the session
  * @param response Optional NextResponse to set the cookie on
+ * @param requestData Optional request data for session tracking
  * @returns The session ID
  */
 export async function createSession(
   user: User,
-  response?: NextResponse
+  response?: NextResponse,
+  requestData?: SessionRequestData
 ): Promise<string> {
   const sessionId = createSessionCookieString();
+  const now = Date.now();
+
+  const sessionData = {
+    userId: user.id.toString(),
+    email: user.email,
+    createdAt: now
+  };
 
   // Store user data in Redis with the session ID as the key
   await redis.set(
     getRedisKey(`session:${sessionId}`),
-    JSON.stringify({
-      userId: user.id.toString(),
-      email: user.email,
-      createdAt: Date.now()
-    }),
+    JSON.stringify(sessionData),
     'EX',
     SESSION_EXPIRY
   );
+
+  // Insert session record into database (non-blocking)
+  if (requestData) {
+    const sessionInsertData: SessionInsertData = {
+      id: sessionId,
+      userId: user.id,
+      payload: JSON.stringify(sessionData),
+      lastActivity: Math.floor(now / 1000), // Convert to seconds for database
+      ...requestData
+    };
+
+    // Fire and forget - don't block session creation if DB insert fails
+    createSessionRecord(sessionInsertData).catch(error => {
+      console.error('Failed to log session to database:', error);
+    });
+  }
 
   // Set the session cookie if a response object is provided
   if (response) {

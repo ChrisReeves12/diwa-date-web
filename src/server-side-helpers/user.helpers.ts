@@ -1,6 +1,6 @@
 import { prismaRead, prismaWrite } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { User, AuthResult, UserPhoto, UserPreview, SubscriptionPlanEnrollment } from '../types';
+import { User, AuthResult, UserPhoto, UserPreview, SubscriptionPlanEnrollment, SessionRequestData } from '../types';
 import moment from "moment";
 import _ from "lodash";
 import {
@@ -274,12 +274,14 @@ export async function getUserProfileDetail(currentUserId: number, user: UserForP
  * @param email The user's email
  * @param password The user's password
  * @param response Optional NextResponse to set the session cookie on
+ * @param requestData Optional request data for session tracking
  * @returns Authentication result with user data if successful
  */
 export async function authenticateUser(
     email: string,
     password: string,
-    response?: NextResponse
+    response?: NextResponse,
+    requestData?: SessionRequestData
 ): Promise<AuthResult> {
     const user = await prismaRead.users.findUnique({
         where: {
@@ -309,7 +311,8 @@ export async function authenticateUser(
     // Create a session for the user
     const sessionId = await createSession(
         user as unknown as User,
-        response
+        response,
+        requestData
     );
 
     return {
