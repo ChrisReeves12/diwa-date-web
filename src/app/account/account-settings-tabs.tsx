@@ -6,7 +6,7 @@ export function AccountSettingsTabs({ selectedTab }: {
     return (
         <TabBar tabs={[
             {label: 'General Settings', icon: 'las la-cog', isSelected: selectedTab === 'user-settings', url: '/account/settings'},
-            {label: 'Billing Information', icon: 'las la-credit-card', isSelected: selectedTab === 'billing', url: '/account/billing'}
+            {label: 'Premium Membership', icon: 'las la-trophy', isSelected: selectedTab === 'billing', url: '/account/billing'}
         ]}/>
     )
 }

@@ -7,7 +7,7 @@ import { BillingInformation } from "@/app/account/billing/billing-information";
 
 export async function generateMetadata(): Promise<Metadata> {
     return {
-        title: `${process.env.APP_NAME} | Account - Billing Information`
+        title: `${process.env.APP_NAME} | Account - Premium Membership`
     };
 }
 

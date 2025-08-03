@@ -413,6 +413,7 @@ export async function getMatchDetails(
                     displayName: otherUser.displayName,
                     gender: otherUser.gender,
                     lastActiveAt: otherUser.lastActiveAt,
+                    hideOnlineStatus: otherUser.hideOnlineStatus,
                     mainPhoto: otherUser.mainPhoto,
                     photos: otherUser.photos,
                     ...otherUserPublicDetail

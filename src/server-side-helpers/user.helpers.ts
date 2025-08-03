@@ -744,36 +744,45 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
 
         // Create a notification for the original match initiator (the user who sent the original match request)
         if (shouldCreateNotification) {
-            const notification = await prismaWrite.notifications.create({
-                data: {
-                    userId: userId, // The user who confirmed the match
-                    recipientId: existingMatch.userId, // The user who originally initiated the match
-                    type: 'match',
-                    data: { matchId: existingMatch.id },
-                    createdAt: new Date(),
-                    updatedAt: new Date()
+            const existingNotification = await prismaRead.notifications.findFirst({
+                where: {
+                    userId: userId,
+                    recipientId: existingMatch.userId
                 }
             });
 
-            // Send real-time notification for a confirmed match
-            try {
-                // Get sender info for the notification
-                const senderUser = await getUser(userId);
-                if (senderUser) {
-                    await emitNewNotification(existingMatch.userId, {
-                        id: notification.id,
-                        sender: {
-                            id: senderUser.id,
-                            locationName: senderUser.locationName || '',
-                            gender: senderUser.gender,
-                            displayName: senderUser.displayName,
-                            age: calculateUserAge(senderUser),
-                            publicMainPhoto: senderUser.publicMainPhoto
-                        }
-                    });
+            // Only create the notification if one doesn't already exist
+            if (!existingNotification) {
+                const notification = await prismaWrite.notifications.create({
+                    data: {
+                        userId: userId, // The user who confirmed the match
+                        recipientId: existingMatch.userId, // The user who originally initiated the match
+                        type: 'match',
+                        data: { matchId: existingMatch.id },
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    }
+                });
+
+                // Send real-time notification for a confirmed match
+                try {
+                    const senderUser = await getUser(userId);
+                    if (senderUser) {
+                        await emitNewNotification(existingMatch.userId, {
+                            id: notification.id,
+                            sender: {
+                                id: senderUser.id,
+                                locationName: senderUser.locationName || '',
+                                gender: senderUser.gender,
+                                displayName: senderUser.displayName,
+                                age: calculateUserAge(senderUser),
+                                publicMainPhoto: senderUser.publicMainPhoto
+                            }
+                        });
+                    }
+                } catch (wsError) {
+                    console.error('Failed to emit confirmed match notification:', wsError);
                 }
-            } catch (wsError) {
-                console.error('Failed to emit confirmed match notification:', wsError);
             }
         }
 

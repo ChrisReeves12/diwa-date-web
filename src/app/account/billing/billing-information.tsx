@@ -407,7 +407,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                     <div className="account-settings-container">
                         <div className="container">
                             <UserSubscriptionPlanDisplay />
-                            <h2>Account | Billing Information</h2>
+                            <h2>Account | Billing/Membership Information</h2>
                             <AccountSettingsTabs selectedTab={'billing'} />
                             <div className="account-settings-form-container billing-settings">
                                 <div className="loading-message">
@@ -427,7 +427,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                 <div className="account-settings-container">
                     <div className="container">
                         <UserSubscriptionPlanDisplay />
-                        <h2>Account | Billing Information</h2>
+                        <h2>Account | Premium Membership</h2>
                         <AccountSettingsTabs selectedTab={'billing'} />
                         <div className="account-settings-form-container billing-settings">
 

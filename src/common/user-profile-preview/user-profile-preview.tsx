@@ -24,6 +24,7 @@ import _ from 'lodash';
 import ReportUserDialog from '../report-user-dialog/report-user-dialog';
 import Link from "next/link";
 import { CircularProgress } from "@mui/material";
+import { sendUserMatchRequest } from "@/server-side-helpers/user.helpers";
 
 interface UserProfilePreviewProps {
     userPreview: UserPreview,
@@ -352,7 +353,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                                             setIsLikeLoading(false);
                                         }, 500);
                                     }}>
-                                    <HeartIcon /></button>) : <Link className="message-link" href=""><CommentsIcon /></Link>
+                                    <HeartIcon /></button>) : <Link className="message-link" href={`/messages/${userPreview.matchId}`}><CommentsIcon /></Link>
                             ) :
                             <div className="match-buttons">
                                 <button onClick={async () => {
