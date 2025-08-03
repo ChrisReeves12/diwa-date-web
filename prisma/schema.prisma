@@ -157,6 +157,8 @@ model sessions {
   userAgent    String?
   payload      String
   lastActivity Int
+  ipGeoCountry String? @db.VarChar(300)
+  ipGeoCity    String? @db.VarChar(300)
   users        users?  @relation(fields: [userId], references: [id], onDelete: Cascade, map: "sessions_users_id_fk")
 
   @@index([lastActivity], map: "sessionsLastActivityIndex")
@@ -334,7 +336,7 @@ model paymentTransactions {
   id            Int       @id(map: "paymenttransactions_pk") @default(autoincrement())
   userId        Int?
   amount        Float?    @default(0)
-  transId       String?   @db.VarChar(100)
+  transId       String?   @unique(map: "paymenttransactions_transid_index") @db.VarChar(100)
   accountNumber String?   @db.VarChar(100)
   updatedAt     DateTime? @db.Timestamp(6)
   createdAt     DateTime? @db.Timestamp(6)
@@ -346,7 +348,6 @@ model paymentTransactions {
   users         users?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "paymenttransactions_users_id_fk")
 
   @@index([userId], map: "paymenttransactions_userid_index")
-  @@index([transId], map: "paymenttransactions_transid_index")
 }
 
 model billingHolds {
