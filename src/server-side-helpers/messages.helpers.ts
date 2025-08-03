@@ -527,7 +527,7 @@ export async function markMessagesAsRead(
  * @param currentUserId
  * @param conversations
  */
-export async function markMatchesAsRead(currentUserId: number, conversations: ConversationMatch[]) {
+export async function markMatchesAsRead(currentUserId: number, conversations: {matchId: number}[]) {
     const matchIds = conversations.map(conversation => conversation.matchId);
     const updateResult = await prismaWrite.userMatches.updateMany({
         where: {

@@ -377,8 +377,8 @@ export default function NotificationCenter() {
                     content: "",
                     senderUser: notification.sender,
                     receivedAtMessage: "",
-                    infoSectionUrl: "",
-                    userPhotoUrl: "",
+                    infoSectionUrl: `/messages/${notification.data.matchId}`,
+                    userPhotoUrl: userProfileLink(notification.sender),
                     type: "notifications"
                 }))}
             />

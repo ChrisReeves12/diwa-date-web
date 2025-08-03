@@ -103,7 +103,6 @@
   }
 }
 
-// Notification popover item animation
 .notification-list-item {
   &.new-item {
     animation: slideIn 0.3s ease-out;
@@ -111,6 +110,22 @@
 
     @include globals.dark-mode {
       background-color: rgba(globals.$primary-blue-dark, 0.1);
+    }
+  }
+
+  .info-button-container {
+    .info-section {
+      &.notification {
+        .content {
+          a {
+            color: black;
+
+            @include globals.dark-mode {
+              color: white;
+            }
+          }
+        }
+      }
     }
   }
 }

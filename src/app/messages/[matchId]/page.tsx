@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { getCurrentUser } from '@/server-side-helpers/user.helpers';
 import { getMatchDetails } from '@/server-side-helpers/messages.helpers';
 import ChatView from "./chat-view";
+import { markConversationsAsAknowledged } from "@/app/messages/messages.actions";
 
 export async function generateMetadata({ params }: { params: Promise<{ matchId: string }> }): Promise<Metadata> {
     return {
@@ -34,6 +35,8 @@ export default async function MessageConversationPage({ params }: { params: Prom
 
         notFound();
     }
+
+    markConversationsAsAknowledged([{matchId: matchIdNumber}]);
 
     return (
         <ChatView

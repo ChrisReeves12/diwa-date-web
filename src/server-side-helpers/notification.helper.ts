@@ -312,6 +312,7 @@ export async function getPendingNotifications(user: User): Promise<Notification[
         take: 5,
         select: {
             id: true,
+            data: true,
             users_notifications_userIdTousers: {
                 select: {
                     id: true,
@@ -333,6 +334,7 @@ export async function getPendingNotifications(user: User): Promise<Notification[
 
         return {
             id: notification.id,
+            data: notification.data,
             sender: {
                 id: notification.users_notifications_userIdTousers.id,
                 gender: notification.users_notifications_userIdTousers.gender,

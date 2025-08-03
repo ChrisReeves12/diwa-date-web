@@ -61,10 +61,10 @@ function NotificationListItem({ senderUser, content, receivedAtMessage,
                         <div className="content">
                             {type !== "notifications" ?
                                 <>{decodeHtmlEntities(content)}</> :
-                                <>
+                                <Link href={infoSectionUrl}>
                                     🎉Congratulations on the match! 🎉<br />
                                     Go start the conversation with <strong>{senderUser.displayName}</strong>
-                                </>}
+                                </Link>}
                         </div>
                         <div className="received-at-message">{receivedAtMessage}</div>
                     </div>

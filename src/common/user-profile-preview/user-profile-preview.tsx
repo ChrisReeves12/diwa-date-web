@@ -119,6 +119,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                 setUserMatchStatus(sendUserMatchResult);
             }
 
+            window.dispatchEvent(new CustomEvent('notification-center-refresh'));
             setIsLikeLoading(false);
         }, 500);
     };
@@ -135,6 +136,8 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                     await blockUserAction(Number(userPreview.id));
                     setBlockedThem(true);
                 }
+
+                window.dispatchEvent(new CustomEvent('notification-center-refresh'));
             } finally {
                 setIsBlockLoading(false);
             }
@@ -196,10 +199,12 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
         }
 
         setUserMatchStatus(sendUserMatchResult);
+        window.dispatchEvent(new CustomEvent('notification-center-refresh'));
     }
 
     const passOnMatch = async () => {
         const muteResult = await muteUser(Number(userPreview.id));
+        window.dispatchEvent(new CustomEvent('notification-center-refresh'));
     }
 
     return (
@@ -350,6 +355,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                                                 setUserMatchStatus(sendUserMatchResult);
                                             }
 
+                                            window.dispatchEvent(new CustomEvent('notification-center-refresh'));
                                             setIsLikeLoading(false);
                                         }, 500);
                                     }}>

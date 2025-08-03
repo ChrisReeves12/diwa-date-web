@@ -222,10 +222,10 @@ export async function getChatMatchDetails(matchId: string) {
 }
 
 /**
- * Mark conversations as seen, and removes notifications.
+ * Mark conversations as "seen" and removes notifications.
  * @param conversations
  */
-export async function markConversationsAsAknowledged(conversations: ConversationMatch[]) {
+export async function markConversationsAsAknowledged(conversations: {matchId: number}[]) {
     try {
         const currentUser = await getCurrentUser(await cookies());
 
