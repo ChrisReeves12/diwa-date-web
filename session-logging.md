@@ -68,6 +68,8 @@ async function getIPGeolocation(ipAddress: string) {
 2. Extract IP, user agent, and geolocation in `loginAction()`
 3. Pass request data to session creation
 4. Insert session record into database alongside Redis storage
+5. Ensure that inserting of the record into database is non-blocking
+6. If there is some type of error that occurs during this process, log the error but do not disrupt the user experience.
 
 ### 4. Add Request Data Extraction to Login
 
