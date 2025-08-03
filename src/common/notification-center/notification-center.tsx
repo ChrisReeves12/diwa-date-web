@@ -159,15 +159,15 @@ export default function NotificationCenter() {
     }, [isConnected, currentUser, on, off, triggerRefetch, refetchNotificationData, pathname]);
 
     useEffect(() => {
-        const handleMessagesRead = () => {
-            console.log('messages-read event received, refetching notification data.');
+        const handleNotificationCenterRefresh = () => {
+            console.log('notification-center-refresh event received, refetching notification data.');
             refetchNotificationData();
         };
 
-        window.addEventListener('messages-read', handleMessagesRead);
+        window.addEventListener('notification-center-refresh', handleNotificationCenterRefresh);
 
         return () => {
-            window.removeEventListener('messages-read', handleMessagesRead);
+            window.removeEventListener('notification-center-refresh', handleNotificationCenterRefresh);
         };
     }, [refetchNotificationData]);
 

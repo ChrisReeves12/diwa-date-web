@@ -185,7 +185,7 @@ export default function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                         });
                     }
                     // Dispatch an event to notify the notification center to refresh
-                    window.dispatchEvent(new CustomEvent('messages-read'));
+                    window.dispatchEvent(new CustomEvent('notification-center-refresh'));
                 } catch (error) {
                     console.error('Error marking messages as read:', error);
                     // Don't show this error to user as it's not critical

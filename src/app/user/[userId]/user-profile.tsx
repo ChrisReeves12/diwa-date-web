@@ -211,6 +211,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                 }
 
                 setUserProfile(result.userProfileDetails);
+                window.dispatchEvent(new CustomEvent('notification-center-refresh'));
             } catch (error) {
                 console.error('Error sending match request:', error);
             } finally {
@@ -233,6 +234,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                 }
 
                 setUserProfile(result.userProfileDetails);
+                window.dispatchEvent(new CustomEvent('notification-center-refresh'));
             } catch (error) {
                 console.error('Error canceling match request:', error);
             } finally {
@@ -255,6 +257,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                 }
 
                 setUserProfile(result.userProfileDetails);
+                window.dispatchEvent(new CustomEvent('notification-center-refresh'));
             } catch (error) {
                 console.error('Error rejecting match request:', error);
             } finally {
@@ -277,6 +280,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                 }
 
                 setUserProfile(result.userProfileDetails);
+                window.dispatchEvent(new CustomEvent('notification-center-refresh'));
             } catch (error) {
                 console.error('Error blocking user:', error);
             } finally {
@@ -299,6 +303,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                 }
 
                 setUserProfile(result.userProfileDetails);
+                window.dispatchEvent(new CustomEvent('notification-center-refresh'));
             } catch (error) {
                 console.error('Error unblocking user:', error);
             } finally {
