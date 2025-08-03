@@ -54,6 +54,61 @@
         }
       }
     }
+
+    .paginator-section {
+      padding-bottom: 0.8rem;
+      padding-top: 0.8rem;
+
+      .paginator-container {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+
+        .previous-button,
+        .next-button {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 16px;
+          border: 1px solid globals.$primary-blue;
+          background-color: white;
+          color: globals.$primary-blue;
+          border-radius: 6px;
+          font-weight: 500;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+
+          @include globals.dark-mode {
+            border-color: globals.$primary-blue-dark;
+            background-color: globals.$dark-background-color;
+            color: globals.$primary-blue-dark;
+          }
+
+          &:hover {
+            background-color: globals.$primary-blue;
+            color: white;
+
+            @include globals.dark-mode {
+              background-color: globals.$primary-blue-dark;
+              color: white;
+            }
+          }
+
+          &:active {
+            transform: translateY(1px);
+          }
+
+          span {
+            white-space: nowrap;
+          }
+
+          svg {
+            font-size: 16px;
+          }
+        }
+      }
+    }
   }
 
   .search-results-section {

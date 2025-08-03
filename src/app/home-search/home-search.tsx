@@ -17,6 +17,7 @@ import { Box } from "@mui/system";
 import SearchFiltersDialog from "@/app/home-search/search-filters-dialog/search-filters-dialog";
 import { NotificationCenterData } from "@/types/notification-center-data.interface";
 import { showAlert } from '@/util';
+import { AngleLeftIcon, AngleRightIcon } from "react-line-awesome";
 
 function SearchErrorDisplay() {
     return (
@@ -131,12 +132,18 @@ function SearchResultsView({ currentUser: initialCurrentUser, searchPromise }: {
                                 const params = new URLSearchParams(searchParams.toString());
                                 params.set('page', (page - 1).toString());
                                 history.pushState({}, '', `?${params.toString()}`);
-                            }} className="previous-button">Previous Page</button>}
+                            }} className="previous-button">
+                                <AngleLeftIcon />
+                                <span>Previous Page</span>
+                            </button>}
                             {searchResponse.hasNextPage && <button onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString());
                                 params.set('page', (page + 1).toString());
                                 history.pushState({}, '', `?${params.toString()}`);
-                            }} className="next-button">Next Page</button>}
+                            }} className="next-button">
+                                <span>Next Page</span>
+                                <AngleRightIcon />
+                            </button>}
                         </div>
                     </div>
                 </div>
