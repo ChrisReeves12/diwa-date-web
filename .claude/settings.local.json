@@ -22,7 +22,8 @@
       "Bash(curl:*)",
       "Bash(npm run start:*)",
       "Bash(git rm:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(docker run:*)"
     ]
   },
   "enableAllProjectMcpServers": false

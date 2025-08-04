@@ -32,9 +32,9 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
     const headersList = await headers();
 
     const ipAddress = headersList.get('x-forwarded-for')?.split(',')[0].trim() ||
-                     headersList.get('x-real-ip') ||
-                     headersList.get('cf-connecting-ip') ||
-                     null;
+      headersList.get('x-real-ip') ||
+      headersList.get('cf-connecting-ip') ||
+      null;
 
     const userAgent = headersList.get('user-agent') || '';
 
@@ -122,7 +122,10 @@ export async function verifyTwoFactorCodeAction(formData: FormData): Promise<Log
       };
     }
 
-    if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+    // Remove any dashes from the code before validation
+    const cleanedCode = code.replace(/-/g, '');
+
+    if (cleanedCode.length !== 6 || !/^\d{6}$/.test(cleanedCode)) {
       return {
         success: false,
         message: 'Please enter a valid 6-digit verification code'
@@ -132,9 +135,9 @@ export async function verifyTwoFactorCodeAction(formData: FormData): Promise<Log
     const headersList = await headers();
 
     const ipAddress = headersList.get('x-forwarded-for')?.split(',')[0].trim() ||
-                     headersList.get('x-real-ip') ||
-                     headersList.get('cf-connecting-ip') ||
-                     null;
+      headersList.get('x-real-ip') ||
+      headersList.get('cf-connecting-ip') ||
+      null;
 
     const userAgent = headersList.get('user-agent') || '';
 
@@ -160,7 +163,7 @@ export async function verifyTwoFactorCodeAction(formData: FormData): Promise<Log
     };
 
     // Complete 2FA authentication
-    const result = await completeTwoFactorAuth(userId, code, undefined, requestData);
+    const result = await completeTwoFactorAuth(userId, cleanedCode, undefined, requestData);
 
     if (!result.success) {
       return {
