@@ -27,6 +27,7 @@ import { sendEmail } from './mail.helper';
 import { createGenderLabels } from '@/helpers/user.helpers';
 import { generateCryptoRandomString } from "@/util";
 import { NextResponse } from 'next/server';
+import { generateAndSendTwoFactorCode, validateTwoFactorCode } from '@/server-side-helpers/two-factor.helpers';
 
 type UserForProfileDetail = Pick<User,
     | "id"
@@ -286,6 +287,15 @@ export async function authenticateUser(
     const user = await prismaRead.users.findUnique({
         where: {
             email
+        },
+        select: {
+            id: true,
+            email: true,
+            password: true,
+            require2fa: true,
+            firstName: true,
+            lastName: true,
+            displayName: true
         }
     });
 
@@ -303,6 +313,78 @@ export async function authenticateUser(
         return {
             success: false,
             message: 'The email and/or password does not match our records.'
+        };
+    }
+
+    // Check if 2FA is required
+    if (user.require2fa) {
+        // Generate and send 2FA code
+        const twoFactorResult = await generateAndSendTwoFactorCode(user.id);
+        
+        if (!twoFactorResult.success) {
+            return {
+                success: false,
+                message: twoFactorResult.error || 'Failed to send verification code. Please try again.'
+            };
+        }
+
+        return {
+            success: false,
+            message: 'Two-factor authentication required',
+            requiresTwoFactor: true,
+            userId: user.id,
+            twoFactorMessage: 'A verification code has been sent to your email address.'
+        };
+    }
+
+    refreshLastActive(user as unknown as User).then().catch(console.error);
+
+    // Create a session for the user
+    const sessionId = await createSession(
+        user as unknown as User,
+        response,
+        requestData
+    );
+
+    return {
+        success: true,
+        sessionId
+    };
+}
+
+/**
+ * Complete two-factor authentication for a user
+ * @param userId The user's ID
+ * @param code The 6-digit verification code
+ * @param response Optional NextResponse to set the session cookie on
+ * @param requestData Optional request data for session tracking
+ * @returns Authentication result with session if successful
+ */
+export async function completeTwoFactorAuth(
+    userId: number,
+    code: string,
+    response?: NextResponse,
+    requestData?: SessionRequestData
+): Promise<AuthResult> {
+    // Validate the 2FA code
+    const validationResult = await validateTwoFactorCode(userId, code);
+    
+    if (!validationResult.success) {
+        return {
+            success: false,
+            message: validationResult.error || 'Invalid verification code'
+        };
+    }
+
+    // Get the full user data for session creation
+    const user = await prismaRead.users.findUnique({
+        where: { id: userId }
+    });
+
+    if (!user) {
+        return {
+            success: false,
+            message: 'User not found'
         };
     }
 

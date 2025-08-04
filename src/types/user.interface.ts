@@ -95,4 +95,9 @@ export interface User {
     lastUpdated?: string;
   };
   isPremium: boolean;
+  require2fa: boolean;
+  twoFactorCode?: string;
+  twoFactorCodeExpiry?: Date;
+  twoFactorCodeAttempts?: number;
+  lastTwoFactorCodeSentAt?: Date;
 }

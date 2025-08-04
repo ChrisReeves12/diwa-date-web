@@ -8,4 +8,7 @@ export type AuthResult = {
   user?: User;
   sessionId?: string;
   message?: string;
+  requiresTwoFactor?: boolean;
+  userId?: number;
+  twoFactorMessage?: string;
 };

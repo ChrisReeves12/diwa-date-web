@@ -1,6 +1,7 @@
 'use server';
 
 import { getCurrentUser, hashPassword, comparePasswords, getBlockedUsers, unBlockUser, generateEmailUpdateUrl } from "@/server-side-helpers/user.helpers";
+import { enableTwoFactorAuth, disableTwoFactorAuth } from "@/server-side-helpers/two-factor.helpers";
 import { cookies } from "next/headers";
 import { prismaRead, prismaWrite } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -296,4 +297,100 @@ export async function reportUserAction(
 
     const { reportUser } = await import("@/server-side-helpers/user.helpers");
     return await reportUser(currentUser.id, reportedUserId, reportContent);
+}
+
+/**
+ * Enable two-factor authentication for the current user
+ * @param password The user's current password for verification
+ * @returns Success status and any error messages
+ */
+export async function enableTwoFactor(password: string) {
+    const currentUser = await getCurrentUser(await cookies());
+    if (!currentUser) {
+        return { success: false, error: "User not found" };
+    }
+
+    // Check if 2FA is already enabled
+    if (currentUser.require2fa) {
+        return { success: false, error: "Two-factor authentication is already enabled" };
+    }
+
+    try {
+        // Get the user's current password hash from the database for verification
+        const userWithPassword = await prismaRead.users.findUnique({
+            where: { id: currentUser.id },
+            select: { password: true }
+        });
+
+        if (!userWithPassword) {
+            return { success: false, error: "User not found" };
+        }
+
+        // Verify the current password
+        const isPasswordValid = await comparePasswords(password, userWithPassword.password);
+        if (!isPasswordValid) {
+            return { success: false, error: "Password is incorrect" };
+        }
+
+        // Enable 2FA
+        const result = await enableTwoFactorAuth(currentUser.id);
+        
+        if (!result.success) {
+            return { success: false, error: result.error || "Failed to enable two-factor authentication" };
+        }
+
+        revalidatePath('/account/settings');
+        return { success: true, message: "Two-factor authentication has been enabled for your account" };
+    } catch (error) {
+        console.error('Enable 2FA error:', error);
+        return { success: false, error: "Failed to enable two-factor authentication. Please try again." };
+    }
+}
+
+/**
+ * Disable two-factor authentication for the current user
+ * @param password The user's current password for verification
+ * @returns Success status and any error messages
+ */
+export async function disableTwoFactor(password: string) {
+    const currentUser = await getCurrentUser(await cookies());
+    if (!currentUser) {
+        return { success: false, error: "User not found" };
+    }
+
+    // Check if 2FA is already disabled
+    if (!currentUser.require2fa) {
+        return { success: false, error: "Two-factor authentication is already disabled" };
+    }
+
+    try {
+        // Get the user's current password hash from the database for verification
+        const userWithPassword = await prismaRead.users.findUnique({
+            where: { id: currentUser.id },
+            select: { password: true }
+        });
+
+        if (!userWithPassword) {
+            return { success: false, error: "User not found" };
+        }
+
+        // Verify the current password
+        const isPasswordValid = await comparePasswords(password, userWithPassword.password);
+        if (!isPasswordValid) {
+            return { success: false, error: "Password is incorrect" };
+        }
+
+        // Disable 2FA
+        const result = await disableTwoFactorAuth(currentUser.id);
+        
+        if (!result.success) {
+            return { success: false, error: result.error || "Failed to disable two-factor authentication" };
+        }
+
+        revalidatePath('/account/settings');
+        return { success: true, message: "Two-factor authentication has been disabled for your account" };
+    } catch (error) {
+        console.error('Disable 2FA error:', error);
+        return { success: false, error: "Failed to disable two-factor authentication. Please try again." };
+    }
 }

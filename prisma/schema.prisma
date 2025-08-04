@@ -301,6 +301,11 @@ model users {
   profileCompletedAt                             DateTime?                     @db.Timestamp(6)
   currentOnboardingSteps                         Json?
   isPremium                                      Boolean                       @default(false)
+  require2fa                                     Boolean                       @default(false)
+  twoFactorCode                                  String?                       @db.VarChar(6)
+  twoFactorCodeExpiry                            DateTime?                     @db.Timestamp(6)
+  twoFactorCodeAttempts                          Int?                          @default(0)
+  lastTwoFactorCodeSentAt                        DateTime?                     @db.Timestamp(6)
   billingHolds                                   billingHolds[]
   billingInformationEntries                      billingInformationEntries[]
   blockedUsers_blockedUsers_userIdTousers        blockedUsers[]                @relation("blockedUsers_userIdTousers")

@@ -6,7 +6,7 @@ import { CurrentUserProvider } from "@/common/context/current-user-context";
 import SiteWrapper from "@/common/site-wrapper/site-wrapper";
 import UserSubscriptionPlanDisplay from "@/common/user-subscription-plan-display/user-subscription-plan-display";
 import { AccountSettingsTabs } from "@/app/account/account-settings-tabs";
-import { updatePassword, toggleAccountDeactivation, deleteAccount, getBlockedUsersList, unblockUser, updateEmail } from "@/common/server-actions/user.actions";
+import { updatePassword, toggleAccountDeactivation, deleteAccount, getBlockedUsersList, unblockUser, updateEmail, enableTwoFactor, disableTwoFactor } from "@/common/server-actions/user.actions";
 import React, { useState, useEffect } from "react";
 import { UserPreview } from "@/types";
 
@@ -48,6 +48,12 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
     const [blockedUsers, setBlockedUsers] = useState<UserPreview[]>([]);
     const [isLoadingBlockedUsers, setIsLoadingBlockedUsers] = useState(true);
     const [unblockingUserId, setUnblockingUserId] = useState<number | null>(null);
+
+    // 2FA state
+    const [twoFactorEnabled, setTwoFactorEnabled] = useState(!!currentUser?.require2fa);
+    const [twoFactorPassword, setTwoFactorPassword] = useState('');
+    const [showTwoFactorPassword, setShowTwoFactorPassword] = useState(false);
+    const [isUpdatingTwoFactor, setIsUpdatingTwoFactor] = useState(false);
 
     // Load blocked users on component mount
     useEffect(() => {
@@ -214,6 +220,51 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
             setErrors({ form: 'An unexpected error occurred' });
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleTwoFactorToggle = async () => {
+        setErrors({});
+        setSuccessMessage('');
+        setIsUpdatingTwoFactor(true);
+
+        try {
+            // Client-side validation
+            if (!twoFactorPassword) {
+                setErrors({ twoFactorPassword: 'Password is required to change 2FA settings' });
+                return;
+            }
+
+            let result;
+            if (twoFactorEnabled) {
+                // Disable 2FA
+                const confirmed = window.confirm(
+                    'Are you sure you want to disable two-factor authentication? This will make your account less secure.'
+                );
+                if (!confirmed) {
+                    setIsUpdatingTwoFactor(false);
+                    return;
+                }
+                result = await disableTwoFactor(twoFactorPassword);
+            } else {
+                // Enable 2FA
+                result = await enableTwoFactor(twoFactorPassword);
+            }
+
+            if (!result.success) {
+                setErrors({ twoFactorForm: result.error || 'Failed to update two-factor authentication' });
+                return;
+            }
+
+            // Success
+            setTwoFactorEnabled(!twoFactorEnabled);
+            setSuccessMessage(result.message || 'Two-factor authentication updated successfully');
+            setTwoFactorPassword('');
+        } catch (error) {
+            console.error('2FA toggle error:', error);
+            setErrors({ twoFactorForm: 'An unexpected error occurred' });
+        } finally {
+            setIsUpdatingTwoFactor(false);
         }
     };
 
@@ -454,6 +505,102 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
                                             </button>
                                         </div>
                                     </form>
+                                </div>
+
+                                {/* Two-Factor Authentication Section */}
+                                <div className="settings-section">
+                                    <h3>Two-Factor Authentication</h3>
+                                    <div className="two-factor-container">
+                                        <div className="two-factor-status">
+                                            <p>
+                                                <strong>Status:</strong> {twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                                            </p>
+                                            {twoFactorEnabled ? (
+                                                <div className="enabled-notice">
+                                                    <p className="security-notice">
+                                                        <i className="las la-shield-alt"></i>
+                                                        Two-factor authentication is enabled. Your account is more secure.
+                                                    </p>
+                                                    <p>You&apos;ll need to enter a verification code sent to your email each time you log in.</p>
+                                                </div>
+                                            ) : (
+                                                <div className="disabled-notice">
+                                                    <p className="security-warning">
+                                                        <i className="las la-exclamation-triangle"></i>
+                                                        Two-factor authentication is disabled. Enable it to add an extra layer of security.
+                                                    </p>
+                                                    <p>When enabled, you&apos;ll receive a verification code via email each time you log in.</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* 2FA Form Errors */}
+                                        {errors.twoFactorForm && (
+                                            <div className="error-message">
+                                                {errors.twoFactorForm}
+                                            </div>
+                                        )}
+
+                                        <form onSubmit={(e) => { e.preventDefault(); handleTwoFactorToggle(); }}>
+                                            <div className="form-row">
+                                                <div className={`input-container ${errors.twoFactorPassword ? 'error' : ''}`}>
+                                                    <label htmlFor="twoFactorPassword">Enter your password to {twoFactorEnabled ? 'disable' : 'enable'} 2FA</label>
+                                                    <div className="password-input-wrapper">
+                                                        <input
+                                                            type={showTwoFactorPassword ? "text" : "password"}
+                                                            id="twoFactorPassword"
+                                                            name="twoFactorPassword"
+                                                            value={twoFactorPassword}
+                                                            onChange={(e) => setTwoFactorPassword(e.target.value)}
+                                                            className={errors.twoFactorPassword ? 'error' : ''}
+                                                            placeholder="Enter your password"
+                                                            required
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            className="password-toggle"
+                                                            onClick={() => setShowTwoFactorPassword(!showTwoFactorPassword)}
+                                                            tabIndex={-1}
+                                                        >
+                                                            <i className={`las ${showTwoFactorPassword ? 'la-eye-slash' : 'la-eye'}`}></i>
+                                                        </button>
+                                                    </div>
+                                                    {errors.twoFactorPassword && (
+                                                        <div className="error-message">{errors.twoFactorPassword}</div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="form-row">
+                                                <button
+                                                    className={twoFactorEnabled ? "btn-danger" : "btn-primary"}
+                                                    type="submit"
+                                                    disabled={isUpdatingTwoFactor || !twoFactorPassword}
+                                                >
+                                                    {isUpdatingTwoFactor ? 'Processing...' : (twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA')}
+                                                </button>
+                                            </div>
+                                        </form>
+
+                                        <div className="two-factor-info">
+                                            <p><strong>How it works:</strong></p>
+                                            <ul>
+                                                <li>When you log in, you&apos;ll enter your email and password as usual</li>
+                                                <li>We&apos;ll send a 6-digit verification code to your email address</li>
+                                                <li>Enter the code to complete your login (codes expire after 5 minutes)</li>
+                                                <li>You can request a new code if needed</li>
+                                            </ul>
+                                            <div className="security-benefits">
+                                                <p><strong>Security Benefits:</strong></p>
+                                                <ul>
+                                                    <li><i className="las la-check"></i> Protects against password theft</li>
+                                                    <li><i className="las la-check"></i> Prevents unauthorized access even if your password is compromised</li>
+                                                    <li><i className="las la-check"></i> Adds an extra layer of account security</li>
+                                                    <li><i className="las la-check"></i> Email-based codes are secure and convenient</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Account Deactivation Section */}
