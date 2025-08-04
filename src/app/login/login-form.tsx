@@ -259,7 +259,7 @@ export default function LoginForm() {
 
                                     <div className="two-factor-actions">
                                         <div className="resend-code-section">
-                                            <p>Didn't receive a code?</p>
+                                            <p>Didn&apos;t receive a code?</p>
                                             <button
                                                 type="button"
                                                 className="link-button"
