@@ -320,7 +320,7 @@ export async function authenticateUser(
     if (user.require2fa) {
         // Generate and send 2FA code
         const twoFactorResult = await generateAndSendTwoFactorCode(user.id);
-        
+
         if (!twoFactorResult.success) {
             return {
                 success: false,
@@ -364,11 +364,12 @@ export async function completeTwoFactorAuth(
     userId: number,
     code: string,
     response?: NextResponse,
-    requestData?: SessionRequestData
+    requestData?: SessionRequestData,
+    cookieConsentDeclined: boolean = false
 ): Promise<AuthResult> {
     // Validate the 2FA code
     const validationResult = await validateTwoFactorCode(userId, code);
-    
+
     if (!validationResult.success) {
         return {
             success: false,
@@ -394,7 +395,8 @@ export async function completeTwoFactorAuth(
     const sessionId = await createSession(
         user as unknown as User,
         response,
-        requestData
+        requestData,
+        cookieConsentDeclined
     );
 
     return {

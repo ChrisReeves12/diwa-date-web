@@ -20,6 +20,10 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
   try {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
+    const cookieConsent = formData.get('cookieConsent') as string;
+
+    // Check if user has declined cookie consent
+    const cookieConsentDeclined = cookieConsent === 'declined';
 
     // Validate input
     if (!email || !password) {
@@ -83,15 +87,22 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
     // If authentication was successful, set the session cookie
     if (result.sessionId) {
       const cookieStore = await cookies();
-      cookieStore.set({
+      const cookieOptions: any = {
         name: process.env.SESSION_COOKIE_NAME as string,
         value: result.sessionId,
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: parseInt(process.env.SESSION_EXPIRY_MIN || '1440') * 60,
         path: '/'
-      });
+      };
+
+      // If user declined cookies, make it session-only (expires when browser closes)
+      // Otherwise, set maxAge for persistent storage
+      if (!cookieConsentDeclined) {
+        cookieOptions.maxAge = parseInt(process.env.SESSION_EXPIRY_MIN || '1440') * 60;
+      }
+
+      cookieStore.set(cookieOptions);
     }
 
     return {
@@ -113,6 +124,10 @@ export async function verifyTwoFactorCodeAction(formData: FormData): Promise<Log
   try {
     const userId = parseInt(formData.get('userId') as string);
     const code = formData.get('code') as string;
+    const cookieConsent = formData.get('cookieConsent') as string;
+
+    // Check if user has declined cookie consent
+    const cookieConsentDeclined = cookieConsent === 'declined';
 
     // Validate input
     if (!userId || !code) {
@@ -163,7 +178,7 @@ export async function verifyTwoFactorCodeAction(formData: FormData): Promise<Log
     };
 
     // Complete 2FA authentication
-    const result = await completeTwoFactorAuth(userId, cleanedCode, undefined, requestData);
+    const result = await completeTwoFactorAuth(userId, cleanedCode, undefined, requestData, cookieConsentDeclined);
 
     if (!result.success) {
       return {
@@ -175,15 +190,22 @@ export async function verifyTwoFactorCodeAction(formData: FormData): Promise<Log
     // If authentication was successful, set the session cookie
     if (result.sessionId) {
       const cookieStore = await cookies();
-      cookieStore.set({
+      const cookieOptions: any = {
         name: process.env.SESSION_COOKIE_NAME as string,
         value: result.sessionId,
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: parseInt(process.env.SESSION_EXPIRY_MIN || '1440') * 60,
         path: '/'
-      });
+      };
+
+      // If user declined cookies, make it session-only (expires when browser closes)
+      // Otherwise, set maxAge for persistent storage
+      if (!cookieConsentDeclined) {
+        cookieOptions.maxAge = parseInt(process.env.SESSION_EXPIRY_MIN || '1440') * 60;
+      }
+
+      cookieStore.set(cookieOptions);
     }
 
     return {

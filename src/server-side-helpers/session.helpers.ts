@@ -25,12 +25,14 @@ function createSessionCookieString() {
  * @param user The user object to store in the session
  * @param response Optional NextResponse to set the cookie on
  * @param requestData Optional request data for session tracking
+ * @param cookieConsentDeclined Whether the user has declined cookie consent
  * @returns The session ID
  */
 export async function createSession(
   user: User,
   response?: NextResponse,
-  requestData?: SessionRequestData
+  requestData?: SessionRequestData,
+  cookieConsentDeclined: boolean = false
 ): Promise<string> {
   const sessionId = createSessionCookieString();
   const now = Date.now();
@@ -67,15 +69,22 @@ export async function createSession(
 
   // Set the session cookie if a response object is provided
   if (response) {
-    response.cookies.set({
+    const cookieOptions: any = {
       name: process.env.SESSION_COOKIE_NAME as string,
       value: sessionId,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: SESSION_EXPIRY,
       path: '/'
-    });
+    };
+
+    // If user declined cookies, make it session-only (expires when browser closes)
+    // Otherwise, set maxAge for persistent storage
+    if (!cookieConsentDeclined) {
+      cookieOptions.maxAge = SESSION_EXPIRY;
+    }
+
+    response.cookies.set(cookieOptions);
   }
 
   return sessionId;

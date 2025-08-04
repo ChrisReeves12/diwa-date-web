@@ -9,6 +9,7 @@ import { loginAction, verifyTwoFactorCodeAction, resendTwoFactorCodeAction } fro
 import Link from 'next/link';
 import { Alert, Button, CircularProgress } from '@mui/material';
 import { SpinnerIcon } from "react-line-awesome";
+import { getCookieConsentStatus } from '@/common/cookie-consent';
 
 export default function LoginForm() {
     const router = useRouter();
@@ -68,6 +69,10 @@ export default function LoginForm() {
                 formData.set('email', email);
                 formData.set('password', password);
 
+                // Add cookie consent status to form data
+                const consentStatus = getCookieConsentStatus();
+                formData.set('cookieConsent', consentStatus || 'null');
+
                 // Call the server action
                 const result = await loginAction(formData);
 
@@ -114,6 +119,10 @@ export default function LoginForm() {
         try {
             formData.set('userId', userId.toString());
             formData.set('code', twoFactorCode);
+
+            // Add cookie consent status to form data
+            const consentStatus = getCookieConsentStatus();
+            formData.set('cookieConsent', consentStatus || 'null');
 
             const result = await verifyTwoFactorCodeAction(formData);
 
@@ -220,7 +229,7 @@ export default function LoginForm() {
                                     {alertMessage}
                                 </Alert>
                             </div>}
-                        
+
                         {requiresTwoFactor ? (
                             <>
                                 <h1>Two-Factor Authentication</h1>
@@ -266,16 +275,16 @@ export default function LoginForm() {
                                                 onClick={handleResendCode}
                                                 disabled={isResendingCode || resendCooldown > 0}
                                             >
-                                                {isResendingCode ? 'Sending...' : 
-                                                 resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 
-                                                 'Resend Code'}
+                                                {isResendingCode ? 'Sending...' :
+                                                    resendCooldown > 0 ? `Resend in ${resendCooldown}s` :
+                                                        'Resend Code'}
                                             </button>
                                         </div>
                                     </div>
 
                                     <div className="submit-button-wrapper">
                                         <div className="form-row form-row-loader-container">
-                                            {isLoading ? <CircularProgress sx={{color: "primary.main" }} /> : 
+                                            {isLoading ? <CircularProgress sx={{ color: "primary.main" }} /> :
                                                 <button
                                                     className="btn-primary"
                                                     type="submit"
@@ -303,71 +312,71 @@ export default function LoginForm() {
                                 <h1>{loginTitle}</h1>
                                 <h4>{loginSubtitle}</h4>
                                 <form action={handleSubmit}>
-                            <div className="form-row">
-                                <div className={`input-container ${errors.email ? 'error' : ''}`}>
-                                    <label htmlFor="email">Email</label>
-                                    <input
-                                        type="email"
-                                        id="email"
-                                        name="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className={errors.email ? 'error' : ''}
-                                        required
-                                    />
-                                    {errors.email && (
-                                        <div className="error-message">{errors.email}</div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {errors.form && (
-                                <div className="form-row">
-                                    <div className="error-message">{errors.form}</div>
-                                </div>
-                            )}
-
-                            <div className="form-row">
-                                <div className={`input-container ${errors.password ? 'error' : ''}`}>
-                                    <label htmlFor="password">Password</label>
-                                    <div className="password-input-wrapper">
-                                        <input
-                                            type={showPassword ? "text" : "password"}
-                                            id="password"
-                                            name="password"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            className={errors.password ? 'error' : ''}
-                                            required
-                                        />
-                                        <button
-                                            type="button"
-                                            className="password-toggle"
-                                            onClick={togglePasswordVisibility}
-                                            tabIndex={-1}
-                                        >
-                                            <i className={`las ${showPassword ? 'la-eye-slash' : 'la-eye'}`}></i>
-                                        </button>
+                                    <div className="form-row">
+                                        <div className={`input-container ${errors.email ? 'error' : ''}`}>
+                                            <label htmlFor="email">Email</label>
+                                            <input
+                                                type="email"
+                                                id="email"
+                                                name="email"
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
+                                                className={errors.email ? 'error' : ''}
+                                                required
+                                            />
+                                            {errors.email && (
+                                                <div className="error-message">{errors.email}</div>
+                                            )}
+                                        </div>
                                     </div>
-                                    {errors.password && (
-                                        <div className="error-message">{errors.password}</div>
+
+                                    {errors.form && (
+                                        <div className="form-row">
+                                            <div className="error-message">{errors.form}</div>
+                                        </div>
                                     )}
-                                </div>
-                            </div>
 
-                            <div className="forgot-password-link">
-                                <Link href="/user/reset/password">Forgot Password?</Link>
-                            </div>
+                                    <div className="form-row">
+                                        <div className={`input-container ${errors.password ? 'error' : ''}`}>
+                                            <label htmlFor="password">Password</label>
+                                            <div className="password-input-wrapper">
+                                                <input
+                                                    type={showPassword ? "text" : "password"}
+                                                    id="password"
+                                                    name="password"
+                                                    value={password}
+                                                    onChange={(e) => setPassword(e.target.value)}
+                                                    className={errors.password ? 'error' : ''}
+                                                    required
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="password-toggle"
+                                                    onClick={togglePasswordVisibility}
+                                                    tabIndex={-1}
+                                                >
+                                                    <i className={`las ${showPassword ? 'la-eye-slash' : 'la-eye'}`}></i>
+                                                </button>
+                                            </div>
+                                            {errors.password && (
+                                                <div className="error-message">{errors.password}</div>
+                                            )}
+                                        </div>
+                                    </div>
 
-                            <div className="submit-button-wrapper">
-                                <div className="form-row form-row-loader-container">
-                                    {isLoading ? <CircularProgress sx={{color: "primary.main" }} /> : <button
-                                        className="btn-primary"
-                                        type="submit">
-                                        Sign In
-                                    </button>}
-                                </div>
-                            </div>
+                                    <div className="forgot-password-link">
+                                        <Link href="/user/reset/password">Forgot Password?</Link>
+                                    </div>
+
+                                    <div className="submit-button-wrapper">
+                                        <div className="form-row form-row-loader-container">
+                                            {isLoading ? <CircularProgress sx={{ color: "primary.main" }} /> : <button
+                                                className="btn-primary"
+                                                type="submit">
+                                                Sign In
+                                            </button>}
+                                        </div>
+                                    </div>
                                 </form>
                                 <div className="register-link">
                                     Don&apos;t have an account? <a href="/registration">Register</a>

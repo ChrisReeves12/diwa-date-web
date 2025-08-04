@@ -3,6 +3,8 @@ import "@/styles/globals.scss";
 import GlobalAlertProvider from "@/common/alert-dialog/global-alert-provider";
 import { ThemeProvider } from '@mui/material/styles';
 import { theme } from '@/theme/theme';
+import { CookieConsentProvider } from '@/common/cookie-consent/cookie-consent-provider';
+import CookieConsentPopup from '@/common/cookie-consent/cookie-consent-popup';
 
 export const metadata: Metadata = {
   title: `${process.env.APP_NAME} | ${process.env.APP_TAGLINE}`,
@@ -34,9 +36,12 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider theme={theme}>
-          <GlobalAlertProvider>
-            {children}
-          </GlobalAlertProvider>
+          <CookieConsentProvider>
+            <GlobalAlertProvider>
+              {children}
+            </GlobalAlertProvider>
+            <CookieConsentPopup />
+          </CookieConsentProvider>
         </ThemeProvider>
       </body>
     </html>
