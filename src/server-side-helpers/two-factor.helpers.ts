@@ -2,7 +2,7 @@ import { randomInt } from 'crypto';
 import { User } from '@/types/user.interface';
 import { log, logError } from '@/server-side-helpers/logging.helpers';
 import { sendEmail } from '@/server-side-helpers/mail.helper';
-import { prisma } from '@/lib/prisma';
+import { prismaRead, prismaWrite } from '@/lib/prisma';
 
 const COOLDOWN_PERIOD = 60 * 1000; // 1 minute in milliseconds
 const CODE_EXPIRY = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -78,7 +78,7 @@ export async function sendTwoFactorCode(email: string, code: string) {
  */
 export async function validateTwoFactorCode(userId: number, inputCode: string) {
     try {
-        const user = await prisma.users.findUnique({
+        const user = await prismaRead.users.findUnique({
             where: { id: userId },
             select: {
                 id: true,
@@ -117,7 +117,7 @@ export async function validateTwoFactorCode(userId: number, inputCode: string) {
 
         // Check if too many attempts
         if ((user.twoFactorCodeAttempts || 0) >= MAX_ATTEMPTS) {
-            await prisma.users.update({
+            await prismaWrite.users.update({
                 where: { id: userId },
                 data: {
                     twoFactorCode: null,
@@ -136,7 +136,7 @@ export async function validateTwoFactorCode(userId: number, inputCode: string) {
         // Validate the code
         if (user.twoFactorCode !== inputCode.trim()) {
             // Increment attempts
-            await prisma.users.update({
+            await prismaWrite.users.update({
                 where: { id: userId },
                 data: {
                     twoFactorCodeAttempts: (user.twoFactorCodeAttempts || 0) + 1
@@ -156,7 +156,7 @@ export async function validateTwoFactorCode(userId: number, inputCode: string) {
         }
 
         // Code is valid - clear the 2FA code data
-        await prisma.users.update({
+        await prismaWrite.users.update({
             where: { id: userId },
             data: {
                 twoFactorCode: null,
@@ -190,7 +190,7 @@ export async function validateTwoFactorCode(userId: number, inputCode: string) {
  */
 export async function canRequestNewCode(userId: number) {
     try {
-        const user = await prisma.users.findUnique({
+        const user = await prismaRead.users.findUnique({
             where: { id: userId },
             select: {
                 lastTwoFactorCodeSentAt: true
@@ -243,7 +243,7 @@ export async function generateAndSendTwoFactorCode(userId: number) {
             };
         }
 
-        const user = await prisma.users.findUnique({
+        const user = await prismaRead.users.findUnique({
             where: { id: userId },
             select: { id: true, email: true }
         });
@@ -260,7 +260,7 @@ export async function generateAndSendTwoFactorCode(userId: number) {
         const expiry = new Date(Date.now() + CODE_EXPIRY);
 
         // Update user with new code
-        await prisma.users.update({
+        await prismaWrite.users.update({
             where: { id: userId },
             data: {
                 twoFactorCode: code,
@@ -306,7 +306,7 @@ export async function generateAndSendTwoFactorCode(userId: number) {
  */
 export async function cleanupExpiredCodes() {
     try {
-        const result = await prisma.users.updateMany({
+        const result = await prismaWrite.users.updateMany({
             where: {
                 twoFactorCodeExpiry: {
                     lt: new Date()
@@ -339,7 +339,7 @@ export async function cleanupExpiredCodes() {
  */
 export async function enableTwoFactorAuth(userId: number) {
     try {
-        await prisma.users.update({
+        await prismaWrite.users.update({
             where: { id: userId },
             data: {
                 require2fa: true
@@ -363,7 +363,7 @@ export async function enableTwoFactorAuth(userId: number) {
  */
 export async function disableTwoFactorAuth(userId: number) {
     try {
-        await prisma.users.update({
+        await prismaWrite.users.update({
             where: { id: userId },
             data: {
                 require2fa: false,

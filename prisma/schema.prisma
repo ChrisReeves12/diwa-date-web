@@ -338,7 +338,7 @@ model spatial_ref_sys {
 }
 
 model paymentTransactions {
-  id            Int       @id(map: "paymenttransactions_pk") @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   userId        Int?
   amount        Float?    @default(0)
   transId       String?   @unique(map: "paymenttransactions_transid_index") @db.VarChar(100)

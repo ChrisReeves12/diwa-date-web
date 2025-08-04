@@ -51,8 +51,6 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
 
     // 2FA state
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(!!currentUser?.require2fa);
-    const [twoFactorPassword, setTwoFactorPassword] = useState('');
-    const [showTwoFactorPassword, setShowTwoFactorPassword] = useState(false);
     const [isUpdatingTwoFactor, setIsUpdatingTwoFactor] = useState(false);
 
     // Load blocked users on component mount
@@ -229,12 +227,6 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
         setIsUpdatingTwoFactor(true);
 
         try {
-            // Client-side validation
-            if (!twoFactorPassword) {
-                setErrors({ twoFactorPassword: 'Password is required to change 2FA settings' });
-                return;
-            }
-
             let result;
             if (twoFactorEnabled) {
                 // Disable 2FA
@@ -245,10 +237,10 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
                     setIsUpdatingTwoFactor(false);
                     return;
                 }
-                result = await disableTwoFactor(twoFactorPassword);
+                result = await disableTwoFactor('');
             } else {
                 // Enable 2FA
-                result = await enableTwoFactor(twoFactorPassword);
+                result = await enableTwoFactor('');
             }
 
             if (!result.success) {
@@ -259,7 +251,6 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
             // Success
             setTwoFactorEnabled(!twoFactorEnabled);
             setSuccessMessage(result.message || 'Two-factor authentication updated successfully');
-            setTwoFactorPassword('');
         } catch (error) {
             console.error('2FA toggle error:', error);
             setErrors({ twoFactorForm: 'An unexpected error occurred' });
@@ -511,17 +502,38 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
                                 <div className="settings-section">
                                     <h3>Two-Factor Authentication</h3>
                                     <div className="two-factor-container">
-                                        <div className="two-factor-status">
-                                            <p>
-                                                <strong>Status:</strong> {twoFactorEnabled ? 'Enabled' : 'Disabled'}
-                                            </p>
+                                        <div className="two-factor-toggle-section">
+                                            <div className="toggle-header">
+                                                <div className="toggle-info">
+                                                    <h4>Enable Two-Factor Authentication</h4>
+                                                    <p>Add an extra layer of security to your account by requiring a verification code sent to your email when logging in.</p>
+                                                </div>
+                                                <div className="toggle-switch-container">
+                                                    <label className="toggle-switch">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={twoFactorEnabled}
+                                                            onChange={handleTwoFactorToggle}
+                                                            disabled={isUpdatingTwoFactor}
+                                                        />
+                                                        <span className="toggle-slider"></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            {/* 2FA Form Errors */}
+                                            {errors.twoFactorForm && (
+                                                <div className="error-message">
+                                                    {errors.twoFactorForm}
+                                                </div>
+                                            )}
+
                                             {twoFactorEnabled ? (
                                                 <div className="enabled-notice">
                                                     <p className="security-notice">
                                                         <i className="las la-shield-alt"></i>
                                                         Two-factor authentication is enabled. Your account is more secure.
                                                     </p>
-                                                    <p>You&apos;ll need to enter a verification code sent to your email each time you log in.</p>
                                                 </div>
                                             ) : (
                                                 <div className="disabled-notice">
@@ -529,58 +541,9 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
                                                         <i className="las la-exclamation-triangle"></i>
                                                         Two-factor authentication is disabled. Enable it to add an extra layer of security.
                                                     </p>
-                                                    <p>When enabled, you&apos;ll receive a verification code via email each time you log in.</p>
                                                 </div>
                                             )}
                                         </div>
-
-                                        {/* 2FA Form Errors */}
-                                        {errors.twoFactorForm && (
-                                            <div className="error-message">
-                                                {errors.twoFactorForm}
-                                            </div>
-                                        )}
-
-                                        <form onSubmit={(e) => { e.preventDefault(); handleTwoFactorToggle(); }}>
-                                            <div className="form-row">
-                                                <div className={`input-container ${errors.twoFactorPassword ? 'error' : ''}`}>
-                                                    <label htmlFor="twoFactorPassword">Enter your password to {twoFactorEnabled ? 'disable' : 'enable'} 2FA</label>
-                                                    <div className="password-input-wrapper">
-                                                        <input
-                                                            type={showTwoFactorPassword ? "text" : "password"}
-                                                            id="twoFactorPassword"
-                                                            name="twoFactorPassword"
-                                                            value={twoFactorPassword}
-                                                            onChange={(e) => setTwoFactorPassword(e.target.value)}
-                                                            className={errors.twoFactorPassword ? 'error' : ''}
-                                                            placeholder="Enter your password"
-                                                            required
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            className="password-toggle"
-                                                            onClick={() => setShowTwoFactorPassword(!showTwoFactorPassword)}
-                                                            tabIndex={-1}
-                                                        >
-                                                            <i className={`las ${showTwoFactorPassword ? 'la-eye-slash' : 'la-eye'}`}></i>
-                                                        </button>
-                                                    </div>
-                                                    {errors.twoFactorPassword && (
-                                                        <div className="error-message">{errors.twoFactorPassword}</div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <div className="form-row">
-                                                <button
-                                                    className={twoFactorEnabled ? "btn-danger" : "btn-primary"}
-                                                    type="submit"
-                                                    disabled={isUpdatingTwoFactor || !twoFactorPassword}
-                                                >
-                                                    {isUpdatingTwoFactor ? 'Processing...' : (twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA')}
-                                                </button>
-                                            </div>
-                                        </form>
 
                                         <div className="two-factor-info">
                                             <p><strong>How it works:</strong></p>

@@ -301,7 +301,7 @@ export async function reportUserAction(
 
 /**
  * Enable two-factor authentication for the current user
- * @param password The user's current password for verification
+ * @param password The user's current password for verification (no longer used)
  * @returns Success status and any error messages
  */
 export async function enableTwoFactor(password: string) {
@@ -316,22 +316,6 @@ export async function enableTwoFactor(password: string) {
     }
 
     try {
-        // Get the user's current password hash from the database for verification
-        const userWithPassword = await prismaRead.users.findUnique({
-            where: { id: currentUser.id },
-            select: { password: true }
-        });
-
-        if (!userWithPassword) {
-            return { success: false, error: "User not found" };
-        }
-
-        // Verify the current password
-        const isPasswordValid = await comparePasswords(password, userWithPassword.password);
-        if (!isPasswordValid) {
-            return { success: false, error: "Password is incorrect" };
-        }
-
         // Enable 2FA
         const result = await enableTwoFactorAuth(currentUser.id);
         
@@ -349,7 +333,7 @@ export async function enableTwoFactor(password: string) {
 
 /**
  * Disable two-factor authentication for the current user
- * @param password The user's current password for verification
+ * @param password The user's current password for verification (no longer used)
  * @returns Success status and any error messages
  */
 export async function disableTwoFactor(password: string) {
@@ -364,22 +348,6 @@ export async function disableTwoFactor(password: string) {
     }
 
     try {
-        // Get the user's current password hash from the database for verification
-        const userWithPassword = await prismaRead.users.findUnique({
-            where: { id: currentUser.id },
-            select: { password: true }
-        });
-
-        if (!userWithPassword) {
-            return { success: false, error: "User not found" };
-        }
-
-        // Verify the current password
-        const isPasswordValid = await comparePasswords(password, userWithPassword.password);
-        if (!isPasswordValid) {
-            return { success: false, error: "Password is incorrect" };
-        }
-
         // Disable 2FA
         const result = await disableTwoFactorAuth(currentUser.id);
         
