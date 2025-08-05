@@ -113,9 +113,12 @@
 
   .search-results-section {
     padding-top: 16px;
-    display: flex;
-    flex-wrap: wrap;
     position: relative;
+
+    @include globals.media-min('screens.lg') {
+      display: flex;
+      flex-wrap: wrap;
+    }
 
     .center-screen-loader-container {
       position: fixed;

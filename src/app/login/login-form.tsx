@@ -8,7 +8,6 @@ import { loginTitle, loginSubtitle } from '@/content/login-content';
 import { loginAction, verifyTwoFactorCodeAction, resendTwoFactorCodeAction } from './login.actions';
 import Link from 'next/link';
 import { Alert, Button, CircularProgress } from '@mui/material';
-import { SpinnerIcon } from "react-line-awesome";
 
 export default function LoginForm() {
     const router = useRouter();
@@ -220,7 +219,7 @@ export default function LoginForm() {
                                     {alertMessage}
                                 </Alert>
                             </div>}
-                        
+
                         {requiresTwoFactor ? (
                             <>
                                 <h1>Two-Factor Authentication</h1>
@@ -266,8 +265,8 @@ export default function LoginForm() {
                                                 onClick={handleResendCode}
                                                 disabled={isResendingCode || resendCooldown > 0}
                                             >
-                                                {isResendingCode ? 'Sending...' : 
-                                                 resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 
+                                                {isResendingCode ? 'Sending...' :
+                                                 resendCooldown > 0 ? `Resend in ${resendCooldown}s` :
                                                  'Resend Code'}
                                             </button>
                                         </div>
@@ -275,7 +274,7 @@ export default function LoginForm() {
 
                                     <div className="submit-button-wrapper">
                                         <div className="form-row form-row-loader-container">
-                                            {isLoading ? <CircularProgress sx={{color: "primary.main" }} /> : 
+                                            {isLoading ? <CircularProgress sx={{color: "primary.main" }} /> :
                                                 <button
                                                     className="btn-primary"
                                                     type="submit"
