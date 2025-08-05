@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "../styles/globals.scss" as *;
 
 .not-found-container {
@@ -74,7 +75,7 @@
     background-color: $primary-blue;
 
     &:hover {
-      background-color: darken($primary-blue, 10%);
+      background-color: color.adjust($primary-blue, $lightness: -10%);
     }
   }
 }

@@ -32,7 +32,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Graceful shutdown
-process.on('beforeExit', async () => {
+process.once('beforeExit', async () => {
     await pgDbWritePool.end();
     if (pgDbReadPool !== pgDbWritePool) {
         await pgDbReadPool.end();

@@ -4,11 +4,10 @@ import './login.scss';
 import React, { useLayoutEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { loginTitle, loginSubtitle } from '@/content/login-content';
+import { loginSubtitle, loginTitle } from '@/content/login-content';
 import { loginAction, verifyTwoFactorCodeAction, resendTwoFactorCodeAction } from './login.actions';
 import Link from 'next/link';
 import { Alert, Button, CircularProgress } from '@mui/material';
-import { SpinnerIcon } from "react-line-awesome";
 import { getCookieConsentStatus } from '@/common/cookie-consent';
 
 export default function LoginForm() {
@@ -273,8 +272,7 @@ export default function LoginForm() {
                                                 type="button"
                                                 className="link-button"
                                                 onClick={handleResendCode}
-                                                disabled={isResendingCode || resendCooldown > 0}
-                                            >
+                                                disabled={isResendingCode || resendCooldown > 0}>
                                                 {isResendingCode ? 'Sending...' :
                                                     resendCooldown > 0 ? `Resend in ${resendCooldown}s` :
                                                         'Resend Code'}
