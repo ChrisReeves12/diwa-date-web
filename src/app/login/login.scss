@@ -6,7 +6,6 @@
     display: flex;
     justify-content: center;
     padding: 2rem 0;
-    padding-top: 18vh;
     position: relative;
 
     &::before {
@@ -30,6 +29,7 @@
 
         @include globals.media-min('screens.md') {
             max-width: 550px;
+            padding-top: 18vh;
         }
 
         @include globals.media-min('screens.lg') {
@@ -318,7 +318,7 @@
         letter-spacing: 0.2em;
         font-family: 'Courier New', monospace !important;
         background: #f8f9fa !important;
-        
+
         &:focus {
             background: #fff !important;
             box-shadow: 0 0 0 3px rgba(9, 149, 235, 0.1);
@@ -402,7 +402,7 @@
     .security-notice {
         color: #28a745;
         font-weight: 600;
-        
+
         i {
             margin-right: 0.5rem;
         }
@@ -411,7 +411,7 @@
     .security-warning {
         color: #ffc107;
         font-weight: 600;
-        
+
         i {
             margin-right: 0.5rem;
         }
