@@ -35,6 +35,7 @@ interface UserProfilePreviewProps {
 export default function UserProfilePreview({ userPreview, type, onCallToRefresh, isInactive = false }: UserProfilePreviewProps) {
     const [showPhotoPopover, setShowPhotoPopover] = useState(false);
     const [showPhotoModal, setShowPhotoModal] = useState(false);
+    const [showMoreOptionsModal, setShowMoreOptionsModal] = useState(false);
     const [showMoreOptionsPopover, setShowMoreOptionsPopover] = useState(false);
     const [showImageViewer, setShowImageViewer] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -103,8 +104,15 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
     };
 
     const toggleMoreOptionsPopover = () => {
-        setShowMoreOptionsPopover(!showMoreOptionsPopover);
-        if (showPhotoPopover) setShowPhotoPopover(false);
+        if (innerWidth <= 768) {
+            setShowMoreOptionsModal(!showMoreOptionsModal);
+        } else {
+            setShowMoreOptionsPopover(!showMoreOptionsPopover);
+        }
+        if (showPhotoPopover || showPhotoModal) {
+            setShowPhotoPopover(false);
+            setShowPhotoModal(false);
+        }
     };
 
     const handleLike = async () => {
@@ -312,7 +320,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                                 </span>
                             </span>
                         </button>
-                        {showMoreOptionsPopover && (
+                        {showMoreOptionsPopover && innerWidth > 768 && (
                             <div className="more-options-popover" ref={moreOptionsPopoverRef}>
                                 <h4>More Options</h4>
                                 <a href={userProfileLink(userPreview)}><UserCircleIcon /> View Profile</a>
@@ -461,6 +469,76 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                                     />
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* More Options Modal for Mobile */}
+            {showMoreOptionsModal && innerWidth <= 768 && (
+                <div className="more-options-modal-overlay" onClick={() => setShowMoreOptionsModal(false)}>
+                    <div className="more-options-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="more-options-modal-header">
+                            <h3>More Options</h3>
+                            <button 
+                                className="more-options-modal-close"
+                                onClick={() => setShowMoreOptionsModal(false)}
+                            >
+                                <TimesIcon />
+                            </button>
+                        </div>
+                        <div className="more-options-modal-body">
+                            <a href={userProfileLink(userPreview)} className="more-options-modal-item">
+                                <UserCircleIcon /> View Profile
+                            </a>
+                            {type === 'search' && <>
+                                {userMatchStatus === 'matched' ?
+                                    <a href="" className="more-options-modal-item">
+                                        <CommentsIcon /> Send Message
+                                    </a> :
+                                    (isLikeLoading ?
+                                        <div className="more-options-modal-loading">
+                                            <CircularProgress size={20} sx={{ color: "primary.light" }} />
+                                        </div> :
+                                        <button 
+                                            onClick={() => {
+                                                setShowMoreOptionsModal(false);
+                                                handleLike();
+                                            }}
+                                            className="more-options-modal-item"
+                                        >
+                                            {userPreview.theyLikedMe ?
+                                                <><HeartIcon /> Accept Match</> :
+                                                userMatchStatus === 'pending' ?
+                                                    <><HeartBrokenIcon /> Remove Like</> :
+                                                    <><HeartIcon /> Like</>}
+                                        </button>)
+                                }
+                            </>}
+                            {isBlockLoading ? (
+                                <div className="more-options-modal-loading">
+                                    <CircularProgress size={20} sx={{ color: "primary.light" }} />
+                                </div>
+                            ) : (
+                                <button 
+                                    onClick={() => {
+                                        setShowMoreOptionsModal(false);
+                                        handleBlock();
+                                    }}
+                                    className="more-options-modal-item"
+                                >
+                                    {blockedThem ? <><UnlockIcon /> Unblock</> : <><BanIcon /> Block</>}
+                                </button>
+                            )}
+                            <button 
+                                onClick={() => {
+                                    setShowMoreOptionsModal(false);
+                                    handleReport();
+                                }}
+                                className="more-options-modal-item"
+                            >
+                                <ExclamationTriangleIcon /> Report
+                            </button>
                         </div>
                     </div>
                 </div>
