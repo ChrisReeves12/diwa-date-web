@@ -34,6 +34,7 @@ interface UserProfilePreviewProps {
 
 export default function UserProfilePreview({ userPreview, type, onCallToRefresh, isInactive = false }: UserProfilePreviewProps) {
     const [showPhotoPopover, setShowPhotoPopover] = useState(false);
+    const [showPhotoModal, setShowPhotoModal] = useState(false);
     const [showMoreOptionsPopover, setShowMoreOptionsPopover] = useState(false);
     const [showImageViewer, setShowImageViewer] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -93,7 +94,11 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
     }, [showImageViewer]);
 
     const togglePhotoPopover = () => {
-        setShowPhotoPopover(!showPhotoPopover);
+        if (innerWidth <= 768) {
+            setShowPhotoModal(!showPhotoModal);
+        } else {
+            setShowPhotoPopover(!showPhotoPopover);
+        }
         if (showMoreOptionsPopover) setShowMoreOptionsPopover(false);
     };
 
@@ -265,7 +270,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                             <span className="count-value">{userPreview.numOfPhotos}</span>
                             <Image className="camera-icon" width="20" height="20" alt="Camera" src="/images/camera.svg" />
                         </button>
-                        {showPhotoPopover && (
+                        {showPhotoPopover && innerWidth > 768 && (
                             <div className="photo-popover" ref={popoverRef}>
                                 <div className="photo-grid">
                                     {userPreview.publicPhotos && userPreview.publicPhotos.map((photo: UserPhoto, index: number) => (
@@ -418,6 +423,44 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                             className="image-viewer-nav image-viewer-next"
                             onClick={(e) => navigateImage('next', e)}>
                             <AngleRightIcon />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Photo Grid Modal for Mobile */}
+            {showPhotoModal && innerWidth <= 768 && (
+                <div className="photo-modal-overlay" onClick={() => setShowPhotoModal(false)}>
+                    <div className="photo-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="photo-modal-header">
+                            <h3>{userPreview.displayName}'s Photos</h3>
+                            <button 
+                                className="photo-modal-close"
+                                onClick={() => setShowPhotoModal(false)}
+                            >
+                                <TimesIcon />
+                            </button>
+                        </div>
+                        <div className="photo-modal-grid">
+                            {userPreview.publicPhotos && userPreview.publicPhotos.map((photo: UserPhoto, index: number) => (
+                                <div
+                                    key={index}
+                                    className="photo-modal-grid-item"
+                                    onClick={() => {
+                                        setShowPhotoModal(false);
+                                        openImageViewer(index);
+                                    }}>
+                                    <UserPhotoDisplay
+                                        alt={`${userPreview.displayName}'s photo ${index + 1}`}
+                                        shape="square"
+                                        imageUrl={photo.path}
+                                        croppedImageData={photo.croppedImageData}
+                                        width={120}
+                                        height={120}
+                                        gender={userPreview.gender}
+                                    />
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
