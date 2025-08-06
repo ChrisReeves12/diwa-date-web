@@ -2,7 +2,6 @@
 
 import './info-bar.scss';
 import { useCurrentUser } from '../context/current-user-context';
-import { InfoCircleIcon } from 'react-line-awesome';
 import { resendVerificationEmail } from './info-bar.actions';
 import { useState, useEffect } from 'react';
 import { showAlert, userHasOnboarded } from '@/util';
@@ -44,21 +43,21 @@ export default function InfoBar({ onHide }: { onHide?: () => void }) {
     const InfoContent = () => {
         if (onboardedResult?.issues.profileCompletedAt) {
             return (
-                <p><InfoCircleIcon /> You will not be shown to other users until you have completed your profile. <Link
+                <p>You will not be shown to other users until you have completed your profile. <Link
                     href={'/onboarding'} className='action-button'>{isLoading ? 'Please wait...' : 'Complete Profile'}</Link></p>
             );
         }
 
         if (onboardedResult?.issues.numOfPhotos) {
             return (
-                <p><InfoCircleIcon /> Your profile will not be shown until you have added at least 3 approved photos to your profile. <Link
+                <p>Your profile will not be shown until you have added at least 3 approved photos to your profile. <Link
                     href={'/profile/photos'} className='action-button'>{isLoading ? 'Please wait...' : 'Add Photos'}</Link></p>
             );
         }
 
         if (onboardedResult?.issues.emailVerifiedAt) {
             return (
-                <p><InfoCircleIcon /> Your profile will not be shown until you verify your email. <button disabled={isLoading}
+                <p>Your profile will not be shown until you verify your email. <button disabled={isLoading}
                     onClick={handleResendVerificationEmail} className='action-button'>{isLoading ? 'Please wait...' : 'Resend Email'}</button></p>
             );
         }
@@ -73,4 +72,4 @@ export default function InfoBar({ onHide }: { onHide?: () => void }) {
             </div>
         </div>
     );
-} 
+}
