@@ -19,6 +19,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { UserPhoto } from "@/types/user-photo.type";
 import { AngleLeftIcon, AngleRightIcon } from "react-line-awesome";
 import { removeUserMatch, sendUserMatch, blockUserAction, unBlockUserAction, muteUser } from '../server-actions/user-profile.actions';
+import { useWindowWidth } from '@/hooks/use-window-width';
 import _ from 'lodash';
 import ReportUserDialog from '../report-user-dialog/report-user-dialog';
 import Link from "next/link";
@@ -41,6 +42,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
     const [showReportDialog, setShowReportDialog] = useState(false);
     const [isLikeLoading, setIsLikeLoading] = useState(false);
     const [isBlockLoading, setIsBlockLoading] = useState(false);
+    const innerWidth = useWindowWidth();
     const popoverRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const moreOptionsPopoverRef = useRef<HTMLDivElement>(null);
@@ -207,7 +209,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
 
     // Calculate user image size
     let userImgSize = 210;
-    if (window.innerWidth <= 640) {
+    if (innerWidth <= 768) {
         userImgSize = 128;
     }
 

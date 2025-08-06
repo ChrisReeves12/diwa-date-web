@@ -23,6 +23,10 @@
 
 .info-bar-shown {
   .tab-bar-container {
-    top: 112px !important;
+    top: 158px !important;
+
+    @include globals.media-min('screens.md') {
+      top: 134px !important;
+    }
   }
 }

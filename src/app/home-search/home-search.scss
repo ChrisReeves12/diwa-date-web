@@ -138,6 +138,10 @@
 
 .info-bar-shown {
   .search-filters-section {
-    top: 187px !important;
+    top: 208px !important;
+
+    @include globals.media-min('screens.md') {
+      top: 187px !important;
+    }
   }
 }

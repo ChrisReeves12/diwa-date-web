@@ -1,34 +1,52 @@
+@use '@/styles/globals' as globals;
+
 .site-info-bar {
     width: 100%;
     background-color: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
     padding: 16px 0;
-    top: 69px;
     position: sticky;
     z-index: 100;
+    top: 54px;
+
+    @include globals.media-min('screens.md') {
+        top: 69px;
+    }
 
     .info-bar-content {
         max-width: 1200px;
         margin: 0 auto;
         padding: 0 20px;
         display: flex;
+        font-size: 12px;
         align-items: center;
-        justify-content: center;
+        height: 72px;
+
+        @include globals.media-min('screens.md') {
+            font-size: 15px;
+            justify-content: center;
+            height: inherit;
+        }
 
         .action-button {
             background-color: #49b1f4;
             color: #ffffff;
-            padding: 10px 16px;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 500;
-            margin-left: 12px;
             border: none;
             cursor: pointer;
+            padding: 8px 10px;
             transition: background-color 0.2s ease;
             text-decoration: none;
             display: inline-block;
             line-height: 1;
+            max-width: 75vw;
+
+            @include globals.media-min('screens.md') {
+                margin-left: 12px;
+                padding: 10px 16px;
+            }
 
             &:hover {
                 background-color: #2196f3;
@@ -46,75 +64,21 @@
 
         p {
             margin: 0;
-            font-size: 15px;
             line-height: 1.5;
             color: #6c757d;
             display: flex;
             align-items: center;
             flex-wrap: wrap;
             gap: 8px;
-            text-align: center;
+
+            @include globals.media-min('screens.md') {
+                text-align: center;
+            }
 
             svg {
                 flex-shrink: 0;
                 font-size: 18px;
                 color: #49b1f4;
-            }
-        }
-    }
-
-    // Mobile optimizations
-    @media (max-width: 768px) {
-        padding: 16px 0;
-
-        .info-bar-content {
-            padding: 0 16px;
-
-            p {
-                font-size: 14px;
-                line-height: 1.4;
-                text-align: left;
-                
-                svg {
-                    display: none;
-                }
-            }
-
-            .action-button {
-                margin-left: 8px;
-                padding: 8px 12px;
-                font-size: 13px;
-                border-radius: 4px;
-                min-width: fit-content;
-                white-space: nowrap;
-            }
-        }
-    }
-
-    // Extra small mobile screens
-    @media (max-width: 480px) {
-        .info-bar-content {
-            padding: 0 12px;
-
-            p {
-                font-size: 13px;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-                text-align: left;
-
-                svg {
-                    align-self: flex-start;
-                }
-            }
-
-            .action-button {
-                margin-left: 0;
-                margin-top: 4px;
-                width: 100%;
-                text-align: center;
-                padding: 12px 16px;
-                font-size: 14px;
             }
         }
     }

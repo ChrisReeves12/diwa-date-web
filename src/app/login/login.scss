@@ -45,11 +45,19 @@
     }
 
     .form-section {
-        padding: 3rem;
-        padding-top: 0;
         display: flex;
         flex-direction: column;
         justify-content: center;
+        padding: 0 1.5rem 3rem 1.5rem;
+
+        @include globals.media-min('screens.md') {
+            padding: 0 3rem 3rem;
+        }
+
+        .container {
+            margin: 0;
+            padding: 0;
+        }
 
         .logo-container {
             text-align: center;

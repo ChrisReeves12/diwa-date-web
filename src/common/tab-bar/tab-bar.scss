@@ -9,13 +9,15 @@
   }
 
   .tab {
-    padding-top: 24px;
-    padding-bottom: 24px;
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    padding-right: 40px;
+    padding: 12px 30px 12px 0;
     gap: 8px;
+
+    @include globals.media-min('screens.md') {
+      padding: 24px 40px 24px 0;
+    }
 
     .label, i {
       color: #000000;
