@@ -2,18 +2,24 @@
 
 .user-profile-preview-container {
   display: flex;
-  gap: 15px;
   align-items: flex-start;
   border: 1px solid #d2d2d2;
-  padding: 15px;
   border-radius: 8px;
   box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
   justify-content: flex-start;
   box-sizing: border-box;
   background-color: white;
   position: relative;
-  margin: 8px 8px 14px;
-  height: 242px;
+  height: 192px;
+  gap: 12px;
+  padding: 10px;
+
+  @include globals.media-min('screens.md') {
+    height: 242px;
+    margin: 8px 8px 14px;
+    gap: 15px;
+    adding: 15px;
+  }
 
   @include globals.media-min('screens.lg') {
     width: calc(49% - 16px);
@@ -99,6 +105,11 @@
           font-weight: bold;
           font-size: 15px;
           color: globals.$primary-blue;
+          display: none;
+
+          @include globals.media-min('screens.md') {
+            display: block;
+          }
         }
       }
 

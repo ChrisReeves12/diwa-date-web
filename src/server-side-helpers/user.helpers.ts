@@ -1396,6 +1396,8 @@ export async function updatePersonalInformationForUser(currentUser: any, data: a
 
         if (!data.displayName?.trim()) {
             errors.displayName = 'Display name is required';
+        } else if (data.displayName.trim().length > 20) {
+            errors.displayName = 'Display name cannot be longer than 20 characters';
         }
 
         if (!data.firstName?.trim()) {

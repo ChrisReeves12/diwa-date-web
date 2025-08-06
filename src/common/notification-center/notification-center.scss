@@ -50,6 +50,11 @@
 
       .profile-name-container {
         text-align: left;
+        display: none;
+
+        @include globals.media-min('screens.md') {
+          display: block;
+        }
 
         h5,
         h6 {

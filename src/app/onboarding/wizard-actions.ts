@@ -89,6 +89,10 @@ export async function completeWizard(data: WizardData) {
             return { success: false, message: 'Display name is required' };
         }
 
+        if (data.displayName.trim().length > 20) {
+            return { success: false, message: 'Display name cannot be longer than 20 characters' };
+        }
+
         // Update user with complete wizard data and mark profile as complete
         await prismaWrite.users.update({
             where: { id: currentUser.id },

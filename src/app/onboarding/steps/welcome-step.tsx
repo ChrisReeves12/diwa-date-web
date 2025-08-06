@@ -60,6 +60,7 @@ export function WelcomeStep({ data, updateData, onValidationChange }: WelcomeSte
                             onChange={handleDisplayNameChange}
                             placeholder="Enter your display name"
                             className={`form-input ${displayName.trim().length > 0 && displayName.trim().length < 2 ? 'error' : ''}`}
+                            maxLength={20}
                         />
                         {displayName.trim().length > 0 && displayName.trim().length < 2 && (
                             <div className="error-message">Display name must be at least 2 characters long</div>

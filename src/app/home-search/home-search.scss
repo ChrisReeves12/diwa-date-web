@@ -24,8 +24,12 @@
       padding-top: 0.8rem;
 
       .age-order-by-container {
-        display: flex;
+        display: none;
         gap: 1.8rem;
+
+        @include globals.media-min('screens.md') {
+          display: flex;
+        }
 
         .filter {
           label {
@@ -114,10 +118,14 @@
   .search-results-section {
     padding-top: 16px;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 
     @include globals.media-min('screens.lg') {
-      display: flex;
+      flex-direction: row;
       flex-wrap: wrap;
+      gap: inherit;
     }
 
     .center-screen-loader-container {

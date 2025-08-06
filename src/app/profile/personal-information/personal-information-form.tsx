@@ -315,6 +315,7 @@ export function PersonalInformationForm({ currentUser }: PersonalInformationForm
                                 value={displayName}
                                 onChange={(e) => setDisplayName(e.target.value)}
                                 className={errors.displayName ? 'error' : ''}
+                                maxLength={20}
                             />
                             {errors.displayName && (
                                 <div className="error-message">{errors.displayName}</div>

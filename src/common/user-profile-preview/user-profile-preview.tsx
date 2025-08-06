@@ -13,7 +13,6 @@ import {
     TimesIcon,
     UnlockIcon,
     UserCircleIcon,
-    CrownIcon,
     TrophyIcon
 } from "react-line-awesome";
 import React, { useState, useRef, useEffect, useCallback } from "react";
@@ -24,7 +23,6 @@ import _ from 'lodash';
 import ReportUserDialog from '../report-user-dialog/report-user-dialog';
 import Link from "next/link";
 import { CircularProgress } from "@mui/material";
-import { sendUserMatchRequest } from "@/server-side-helpers/user.helpers";
 
 interface UserProfilePreviewProps {
     userPreview: UserPreview,
@@ -207,6 +205,12 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
         window.dispatchEvent(new CustomEvent('notification-center-refresh'));
     }
 
+    // Calculate user image size
+    let userImgSize = 210;
+    if (window.innerWidth <= 640) {
+        userImgSize = 128;
+    }
+
     return (
         <div className={"user-profile-preview-container" + (isInactive ? " inactive" : "")}>
             <div className="image-container">
@@ -216,8 +220,8 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                         shape="rounded-square"
                         imageUrl={userPreview.publicMainPhoto}
                         croppedImageData={userPreview.mainPhotoCroppedImageData}
-                        width={210}
-                        height={210}
+                        width={userImgSize}
+                        height={userImgSize}
                         gender={userPreview.gender} />
                 </a>
             </div>
@@ -226,7 +230,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                     <div className="info-container">
                         <div className="display-name-container">
                             <a className="user-display-name" href={userProfileLink(userPreview)}>
-                                {userPreview.displayName}
+                                {_.truncate(userPreview.displayName, { length: 18 })}
                             </a>
                             {userPreview.isPremium && (
                                 <div className="premium-badge" title="Premium Member">
@@ -236,7 +240,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                             {userPreview.isOnline && <div className="online-lamp" title="Online now"></div>}
                         </div>
                         <div className="info-line age">Age: {userPreview.age}</div>
-                        <div className="info-line location">Location: {userPreview.locationName}</div>
+                        <div className="info-line location">Location: {_.truncate(userPreview.locationName, { length: 30 })}</div>
                         {type === 'like' && (
                             <div className="info-line received-on">Received {userPreview.receivedLikeHumanized}</div>
                         )}
