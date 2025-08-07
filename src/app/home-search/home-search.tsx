@@ -18,6 +18,7 @@ import SearchFiltersDialog from "@/app/home-search/search-filters-dialog/search-
 import { NotificationCenterData } from "@/types/notification-center-data.interface";
 import { showAlert } from '@/util';
 import { AngleLeftIcon, AngleRightIcon } from "react-line-awesome";
+import { useWindowWidth } from '@/hooks/use-window-width';
 
 function SearchErrorDisplay() {
     return (
@@ -40,6 +41,7 @@ function SearchResultsView({ currentUser: initialCurrentUser, searchPromise }: {
     const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
     const [isUpdatingSearchResults, setIsUpdatingSearchResults] = useState(false);
     const [updatedSearchResponse, setUpdatedSearchResponse] = useState<SearchResponse | undefined>();
+    const innerWidth = useWindowWidth();
 
     const searchSortBy = (searchParams.get('sortBy') || SearchSortBy.LastActive) as SearchSortBy;
     const page = Number(searchParams.get('page')) || 1;
@@ -161,10 +163,10 @@ function SearchResultsView({ currentUser: initialCurrentUser, searchPromise }: {
             <Modal open={isSearchFiltersModalOpen}>
                 <Box sx={{
                     position: 'absolute',
-                    top: '48%',
+                    top: innerWidth <= 768 ? '50%' : '48%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    width: '70vw',
+                    width: innerWidth <= 768 ? '95vw' : '70vw',
                     height: '90vh',
                     maxHeight: '1200px',
                     bgcolor: 'white',

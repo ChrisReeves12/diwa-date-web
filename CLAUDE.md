@@ -9,3 +9,8 @@ We do use Prisma for some database transactions, but we don't use any of their m
 # Query Guidelines
 
 - In raw queries, surround all field names with double quotes, to ensure camel-cased field names stay in tact 
+
+# Styling Guidelines
+
+- Always use the breakpoint min-media helpers for conditional styling for screen width, and the helper for dark mode
+- Assume a mobile-first approach, in that the default styling is optimized for mobile
