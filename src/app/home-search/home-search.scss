@@ -10,6 +10,11 @@
     position: sticky;
     z-index: 5;
     top: 145px;
+    padding-right: 6px;
+
+    @include globals.media-min('screens.md') {
+      padding-right: 8px;
+    }
 
     @include globals.dark-mode {
       border-bottom-color: #ffffff;
@@ -51,7 +56,7 @@
         color: globals.$primary-blue;
         font-weight: bold;
         font-size: 14px;
-        width: 50px;
+        width: 68px;
 
         @include globals.dark-mode {
           color: globals.$primary-blue-dark;
@@ -65,15 +70,19 @@
 
       .paginator-container {
         display: flex;
-        gap: 12px;
+        gap: 5px;
         align-items: center;
+
+        @include globals.media-min('screens.md') {
+          gap: 12px;
+        }
 
         .previous-button,
         .next-button {
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 8px 16px;
+          padding: 6px 8px;;
           border: 1px solid globals.$primary-blue;
           background-color: white;
           color: globals.$primary-blue;
@@ -82,6 +91,10 @@
           font-size: 14px;
           cursor: pointer;
           transition: all 0.2s ease;
+
+          @include globals.media-min('screens.md') {
+            padding: 8px 16px;
+          }
 
           @include globals.dark-mode {
             border-color: globals.$primary-blue-dark;
@@ -121,6 +134,13 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding-right: 8px;
+    padding-left: 8px;
+
+    @include globals.media-min('screens.md') {
+      padding-right: 0;
+      padding-left: 0;
+    }
 
     @include globals.media-min('screens.lg') {
       flex-direction: row;
@@ -138,10 +158,6 @@
 
 .info-bar-shown {
   .search-filters-section {
-    top: 208px !important;
-
-    @include globals.media-min('screens.md') {
-      top: 187px !important;
-    }
+    top: 209px !important;
   }
 }

@@ -25,7 +25,6 @@ export default async function LikesPage({ searchParams }: { searchParams: any })
     const sortBy = (lSearchParams.sortBy as LikesSortBy) || LikesSortBy.ReceivedAt;
     const page = Number(lSearchParams.page) || 1;
 
-
     const getLikesPromise = getUserLikes(
         Number(currentUser.id),
         sortBy,

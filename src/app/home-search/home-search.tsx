@@ -41,7 +41,7 @@ function SearchResultsView({ currentUser: initialCurrentUser, searchPromise }: {
     const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
     const [isUpdatingSearchResults, setIsUpdatingSearchResults] = useState(false);
     const [updatedSearchResponse, setUpdatedSearchResponse] = useState<SearchResponse | undefined>();
-    const innerWidth = useWindowWidth();
+    const innerWidth = window.innerWidth;
 
     const searchSortBy = (searchParams.get('sortBy') || SearchSortBy.LastActive) as SearchSortBy;
     const page = Number(searchParams.get('page')) || 1;
@@ -167,7 +167,7 @@ function SearchResultsView({ currentUser: initialCurrentUser, searchPromise }: {
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
                     width: innerWidth <= 768 ? '95vw' : '70vw',
-                    height: '90vh',
+                    height: innerWidth <= 768 ? '80vh' : '90vh',
                     maxHeight: '1200px',
                     bgcolor: 'white',
                     outlineWidth: 0,

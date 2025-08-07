@@ -50,8 +50,10 @@ $default-font: "Nunito Sans", sans-serif;
   background-color: transparent;
   border-bottom: 1px solid #000000;
   font-size: 16px;
+  color: #000000;
 
   @media (prefers-color-scheme: dark) {
+    color: #ffffff;
     border-bottom-color: #ffffff;
   }
 }

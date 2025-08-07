@@ -9,7 +9,11 @@ export function useWindowWidth() {
     });
 
     useEffect(() => {
-        const handler = () => setInnerWidth(window.innerWidth);
+        const handler = () => {
+            setInnerWidth(window.innerWidth);
+            console.log('Inner Width', window.innerWidth);
+        };
+
         window.addEventListener('resize', handler);
 
         return () => window.removeEventListener('resize', handler);

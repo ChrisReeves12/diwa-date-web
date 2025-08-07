@@ -19,7 +19,6 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { UserPhoto } from "@/types/user-photo.type";
 import { AngleLeftIcon, AngleRightIcon } from "react-line-awesome";
 import { removeUserMatch, sendUserMatch, blockUserAction, unBlockUserAction, muteUser } from '../server-actions/user-profile.actions';
-import { useWindowWidth } from '@/hooks/use-window-width';
 import _ from 'lodash';
 import ReportUserDialog from '../report-user-dialog/report-user-dialog';
 import Link from "next/link";
@@ -44,7 +43,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
     const [showReportDialog, setShowReportDialog] = useState(false);
     const [isLikeLoading, setIsLikeLoading] = useState(false);
     const [isBlockLoading, setIsBlockLoading] = useState(false);
-    const innerWidth = useWindowWidth();
+    const innerWidth = window.innerWidth;
     const popoverRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const moreOptionsPopoverRef = useRef<HTMLDivElement>(null);
@@ -216,7 +215,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
     }
 
     const passOnMatch = async () => {
-        const muteResult = await muteUser(Number(userPreview.id));
+        await muteUser(Number(userPreview.id));
         window.dispatchEvent(new CustomEvent('notification-center-refresh'));
     }
 
@@ -254,13 +253,13 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                             )}
                             {userPreview.isOnline && <div className="online-lamp" title="Online now"></div>}
                         </div>
-                        <div className="info-line age">Age: {userPreview.age}</div>
-                        <div className="info-line location">Location: {_.truncate(userPreview.locationName, { length: 30 })}</div>
+                        <div className="info-line age"><strong>Age:</strong> {userPreview.age}</div>
+                        <div className="info-line location"><strong>Location:</strong> {_.truncate(userPreview.locationName, { length: 30 })}</div>
                         {type === 'like' && (
-                            <div className="info-line received-on">Received {userPreview.receivedLikeHumanized}</div>
+                            <div className="info-line received-on"><strong>Received:</strong> {userPreview.receivedLikeHumanized}</div>
                         )}
-                        <div className="info-line last-active">Last
-                            Active {userPreview.lastActiveHumanized}</div>
+                        <div className="info-line last-active"><strong>Last
+                            Active:</strong> {userPreview.lastActiveHumanized}</div>
                         {userPreview.theyLikedMe && (
                             <div className="info-line they-liked-me">
                                 <HeartIcon style={{ marginRight: '4px' }} />
@@ -441,8 +440,8 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                 <div className="photo-modal-overlay" onClick={() => setShowPhotoModal(false)}>
                     <div className="photo-modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="photo-modal-header">
-                            <h3>{userPreview.displayName}'s Photos</h3>
-                            <button 
+                            <h3>{userPreview.displayName}&apos;s Photos</h3>
+                            <button
                                 className="photo-modal-close"
                                 onClick={() => setShowPhotoModal(false)}
                             >
@@ -480,7 +479,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                     <div className="more-options-modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="more-options-modal-header">
                             <h3>More Options</h3>
-                            <button 
+                            <button
                                 className="more-options-modal-close"
                                 onClick={() => setShowMoreOptionsModal(false)}
                             >
@@ -500,7 +499,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                                         <div className="more-options-modal-loading">
                                             <CircularProgress size={20} sx={{ color: "primary.light" }} />
                                         </div> :
-                                        <button 
+                                        <button
                                             onClick={() => {
                                                 setShowMoreOptionsModal(false);
                                                 handleLike();
@@ -520,7 +519,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                                     <CircularProgress size={20} sx={{ color: "primary.light" }} />
                                 </div>
                             ) : (
-                                <button 
+                                <button
                                     onClick={() => {
                                         setShowMoreOptionsModal(false);
                                         handleBlock();
@@ -530,7 +529,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                                     {blockedThem ? <><UnlockIcon /> Unblock</> : <><BanIcon /> Block</>}
                                 </button>
                             )}
-                            <button 
+                            <button
                                 onClick={() => {
                                     setShowMoreOptionsModal(false);
                                     handleReport();

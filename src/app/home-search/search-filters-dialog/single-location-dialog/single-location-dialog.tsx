@@ -1,5 +1,5 @@
 import './single-location-dialog.scss';
-import { Autocomplete, Box, TextField } from "@mui/material";
+import { Autocomplete, Box, MenuItem, Select, TextField } from "@mui/material";
 import { countries } from "@/config/countries";
 import LocationSearch from "@/common/location-search/location-search";
 import { useState } from "react";
@@ -9,6 +9,7 @@ import { businessConfig } from "@/config/business";
 import { SingleSearchLocation } from "@/types";
 import SelectedSingleLocationDisplay
     from "@/app/home-search/search-filters-dialog/selected-single-location-display/selected-single-location-display";
+import { useWindowWidth } from "@/hooks/use-window-width";
 
 interface SingleLocationDialogProps {
     onClose: () => void,
@@ -21,6 +22,7 @@ export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleS
     const [singleLocationCountry, setSingleLocationCountry] = useState<string | null>(null);
     const [singleSearchLocation, setSingleSearchLocation] = useState<SingleSearchLocation | undefined>(defaultSingleSearchLocation);
     const [countryBounds, setCountryBounds] = useState<google.maps.LatLngBounds | undefined>();
+    const innerWidth = window.innerWidth;
 
     const getGeoBoundsForCountry = async (country: { name: string, code: string }) => {
         const geoCodeResult = await new Promise<google.maps.GeocoderResult>((resolve, reject) => {
@@ -49,7 +51,7 @@ export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleS
             top: '25%',
             left: '50%',
             transform: 'translate(-50%)',
-            width: '40vw',
+            width: innerWidth <= 768 ? '85vw' : '40vw',
             maxWidth: 600,
             bgcolor: 'white',
             outlineWidth: 0,
@@ -69,7 +71,29 @@ export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleS
                     <div className="form-section">
                         {!singleSearchLocation && <div className="input-container country">
                             <label>Country</label>
-                            <Autocomplete
+                            {innerWidth <= 768 ?
+                                <Select
+                                    value={singleLocationCountry || ''}
+                                    onChange={async (e) => {
+                                        const newValue = e.target.value || null;
+                                        setSingleLocationCountry(newValue);
+                                        const countryObj = countries.find(country => country.name === newValue);
+
+                                        if (newValue && countryObj) {
+                                            await getGeoBoundsForCountry(countryObj);
+                                        }
+                                    }}
+                                    displayEmpty
+                                    sx={{ width: '100%' }}
+                                >
+                                    <MenuItem value="" disabled>Select Country</MenuItem>
+                                    {countries.map(country => (
+                                        <MenuItem key={country.code} value={country.name}>
+                                            {country.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select> :
+                                <Autocomplete
                                 disablePortal
                                 options={countries.map(country => country.name)}
                                 sx={{ width: '100%' }}
@@ -83,7 +107,7 @@ export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleS
                                     }
                                 }}
                                 renderInput={(params) => <TextField {...params} placeholder="Select Country" />}
-                            />
+                            />}
                         </div>}
                         {countryBounds && !singleSearchLocation &&
                             <div className="inline-form-container">
@@ -132,7 +156,7 @@ export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleS
                                                 }
                                             });
                                         });
-                                    }} className="all-localities">All Localities</button>}
+                                    }} className="all-localities">All</button>}
                             </div>}
                         {singleSearchLocation &&
                             <SelectedSingleLocationDisplay

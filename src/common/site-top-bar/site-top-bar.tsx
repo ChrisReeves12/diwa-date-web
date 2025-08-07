@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import './site-top-bar.scss';
 import NotificationCenter from "@/common/notification-center/notification-center";
 import { useCurrentUser } from '../context/current-user-context';
+import { useWindowWidth } from "@/hooks/use-window-width";
 interface SiteTopBarProps {
     isLoginPage?: boolean;
     hideButtons?: boolean;
@@ -14,6 +15,7 @@ interface SiteTopBarProps {
 export default function SiteTopBar({ isLoginPage = false, hideButtons = false }: SiteTopBarProps) {
     const currentUser = useCurrentUser();
     const pathname = usePathname();
+    const innerWidth = window?.innerWidth || 0;
 
     return (
         <>
@@ -22,24 +24,34 @@ export default function SiteTopBar({ isLoginPage = false, hideButtons = false }:
                     <Link href="/">
                         <span className="light-dark">
                             <span className="light">
-                                <Image
+                                {innerWidth <= 768 ? <img
                                     title="Diwa Date"
                                     alt="Logo"
-                                    src="/images/full_logo.png"
+                                    src={`${process.env.NEXT_PUBLIC_IMAGE_ROOT}/images/mobile_logo.png`}
+                                    width={50}
+                                    height={50}
+                                /> : <img
+                                    title="Diwa Date"
+                                    alt="Logo"
+                                    src={`${process.env.NEXT_PUBLIC_IMAGE_ROOT}/images/full_logo.png`}
                                     width={130}
                                     height={40}
-                                    priority
-                                />
+                                />}
                             </span>
                             <span className="dark">
-                                <Image
+                                {innerWidth <= 768 ? <img
                                     title="Diwa Date"
                                     alt="Logo"
-                                    src="/images/white_logo.png"
+                                    src={`${process.env.NEXT_PUBLIC_IMAGE_ROOT}/images/mobile_logo_dark.png`}
+                                    width={50}
+                                    height={50}
+                                /> : <img
+                                    title="Diwa Date"
+                                    alt="Logo"
+                                    src={`${process.env.NEXT_PUBLIC_IMAGE_ROOT}/images/full_logo_dark.png`}
                                     width={130}
                                     height={40}
-                                    priority
-                                />
+                                />}
                             </span>
                         </span>
                     </Link>

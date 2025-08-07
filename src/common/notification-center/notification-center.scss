@@ -3,11 +3,19 @@
 .notification-center-container {
   display: flex;
   align-items: center;
-  gap: 25px;
+  gap: 8px;
+
+  @include globals.media-min('screens.md') {
+    gap: 25px;
+  }
 
   .notification-container {
     display: flex;
-    gap: 16px;
+    gap: 8px;
+
+    @include globals.media-min('screens.md') {
+      gap: 16px;
+    }
 
     .notification-icon-container {
       button {

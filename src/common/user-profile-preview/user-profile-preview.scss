@@ -10,15 +10,17 @@
   box-sizing: border-box;
   background-color: white;
   position: relative;
-  height: 192px;
+  height: 196px;
   gap: 12px;
   padding: 10px;
+  font-size: 14px;
 
   @include globals.media-min('screens.md') {
+    font-size: 16px;
     height: 242px;
     margin: 8px 8px 14px;
     gap: 15px;
-    adding: 15px;
+    padding: 15px;
   }
 
   @include globals.media-min('screens.lg') {
@@ -42,7 +44,7 @@
           display: flex;
           align-items: center;
           gap: 8px;
-          margin-bottom: 4px;
+          margin-bottom: 6px;
 
           .user-display-name {
             font-weight: bold;
@@ -349,14 +351,27 @@
         .match-buttons {
           display: flex;
           gap: 12px;
+          flex-direction: column;
+
+          @include globals.media-min('screens.md') {
+            flex-direction: row;
+          }
 
           button {
-            padding: 10px;
+            padding: 7px;
             border-radius: 50%;
 
+            @include globals.media-min('screens.md') {
+              padding: 10px;
+            }
+
             i {
-              font-size: 24px;
+              font-size: 19px;
               color: white;
+
+              @include globals.media-min('screens.md') {
+                font-size: 24px;
+              }
             }
 
             &.like {

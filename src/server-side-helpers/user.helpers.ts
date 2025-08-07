@@ -1111,7 +1111,7 @@ export async function getUserLikes(
     userId: number,
     sortBy: LikesSortBy = LikesSortBy.ReceivedAt,
     page: number = 1,
-    pageSize: number = 60
+    pageSize: number = 400
 ): Promise<{ hasMore: boolean; likes: UserPreview[] }> {
     const offset = (page - 1) * pageSize;
     let orderByClause: string;

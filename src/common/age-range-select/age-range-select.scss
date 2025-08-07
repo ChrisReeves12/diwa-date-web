@@ -6,6 +6,12 @@
 
   .from-label {
     margin-right: 0.8rem;
+
+    display: none;
+
+    @include globals.media-min('screens.md') {
+      display: block;
+    }
   }
 
   .to-label {

@@ -93,18 +93,6 @@ function LikesListing({ likesPromise }: LikesViewProps) {
                         </div>
                     </div>
                 </div>
-                <div className="paginator-section">
-                    {page > 1 && (
-                        <button onClick={() => handlePageChange('prev')}>
-                            Previous Page
-                        </button>
-                    )}
-                    {hasMore && (
-                        <button onClick={() => handlePageChange('next')}>
-                            Next Page
-                        </button>
-                    )}
-                </div>
             </div>}
             <div className="user-likes-listing-container">
                 {likes.length === 0 &&

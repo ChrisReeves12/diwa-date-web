@@ -16,13 +16,14 @@
     .info-bar-content {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 0 20px;
+        padding: 0 10px;
         display: flex;
         font-size: 12px;
         align-items: center;
         height: 72px;
 
         @include globals.media-min('screens.md') {
+            padding: 0 20px;
             font-size: 15px;
             justify-content: center;
             height: inherit;

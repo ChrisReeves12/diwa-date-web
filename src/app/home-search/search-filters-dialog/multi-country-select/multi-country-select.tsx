@@ -15,6 +15,7 @@ const MAX_COUNTRIES = 5;
 export default function MultiCountrySelect({ selectedCountries = [], onUpdate, onClose }: MultiCountrySelectProps) {
     const [selected, setSelected] = useState<string[]>(selectedCountries || []);
     const [error, setError] = useState<string | null>(null);
+    const innerWidth = window.innerWidth;
 
     const handleToggleCountry = (countryName: string) => {
         if (selected.includes(countryName)) {
@@ -38,10 +39,10 @@ export default function MultiCountrySelect({ selectedCountries = [], onUpdate, o
     return (
         <Box sx={{
             position: 'absolute',
-            top: '25%',
+            top: innerWidth <= 768 ? '8vh' : '25%',
             left: '50%',
             transform: 'translate(-50%)',
-            width: '40vw',
+            width: innerWidth <= 768 ? '87vw' : '40vw',
             maxWidth: 600,
             bgcolor: 'white',
             outlineWidth: 0,
