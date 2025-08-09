@@ -27,8 +27,8 @@
         position: relative;
 
         .notification-count-bubble {
-          top: -9px;
-          right: -3px;
+          right: 2px;
+          bottom: 2px;
           position: absolute;
           background-color: globals.$primary-blue;
           color: #ffffff;
@@ -40,6 +40,12 @@
           justify-content: center;
           align-items: center;
           transition: all 0.3s ease;
+
+          @include globals.media-min('screens.md') {
+            top: -9px;
+            right: -3px;
+            bottom: inherit;
+          }
 
           &.new-notification {
             animation: pulse 1s ease-in-out 3;

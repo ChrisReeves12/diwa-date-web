@@ -9,7 +9,7 @@
     background-color: #ffffff;
     position: sticky;
     z-index: 5;
-    top: 145px;
+    top: 116px;
     padding-right: 6px;
 
     @include globals.media-min('screens.md') {
@@ -82,7 +82,8 @@
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 6px 8px;;
+          padding: 6px 8px;
+          ;
           border: 1px solid globals.$primary-blue;
           background-color: white;
           color: globals.$primary-blue;
@@ -129,7 +130,7 @@
   }
 
   .search-results-section {
-    padding-top: 16px;
+    padding-top: 25px;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -138,6 +139,7 @@
     padding-left: 8px;
 
     @include globals.media-min('screens.md') {
+      padding-top: 10px;
       padding-right: 0;
       padding-left: 0;
     }

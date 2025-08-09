@@ -206,7 +206,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
     const confirmMatch = async () => {
         const sendUserMatchResult = await sendUserMatch(Number(userPreview.id));
         if (typeof sendUserMatchResult === 'object' && "error" in sendUserMatchResult) {
-            showAlert('An error occurred while sending user match confirmation.');
+            showAlert(sendUserMatchResult.error);
             return;
         }
 

@@ -7,7 +7,7 @@ import UserProfileAccountMenu from './user-profile-account-menu/user-profile-acc
 import * as React from 'react';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useCurrentUser } from '../context/current-user-context';
-import { userProfileLink } from '@/util';
+import { userProfileLink, showAlert } from '@/util';
 import _ from 'lodash';
 import { NotificationCenterData } from '@/types/notification-center-data.interface';
 import {
@@ -308,7 +308,11 @@ export default function NotificationCenter() {
                         setItemLoadingStates(prev => ({ ...prev, [pendingMatch.id]: true }));
                         setTimeout(async () => {
                             try {
-                                await sendUserMatch(pendingMatch.sender.id);
+                                const result = await sendUserMatch(pendingMatch.sender.id);
+                                if (typeof result === 'object' && result && 'error' in result) {
+                                    showAlert(result.error);
+                                    return;
+                                }
                                 const aData = await loadNotificationCenterData(currentUser);
                                 setNotificationsData(aData);
                                 if (aData.pendingMatches?.length === 0) {
