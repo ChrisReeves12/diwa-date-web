@@ -122,6 +122,9 @@
           button {
             border-radius: 50%;
             $notification-list-item-btn-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
             width: $notification-list-item-btn-size;
             height: $notification-list-item-btn-size;

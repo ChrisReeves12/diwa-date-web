@@ -12,9 +12,10 @@
 
   .likes-filters-section {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
     padding: 15px;
     background-color: globals.$light-background-color;
     border-bottom: 1px solid #bfbfbf;
@@ -22,15 +23,43 @@
     z-index: 5;
     top: 145px;
 
+    @include globals.media-min('screens.md') {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0;
+    }
+
     .filter-section {
       display: flex;
       flex-direction: column;
       gap: 10px;
+      width: 100%;
+
+      @include globals.media-min('screens.md') {
+        width: auto;
+      }
 
       .age-order-by-container {
         display: flex;
-        gap: 20px;
-        align-items: center;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+
+        @include globals.media-min('screens.md') {
+          flex-direction: row;
+          gap: 20px;
+          align-items: center;
+          width: auto;
+        }
+
+        .filter {
+          width: 100%;
+
+          @include globals.media-min('screens.md') {
+            width: auto;
+          }
+        }
       }
 
       .filter {
@@ -58,7 +87,15 @@
 
     .paginator-section {
       display: flex;
-      justify-content: flex-end;
+      width: 100%;
+      justify-content: center;
+      margin-top: 10px;
+
+      @include globals.media-min('screens.md') {
+        width: auto;
+        justify-content: flex-end;
+        margin-top: 0;
+      }
     }
   }
 
@@ -67,6 +104,11 @@
     flex-wrap: wrap;
     gap: 15px;
     margin-bottom: 20px;
+    padding: 8px;
+
+    @include globals.media-min('screens.md') {
+      padding: 0;
+    }
 
     .no-likes-notice {
       padding-top: 30px;
@@ -92,32 +134,4 @@
     justify-content: center;
   }
 
-  // Responsive styles
-  @media (max-width: 768px) {
-    .likes-filters-section {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 15px;
-
-      .filter-section {
-        width: 100%;
-
-        .age-order-by-container {
-          flex-direction: column;
-          align-items: flex-start;
-          width: 100%;
-
-          .filter {
-            width: 100%;
-          }
-        }
-      }
-
-      .paginator-section {
-        width: 100%;
-        justify-content: center;
-        margin-top: 10px;
-      }
-    }
-  }
 }
