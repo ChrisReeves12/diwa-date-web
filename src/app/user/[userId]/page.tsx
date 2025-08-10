@@ -19,7 +19,6 @@ const getLoggedInUser = cache(async () => {
 const getUserProfile = cache(async (userId: string) => {
     const currentUser = await getLoggedInUser();
     if (!currentUser) {
-        // Return a more specific type for error cases
         return { statusCode: 401, error: "Not authenticated", userProfileDetails: undefined };
     }
 

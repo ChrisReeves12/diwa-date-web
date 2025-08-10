@@ -65,6 +65,7 @@ export default function ChatView({ currentUser, matchDetails }: ChatViewProps) {
     const messageListRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const needsFocusRef = useRef(false);
+    const isMobile = window.innerWidth <= 768;
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [messagesLoading, setMessagesLoading] = useState(true);
