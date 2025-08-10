@@ -65,37 +65,42 @@
       }
 
       .input-container {
-          select {
-              border: none;
-              border-bottom: 1px solid #ccc;
-              padding: 5px 0;
-              width: 100%;
-              background-color: transparent;
-              font-size: 16px;
+        &.order-by-container {
+          padding-bottom: 0;
+          max-width: 170px;
+        }
 
-              &:focus {
-                  outline: none;
-                  border-bottom-color: #4a90e2;
-              }
+        select {
+          border: none;
+          border-bottom: 1px solid #ccc;
+          padding: 5px 0;
+          width: 100%;
+          background-color: transparent;
+          font-size: 16px;
 
-              &.underlined-select {
-                  border: none;
-                  border-bottom: 1px solid #ccc;
-                  padding: 8px 0;
-                  width: 100%;
-                  background-color: transparent;
-                  font-size: 16px;
-                  appearance: none;
-                  background-image: url("data:image/svg+xml;utf8,<svg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
-                  background-repeat: no-repeat;
-                  background-position: right center;
-
-                  &:focus {
-                      outline: none;
-                      border-bottom-color: #4a90e2;
-                  }
-              }
+          &:focus {
+            outline: none;
+            border-bottom-color: #4a90e2;
           }
+
+          &.underlined-select {
+            border: none;
+            border-bottom: 1px solid #ccc;
+            padding: 8px 0;
+            width: 100%;
+            background-color: transparent;
+            font-size: 16px;
+            appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right center;
+
+            &:focus {
+              outline: none;
+              border-bottom-color: #4a90e2;
+            }
+          }
+        }
       }
 
       .location-input-container {

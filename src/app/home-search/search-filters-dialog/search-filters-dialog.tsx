@@ -55,6 +55,7 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
     const [isSaving, setIsSaving] = useState<boolean>(false);
 
     const searchSortBy = (searchParams.get('sortBy') || SearchSortBy.LastActive) as SearchSortBy;
+    const [sortBy, setSortBy] = useState<SearchSortBy>(searchSortBy);
 
     const onSubmit = () => {
         // Validate that a location is selected if SingleLocation is chosen
@@ -69,6 +70,11 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
             showAlert('Please select at least one country before applying filters');
             return;
         }
+
+        // Reflect selected sort in URL
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('sortBy', sortBy);
+        history.pushState({}, '', `?${params.toString()}`);
 
         setIsSaving(true);
         updateUserSearchPreferences({
@@ -92,7 +98,7 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
             seekingDistanceOrigin: seekingDistanceOrigin,
             seekingMaxDistance: seekingMaxDistance,
             searchFromLocation: seekingDistanceOrigin === SearchFromOrigin.SingleLocation ? singleSearchLocation : undefined
-        }, searchSortBy).then((searchResponse) => {
+        }, sortBy).then((searchResponse) => {
             onApply(searchResponse);
             onClose();
         }).catch((error) => {
@@ -115,6 +121,19 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                     </div>
                 </div>
                 <div className="dialog-body">
+                    <div className="input-container">
+                        <label>Order By</label>
+                        <div className="input-container order-by-container">
+                            <select value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value as SearchSortBy)}
+                                className="order-by">
+                                <option value={SearchSortBy.LastActive}>Last Active</option>
+                                <option value={SearchSortBy.Newest}>Newest Member</option>
+                                <option value={SearchSortBy.Age}>Age</option>
+                                <option value={SearchSortBy.NumberOfPhotos}>Photo Count</option>
+                            </select>
+                        </div>
+                    </div>
                     <div className="input-container">
                         <label>Age</label>
                         <AgeRangeSelect minAge={seekingMinAge} maxAge={seekingMaxAge} onChange={(newValues) => {
@@ -193,20 +212,20 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                                     label="Any" />
                                 {_.toPairs(businessConfig.options.bodyTypes).map((bodyType) =>
                                     <FormControlLabel key={bodyType[0]}
-                                                      control={<Checkbox
-                                                          onChange={(e: any) => {
-                                                              if (e.target.checked) {
-                                                                  setBodyTypePreferences((prevState) =>
-                                                                      [...(prevState || []), bodyType[0]]);
-                                                              } else {
-                                                                  setBodyTypePreferences((prevState) =>
-                                                                      (prevState || []).filter(aBodyType => aBodyType !== bodyType[0])
-                                                                  );
-                                                              }
-                                                          }}
-                                                          checked={bodyTypePreferences?.includes(bodyType[0]) ?? false}
-                                                          disabled={!currentUser.isPremium} />}
-                                                      label={bodyType[1]} />)}
+                                        control={<Checkbox
+                                            onChange={(e: any) => {
+                                                if (e.target.checked) {
+                                                    setBodyTypePreferences((prevState) =>
+                                                        [...(prevState || []), bodyType[0]]);
+                                                } else {
+                                                    setBodyTypePreferences((prevState) =>
+                                                        (prevState || []).filter(aBodyType => aBodyType !== bodyType[0])
+                                                    );
+                                                }
+                                            }}
+                                            checked={bodyTypePreferences?.includes(bodyType[0]) ?? false}
+                                            disabled={!currentUser.isPremium} />}
+                                        label={bodyType[1]} />)}
                             </FormGroup>
                         </div>
                         <div className="input-container">
@@ -224,20 +243,20 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                                     label="Any" />
                                 {_.toPairs(businessConfig.options.languages).map((language) =>
                                     <FormControlLabel key={language[0]}
-                                                      control={<Checkbox
-                                                          onChange={(e: any) => {
-                                                              if (e.target.checked) {
-                                                                  setLanguagePreferences((prevState) =>
-                                                                      [...(prevState || []), language[0]]);
-                                                              } else {
-                                                                  setLanguagePreferences((prevState) =>
-                                                                      (prevState || []).filter(aLanguage => aLanguage !== language[0])
-                                                                  );
-                                                              }
-                                                          }}
-                                                          checked={languagePreferences?.includes(language[0]) ?? false}
-                                                          disabled={!currentUser.isPremium} />}
-                                                      label={language[1]} />)}
+                                        control={<Checkbox
+                                            onChange={(e: any) => {
+                                                if (e.target.checked) {
+                                                    setLanguagePreferences((prevState) =>
+                                                        [...(prevState || []), language[0]]);
+                                                } else {
+                                                    setLanguagePreferences((prevState) =>
+                                                        (prevState || []).filter(aLanguage => aLanguage !== language[0])
+                                                    );
+                                                }
+                                            }}
+                                            checked={languagePreferences?.includes(language[0]) ?? false}
+                                            disabled={!currentUser.isPremium} />}
+                                        label={language[1]} />)}
                             </FormGroup>
                         </div>
                         <div className="input-container">
@@ -255,20 +274,20 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                                     label="Any" />
                                 {_.toPairs(businessConfig.options.educationLevels).map((education) =>
                                     <FormControlLabel key={education[0]}
-                                                      control={<Checkbox
-                                                          onChange={(e: any) => {
-                                                              if (e.target.checked) {
-                                                                  setEducationPreferences((prevState) =>
-                                                                      [...(prevState || []), education[0]]);
-                                                              } else {
-                                                                  setEducationPreferences((prevState) =>
-                                                                      (prevState || []).filter(anEducation => anEducation !== education[0])
-                                                                  );
-                                                              }
-                                                          }}
-                                                          checked={educationPreferences?.includes(education[0]) ?? false}
-                                                          disabled={!currentUser.isPremium} />}
-                                                      label={education[1]} />)}
+                                        control={<Checkbox
+                                            onChange={(e: any) => {
+                                                if (e.target.checked) {
+                                                    setEducationPreferences((prevState) =>
+                                                        [...(prevState || []), education[0]]);
+                                                } else {
+                                                    setEducationPreferences((prevState) =>
+                                                        (prevState || []).filter(anEducation => anEducation !== education[0])
+                                                    );
+                                                }
+                                            }}
+                                            checked={educationPreferences?.includes(education[0]) ?? false}
+                                            disabled={!currentUser.isPremium} />}
+                                        label={education[1]} />)}
                             </FormGroup>
                         </div>
                         <div className="input-container">
@@ -286,20 +305,20 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                                     label="Any" />
                                 {_.toPairs(businessConfig.options.ethnicities).map((ethnicity) =>
                                     <FormControlLabel key={ethnicity[0]}
-                                                      control={<Checkbox
-                                                          onChange={(e: any) => {
-                                                              if (e.target.checked) {
-                                                                  setEthnicPreferences((prevState) =>
-                                                                      [...(prevState || []), ethnicity[0]]);
-                                                              } else {
-                                                                  setEthnicPreferences((prevState) =>
-                                                                      (prevState || []).filter(anEthnicity => anEthnicity !== ethnicity[0])
-                                                                  );
-                                                              }
-                                                          }}
-                                                          checked={ethnicPreferences?.includes(ethnicity[0]) ?? false}
-                                                          disabled={!currentUser.isPremium} />}
-                                                      label={ethnicity[1]} />)}
+                                        control={<Checkbox
+                                            onChange={(e: any) => {
+                                                if (e.target.checked) {
+                                                    setEthnicPreferences((prevState) =>
+                                                        [...(prevState || []), ethnicity[0]]);
+                                                } else {
+                                                    setEthnicPreferences((prevState) =>
+                                                        (prevState || []).filter(anEthnicity => anEthnicity !== ethnicity[0])
+                                                    );
+                                                }
+                                            }}
+                                            checked={ethnicPreferences?.includes(ethnicity[0]) ?? false}
+                                            disabled={!currentUser.isPremium} />}
+                                        label={ethnicity[1]} />)}
                             </FormGroup>
                         </div>
                         <div className="input-container">
@@ -317,20 +336,20 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                                     label="Any" />
                                 {_.toPairs(businessConfig.options.maritalStatuses).map((maritalStatus) =>
                                     <FormControlLabel key={maritalStatus[0]}
-                                                      control={<Checkbox
-                                                          onChange={(e: any) => {
-                                                              if (e.target.checked) {
-                                                                  setMaritalStatusPreferences((prevState) =>
-                                                                      [...(prevState || []), maritalStatus[0]]);
-                                                              } else {
-                                                                  setMaritalStatusPreferences((prevState) =>
-                                                                      (prevState || []).filter(aMaritalStatus => aMaritalStatus !== maritalStatus[0])
-                                                                  );
-                                                              }
-                                                          }}
-                                                          checked={maritalStatusPreferences?.includes(maritalStatus[0]) ?? false}
-                                                          disabled={!currentUser.isPremium} />}
-                                                      label={maritalStatus[1]} />)}
+                                        control={<Checkbox
+                                            onChange={(e: any) => {
+                                                if (e.target.checked) {
+                                                    setMaritalStatusPreferences((prevState) =>
+                                                        [...(prevState || []), maritalStatus[0]]);
+                                                } else {
+                                                    setMaritalStatusPreferences((prevState) =>
+                                                        (prevState || []).filter(aMaritalStatus => aMaritalStatus !== maritalStatus[0])
+                                                    );
+                                                }
+                                            }}
+                                            checked={maritalStatusPreferences?.includes(maritalStatus[0]) ?? false}
+                                            disabled={!currentUser.isPremium} />}
+                                        label={maritalStatus[1]} />)}
                             </FormGroup>
                         </div>
                         <div className="input-container">
@@ -348,20 +367,20 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                                     label="Any" />
                                 {_.toPairs(businessConfig.options.religions).map((religion) =>
                                     <FormControlLabel key={religion[0]}
-                                                      control={<Checkbox
-                                                          onChange={(e: any) => {
-                                                              if (e.target.checked) {
-                                                                  setReligiousPreferences((prevState) =>
-                                                                      [...(prevState || []), religion[0]]);
-                                                              } else {
-                                                                  setReligiousPreferences((prevState) =>
-                                                                      (prevState || []).filter(aReligion => aReligion !== religion[0])
-                                                                  );
-                                                              }
-                                                          }}
-                                                          checked={religiousPreferences?.includes(religion[0]) ?? false}
-                                                          disabled={!currentUser.isPremium} />}
-                                                      label={religion[1]} />)}
+                                        control={<Checkbox
+                                            onChange={(e: any) => {
+                                                if (e.target.checked) {
+                                                    setReligiousPreferences((prevState) =>
+                                                        [...(prevState || []), religion[0]]);
+                                                } else {
+                                                    setReligiousPreferences((prevState) =>
+                                                        (prevState || []).filter(aReligion => aReligion !== religion[0])
+                                                    );
+                                                }
+                                            }}
+                                            checked={religiousPreferences?.includes(religion[0]) ?? false}
+                                            disabled={!currentUser.isPremium} />}
+                                        label={religion[1]} />)}
                             </FormGroup>
                         </div>
                         <div className="input-container">
@@ -379,20 +398,20 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                                     label="Any" />
                                 {_.toPairs(businessConfig.options.hasChildrenStatuses).map((hasChildren) =>
                                     <FormControlLabel key={hasChildren[0]}
-                                                      control={<Checkbox
-                                                          onChange={(e: any) => {
-                                                              if (e.target.checked) {
-                                                                  setHasChildrenPreferences((prevState) =>
-                                                                      [...(prevState || []), hasChildren[0]]);
-                                                              } else {
-                                                                  setHasChildrenPreferences((prevState) =>
-                                                                      (prevState || []).filter(aHasChildren => aHasChildren !== hasChildren[0])
-                                                                  );
-                                                              }
-                                                          }}
-                                                          checked={hasChildrenPreferences?.includes(hasChildren[0]) ?? false}
-                                                          disabled={!currentUser.isPremium} />}
-                                                      label={hasChildren[1]} />)}
+                                        control={<Checkbox
+                                            onChange={(e: any) => {
+                                                if (e.target.checked) {
+                                                    setHasChildrenPreferences((prevState) =>
+                                                        [...(prevState || []), hasChildren[0]]);
+                                                } else {
+                                                    setHasChildrenPreferences((prevState) =>
+                                                        (prevState || []).filter(aHasChildren => aHasChildren !== hasChildren[0])
+                                                    );
+                                                }
+                                            }}
+                                            checked={hasChildrenPreferences?.includes(hasChildren[0]) ?? false}
+                                            disabled={!currentUser.isPremium} />}
+                                        label={hasChildren[1]} />)}
                             </FormGroup>
                         </div>
                         <div className="row-container">
@@ -411,20 +430,20 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                                         label="Any" />
                                     {_.toPairs(businessConfig.options.drinkingStatuses).map((drinking) =>
                                         <FormControlLabel key={drinking[0]}
-                                                          control={<Checkbox
-                                                              onChange={(e: any) => {
-                                                                  if (e.target.checked) {
-                                                                      setDrinkingPreferences((prevState) =>
-                                                                          [...(prevState || []), drinking[0]]);
-                                                                  } else {
-                                                                      setDrinkingPreferences((prevState) =>
-                                                                          (prevState || []).filter(aDrinking => aDrinking !== drinking[0])
-                                                                      );
-                                                                  }
-                                                              }}
-                                                              checked={drinkingPreferences?.includes(drinking[0]) ?? false}
-                                                              disabled={!currentUser.isPremium} />}
-                                                          label={drinking[1]} />)}
+                                            control={<Checkbox
+                                                onChange={(e: any) => {
+                                                    if (e.target.checked) {
+                                                        setDrinkingPreferences((prevState) =>
+                                                            [...(prevState || []), drinking[0]]);
+                                                    } else {
+                                                        setDrinkingPreferences((prevState) =>
+                                                            (prevState || []).filter(aDrinking => aDrinking !== drinking[0])
+                                                        );
+                                                    }
+                                                }}
+                                                checked={drinkingPreferences?.includes(drinking[0]) ?? false}
+                                                disabled={!currentUser.isPremium} />}
+                                            label={drinking[1]} />)}
                                 </FormGroup>
                             </div>
 
@@ -443,20 +462,20 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                                         label="Any" />
                                     {_.toPairs(businessConfig.options.smokingStatuses).map((smoking) =>
                                         <FormControlLabel key={smoking[0]}
-                                                          control={<Checkbox
-                                                              onChange={(e: any) => {
-                                                                  if (e.target.checked) {
-                                                                      setSmokingPreferences((prevState) =>
-                                                                          [...(prevState || []), smoking[0]]);
-                                                                  } else {
-                                                                      setSmokingPreferences((prevState) =>
-                                                                          (prevState || []).filter(aSmoking => aSmoking !== smoking[0])
-                                                                      );
-                                                                  }
-                                                              }}
-                                                              checked={smokingPreferences?.includes(smoking[0]) ?? false}
-                                                              disabled={!currentUser.isPremium} />}
-                                                          label={smoking[1]} />)}
+                                            control={<Checkbox
+                                                onChange={(e: any) => {
+                                                    if (e.target.checked) {
+                                                        setSmokingPreferences((prevState) =>
+                                                            [...(prevState || []), smoking[0]]);
+                                                    } else {
+                                                        setSmokingPreferences((prevState) =>
+                                                            (prevState || []).filter(aSmoking => aSmoking !== smoking[0])
+                                                        );
+                                                    }
+                                                }}
+                                                checked={smokingPreferences?.includes(smoking[0]) ?? false}
+                                                disabled={!currentUser.isPremium} />}
+                                            label={smoking[1]} />)}
                                 </FormGroup>
                             </div>
 
@@ -475,20 +494,20 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                                         label="Any" />
                                     {_.toPairs(businessConfig.options.wantsChildrenStatuses).map((wantsChildren) =>
                                         <FormControlLabel key={wantsChildren[0]}
-                                                          control={<Checkbox
-                                                              onChange={(e: any) => {
-                                                                  if (e.target.checked) {
-                                                                      setWantsChildrenPreferences((prevState) =>
-                                                                          [...(prevState || []), wantsChildren[0]]);
-                                                                  } else {
-                                                                      setWantsChildrenPreferences((prevState) =>
-                                                                          (prevState || []).filter(aWantsChildren => aWantsChildren !== wantsChildren[0])
-                                                                      );
-                                                                  }
-                                                              }}
-                                                              checked={wantsChildrenPreferences?.includes(wantsChildren[0]) ?? false}
-                                                              disabled={!currentUser.isPremium} />}
-                                                          label={wantsChildren[1]} />)}
+                                            control={<Checkbox
+                                                onChange={(e: any) => {
+                                                    if (e.target.checked) {
+                                                        setWantsChildrenPreferences((prevState) =>
+                                                            [...(prevState || []), wantsChildren[0]]);
+                                                    } else {
+                                                        setWantsChildrenPreferences((prevState) =>
+                                                            (prevState || []).filter(aWantsChildren => aWantsChildren !== wantsChildren[0])
+                                                        );
+                                                    }
+                                                }}
+                                                checked={wantsChildrenPreferences?.includes(wantsChildren[0]) ?? false}
+                                                disabled={!currentUser.isPremium} />}
+                                            label={wantsChildren[1]} />)}
                                 </FormGroup>
                             </div>
                         </div>
@@ -507,20 +526,20 @@ export default function SearchFiltersDialog({ currentUser, onApply, onClose }: S
                                     label="Any" />
                                 {_.toPairs(businessConfig.options.interests).map((interest) =>
                                     <FormControlLabel key={interest[0]}
-                                                      control={<Checkbox
-                                                          onChange={(e: any) => {
-                                                              if (e.target.checked) {
-                                                                  setInterestPreferences((prevState) =>
-                                                                      [...(prevState || []), interest[0]]);
-                                                              } else {
-                                                                  setInterestPreferences((prevState) =>
-                                                                      (prevState || []).filter(anInterest => anInterest !== interest[0])
-                                                                  );
-                                                              }
-                                                          }}
-                                                          checked={interestPreferences?.includes(interest[0]) ?? false}
-                                                          disabled={!currentUser.isPremium} />}
-                                                      label={`${interest[1].emoji} ${interest[1].label}`} />)}
+                                        control={<Checkbox
+                                            onChange={(e: any) => {
+                                                if (e.target.checked) {
+                                                    setInterestPreferences((prevState) =>
+                                                        [...(prevState || []), interest[0]]);
+                                                } else {
+                                                    setInterestPreferences((prevState) =>
+                                                        (prevState || []).filter(anInterest => anInterest !== interest[0])
+                                                    );
+                                                }
+                                            }}
+                                            checked={interestPreferences?.includes(interest[0]) ?? false}
+                                            disabled={!currentUser.isPremium} />}
+                                        label={`${interest[1].emoji} ${interest[1].label}`} />)}
                             </FormGroup>
                         </div>
                     </div>

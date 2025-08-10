@@ -8,9 +8,11 @@ const nextConfig: NextConfig = {
 
   // Use server external packages instead of the deprecated option
   serverExternalPackages: [],
-  
+
+  devIndicators: false,
+
   // We won't modify webpack devtool as it causes performance issues
-  
+
   // Polyfill for Node.js modules that might be needed in client components
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -20,7 +22,7 @@ const nextConfig: NextConfig = {
         dns: false
       };
     }
-    
+
     return config;
   },
 };

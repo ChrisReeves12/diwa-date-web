@@ -11,6 +11,7 @@ import { getChatMessages, sendChatMessage, markChatAsRead } from "../messages.ac
 import { useWebSocket } from '@/hooks/use-websocket';
 import { isToday, formatChatDate } from '@/server-side-helpers/time.helpers';
 import { isUserOnline } from '@/helpers/user.helpers';
+import { ArrowLeftIcon } from 'react-line-awesome';
 
 interface MatchDetails {
     matchId: number;
@@ -454,7 +455,7 @@ export default function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                         onClick={handleBackClick}
                         aria-label="Back to conversations"
                     >
-                        ←
+                        <ArrowLeftIcon />
                     </button>
 
                     <Link href={`/user/${otherUser.id}`} className="user-info">
@@ -555,15 +556,15 @@ export default function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                                                 </div>
                                                 {/* Show seen indicator for the last message from current user */}
                                                 {message.isFromCurrentUser &&
-                                                 message.id === messages[messages.length - 1]?.id &&
-                                                 message.readAt && (
-                                                    <div className="seen-indicator">
-                                                        <span className="seen-text">Seen</span>
-                                                        <span className="seen-time">
-                                                            {formatMessageTime(message.readAt)}
-                                                        </span>
-                                                    </div>
-                                                )}
+                                                    message.id === messages[messages.length - 1]?.id &&
+                                                    message.readAt && (
+                                                        <div className="seen-indicator">
+                                                            <span className="seen-text">Seen</span>
+                                                            <span className="seen-time">
+                                                                {formatMessageTime(message.readAt)}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                             </div>
                                         ))}
                                     </div>
