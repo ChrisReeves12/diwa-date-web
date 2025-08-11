@@ -25,7 +25,7 @@ export default async function PersonalInformationPage() {
                 <div className="profile-settings-container">
                     <div className="container">
                         <UserSubscriptionPlanDisplay />
-                        <h2>Profile | Personal Information</h2>
+                        <h2>Personal Information</h2>
                         <ProfileSettingsTabs selectedTab="personal-information" />
                         <PersonalInformationForm currentUser={currentUser} />
                     </div>

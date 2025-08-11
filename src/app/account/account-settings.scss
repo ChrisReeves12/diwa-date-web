@@ -1,6 +1,16 @@
+@use '../../styles/globals.scss' as globals;
+
 .account-settings-form-container {
-  padding-top: 38px;
+  padding-top: 20px;
   padding-bottom: 50px;
+
+  h2 {
+    padding-left: 16px;
+
+    @include globals.media-min('screens.md') {
+      padding-left: 0;
+    }
+  }
 
   label {
     font-weight: bold;
@@ -741,10 +751,15 @@
   }
 }
 
-// Security settings specific styles
 .security-settings {
+  padding-top: 25px;
 
-  // Settings row for side-by-side layout
+  .email-update-container {
+    form {
+      max-width: 360px;
+    }
+  }
+
   .settings-row {
     display: flex;
     gap: 30px;

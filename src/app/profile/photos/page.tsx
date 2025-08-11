@@ -25,7 +25,7 @@ export default async function PhotosPage() {
                 <div className="profile-settings-container">
                     <div className="container">
                         <UserSubscriptionPlanDisplay />
-                        <h2>Profile | Photos</h2>
+                        <h2>Photos</h2>
                         <ProfileSettingsTabs selectedTab="photos" />
                         <PhotosManagement currentUser={currentUser} />
                     </div>

@@ -316,12 +316,12 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
     return (
         <CurrentUserProvider currentUser={currentUser}>
             <SiteWrapper>
-                <div className="account-settings-container">
+                <div className="account-settings-form-container">
                     <div className="container">
                         <UserSubscriptionPlanDisplay />
-                        <h2>Account | General Settings</h2>
+                        <h2>General Settings</h2>
                         <AccountSettingsTabs selectedTab={'user-settings'} />
-                        <div className="account-settings-form-container security-settings">
+                        <div className="security-settings">
 
                             {/* Success Message */}
                             {successMessage && (

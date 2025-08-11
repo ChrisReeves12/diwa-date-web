@@ -45,6 +45,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
     const [showImageViewer, setShowImageViewer] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showReportDialog, setShowReportDialog] = useState(false);
+    const [showBioModal, setShowBioModal] = useState(false);
     const imageViewerRef = useRef<HTMLDivElement>(null);
     const { on, off, isConnected } = useWebSocket();
 
@@ -317,6 +318,111 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         setShowReportDialog(true);
     };
 
+    const ButtonsContainer = ({ containerName }: { containerName: string }) => {
+        return (
+            <div className={containerName}>
+                {userProfile.matchStatus === 'pending' && !userProfile.matchIsTowardsMe ? (
+                    <button
+                        disabled={isUpdatingMatch}
+                        onClick={onCancelMatchClick}
+                        className="request-match">
+                        {isUpdatingMatch ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
+                            <HeartBrokenIcon />
+                            <div className="label">Cancel Match Request</div>
+                        </>}
+                    </button>
+                ) : userProfile.matchStatus === 'pending' && userProfile.matchIsTowardsMe ? (
+                    <>
+                        <button
+                            disabled={isUpdatingMatch}
+                            onClick={onRequestMatchClick}
+                            className="request-match"
+                        >
+                            {isUpdatingMatch ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
+                                <HeartIcon />
+                                <div className="label">Accept Match</div>
+                            </>}
+                        </button>
+                        <button
+                            disabled={isUpdatingMatch}
+                            onClick={onIgnoreMatchClick}
+                            className="reject-match"
+                        >
+                            {isUpdatingMatch ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
+                                <TimesIcon />
+                                <div className="label">Pass</div>
+                            </>}
+                        </button>
+                    </>
+                ) : userProfile.matchStatus === 'matched' ? (
+                    <>
+                        <div className="matched">
+                            <CheckCircleIcon />
+                            <div className="label">Matched</div>
+                        </div>
+
+                        {userProfile.matchId && (
+                            <Link href={`/messages/${userProfile.matchId}`} className="request-match">
+                                <CommentsIcon />
+                                <div className="label">Send Message</div>
+                            </Link>
+                        )}
+                    </>
+                ) : (
+                    <button
+                        disabled={isUpdatingMatch}
+                        onClick={onRequestMatchClick}
+                        className="request-match">
+                        {isUpdatingMatch ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
+                            <HeartIcon />
+                            <div className="label">Like</div>
+                        </>}
+                    </button>
+                )}
+
+                <div className="cancel-block-button-container">
+                    {!userProfile.blockedThem ? (
+                        <button
+                            disabled={isBlockingOrUnBlocking}
+                            onClick={onBlockUserClick}
+                            className="block-user"
+                        >
+                            {isBlockingOrUnBlocking ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
+                                <BanIcon />
+                                <div className="label">Block User</div>
+                            </>}
+                        </button>
+                    ) : (
+                        <button
+                            disabled={isBlockingOrUnBlocking}
+                            onClick={onUnBlockUserClick}
+                            className="block-user">
+                            {isBlockingOrUnBlocking ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
+                                <UnlockIcon />
+                                <div className="label">Unblock User</div>
+                            </>}
+                        </button>
+                    )}
+
+                    <button
+                        className="report-user"
+                        onClick={onReportUserClick}
+                    >
+                        <ExclamationTriangleIcon />
+                        <div className="label">Report User</div>
+                    </button>
+                </div>
+            </div>
+        )
+    };
+
+    const onReadMoreBio = (e: any) => {
+        e.preventDefault();
+        setShowBioModal(true);
+    };
+
+    const showReadMoreBio = (userProfile.user.bio || '').length > 450;
+
     return (
         <CurrentUserProvider currentUser={currentUser}>
             <SiteTopBar />
@@ -426,101 +532,8 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                             </div>
                                         </div>
 
-                                        {/* Don't show buttons when viewing your own profile */}
                                         {userProfile.user.id !== currentUser.id && (
-                                            <div className="buttons-container">
-                                                {userProfile.matchStatus === 'pending' && !userProfile.matchIsTowardsMe ? (
-                                                    <button
-                                                        disabled={isUpdatingMatch}
-                                                        onClick={onCancelMatchClick}
-                                                        className="request-match">
-                                                        {isUpdatingMatch ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
-                                                            <HeartBrokenIcon />
-                                                            <div className="label">Cancel Match Request</div>
-                                                        </>}
-                                                    </button>
-                                                ) : userProfile.matchStatus === 'pending' && userProfile.matchIsTowardsMe ? (
-                                                    <>
-                                                        <button
-                                                            disabled={isUpdatingMatch}
-                                                            onClick={onRequestMatchClick}
-                                                            className="request-match"
-                                                        >
-                                                            {isUpdatingMatch ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
-                                                                <HeartIcon />
-                                                                <div className="label">Accept Match</div>
-                                                            </>}
-                                                        </button>
-                                                        <button
-                                                            disabled={isUpdatingMatch}
-                                                            onClick={onIgnoreMatchClick}
-                                                            className="reject-match"
-                                                        >
-                                                            {isUpdatingMatch ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
-                                                                <TimesIcon />
-                                                                <div className="label">Pass</div>
-                                                            </>}
-                                                        </button>
-                                                    </>
-                                                ) : userProfile.matchStatus === 'matched' ? (
-                                                    <>
-                                                        <div className="matched">
-                                                            <CheckCircleIcon />
-                                                            <div className="label">Matched</div>
-                                                        </div>
-
-                                                        {userProfile.matchId && (
-                                                            <Link href={`/messages/${userProfile.matchId}`} className="request-match">
-                                                                <CommentsIcon />
-                                                                <div className="label">Send Message</div>
-                                                            </Link>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <button
-                                                        disabled={isUpdatingMatch}
-                                                        onClick={onRequestMatchClick}
-                                                        className="request-match">
-                                                        {isUpdatingMatch ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
-                                                            <HeartIcon />
-                                                            <div className="label">Like</div>
-                                                        </>}
-                                                    </button>
-                                                )}
-
-                                                <div className="cancel-block-button-container">
-                                                    {!userProfile.blockedThem ? (
-                                                        <button
-                                                            disabled={isBlockingOrUnBlocking}
-                                                            onClick={onBlockUserClick}
-                                                            className="block-user"
-                                                        >
-                                                            {isBlockingOrUnBlocking ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
-                                                                <BanIcon />
-                                                                <div className="label">Block User</div>
-                                                            </>}
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            disabled={isBlockingOrUnBlocking}
-                                                            onClick={onUnBlockUserClick}
-                                                            className="block-user">
-                                                            {isBlockingOrUnBlocking ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : <>
-                                                                <UnlockIcon />
-                                                                <div className="label">Unblock User</div>
-                                                            </>}
-                                                        </button>
-                                                    )}
-
-                                                    <button
-                                                        className="report-user"
-                                                        onClick={onReportUserClick}
-                                                    >
-                                                        <ExclamationTriangleIcon />
-                                                        <div className="label">Report User</div>
-                                                    </button>
-                                                </div>
-                                            </div>
+                                            <ButtonsContainer containerName={'buttons-container'}/>
                                         )}
                                     </div>
                                 </div>
@@ -554,7 +567,10 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                         <UserCircleIcon />
                                         <div className="title">Biography</div>
                                     </div>
-                                    <div className="bio">{userProfile.user.bio || 'No biography available yet.'}</div>
+                                    <div className="bio">
+                                        {_.truncate(userProfile.user.bio || 'No biography available yet.', {length: 450})}
+                                            {showReadMoreBio ? <button onClick={(e) => onReadMoreBio(e)} className={'read-more'}>Read More</button> : null}
+                                    </div>
 
                                     {userProfile.interestLabels?.length > 0 && (
                                         <>
@@ -576,11 +592,14 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                     )}
                                 </div>
                             </div>
+
+                            {userProfile.user.id !== currentUser.id && (
+                                <ButtonsContainer containerName={'buttons-container mobile'}/>
+                            )}
                         </div>
                     )}
                 </div>
 
-                {/* Full-screen Image Viewer */}
                 {showImageViewer && userProfile.user.publicPhotos && userProfile.user.publicPhotos.length > 0 && (
                     <div className="image-viewer-overlay" ref={imageViewerRef}>
                         <div className="image-viewer-content">
@@ -612,7 +631,6 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                     </div>
                 )}
 
-                {/* Report User Dialog */}
                 <ReportUserDialog
                     isOpen={showReportDialog}
                     onClose={() => setShowReportDialog(false)}
@@ -620,6 +638,25 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                     userName={userProfile.user.displayName}
                     onSuccess={refetchUserProfile}
                 />
+
+                {showBioModal && (
+                    <div className="bio-modal-overlay" onClick={() => setShowBioModal(false)}>
+                        <div className="bio-modal-content" onClick={(e) => e.stopPropagation()}>
+                            <div className="bio-modal-header">
+                                <h3>{userProfile.user.displayName}'s Biography</h3>
+                                <button 
+                                    className="bio-modal-close"
+                                    onClick={() => setShowBioModal(false)}
+                                >
+                                    <TimesIcon />
+                                </button>
+                            </div>
+                            <div className="bio-modal-body">
+                                <p>{userProfile.user.bio || 'No biography available yet.'}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </CurrentUserProvider>
     );
