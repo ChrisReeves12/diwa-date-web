@@ -1,8 +1,25 @@
 @use '../../styles/globals.scss' as globals;
 
+.account-settings-container {
+  h2 {
+    padding-top: 18px;
+    padding-left: 14px;
+  }
+}
+
 .account-settings-form-container {
   padding-top: 20px;
   padding-bottom: 50px;
+
+  .settings-section {
+    padding-right: 12px;
+    padding-left: 12px;
+
+    @include globals.media-min('screens.md') {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
 
   h2 {
     padding-left: 16px;
@@ -235,18 +252,31 @@
   }
 }
 
-// Billing settings specific styles
 .billing-settings {
+  form {
+    padding-bottom: 20px;
 
-  // Settings row for side-by-side layout
+    @include globals.media-min('screens.md') {
+      padding-bottom: 10px;
+    }
+  }
+
+  .billing-settings-submit-container {
+    text-align: center;
+
+    @include globals.media-min('screens.md') {
+      text-align: left;
+    }
+  }
+
   .settings-row {
     display: flex;
-    gap: 30px;
+    flex-direction: column;
     margin-bottom: 20px;
 
-    @media (max-width: 768px) {
-      flex-direction: column;
-      gap: 20px;
+    @include globals.media-min('screens.md') {
+      flex-direction: row;
+      gap: 30px;
     }
 
     .settings-section {
@@ -256,24 +286,30 @@
   }
 
   .settings-section {
-    margin-bottom: 20px;
-    margin-top: 30px;
-    padding: 20px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    margin-top: 20px;
     max-width: 500px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 34px;
+
+    @include globals.media-min('screens.md') {
+      border: 1px solid #e0e0e0;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      margin-top: 30px;
+    }
 
     &.membership-section {
       margin-top: 0;
     }
 
-    @media (prefers-color-scheme: dark) {
+    @include globals.dark-mode {
       border-color: #333;
     }
 
     h3 {
       margin-top: 0;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       color: #0092e4;
       font-size: 18px;
       font-weight: 600;
@@ -306,7 +342,7 @@
     border-radius: 6px;
     color: #155724;
 
-    @media (prefers-color-scheme: dark) {
+    @include globals.dark-mode {
       background-color: #1b5e20;
       border-color: #2e7d32;
       color: #4caf50;
@@ -321,7 +357,7 @@
     border-radius: 6px;
     color: #721c24;
 
-    @media (prefers-color-scheme: dark) {
+    @include globals.dark-mode {
       background-color: #5f2120;
       border-color: #d32f2f;
       color: #ff6b6b;
@@ -369,7 +405,7 @@
       display: block;
       cursor: pointer;
 
-      @media (prefers-color-scheme: dark) {
+      @include globals.dark-mode {
         border-bottom-color: #666;
         color: #fff;
       }
@@ -385,7 +421,7 @@
       margin-top: 5px;
       display: block;
 
-      @media (prefers-color-scheme: dark) {
+      @include globals.dark-mode {
         color: #ccc;
       }
     }
@@ -394,7 +430,7 @@
       label {
         color: #c30000;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           color: #ff0000;
         }
       }
@@ -406,7 +442,7 @@
       select {
         border-bottom-color: #c30000;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           border-bottom-color: #ff0000;
         }
       }
@@ -416,15 +452,16 @@
   // Split form row for expiry date
   .form-row-split {
     display: flex;
-    gap: 15px;
+    flex-direction: column;
+    gap: 20px;
 
     .input-container {
       flex: 1;
     }
 
-    @media (max-width: 480px) {
-      flex-direction: column;
-      gap: 20px;
+    @include globals.media-min('screens.sm') {
+      flex-direction: row;
+      gap: 15px;
     }
   }
 
@@ -436,7 +473,7 @@
     border-radius: 6px;
     border-left: 4px solid #0092e4;
 
-    @media (prefers-color-scheme: dark) {
+    @include globals.dark-mode {
       background-color: #2a2a2a;
     }
 
@@ -449,7 +486,7 @@
         font-size: 14px;
         color: #666;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           color: #ccc;
         }
       }
@@ -489,7 +526,7 @@
             cursor: not-allowed;
           }
 
-          @media (prefers-color-scheme: dark) {
+          @include globals.dark-mode {
             background-color: #f44336;
 
             &:hover:not(:disabled) {
@@ -509,7 +546,7 @@
     border-radius: 4px;
     border-left: 3px solid #4caf50;
 
-    @media (prefers-color-scheme: dark) {
+    @include globals.dark-mode {
       background-color: #1b5e20;
       border-left-color: #66bb6a;
     }
@@ -521,7 +558,7 @@
         color: #2e7d32;
         font-weight: 500;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           color: #81c784;
         }
       }
@@ -540,7 +577,7 @@
       border-radius: 8px;
       background-color: #fff;
 
-      @media (prefers-color-scheme: dark) {
+      @include globals.dark-mode {
         border-color: #333;
         background-color: #1a1a1a;
       }
@@ -549,7 +586,7 @@
         opacity: 0.6;
         background-color: #f9f9f9;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           background-color: #2a2a2a;
         }
       }
@@ -561,7 +598,7 @@
           font-size: 18px;
           font-weight: 600;
 
-          @media (prefers-color-scheme: dark) {
+          @include globals.dark-mode {
             color: #fff;
           }
         }
@@ -570,7 +607,7 @@
           margin: 0 0 15px 0;
           color: #666;
 
-          @media (prefers-color-scheme: dark) {
+          @include globals.dark-mode {
             color: #ccc;
           }
         }
@@ -584,7 +621,7 @@
     padding: 40px 20px;
     color: #666;
 
-    @media (prefers-color-scheme: dark) {
+    @include globals.dark-mode {
       color: #ccc;
     }
 
@@ -594,45 +631,86 @@
     }
   }
 
-  // Payment History Table
+  .payment-history-table-mobile {
+    display: block;
+
+    .payment-history-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 12px;
+      padding-top: 12px;
+      font-size: 14px;
+
+      .payment-history-info {
+        .payment-date {
+          padding-bottom: 8px;
+        }
+
+        .view-receipt {
+          padding-top: 8px;
+          color: globals.$primary-blue;
+        }
+      }
+
+      .payment-amount {
+        font-weight: bold;
+      }
+
+      &:last-of-type {
+        border-bottom: none;
+      }
+    }
+
+    @include globals.media-min('screens.md') {
+      display: none;
+    }
+  }
+
   .payment-history-table {
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     overflow: hidden;
     margin-bottom: 20px;
+    display: none;
 
-    @media (prefers-color-scheme: dark) {
+    @include globals.media-min('screens.md') {
+      display: block;
+    }
+
+    @include globals.dark-mode {
       border-color: #333;
     }
 
     .payment-history-header {
       display: grid;
-      grid-template-columns: 0.8fr 0.8fr 2.5fr 1.5fr 0.8fr 0.8fr;
+      grid-template-columns: 0.7fr 0.7fr 2fr 1.2fr 0.6fr 0.6fr;
       background-color: #f8f9fa;
       border-bottom: 1px solid #e0e0e0;
+      font-size: 14px;
 
-      @media (prefers-color-scheme: dark) {
+      @include globals.dark-mode {
         background-color: #2a2a2a;
         border-bottom-color: #333;
       }
 
-      @media (max-width: 768px) {
-        grid-template-columns: 0.7fr 0.7fr 2fr 1.2fr 0.6fr 0.6fr;
-        font-size: 14px;
+      @include globals.media-min('screens.md') {
+        grid-template-columns: 0.8fr 0.8fr 2.5fr 1.5fr 0.8fr 0.8fr;
+        font-size: inherit;
       }
 
       .header-cell {
-        padding: 15px 20px;
+        padding: 12px 15px;
         font-weight: 600;
         color: #333;
         text-align: left;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           color: #fff;
         }
 
-        @media (max-width: 768px) {
-          padding: 12px 15px;
+        @include globals.media-min('screens.md') {
+          padding: 15px 20px;
         }
 
         &.total-col,
@@ -644,17 +722,18 @@
 
     .payment-history-row {
       display: grid;
-      grid-template-columns: 0.8fr 0.8fr 2.5fr 1.5fr 0.8fr 0.8fr;
+      grid-template-columns: 0.7fr 0.7fr 2fr 1.2fr 0.6fr 0.6fr;
       border-bottom: 1px solid #f0f0f0;
       align-items: center;
+      font-size: 14px;
 
-      @media (prefers-color-scheme: dark) {
+      @include globals.dark-mode {
         border-bottom-color: #333;
       }
 
-      @media (max-width: 768px) {
-        grid-template-columns: 0.7fr 0.7fr 2fr 1.2fr 0.6fr 0.6fr;
-        font-size: 14px;
+      @include globals.media-min('screens.md') {
+        grid-template-columns: 0.8fr 0.8fr 2.5fr 1.5fr 0.8fr 0.8fr;
+        font-size: inherit;
       }
 
       &:last-child {
@@ -664,21 +743,21 @@
       &:hover {
         background-color: #f8f9fa;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           background-color: #2a2a2a;
         }
       }
 
       .payment-cell {
-        padding: 15px 20px;
+        padding: 12px 15px;
         color: #333;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           color: #fff;
         }
 
-        @media (max-width: 768px) {
-          padding: 12px 15px;
+        @include globals.media-min('screens.md') {
+          padding: 15px 20px;
         }
 
         &.status {
@@ -703,7 +782,7 @@
               color: #666;
               font-size: 13px;
 
-              @media (prefers-color-scheme: dark) {
+              @include globals.dark-mode {
                 color: #ccc;
               }
             }
@@ -727,7 +806,7 @@
           font-weight: 600;
           color: #333;
 
-          @media (prefers-color-scheme: dark) {
+          @include globals.dark-mode {
             color: #fff;
           }
         }
@@ -741,7 +820,7 @@
     font-size: 14px;
     margin-top: 10px;
 
-    @media (prefers-color-scheme: dark) {
+    @include globals.dark-mode {
       color: #ccc;
     }
 
@@ -752,44 +831,57 @@
 }
 
 .security-settings {
-  padding-top: 25px;
+  @include globals.media-min('screens.md') {
+    padding-top: 25px;
+  }
 
   .email-update-container {
     form {
-      max-width: 360px;
+      max-width: 300px;
     }
   }
 
   .settings-row {
     display: flex;
-    gap: 30px;
-    margin-bottom: 40px;
+    flex-direction: column;
 
-    @media (max-width: 768px) {
-      flex-direction: column;
-      gap: 20px;
+    @include globals.media-min('screens.md') {
+      margin-bottom: 40px;
+      flex-direction: row;
+      gap: 30px;
     }
 
     .settings-section {
       flex: 1;
       margin-bottom: 0;
+      padding-bottom: 24px;
+      padding-top: 20px;
+
+      @include globals.media-min('screens.md') {
+        padding-bottom: 0;
+        padding-top: 15px;
+      }
     }
   }
 
   .settings-section {
-    margin-bottom: 40px;
-    padding: 20px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
     max-width: 500px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-top: 16px;
 
-    @media (prefers-color-scheme: dark) {
+    @include globals.media-min('screens.md') {
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+    }
+
+    @include globals.dark-mode {
       border-color: #333;
     }
 
     h3 {
       margin-top: 0;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       color: #0092e4;
       font-size: 18px;
       font-weight: 600;
@@ -806,6 +898,10 @@
     // Full width sections
     &.full-width {
       max-width: none;
+
+      @include globals.media-min('screens.md') {
+        margin-bottom: 20px;
+      }
     }
   }
 
@@ -821,7 +917,7 @@
         color: #d32f2f;
         font-weight: 500;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           color: #ff6b6b;
         }
       }
@@ -830,7 +926,7 @@
         color: #2e7d32;
         font-weight: 500;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           color: #4caf50;
         }
       }
@@ -843,7 +939,7 @@
       border: 1px solid #ffeaa7;
       border-radius: 6px;
 
-      @media (prefers-color-scheme: dark) {
+      @include globals.dark-mode {
         background-color: #3e2723;
         border-color: #5d4037;
       }
@@ -852,7 +948,7 @@
         margin: 0 0 10px 0;
         color: #856404;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           color: #ffb74d;
         }
       }
@@ -862,7 +958,7 @@
         padding-left: 20px;
         color: #856404;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           color: #ffb74d;
         }
 
@@ -881,7 +977,7 @@
     border-radius: 6px;
     color: #155724;
 
-    @media (prefers-color-scheme: dark) {
+    @include globals.dark-mode {
       background-color: #1b5e20;
       border-color: #2e7d32;
       color: #4caf50;
@@ -896,7 +992,7 @@
     border-radius: 6px;
     color: #721c24;
 
-    @media (prefers-color-scheme: dark) {
+    @include globals.dark-mode {
       background-color: #5f2120;
       border-color: #d32f2f;
       color: #ff6b6b;
@@ -905,12 +1001,15 @@
 
   .blocked-users-container {
     .blocked-users-info {
-      margin-bottom: 20px;
       padding: 15px;
       background-color: #f8f9fa;
       border-radius: 6px;
 
-      @media (prefers-color-scheme: dark) {
+      @include globals.media-min('screens.md') {
+        margin-bottom: 20px;
+      }
+
+      @include globals.dark-mode {
         background-color: #2a2a2a;
       }
 
@@ -918,7 +1017,7 @@
         margin: 0;
         color: #666;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           color: #ccc;
         }
       }
@@ -927,10 +1026,14 @@
     .loading-message,
     .no-blocked-users {
       text-align: center;
-      padding: 40px 20px;
+      padding: 20px;
       color: #666;
 
-      @media (prefers-color-scheme: dark) {
+      @include globals.media-min('screens.md') {
+        padding: 40px 20px;
+      }
+
+      @include globals.dark-mode {
         color: #ccc;
       }
 
@@ -941,6 +1044,12 @@
     }
 
     .blocked-users-list {
+      margin: 15px 0; // Mobile: 15px top and bottom margin
+
+      @include globals.media-min('screens.md') {
+        margin: 0; // Remove margin for tablet and up
+      }
+
       .blocked-user-item {
         display: flex;
         align-items: center;
@@ -951,7 +1060,7 @@
         border-radius: 8px;
         background-color: #fff;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           border-color: #333;
           background-color: #1a1a1a;
         }
@@ -976,7 +1085,7 @@
             align-items: center;
             justify-content: center;
 
-            @media (prefers-color-scheme: dark) {
+            @include globals.dark-mode {
               background-color: #333;
             }
 
@@ -990,7 +1099,7 @@
               color: #999;
               font-size: 24px;
 
-              @media (prefers-color-scheme: dark) {
+              @include globals.dark-mode {
                 color: #666;
               }
             }
@@ -1005,7 +1114,7 @@
               font-weight: 600;
               color: #333;
 
-              @media (prefers-color-scheme: dark) {
+              @include globals.dark-mode {
                 color: #fff;
               }
             }
@@ -1016,7 +1125,7 @@
               color: #d32f2f;
               font-weight: 500;
 
-              @media (prefers-color-scheme: dark) {
+              @include globals.dark-mode {
                 color: #ff6b6b;
               }
             }
@@ -1026,7 +1135,7 @@
               font-size: 14px;
               color: #666;
 
-              @media (prefers-color-scheme: dark) {
+              @include globals.dark-mode {
                 color: #ccc;
               }
             }
@@ -1044,13 +1153,17 @@
     }
   }
 
-  // Delete account danger section
   .danger-section {
-    border-color: #d32f2f !important;
     background-color: #fafafa;
     max-width: none !important;
+    border: none;
 
-    @media (prefers-color-scheme: dark) {
+    @include globals.media-min('screens.md') {
+      border: inherit;
+      border-color: #d32f2f !important;
+    }
+
+    @include globals.dark-mode {
       border-color: #ff6b6b !important;
       background-color: #1a1a1a;
     }
@@ -1058,7 +1171,7 @@
     h3 {
       color: #d32f2f !important;
 
-      @media (prefers-color-scheme: dark) {
+      @include globals.dark-mode {
         color: #ff6b6b !important;
       }
     }
@@ -1072,7 +1185,7 @@
         border-radius: 6px;
         border-left: 4px solid #d32f2f;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           background-color: #3e2723;
           border-color: #5d4037;
           border-left-color: #ff6b6b;
@@ -1083,7 +1196,7 @@
           color: #d32f2f;
           font-weight: 600;
 
-          @media (prefers-color-scheme: dark) {
+          @include globals.dark-mode {
             color: #ff6b6b;
           }
 
@@ -1092,7 +1205,7 @@
             font-weight: 400;
             color: #721c24;
 
-            @media (prefers-color-scheme: dark) {
+            @include globals.dark-mode {
               color: #ffcdd2;
             }
           }
@@ -1106,7 +1219,7 @@
         border: 1px solid #ffcdd2;
         border-radius: 6px;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           background-color: #3e2723;
           border-color: #5d4037;
         }
@@ -1116,7 +1229,7 @@
           color: #d32f2f;
           font-weight: 600;
 
-          @media (prefers-color-scheme: dark) {
+          @include globals.dark-mode {
             color: #ff6b6b;
           }
 
@@ -1125,7 +1238,7 @@
             font-weight: 400;
             color: #721c24;
 
-            @media (prefers-color-scheme: dark) {
+            @include globals.dark-mode {
               color: #ffcdd2;
             }
           }
@@ -1136,7 +1249,7 @@
           padding-left: 20px;
           color: #721c24;
 
-          @media (prefers-color-scheme: dark) {
+          @include globals.dark-mode {
             color: #ffcdd2;
           }
 
@@ -1158,8 +1271,10 @@
         margin-bottom: 20px;
         gap: 20px;
 
-        @media (max-width: 768px) {
-          flex-direction: column;
+        flex-direction: column;
+
+        @include globals.media-min('screens.md') {
+          flex-direction: row;
         }
 
         .toggle-info {
@@ -1171,7 +1286,7 @@
             font-weight: 600;
             color: #333;
 
-            @media (prefers-color-scheme: dark) {
+            @include globals.dark-mode {
               color: #fff;
             }
           }
@@ -1182,7 +1297,7 @@
             color: #666;
             line-height: 1.5;
 
-            @media (prefers-color-scheme: dark) {
+            @include globals.dark-mode {
               color: #ccc;
             }
           }
@@ -1210,7 +1325,7 @@
           &:checked + .toggle-slider {
             background-color: #0092e4;
 
-            @media (prefers-color-scheme: dark) {
+            @include globals.dark-mode {
               background-color: #0092e4;
             }
           }
@@ -1236,7 +1351,7 @@
           transition: .4s;
           border-radius: 34px;
 
-          @media (prefers-color-scheme: dark) {
+          @include globals.dark-mode {
             background-color: #666;
           }
 
@@ -1272,7 +1387,7 @@
         background-color: #d4edda;
         border: 1px solid #c3e6cb;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           background-color: #1b5e20;
           border-color: #2e7d32;
         }
@@ -1281,7 +1396,7 @@
           color: #155724;
           font-weight: 500;
 
-          @media (prefers-color-scheme: dark) {
+          @include globals.dark-mode {
             color: #4caf50;
           }
 
@@ -1295,7 +1410,7 @@
         background-color: #fff3cd;
         border: 1px solid #ffeaa7;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           background-color: #3e2723;
           border-color: #5d4037;
         }
@@ -1304,7 +1419,7 @@
           color: #856404;
           font-weight: 500;
 
-          @media (prefers-color-scheme: dark) {
+          @include globals.dark-mode {
             color: #ffb74d;
           }
 
@@ -1321,7 +1436,7 @@
       background-color: #f8f9fa;
       border-radius: 6px;
 
-      @media (prefers-color-scheme: dark) {
+      @include globals.dark-mode {
         background-color: #2a2a2a;
       }
 
@@ -1330,7 +1445,7 @@
         font-weight: 600;
         color: #333;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           color: #fff;
         }
       }
@@ -1340,7 +1455,7 @@
         padding-left: 20px;
         color: #666;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           color: #ccc;
         }
 
@@ -1355,7 +1470,7 @@
         padding-top: 15px;
         border-top: 1px solid #e0e0e0;
 
-        @media (prefers-color-scheme: dark) {
+        @include globals.dark-mode {
           border-top-color: #333;
         }
 
@@ -1371,7 +1486,7 @@
               color: #2e7d32;
               font-size: 16px;
 
-              @media (prefers-color-scheme: dark) {
+              @include globals.dark-mode {
                 color: #4caf50;
               }
             }

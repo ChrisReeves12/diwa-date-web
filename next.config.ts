@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
 
   devIndicators: false,
 
+  sassOptions: {
+    sourceMap: true
+  },
+
   // We won't modify webpack devtool as it causes performance issues
 
   // Polyfill for Node.js modules that might be needed in client components

@@ -37,10 +37,10 @@ export function PaymentHistory() {
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { 
-            month: 'numeric', 
-            day: 'numeric', 
-            year: 'numeric' 
+        return date.toLocaleDateString('en-US', {
+            month: 'numeric',
+            day: 'numeric',
+            year: 'numeric'
         });
     };
 
@@ -76,7 +76,31 @@ export function PaymentHistory() {
     return (
         <div className="settings-section full-width">
             <h3>Payment History</h3>
-            
+
+            <div className="payment-history-table-mobile">
+                {paymentHistory.map((transaction) => (
+                    <div key={transaction.transId} className="payment-history-row">
+                        <div className="payment-history-info">
+                            <div className="payment-date">{formatDate(transaction.createdAt)}</div>
+                            <div className="payment-desc">
+                                {`${transaction.description} Membership` || 'Premium Membership'}
+                            </div>
+                            <div className="payment-method">
+                                <div>{transaction.paymentMethod} {transaction.accountNumber}</div>
+                            </div>
+                            <div className="view-receipt">
+                                <Link target='_blank' href={`/account/billing/receipt/${transaction.transId}`} className="view-receipt">
+                                    <EyeIcon size='lg'/> View
+                                </Link>
+                            </div>
+                        </div>
+                        <div className="payment-amount">
+                            {formatAmount(transaction.amount)}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
             <div className="payment-history-table">
                 <div className="payment-history-header">
                     <div className="header-cell date-col">Date</div>
@@ -86,7 +110,7 @@ export function PaymentHistory() {
                     <div className="header-cell receipt-col">Receipt</div>
                     <div className="header-cell total-col">Total</div>
                 </div>
-                
+
                 {paymentHistory.map((transaction) => (
                     <div key={transaction.transId} className="payment-history-row">
                         <div className="payment-cell date-col">
@@ -115,7 +139,7 @@ export function PaymentHistory() {
                     </div>
                 ))}
             </div>
-            
+
             <div className="payment-history-note">
                 <p>We only show up to 1 year of billing history</p>
             </div>

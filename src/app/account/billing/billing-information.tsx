@@ -407,7 +407,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                     <div className="account-settings-container">
                         <div className="container">
                             <UserSubscriptionPlanDisplay />
-                            <h2>Billing/Membership Information</h2>
+                            <h2>Premium Membership</h2>
                             <AccountSettingsTabs selectedTab={'billing'} />
                             <div className="account-settings-form-container billing-settings">
                                 <div className="loading-message">
@@ -863,9 +863,8 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                     </div>
                                 </div>
 
-                                {/* Submit button for billing address when payment method exists */}
                                 {existingBilling?.paymentMethod && existingBilling?.cclast4 && (
-                                    <div className="form-row full-width">
+                                    <div className="form-row full-width billing-settings-submit-container">
                                         <button
                                             className="btn-primary"
                                             type="submit"

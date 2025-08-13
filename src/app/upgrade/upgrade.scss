@@ -14,8 +14,13 @@
 
 .upgrade-header {
   text-align: center;
-  margin-bottom: 60px;
+  margin-bottom: 0; // Mobile-first: no bottom margin
   padding: 40px 0;
+
+  // Tablet and up: add bottom margin
+  @include globals.media-min('screens.md') {
+    margin-bottom: 60px;
+  }
 
   h1 {
     font-size: 3rem;
@@ -34,12 +39,27 @@
 }
 
 .premium-features {
-  margin-bottom: 80px;
+  margin-bottom: 40px; // Mobile-first: smaller bottom margin
+
+  // Tablet and up: larger bottom margin
+  @include globals.media-min('screens.md') {
+    margin-bottom: 80px;
+  }
 
   .feature-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr; // Mobile-first: single column
     gap: 30px;
+
+    // Tablet and up: 2 columns
+    @include globals.media-min('screens.md') {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    // Desktop and up: 3 columns
+    @include globals.media-min('screens.lg') {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
 
   .feature-card {
@@ -352,15 +372,6 @@
 @media (max-width: 768px) {
   .upgrade-header h1 {
     font-size: 2rem;
-  }
-
-  .feature-grid {
-    grid-template-columns: 1fr;
-
-    .feature-card:last-child {
-      grid-column: auto;
-      margin-top: 0;
-    }
   }
 
   .pricing-card {
