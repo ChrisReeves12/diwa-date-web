@@ -104,8 +104,7 @@
 
   .message-list {
     padding-top: 118px;
-    height: 100vh;
-    max-height: 100vh;
+    max-height: inherit;
 
     .messages-loading {
       position: absolute;
