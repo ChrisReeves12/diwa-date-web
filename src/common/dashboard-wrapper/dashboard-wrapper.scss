@@ -8,10 +8,15 @@
 
     .dashboard-content-section {
       .tab-bar-container {
-        position: sticky;
+        position: fixed;
         top: 65px;
         background-color: white;
         z-index: 10;
+        width: 100%;
+
+        @include globals.media-min('screens.md') {
+          position: sticky;
+        }
 
         @include globals.dark-mode() {
           background-color: globals.$dark-background-color;

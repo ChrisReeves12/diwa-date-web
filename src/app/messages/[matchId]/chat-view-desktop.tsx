@@ -1,7 +1,4 @@
-'use client';
-
 import './chat-view-desktop.scss';
-import './chat-view-mobile.scss';
 import { ChatMessage, ChatViewProps } from "@/app/messages/[matchId]/chat-view-props.type";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -14,15 +11,13 @@ import Link from "next/link";
 import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
 import { formatChatDate, isToday } from "@/server-side-helpers/time.helpers";
 
-export function ChatView({currentUser, matchDetails}: ChatViewProps) {
+export function ChatViewDesktop({ currentUser, matchDetails }: ChatViewProps)  {
     const params = useParams();
     const router = useRouter();
     const matchId = params.matchId as string;
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messageListRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const mobileMessageInputAreaRef = useRef<HTMLDivElement>(null);
-    const mobileMessageListRef = useRef<HTMLDivElement>(null);
     const needsFocusRef = useRef(false);
     const isMobile = window.innerWidth <= 768;
 
@@ -34,7 +29,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
     const [sendError, setSendError] = useState<string | null>(null);
     const [otherUserTyping, setOtherUserTyping] = useState(false);
     const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
-    const {on, off, isConnected, sendMessage, emit} = useWebSocket();
+    const { on, off, isConnected, sendMessage, emit } = useWebSocket();
 
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -42,16 +37,16 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
 
     // Scroll to bottom function
     const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
-        messagesEndRef.current?.scrollIntoView({behavior});
+        messagesEndRef.current?.scrollIntoView({ behavior });
     };
 
     // Auto-resize textarea function
     const autoResizeTextarea = () => {
         if (textareaRef.current) {
             const textarea = textareaRef.current;
-            textarea.style.height = 'auto';
+            textarea.style.height = 'auto'; // Reset height to calculate scrollHeight
             const scrollHeight = textarea.scrollHeight;
-            const maxHeight = isMobile ? 72 : 120;
+            const maxHeight = 120; // Max height in pixels (about 6 lines)
 
             if (scrollHeight <= maxHeight) {
                 textarea.style.height = `${scrollHeight}px`;
@@ -59,10 +54,6 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
             } else {
                 textarea.style.height = `${maxHeight}px`;
                 textarea.style.overflowY = 'auto';
-            }
-
-            if (isMobile && mobileMessageListRef.current && mobileMessageInputAreaRef.current) {
-                mobileMessageListRef.current.style.paddingBottom = `${mobileMessageInputAreaRef.current.clientHeight + 5}px`;
             }
         }
     };
@@ -114,7 +105,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
         const fetchInitialMessages = async () => {
             try {
                 const pageSize = parseInt(process.env.CHAT_MESSAGES_PAGE_SIZE || '20', 10);
-                const result = await getChatMessages(matchId, {limit: pageSize});
+                const result = await getChatMessages(matchId, { limit: pageSize });
 
                 if (result.error) {
                     setMessagesError(result.error);
@@ -220,7 +211,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
         if (messageMatchId && messageMatchId.toString() === matchId.toString()) {
             const lastMessage = messages[messages.length - 1];
             const options: { cursor?: number; direction?: 'before' | 'after' } = lastMessage
-                ? {cursor: lastMessage.id, direction: 'after'}
+                ? { cursor: lastMessage.id, direction: 'after' }
                 : {};
 
             getChatMessages(matchId, options).then(result => {
@@ -260,7 +251,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
 
         // Join the conversation room for messages and typing events
         const roomId = `conversation:${matchId}`;
-        emit('room:join', {roomId});
+        emit('room:join', { roomId });
 
         // Set up event listeners
         const typingHandler = (data: { userId: string; conversationId: string; isTyping: boolean }) => {
@@ -283,7 +274,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
 
         return () => {
             // Leave room
-            emit('room:leave', {roomId});
+            emit('room:leave', { roomId });
             // Remove event listeners
             off('message:new', messageHandler.handleNewMessage);
             off('message:typing', typingHandler);
@@ -342,7 +333,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
 
     const formatMessageTime = (createdAt: string) => {
         const date = new Date(createdAt);
-        return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
     const handleSendMessage = async (e: React.FormEvent) => {
@@ -374,7 +365,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                 // or wait for WebSocket to deliver it. For now, let's refetch just the newest.
                 const lastMessage = messages[messages.length - 1];
                 const options: { cursor?: number; direction?: 'before' | 'after' } = lastMessage
-                    ? {cursor: lastMessage.id, direction: 'after'}
+                    ? { cursor: lastMessage.id, direction: 'after' }
                     : {};
                 const updatedMessages = await getChatMessages(matchId, options);
                 if (updatedMessages.data) {
@@ -402,199 +393,23 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
         }
     };
 
-    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setMessageInput(e.target.value);
         handleTyping();
-    }, [handleTyping]);
+    };
 
-    const {otherUser} = matchDetails;
+    const { otherUser } = matchDetails;
     const isOnline = isUserOnline(new Date(otherUser.lastActiveAt), otherUser.hideOnlineStatus);
 
     return (
-        isMobile ? <DashboardWrapper activeTab="messages" currentUser={currentUser}>
-            <div className="chat-view-mobile-container">
-                {/* Chat Header */}
-                <div className="chat-view-header">
-                    <div className="back-button-container">
-                        <Link href="/messages">
-                            <ArrowLeftIcon/>
-                        </Link>
-                    </div>
-                    <Link href={`/user/${otherUser.id}`} className="user-info">
-                        <UserPhotoDisplay
-                            alt={otherUser.displayName}
-                            croppedImageData={otherUser.mainPhotoCroppedImageData}
-                            imageUrl={otherUser.publicMainPhoto}
-                            gender={otherUser.gender}
-                            width={40}
-                            height={40}
-                        />
-
-                        <div className="user-details">
-                            <div className="user-name">{otherUser.displayName}</div>
-                            <div className="online-status">
-                                <span className={`status-dot ${isOnline ? 'online' : 'offline'}`}></span>
-                                <span className="status-text">
-                                    {isOnline ? 'Online' : 'Offline'}
-                                </span>
-                            </div>
-                        </div>
-                    </Link>
-                </div>
-
-                {/* Text Container */}
-                <div className="textarea-container">
-                    <div ref={mobileMessageInputAreaRef} className="message-input-area">
-                        {sendError && (
-                            <div className="send-error">
-                                <span className="error-text">{sendError}</span>
-                                <button
-                                    className="dismiss-error"
-                                    onClick={() => setSendError(null)}
-                                    aria-label="Dismiss error"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        )}
-                        <form onSubmit={handleSendMessage} className="message-input-form">
-                            <div className="input-container">
-                            <textarea
-                                ref={textareaRef}
-                                value={messageInput}
-                                onChange={handleInputChange}
-                                onKeyDown={handleInputKeyDown}
-                                placeholder={`Message ${otherUser.displayName}...`}
-                                className="message-input"
-                                rows={1}
-                                maxLength={1000}
-                                disabled={isSending}
-                            />
-                                <button
-                                    type="submit"
-                                    className={`send-button ${(!messageInput.trim() || isSending) ? 'disabled' : ''}`}
-                                    disabled={!messageInput.trim() || isSending}
-                                    aria-label="Send message">
-                                    {isSending ? (
-                                        <div className="send-spinner"></div>
-                                    ) : (
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                             stroke="currentColor" strokeWidth="2">
-                                            <line x1="22" y1="2" x2="11" y2="13"></line>
-                                            <polygon points="22,2 15,22 11,13 2,9"></polygon>
-                                        </svg>
-                                    )}
-                                </button>
-                            </div>
-                            <div className="input-info">
-                                <span className="character-count">
-                                    {messageInput.length}/1000
-                                </span>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                {/* Message List */}
-                <div ref={mobileMessageListRef} className="message-list">
-                    <div className="messages-container">
-                        {isLoadingMore && (
-                            <div className="messages-loading more">
-                                <div className="loading-spinner"></div>
-                            </div>
-                        )}
-                        {!hasMoreMessages && messages.length > 0 && (
-                            <div className="no-more-messages">
-                                <p>This is the beginning of your conversation.</p>
-                            </div>
-                        )}
-                        {messages.length === 0 && !messagesLoading && (
-                            <div className="no-messages">
-                                <p>No messages yet. Start the conversation!</p>
-                            </div>
-                        )}
-                        {(() => {
-                            const messagesByDate = new Map<string, ChatMessage[]>();
-
-                            messages.forEach(message => {
-                                const date = new Date(message.createdAt);
-                                const dateKey = isToday(date) ? 'Today' : formatChatDate(date);
-
-                                if (!messagesByDate.has(dateKey)) {
-                                    messagesByDate.set(dateKey, []);
-                                }
-                                messagesByDate.get(dateKey)!.push(message);
-                            });
-
-                            return Array.from(messagesByDate.entries()).map(([dateKey, dateMessages]) => (
-                                <div key={dateKey}>
-                                    <div className="date-section-header">
-                                        <span className="date-label">{dateKey}</span>
-                                    </div>
-                                    {dateMessages.map((message) => (
-                                        <div
-                                            key={message.id}
-                                            className={`message-bubble ${message.isFromCurrentUser ? 'from-me' : 'from-them'}`}>
-                                            {!message.isFromCurrentUser && (
-                                                <Link href={`/user/${message.sender.id}`} className="message-avatar">
-                                                    {isOnline && <div className="online-lamp"></div>}
-                                                    <UserPhotoDisplay
-                                                        alt={message.sender.displayName}
-                                                        croppedImageData={message.sender.profileDetail?.mainPhotoCroppedImageData}
-                                                        imageUrl={message.sender.profileDetail?.publicMainPhoto}
-                                                        gender={message.sender.gender}
-                                                        width={32}
-                                                        height={32}
-                                                    />
-                                                </Link>
-                                            )}
-
-                                            <div className="message-content">
-                                                <div className="message-text">
-                                                    {message.content}
-                                                </div>
-                                                <div className="message-time">
-                                                    {formatMessageTime(message.createdAt)}
-                                                </div>
-                                            </div>
-                                            {message.isFromCurrentUser &&
-                                                message.id === messages[messages.length - 1]?.id &&
-                                                message.readAt && (
-                                                    <div className="seen-indicator">
-                                                        <span className="seen-text">Seen</span>
-                                                        <span className="seen-time">
-                                                                {formatMessageTime(message.readAt)}
-                                                            </span>
-                                                    </div>
-                                                )}
-                                        </div>
-                                    ))}
-                                </div>
-                            ));
-                        })()}
-                        {otherUserTyping && (
-                            <div className="message-bubble from-them typing-indicator">
-                                <div className="message-content">
-                                    <div className="typing-dots">
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        <div ref={messagesEndRef}/>
-                    </div>
-                </div>
-            </div>
-        </DashboardWrapper> : <DashboardWrapper activeTab="messages" currentUser={currentUser}>
+        <DashboardWrapper activeTab="messages" currentUser={currentUser}>
             <div className="chat-container">
                 <div className="chat-header">
                     <button
                         className="back-button"
                         onClick={handleBackClick}
                         aria-label="Back to conversations">
-                        <ArrowLeftIcon/>
+                        <ArrowLeftIcon />
                     </button>
 
                     <Link href={`/user/${otherUser.id}`} className="user-info">
@@ -668,8 +483,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                                                 key={message.id}
                                                 className={`message-bubble ${message.isFromCurrentUser ? 'from-me' : 'from-them'}`}>
                                                 {!message.isFromCurrentUser && (
-                                                    <Link href={`/user/${message.sender.id}`}
-                                                          className="message-avatar">
+                                                    <Link href={`/user/${message.sender.id}`} className="message-avatar">
                                                         {isOnline && <div className="online-lamp"></div>}
                                                         <UserPhotoDisplay
                                                             alt={message.sender.displayName}
@@ -716,7 +530,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                                     </div>
                                 </div>
                             )}
-                            <div ref={messagesEndRef}/>
+                            <div ref={messagesEndRef} />
                         </div>
                     )}
                 </div>
@@ -729,25 +543,13 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                                 className="dismiss-error"
                                 onClick={() => setSendError(null)}
                                 aria-label="Dismiss error"
-                            >x
+                            >
+                                ✕
                             </button>
                         </div>
                     )}
-                    <div className="message-input-area">
-                        {sendError && (
-                            <div className="send-error">
-                                <span className="error-text">{sendError}</span>
-                                <button
-                                    className="dismiss-error"
-                                    onClick={() => setSendError(null)}
-                                    aria-label="Dismiss error"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        )}
-                        <form onSubmit={handleSendMessage} className="message-input-form">
-                            <div className="input-container">
+                    <form onSubmit={handleSendMessage} className="message-input-form">
+                        <div className="input-container">
                             <textarea
                                 ref={textareaRef}
                                 value={messageInput}
@@ -759,32 +561,30 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                                 maxLength={1000}
                                 disabled={isSending}
                             />
-                                <button
-                                    type="submit"
-                                    className={`send-button ${(!messageInput.trim() || isSending) ? 'disabled' : ''}`}
-                                    disabled={!messageInput.trim() || isSending}
-                                    aria-label="Send message">
-                                    {isSending ? (
-                                        <div className="send-spinner"></div>
-                                    ) : (
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                             stroke="currentColor" strokeWidth="2">
-                                            <line x1="22" y1="2" x2="11" y2="13"></line>
-                                            <polygon points="22,2 15,22 11,13 2,9"></polygon>
-                                        </svg>
-                                    )}
-                                </button>
-                            </div>
-                            <div className="input-info">
+                            <button
+                                type="submit"
+                                className={`send-button ${(!messageInput.trim() || isSending) ? 'disabled' : ''}`}
+                                disabled={!messageInput.trim() || isSending}
+                                aria-label="Send message">
+                                {isSending ? (
+                                    <div className="send-spinner"></div>
+                                ) : (
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22,2 15,22 11,13 2,9"></polygon>
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
+                        <div className="input-info">
                             <span className="character-count">
                                 {messageInput.length}/1000
                             </span>
-                                <span className="input-hint">
+                            <span className="input-hint">
                                 Press Enter to send, Shift+Enter for new line
                             </span>
-                            </div>
-                        </form>
-                    </div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </DashboardWrapper>

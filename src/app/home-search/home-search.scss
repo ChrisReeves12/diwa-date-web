@@ -7,12 +7,14 @@
     align-items: center;
     justify-content: space-between;
     background-color: #ffffff;
-    position: sticky;
+    position: fixed;
     z-index: 5;
     top: 116px;
-    padding-right: 6px;
+    padding-right: 10px;
+    width: 100%;
 
     @include globals.media-min('screens.md') {
+      position: sticky;
       padding-right: 8px;
     }
 
@@ -67,6 +69,11 @@
     .paginator-section {
       padding-bottom: 0.8rem;
       padding-top: 0.8rem;
+      padding-right: 6px;
+
+      @include globals.media-min('screens.md') {
+        padding-right: inherit;
+      }
 
       .paginator-container {
         display: flex;
@@ -130,7 +137,8 @@
   }
 
   .search-results-section {
-    padding-top: 25px;
+    // padding-top: 25px;
+    padding-top: 138px;
     position: relative;
     display: flex;
     flex-direction: column;

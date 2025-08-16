@@ -1,3 +1,5 @@
+@use '@/styles/globals' as globals;
+
 .conversation-list-container {
     position: relative;
     height: 100%;
@@ -36,6 +38,11 @@
         height: 100%;
         overflow-y: auto;
         transition: opacity 0.2s ease;
+        padding-top: 62px;
+
+        @include globals.media-min('screens.md') {
+            padding-top: inherit;
+        }
 
         &.refreshing {
             opacity: 0.7;

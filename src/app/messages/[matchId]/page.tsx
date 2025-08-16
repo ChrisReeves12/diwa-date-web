@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { getCurrentUser } from '@/server-side-helpers/user.helpers';
 import { getMatchDetails } from '@/server-side-helpers/messages.helpers';
-import ChatView from "./chat-view";
+import { ChatView } from "./chat-view";
 import { markConversationsAsAknowledged } from "@/app/messages/messages.actions";
 
 export async function generateMetadata({ params }: { params: Promise<{ matchId: string }> }): Promise<Metadata> {
