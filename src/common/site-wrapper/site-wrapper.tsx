@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useLayoutEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import SiteTopBar from '../site-top-bar/site-top-bar';
 import './site-wrapper.scss';
 import InfoBar from '../site-info-bar/info-bar';
@@ -10,19 +10,25 @@ export default function SiteWrapper({ children, hideButtons = false, hideFlashMe
     const [alertMessage, setAlertMessage] = useState<string | null>(null);
     const [alertType, setAlertType] = useState<'success' | 'warning' | undefined>();
     const [hideInfoBar, setHideInfoBar] = useState(false);
-    useLayoutEffect(() => {
-        setAlertMessage(window.localStorage.getItem('FlashSuccessMessage') || window.localStorage.getItem('FlashWarningMessage'));
-        setAlertType(window.localStorage.getItem('FlashSuccessMessage') ? 'success' : 'warning');
+    useEffect(() => {
+        if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
+            setAlertMessage(window.localStorage.getItem('FlashSuccessMessage') || window.localStorage.getItem('FlashWarningMessage'));
+            setAlertType(window.localStorage.getItem('FlashSuccessMessage') ? 'success' : 'warning');
 
-        setTimeout(() => {
-            window.localStorage.removeItem('FlashSuccessMessage');
-            window.localStorage.removeItem('FlashWarningMessage');
-        }, 500);
+            setTimeout(() => {
+                if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
+                    window.localStorage.removeItem('FlashSuccessMessage');
+                    window.localStorage.removeItem('FlashWarningMessage');
+                }
+            }, 500);
+        }
     }, []);
 
     function onCloseAlert(): void {
-        window.localStorage.removeItem('FlashSuccessMessage');
-        window.localStorage.removeItem('FlashWarningMessage');
+        if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
+            window.localStorage.removeItem('FlashSuccessMessage');
+            window.localStorage.removeItem('FlashWarningMessage');
+        }
         setAlertMessage(null);
         setAlertType(undefined);
     }

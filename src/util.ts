@@ -65,7 +65,11 @@ export function showAlert(message: string, title?: string) {
         alertStateUpdater(alertState);
     } else {
         // Fallback to browser alert if the system isn't initialized yet
-        alert(message);
+        if (typeof window !== 'undefined') {
+            alert(message);
+        } else {
+            console.warn('Alert called during SSR:', message);
+        }
     }
 }
 
@@ -95,6 +99,10 @@ export function userProfileLink(user: { id: string | number }) {
  * Add Google Maps script to head tag.
  */
 export function loadGoogleMapsScript() {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    
     if (document.getElementById('google-maps-script')) {
         return;
     }

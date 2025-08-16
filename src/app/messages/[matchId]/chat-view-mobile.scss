@@ -106,6 +106,13 @@
     padding-top: 118px;
     height: 100vh;
     max-height: 100vh;
+
+    .messages-loading {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translateX(-50%);
+    }
   }
 
   .textarea-container {

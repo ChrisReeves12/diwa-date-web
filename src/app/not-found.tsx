@@ -2,6 +2,8 @@ import SiteWrapper from '@/common/site-wrapper/site-wrapper';
 import Link from 'next/link';
 import './not-found.scss';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
     title: `${process.env.APP_NAME} | Page Not Found`,
 };
