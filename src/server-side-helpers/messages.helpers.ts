@@ -122,6 +122,12 @@ export async function sendMessage(
             statusCode: 403
         };
     }
+    else if (await isUserBlocked(userId, recipientId)) {
+        return {
+            error: 'You cannot message a user you have blocked.',
+            statusCode: 403
+        };
+    }
 
     // Check if sender can message the recipient based on premium status
     const permissionResult = await canUserMessage(userId, recipientId);
@@ -238,14 +244,7 @@ export async function getMessagesForMatch(
         const where: any = {
             matchId: matchId,
             users: {
-                suspendedAt: null,
-                NOT: {
-                    blockedUsers_blockedUsers_userIdTousers: {
-                        some: {
-                            blockedUserId: userId
-                        }
-                    }
-                }
+                suspendedAt: null
             }
         };
 
@@ -378,14 +377,6 @@ export async function getMatchDetails(
             return {
                 error: 'Other user not found or has been suspended.',
                 statusCode: 404
-            };
-        }
-
-        // Check if the other user has blocked the current user
-        if (await isUserBlocked(otherUser.id, currentUserId)) {
-            return {
-                error: 'You have been blocked by this user.',
-                statusCode: 403
             };
         }
 
@@ -527,7 +518,7 @@ export async function markMessagesAsRead(
  * @param currentUserId
  * @param conversations
  */
-export async function markMatchesAsRead(currentUserId: number, conversations: {matchId: number}[]) {
+export async function markMatchesAsRead(currentUserId: number, conversations: { matchId: number }[]) {
     const matchIds = conversations.map(conversation => conversation.matchId);
     const updateResult = await prismaWrite.userMatches.updateMany({
         where: {

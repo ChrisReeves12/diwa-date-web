@@ -75,7 +75,7 @@ export default async function UserProfilePage({ params }: any) {
             return <ProfileAccessError title={'Profile Access Restricted'} errorMessage={userProfileResult.error} />;
         }
 
-        return <ProfileAccessError title={'Profile Not Found'} errorMessage={userProfileResult.error} />;
+        return <ProfileAccessError title={'Profile Not Available'} errorMessage={userProfileResult.error} />;
     }
 
     return (

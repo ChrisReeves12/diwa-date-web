@@ -9,12 +9,12 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import { getChatMessages, markChatAsRead, sendChatMessage } from "@/app/messages/messages.actions";
 import { isUserOnline } from "@/helpers/user.helpers";
 import DashboardWrapper from "@/common/dashboard-wrapper/dashboard-wrapper";
-import { ArrowLeftIcon } from "react-line-awesome";
+import { ArrowLeftIcon, TimesCircleIcon, TimesIcon } from "react-line-awesome";
 import Link from "next/link";
 import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
 import { formatChatDate, isToday } from "@/server-side-helpers/time.helpers";
 
-export function ChatView({currentUser, matchDetails}: ChatViewProps) {
+export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
     const params = useParams();
     const router = useRouter();
     const matchId = params.matchId as string;
@@ -34,7 +34,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
     const [sendError, setSendError] = useState<string | null>(null);
     const [otherUserTyping, setOtherUserTyping] = useState(false);
     const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
-    const {on, off, isConnected, sendMessage, emit} = useWebSocket();
+    const { on, off, isConnected, sendMessage, emit } = useWebSocket();
 
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -42,7 +42,13 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
 
     // Scroll to bottom function
     const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
-        messagesEndRef.current?.scrollIntoView({behavior});
+        if (isMobile) {
+            if (typeof window !== 'undefined') {
+                window.scrollTo(0, document.body.scrollHeight - window.innerHeight);
+            }
+        } else {
+            messagesEndRef.current?.scrollIntoView({ behavior });
+        }
     };
 
     // Auto-resize textarea function
@@ -103,7 +109,6 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                 setHasMoreMessages(false);
             }
         } catch (err) {
-            // Handle error silently for now
             console.error('Failed to load older messages:', err);
         } finally {
             setIsLoadingMore(false);
@@ -114,7 +119,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
         const fetchInitialMessages = async () => {
             try {
                 const pageSize = parseInt(process.env.CHAT_MESSAGES_PAGE_SIZE || '20', 10);
-                const result = await getChatMessages(matchId, {limit: pageSize});
+                const result = await getChatMessages(matchId, { limit: pageSize });
 
                 if (result.error) {
                     setMessagesError(result.error);
@@ -195,13 +200,13 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
 
     // Handle focus after input is cleared
     useLayoutEffect(() => {
-        if (needsFocusRef.current && textareaRef.current) {
+        if (!isMobile && needsFocusRef.current && textareaRef.current) {
             setTimeout(() => {
                 if (textareaRef.current && needsFocusRef.current) {
                     textareaRef.current.focus();
                     needsFocusRef.current = false;
                 }
-            }, 150);
+            }, 400);
         }
     });
 
@@ -220,7 +225,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
         if (messageMatchId && messageMatchId.toString() === matchId.toString()) {
             const lastMessage = messages[messages.length - 1];
             const options: { cursor?: number; direction?: 'before' | 'after' } = lastMessage
-                ? {cursor: lastMessage.id, direction: 'after'}
+                ? { cursor: lastMessage.id, direction: 'after' }
                 : {};
 
             getChatMessages(matchId, options).then(result => {
@@ -232,7 +237,12 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                     });
 
                     const messageList = messageListRef.current;
-                    if (messageList && messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight < 200) {
+                    if (isMobile) {
+                        if (((document.body.scrollHeight - window.innerHeight) - window.scrollY) <= 126) {
+                            setTimeout(() => scrollToBottom(), 100);
+                        }
+                    }
+                    else if (messageList && messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight < 200) {
                         setTimeout(() => scrollToBottom(), 100);
                     }
 
@@ -260,7 +270,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
 
         // Join the conversation room for messages and typing events
         const roomId = `conversation:${matchId}`;
-        emit('room:join', {roomId});
+        emit('room:join', { roomId });
 
         // Set up event listeners
         const typingHandler = (data: { userId: string; conversationId: string; isTyping: boolean }) => {
@@ -282,9 +292,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
         on('message:read', readHandler);
 
         return () => {
-            // Leave room
-            emit('room:leave', {roomId});
-            // Remove event listeners
+            emit('room:leave', { roomId });
             off('message:new', messageHandler.handleNewMessage);
             off('message:typing', typingHandler);
             off('message:read', readHandler);
@@ -342,7 +350,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
 
     const formatMessageTime = (createdAt: string) => {
         const date = new Date(createdAt);
-        return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
     const handleSendMessage = async (e: React.FormEvent) => {
@@ -374,7 +382,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                 // or wait for WebSocket to deliver it. For now, let's refetch just the newest.
                 const lastMessage = messages[messages.length - 1];
                 const options: { cursor?: number; direction?: 'before' | 'after' } = lastMessage
-                    ? {cursor: lastMessage.id, direction: 'after'}
+                    ? { cursor: lastMessage.id, direction: 'after' }
                     : {};
                 const updatedMessages = await getChatMessages(matchId, options);
                 if (updatedMessages.data) {
@@ -407,7 +415,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
         handleTyping();
     }, [handleTyping]);
 
-    const {otherUser} = matchDetails;
+    const { otherUser } = matchDetails;
     const isOnline = isUserOnline(new Date(otherUser.lastActiveAt), otherUser.hideOnlineStatus);
 
     return (
@@ -417,7 +425,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                 <div className="chat-view-header">
                     <div className="back-button-container">
                         <Link href="/messages">
-                            <ArrowLeftIcon/>
+                            <ArrowLeftIcon />
                         </Link>
                     </div>
                     <Link href={`/user/${otherUser.id}`} className="user-info">
@@ -453,23 +461,22 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                                     onClick={() => setSendError(null)}
                                     aria-label="Dismiss error"
                                 >
-                                    ✕
+                                    <TimesCircleIcon size={'2x'} />
                                 </button>
                             </div>
                         )}
                         <form onSubmit={handleSendMessage} className="message-input-form">
                             <div className="input-container">
-                            <textarea
-                                ref={textareaRef}
-                                value={messageInput}
-                                onChange={handleInputChange}
-                                onKeyDown={handleInputKeyDown}
-                                placeholder={`Message ${otherUser.displayName}...`}
-                                className="message-input"
-                                rows={1}
-                                maxLength={1000}
-                                disabled={isSending}
-                            />
+                                <textarea
+                                    ref={textareaRef}
+                                    value={messageInput}
+                                    onChange={handleInputChange}
+                                    placeholder={`Message ${otherUser.displayName}...`}
+                                    className="message-input"
+                                    rows={1}
+                                    maxLength={1000}
+                                    disabled={isSending}
+                                />
                                 <button
                                     type="submit"
                                     className={`send-button ${(!messageInput.trim() || isSending) ? 'disabled' : ''}`}
@@ -479,7 +486,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                                         <div className="send-spinner"></div>
                                     ) : (
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                             stroke="currentColor" strokeWidth="2">
+                                            stroke="currentColor" strokeWidth="2">
                                             <line x1="22" y1="2" x2="11" y2="13"></line>
                                             <polygon points="22,2 15,22 11,13 2,9"></polygon>
                                         </svg>
@@ -498,11 +505,6 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                 {/* Message List */}
                 <div ref={mobileMessageListRef} className="message-list">
                     <div className="messages-container">
-                        {isLoadingMore && (
-                            <div className="messages-loading more">
-                                <div className="loading-spinner"></div>
-                            </div>
-                        )}
                         {!hasMoreMessages && messages.length > 0 && (
                             <div className="no-more-messages">
                                 <p>This is the beginning of your conversation.</p>
@@ -563,8 +565,8 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                                                     <div className="seen-indicator">
                                                         <span className="seen-text">Seen</span>
                                                         <span className="seen-time">
-                                                                {formatMessageTime(message.readAt)}
-                                                            </span>
+                                                            {formatMessageTime(message.readAt)}
+                                                        </span>
                                                     </div>
                                                 )}
                                         </div>
@@ -583,7 +585,15 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                                 </div>
                             </div>
                         )}
-                        <div ref={messagesEndRef}/>
+                        {isLoadingMore && (
+                            <div className="messages-loading more">
+                                <div className="loading-spinner"></div>
+                            </div>
+                        )}
+                        {messagesLoading && <div className="messages-loading">
+                            <div className="loading-spinner"></div>
+                            <span>Loading messages...</span>
+                        </div>}
                     </div>
                 </div>
             </div>
@@ -594,7 +604,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                         className="back-button"
                         onClick={handleBackClick}
                         aria-label="Back to conversations">
-                        <ArrowLeftIcon/>
+                        <ArrowLeftIcon />
                     </button>
 
                     <Link href={`/user/${otherUser.id}`} className="user-info">
@@ -669,7 +679,7 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                                                 className={`message-bubble ${message.isFromCurrentUser ? 'from-me' : 'from-them'}`}>
                                                 {!message.isFromCurrentUser && (
                                                     <Link href={`/user/${message.sender.id}`}
-                                                          className="message-avatar">
+                                                        className="message-avatar">
                                                         {isOnline && <div className="online-lamp"></div>}
                                                         <UserPhotoDisplay
                                                             alt={message.sender.displayName}
@@ -716,10 +726,11 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                                     </div>
                                 </div>
                             )}
-                            <div ref={messagesEndRef}/>
+                            <div ref={messagesEndRef} />
                         </div>
                     )}
                 </div>
+
 
                 <div className="message-input-area">
                     {sendError && (
@@ -729,25 +740,13 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                                 className="dismiss-error"
                                 onClick={() => setSendError(null)}
                                 aria-label="Dismiss error"
-                            >x
+                            >
+                                <TimesIcon size={'lg'} />
                             </button>
                         </div>
                     )}
-                    <div className="message-input-area">
-                        {sendError && (
-                            <div className="send-error">
-                                <span className="error-text">{sendError}</span>
-                                <button
-                                    className="dismiss-error"
-                                    onClick={() => setSendError(null)}
-                                    aria-label="Dismiss error"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        )}
-                        <form onSubmit={handleSendMessage} className="message-input-form">
-                            <div className="input-container">
+                    <form onSubmit={handleSendMessage} className="message-input-form">
+                        <div className="input-container">
                             <textarea
                                 ref={textareaRef}
                                 value={messageInput}
@@ -759,33 +758,33 @@ export function ChatView({currentUser, matchDetails}: ChatViewProps) {
                                 maxLength={1000}
                                 disabled={isSending}
                             />
-                                <button
-                                    type="submit"
-                                    className={`send-button ${(!messageInput.trim() || isSending) ? 'disabled' : ''}`}
-                                    disabled={!messageInput.trim() || isSending}
-                                    aria-label="Send message">
-                                    {isSending ? (
-                                        <div className="send-spinner"></div>
-                                    ) : (
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                             stroke="currentColor" strokeWidth="2">
-                                            <line x1="22" y1="2" x2="11" y2="13"></line>
-                                            <polygon points="22,2 15,22 11,13 2,9"></polygon>
-                                        </svg>
-                                    )}
-                                </button>
-                            </div>
-                            <div className="input-info">
+                            <button
+                                type="submit"
+                                className={`send-button ${(!messageInput.trim() || isSending) ? 'disabled' : ''}`}
+                                disabled={!messageInput.trim() || isSending}
+                                aria-label="Send message">
+                                {isSending ? (
+                                    <div className="send-spinner"></div>
+                                ) : (
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" strokeWidth="2">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22,2 15,22 11,13 2,9"></polygon>
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
+                        <div className="input-info">
                             <span className="character-count">
                                 {messageInput.length}/1000
                             </span>
-                                <span className="input-hint">
+                            <span className="input-hint">
                                 Press Enter to send, Shift+Enter for new line
                             </span>
-                            </div>
-                        </form>
-                    </div>
+                        </div>
+                    </form>
                 </div>
+
             </div>
         </DashboardWrapper>
     );

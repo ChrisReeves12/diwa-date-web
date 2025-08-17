@@ -105,11 +105,21 @@
   .message-list {
     padding-top: 118px;
     max-height: inherit;
+    background-color: transparent;
+
+    .message-bubble {
+      max-width: inherit;
+    }
+
+    .date-label {
+      background-color: #bfe2ff;
+      color: #47a1ee;
+    }
 
     .messages-loading {
       position: absolute;
       left: 50%;
-      top: 50%;
+      bottom: 10%;
       transform: translateX(-50%);
     }
   }

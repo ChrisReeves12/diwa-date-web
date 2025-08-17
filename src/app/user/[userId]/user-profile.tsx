@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { User } from "@/types";
 import { CurrentUserProvider } from "@/common/context/current-user-context";
 import SiteTopBar from "@/common/site-top-bar/site-top-bar";
@@ -30,7 +30,7 @@ import {
 import { useWebSocket } from '@/hooks/use-websocket';
 import { isUserOnline } from '@/helpers/user.helpers';
 import ReportUserDialog from '@/common/report-user-dialog/report-user-dialog';
-import { CircularProgress } from '@mui/material';
+import { CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 
 interface UserProfileProps {
     userProfileDetail: UserProfileDetail,
@@ -46,6 +46,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showReportDialog, setShowReportDialog] = useState(false);
     const [showBioModal, setShowBioModal] = useState(false);
+    const [showUnmatchDialog, setShowUnmatchDialog] = useState(false);
     const imageViewerRef = useRef<HTMLDivElement>(null);
     const { on, off, isConnected } = useWebSocket();
 
@@ -323,6 +324,36 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         }, 500);
     };
 
+    const onUnMatchClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        setShowUnmatchDialog(true);
+    };
+
+    const handleUnmatch = async () => {
+        setShowUnmatchDialog(false);
+        setIsUpdatingMatch(true);
+
+        setTimeout(async () => {
+            try {
+                await removeUserMatch(Number(userProfile.user.id));
+                const result = await loadFullUserProfile(Number(userProfile.user.id));
+                if ('error' in result || !result.userProfileDetails) {
+                    showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
+                    return;
+                }
+
+                setUserProfile(result.userProfileDetails);
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('notification-center-refresh'));
+                }
+            } catch (error) {
+                console.error('Error unmatching user:', error);
+            } finally {
+                setIsUpdatingMatch(false);
+            }
+        }, 500);
+    };
+
     const onReportUserClick = (e: React.MouseEvent) => {
         e.preventDefault();
         setShowReportDialog(true);
@@ -366,10 +397,10 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                     </>
                 ) : userProfile.matchStatus === 'matched' ? (
                     <>
-                        <div className="matched">
-                            <CheckCircleIcon />
-                            <div className="label">Matched</div>
-                        </div>
+                        <button onClick={onUnMatchClick} className="unmatch">
+                            <HeartBrokenIcon />
+                            <div className="label">Remove Match</div>
+                        </button>
 
                         {userProfile.matchId && (
                             <Link href={`/messages/${userProfile.matchId}`} className="request-match">
@@ -543,7 +574,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                         </div>
 
                                         {userProfile.user.id !== currentUser.id && (
-                                            <ButtonsContainer containerName={'buttons-container'}/>
+                                            <ButtonsContainer containerName={'buttons-container'} />
                                         )}
                                     </div>
                                 </div>
@@ -578,8 +609,8 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                         <div className="title">Biography</div>
                                     </div>
                                     <div className="bio">
-                                        {_.truncate(userProfile.user.bio || 'No biography available yet.', {length: 450})}
-                                            {showReadMoreBio ? <button onClick={(e) => onReadMoreBio(e)} className={'read-more'}>Read More</button> : null}
+                                        {_.truncate(userProfile.user.bio || 'No biography available yet.', { length: 450 })}
+                                        {showReadMoreBio ? <button onClick={(e) => onReadMoreBio(e)} className={'read-more'}>Read More</button> : null}
                                     </div>
 
                                     {userProfile.interestLabels?.length > 0 && (
@@ -604,7 +635,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                             </div>
 
                             {userProfile.user.id !== currentUser.id && (
-                                <ButtonsContainer containerName={'buttons-container mobile'}/>
+                                <ButtonsContainer containerName={'buttons-container mobile'} />
                             )}
                         </div>
                     )}
@@ -668,6 +699,27 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                     </div>
                 )}
             </div>
+
+            <Dialog
+                open={showUnmatchDialog}
+                onClose={() => setShowUnmatchDialog(false)}
+                aria-labelledby="unmatch-dialog-title"
+            >
+                <DialogTitle id="unmatch-dialog-title">
+                    Unmatch Confirmation
+                </DialogTitle>
+                <DialogContent>
+                    Are you sure you want to unmatch with {userProfile.user.displayName}? This action cannot be undone.
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setShowUnmatchDialog(false)} color="primary">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleUnmatch} color="error" variant="contained" disabled={isUpdatingMatch}>
+                        {isUpdatingMatch ? <CircularProgress size={20} sx={{ color: "primary.contrastText" }} /> : 'Unmatch'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </CurrentUserProvider>
     );
 }

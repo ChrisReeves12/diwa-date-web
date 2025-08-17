@@ -27,7 +27,7 @@ export default async function PhotosPage() {
                         <UserSubscriptionPlanDisplay />
                         <h2>Photos</h2>
                         <ProfileSettingsTabs selectedTab="photos" />
-                        <PhotosManagement currentUser={currentUser} />
+                        <PhotosManagement />
                     </div>
                 </div>
             </SiteWrapper>

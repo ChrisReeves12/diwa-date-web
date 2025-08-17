@@ -1003,6 +1003,12 @@ export async function removeUserMatchRequest(userId: number, recipientUserId: nu
 
     // Send WebSocket notification to the other user about match cancellation
     if (existingMatch) {
+        // Mute user if this was a match being removed
+        if (existingMatch.status === 'matched') {
+            await muteUserById(userId, recipientUserId);
+            await prismaWrite.$queryRaw`DELETE FROM "notifications" WHERE (data #>> '{matchId}')::integer = ${existingMatch.id}`;
+        }
+
         try {
             // Determine who the other user is (not the one cancelling)
             const otherUserId = existingMatch.userId === userId ? existingMatch.recipientId : existingMatch.userId;

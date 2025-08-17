@@ -77,6 +77,22 @@ body {
   font-family: $default-font;
   background-color: $light-background-color;
 
+  &.messages {
+    background-color: #ebf6ff;
+
+    @include dark-mode {
+      background-color: $dark-background-color;
+    }
+
+    @include media-min('screens.md') {
+      background-color: $light-background-color;
+
+      @include dark-mode {
+        background-color: $dark-background-color;
+      }
+    }
+  }
+
   @include dark-mode {
     background-color: $dark-background-color;
   }

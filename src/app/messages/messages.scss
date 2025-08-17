@@ -67,76 +67,100 @@
 
     .conversation-container {
         display: flex;
+        align-items: center;
         padding: 15px;
         border-bottom: 1px solid #eee;
         text-decoration: none;
-        color: inherit;
-        transition: background-color 0.2s ease;
 
-        &:hover {
-            background-color: #f8f9fa;
-        }
-
-        .profile-container {
-            position: relative;
-            margin-right: 15px;
-
-            .unread-message-indicator {
-                position: absolute;
-                top: -2px;
-                right: -2px;
-                width: 10px;
-                height: 10px;
-                background-color: #3498db;
-                border-radius: 50%;
-                border: 2px solid white;
-                z-index: 1;
-            }
-
-            .online-lamp {
-              width: 12px;
-              height: 12px;
-              background-color: #4CAF50;
-              border-radius: 50%;
-              border: 2px solid white;
-              position: absolute;
-              bottom: 0;
-              right: 0;
-              z-index: 1;
-            }
-        }
-
-        .user-info-section {
+        .conversation-link {
+            display: flex;
+            transition: background-color 0.2s ease;
             flex: 1;
-            min-width: 0;
+            color: inherit;
 
-            &.unread {
-                font-weight: 600;
+            .profile-container {
+                position: relative;
+                margin-right: 15px;
+
+                .unread-message-indicator {
+                    position: absolute;
+                    top: -2px;
+                    right: -2px;
+                    width: 10px;
+                    height: 10px;
+                    background-color: #3498db;
+                    border-radius: 50%;
+                    border: 2px solid white;
+                    z-index: 1;
+                }
+
+                .online-lamp {
+                    width: 12px;
+                    height: 12px;
+                    background-color: #4CAF50;
+                    border-radius: 50%;
+                    border: 2px solid white;
+                    position: absolute;
+                    bottom: 0;
+                    right: 0;
+                    z-index: 1;
+                }
             }
 
-            .user-name {
-                font-size: 16px;
-                margin-bottom: 4px;
-            }
+            .user-info-section {
+                flex: 1;
+                min-width: 0;
 
-            .last-message {
-                color: #666;
-                font-size: 14px;
-                margin-bottom: 4px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
+                &.unread {
+                    font-weight: 600;
+                }
 
-            .last-sent {
-                color: #999;
-                font-size: 12px;
+                .user-name {
+                    font-size: 16px;
+                    margin-bottom: 4px;
+                }
+
+                .last-message {
+                    color: #666;
+                    font-size: 14px;
+                    margin-bottom: 4px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .last-sent {
+                    color: #999;
+                    font-size: 12px;
+                }
+            }
+        }
+
+        .controls-container {
+            button {
+                display: flex;
+                align-items: center;
+                color: globals.$error-color-light;
+
+                @include globals.dark-mode {
+                    color: globals.$error-color-dark;
+                }
+
+                i {
+                    font-size: 24px;
+                    padding-right: 5px;
+                }
             }
         }
     }
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }

@@ -30,17 +30,12 @@ import {
     rectSortingStrategy,
 } from '@dnd-kit/sortable';
 
-interface PhotosManagementProps {
-    currentUser: User;
-}
-
-export function PhotosManagement({ currentUser }: PhotosManagementProps) {
+export function PhotosManagement() {
     const [photos, setPhotos] = useState<PhotoWithUrl[]>([]);
     const [mainPhoto, setMainPhoto] = useState<string | null>(null);
     const [uploads, setUploads] = useState<UploadProgress[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [fixingPermissions, setFixingPermissions] = useState(false);
     const [cropModalOpen, setCropModalOpen] = useState(false);
     const [fileToProcess, setFileToProcess] = useState<File | null>(null);
     const [spotlightModalOpen, setSpotlightModalOpen] = useState(false);
@@ -304,7 +299,6 @@ export function PhotosManagement({ currentUser }: PhotosManagementProps) {
 
     const handleFixPermissions = async () => {
         try {
-            setFixingPermissions(true);
             const response = await fetch('/api/photos/fix-permissions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -323,8 +317,6 @@ export function PhotosManagement({ currentUser }: PhotosManagementProps) {
         } catch (error) {
             console.error('Fix permissions error:', error);
             showAlert('Failed to fix photo permissions. Please try again.');
-        } finally {
-            setFixingPermissions(false);
         }
     };
 
@@ -341,28 +333,6 @@ export function PhotosManagement({ currentUser }: PhotosManagementProps) {
 
     return (
         <div className="photos-management">
-            <div className="photos-header">
-                <div className="header-actions">
-                    <button
-                        className="fix-permissions-btn"
-                        onClick={handleFixPermissions}
-                        disabled={fixingPermissions}
-                    >
-                        {fixingPermissions ? (
-                            <>
-                                <i className="las la-spinner la-spin"></i>
-                                Fixing...
-                            </>
-                        ) : (
-                            <>
-                                <i className="las la-shield-alt"></i>
-                                Fix Photo Permissions
-                            </>
-                        )}
-                    </button>
-                </div>
-            </div>
-
             {error && (
                 <div className="error-message">
                     {error}

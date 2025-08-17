@@ -10,7 +10,6 @@ import {
 import { redirect } from "next/navigation";
 import { logError } from "@/server-side-helpers/logging.helpers";
 import { cookies } from "next/headers";
-import { UserProfileDetail } from "@/types/user-profile-detail.interface";
 
 /**
  * Remove a match between the current user and another user
