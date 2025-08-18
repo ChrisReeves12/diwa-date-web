@@ -4,6 +4,13 @@
   h2 {
     padding-top: 18px;
     padding-left: 14px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+
+    @include globals.media-min('screens.md') {
+      margin-top: inherit;
+      margin-bottom: inherit;
+    }
   }
 }
 
@@ -23,9 +30,13 @@
 
   h2 {
     padding-left: 16px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 
     @include globals.media-min('screens.md') {
       padding-left: 0;
+      margin-top: inherit;
+      margin-bottom: inherit;
     }
   }
 

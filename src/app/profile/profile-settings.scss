@@ -10,9 +10,11 @@
     h2 {
         padding-right: 16px;
         padding-left: 16px;
-        margin-bottom: 20px;
+        margin-top: 10px;
+        margin-bottom: 10px;
 
         @include globals.media-min('screens.md') {
+            margin-top: inherit;
             margin-bottom: 30px;
             padding-left: 0;
         }

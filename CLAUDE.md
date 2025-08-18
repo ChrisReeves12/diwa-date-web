@@ -12,5 +12,10 @@ We do use Prisma for some database transactions, but we don't use any of their m
 
 # Styling Guidelines
 
-- Always use the breakpoint min-media helpers for conditional styling for screen width, and the helper for dark mode
+- Always include the globals.scss in every SCSS file. Use the @use syntax, like this:
+```scss
+@use '@/styles/globals' as globals;
+```
+- Always use the breakpoint min-media helpers from globals.scss for conditional styling for screen width, and the helper for dark mode
 - Assume a mobile-first approach, in that the default styling is optimized for mobile
+- When adding styling for dark-mode, always use the @include globals.dark-mode helper.
