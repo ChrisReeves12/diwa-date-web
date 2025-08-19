@@ -135,10 +135,6 @@ export function PhotosManagement() {
         setImageToDelete(undefined);
     }
 
-    const onCropComplete = (croppedArea: any, croppedAreaPixels: any) => {
-        console.log(croppedArea, croppedAreaPixels);
-    }
-
     return (
         <>
             <div className="photos-management">
