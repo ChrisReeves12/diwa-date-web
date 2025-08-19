@@ -17,5 +17,6 @@ export interface PhotoWithUrl {
   isHidden: boolean;
   sortOrder: number;
   uploadedAt: string;
-  url: string | null;
+  croppedImageUrl?: string;
+  url?: string;
 }

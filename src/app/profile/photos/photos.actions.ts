@@ -22,7 +22,8 @@ export async function getUserPhotos() {
         .map((photo) => {
             return {
               ...photo,
-              url: appendMediaRootToImageUrl(photo.path) || null
+              croppedImageUrl: appendMediaRootToImageUrl(photo.croppedImageData?.croppedImagePath),
+              url: appendMediaRootToImageUrl(photo.path)
             };
         });
 
