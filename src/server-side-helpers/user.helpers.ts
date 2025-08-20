@@ -408,8 +408,9 @@ export async function completeTwoFactorAuth(
 /**
  * Returns the currently logged-in user.
  * @param cookieStore
+ * @param usePublic
  */
-export async function getCurrentUser(cookieStore: ReadonlyRequestCookies) {
+export async function getCurrentUser(cookieStore: ReadonlyRequestCookies, usePublic = true) {
     const sessionId = await getSessionId(cookieStore);
 
     if (!sessionId) {
@@ -444,9 +445,7 @@ export async function getCurrentUser(cookieStore: ReadonlyRequestCookies) {
     }
 
     const user = result as unknown as User;
-    const enhancedUser = Object.assign({}, user, getPublicUserDetails(user));
-
-    return enhancedUser;
+    return usePublic ? Object.assign({}, user, getPublicUserDetails(user)) : user;
 }
 
 /**

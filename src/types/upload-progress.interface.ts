@@ -1,3 +1,5 @@
+import { CroppedImageData } from "@/types/cropped-image-data.interface";
+
 export interface UploadProgress {
   id: string;
   file: File;
@@ -18,5 +20,6 @@ export interface PhotoWithUrl {
   sortOrder: number;
   uploadedAt: string;
   croppedImageUrl?: string;
+  croppedImageData?: CroppedImageData;
   url?: string;
 }
