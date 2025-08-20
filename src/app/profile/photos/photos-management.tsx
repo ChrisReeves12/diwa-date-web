@@ -91,6 +91,7 @@ export function PhotosManagement() {
     const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
     const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 });
     const [captionText, setCaptionText] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
     const imageRef = useRef<HTMLImageElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -292,8 +293,9 @@ export function PhotosManagement() {
 
     // Apply crop to image
     const handleSaveCrop = async () => {
-        if (!imageBeingEdited || !imageRef.current) return;
+        if (!imageBeingEdited || !imageRef.current || isSaving) return;
 
+        setIsSaving(true);
         try {
             const img = imageRef.current;
 
@@ -335,6 +337,8 @@ export function PhotosManagement() {
         } catch (error) {
             console.error('Error saving crop data:', error);
             showAlert('Failed to save crop. Please try again.');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -395,11 +399,12 @@ export function PhotosManagement() {
 
                 {!isLoading && !!imageBeingEdited && <div className="photo-editing-container">
                     <div className="back-button-container">
-                        <button className="back-button" onClick={handleCancelEdit}>
+                        <button className="back-button" onClick={handleCancelEdit} disabled={isSaving}>
                             <TimesIcon/> <div className="label">Cancel</div>
                         </button>
-                        <button className="save-button" onClick={handleSaveCrop}>
-                            <SaveIcon/> <div className="label">Save</div>
+                        <button className="save-button" onClick={handleSaveCrop} disabled={isSaving}>
+                            {isSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon/>} 
+                            <div className="label">{isSaving ? 'Saving...' : 'Save'}</div>
                         </button>
                     </div>
                     <div className="caption-section">
@@ -410,15 +415,16 @@ export function PhotosManagement() {
                             maxLength={100}
                             value={captionText}
                             onChange={(e) => setCaptionText(e.target.value)}
+                            disabled={isSaving}
                         />
                     </div>
                     <h4>Crop & Position</h4>
                     <div
-                        className="photo-crop-container"
+                        className={`photo-crop-container ${isSaving ? 'saving' : ''}`}
                         ref={containerRef}
-                        onPointerMove={handlePointerMove}
-                        onPointerUp={handlePointerUp}
-                        onPointerLeave={handlePointerUp}
+                        onPointerMove={isSaving ? undefined : handlePointerMove}
+                        onPointerUp={isSaving ? undefined : handlePointerUp}
+                        onPointerLeave={isSaving ? undefined : handlePointerUp}
                     >
                         <img
                             ref={imageRef}
@@ -468,9 +474,10 @@ export function PhotosManagement() {
                                     left: cropArea.x,
                                     top: cropArea.y,
                                     width: cropArea.width,
-                                    height: cropArea.height
+                                    height: cropArea.height,
+                                    pointerEvents: isSaving ? 'none' : 'auto'
                                 }}
-                                onPointerDown={(e) => handlePointerDown(e)}
+                                onPointerDown={isSaving ? undefined : (e) => handlePointerDown(e)}
                             >
                                 {/* Corner handles */}
                                 <div className="crop-handle corner nw" onPointerDown={(e) => handlePointerDown(e, 'nw')} />
@@ -489,7 +496,7 @@ export function PhotosManagement() {
                         </div>
                     </div>
                     <div className="crop-actions">
-                        <button className="reset-button" onClick={resetCrop}>
+                        <button className="reset-button" onClick={resetCrop} disabled={isSaving}>
                             <RedoIcon /> Reset Crop
                         </button>
                     </div>
