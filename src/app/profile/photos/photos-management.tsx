@@ -25,9 +25,10 @@ import {
     CSS,
 } from '@dnd-kit/utilities';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+
 const innerWidth = window.innerWidth;
 
-function SortablePhotoItem({ photoWithUrl, onClick, onDelete }: {
+function SortablePhotoItem({photoWithUrl, onClick, onDelete}: {
     photoWithUrl: PhotoWithUrl,
     onClick: (e: React.MouseEvent) => void,
     onDelete: (e: React.MouseEvent) => void
@@ -38,7 +39,7 @@ function SortablePhotoItem({ photoWithUrl, onClick, onDelete }: {
         setNodeRef,
         transform,
         transition,
-    } = useSortable({ id: photoWithUrl.path });
+    } = useSortable({id: photoWithUrl.path});
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -83,13 +84,13 @@ export function PhotosManagement() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Cropping state
-    const [cropArea, setCropArea] = useState<CropArea>({ x: 0, y: 0, width: 200, height: 200 });
+    const [cropArea, setCropArea] = useState<CropArea>({x: 0, y: 0, width: 200, height: 200});
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
-    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [dragStart, setDragStart] = useState({x: 0, y: 0});
     const [resizeHandle, setResizeHandle] = useState('');
-    const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
-    const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 });
+    const [imageSize, setImageSize] = useState({width: 0, height: 0});
+    const [imageOffset, setImageOffset] = useState({x: 0, y: 0});
     const [captionText, setCaptionText] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const imageRef = useRef<HTMLImageElement>(null);
@@ -177,22 +178,22 @@ export function PhotosManagement() {
         const offsetX = (containerWidth - displayWidth) / 2;
         const offsetY = (containerHeight - displayHeight) / 2;
 
-        setImageSize({ width: displayWidth, height: displayHeight });
-        setImageOffset({ x: offsetX, y: offsetY });
+        setImageSize({width: displayWidth, height: displayHeight});
+        setImageOffset({x: offsetX, y: offsetY});
 
         // Initialize crop area
         if (imageBeingEdited?.croppedImageData) {
             // Scale crop coordinates from original image size to displayed size
             const scaleX = displayWidth / img.naturalWidth;
             const scaleY = displayHeight / img.naturalHeight;
-            
+
             const scaledCropArea = {
                 x: offsetX + (imageBeingEdited.croppedImageData.x * scaleX),
                 y: offsetY + (imageBeingEdited.croppedImageData.y * scaleY),
                 width: imageBeingEdited.croppedImageData.width * scaleX,
                 height: imageBeingEdited.croppedImageData.height * scaleY
             };
-            
+
             setCropArea(scaledCropArea);
         } else {
             // Default crop area for new crops
@@ -225,7 +226,7 @@ export function PhotosManagement() {
             setIsDragging(true);
         }
 
-        setDragStart({ x: x - cropArea.x, y: y - cropArea.y });
+        setDragStart({x: x - cropArea.x, y: y - cropArea.y});
     }, [cropArea]);
 
     const handlePointerMove = useCallback((e: React.PointerEvent) => {
@@ -242,10 +243,10 @@ export function PhotosManagement() {
             const newX = Math.max(imageOffset.x, Math.min(x - dragStart.x, imageOffset.x + imageSize.width - cropArea.width));
             const newY = Math.max(imageOffset.y, Math.min(y - dragStart.y, imageOffset.y + imageSize.height - cropArea.height));
 
-            setCropArea(prev => ({ ...prev, x: newX, y: newY }));
+            setCropArea(prev => ({...prev, x: newX, y: newY}));
         } else if (isResizing) {
             // Resize crop area
-            let newCropArea = { ...cropArea };
+            let newCropArea = {...cropArea};
             const minSize = 50;
 
             switch (resizeHandle) {
@@ -317,16 +318,24 @@ export function PhotosManagement() {
             if (result.success) {
                 // Update local state to show crop has been applied
                 setPhotos(prevPhotos =>
-                    prevPhotos.map(photo =>
-                        photo.path === imageBeingEdited.path
-                            ? {
-                                ...photo,
-                                cropData,
-                                caption: captionText,
-                                // For now, show original image until server processing is done
-                                croppedImageUrl: photo.url
+                    prevPhotos.map(photo => {
+                            if (photo.path === imageBeingEdited.path)
+                                return {
+                                    ...photo,
+                                    croppedImageData: {
+                                        x: result.cropData.x,
+                                        y: result.cropData.y,
+                                        width: result.cropData.width,
+                                        height: result.cropData.height,
+                                        croppedImagePath: result.croppedImageUrl!
+                                    },
+                                    caption: captionText,
+                                    croppedImageUrl: result.croppedImageUrl,
+                                }
+                            else {
+                                return photo;
                             }
-                            : photo
+                        }
                     )
                 );
 
@@ -344,9 +353,9 @@ export function PhotosManagement() {
 
     const handleCancelEdit = () => {
         setImageBeingEdited(undefined);
-        setCropArea({ x: 0, y: 0, width: 200, height: 200 });
-        setImageOffset({ x: 0, y: 0 });
-        setImageSize({ width: 0, height: 0 });
+        setCropArea({x: 0, y: 0, width: 200, height: 200});
+        setImageOffset({x: 0, y: 0});
+        setImageSize({width: 0, height: 0});
         setCaptionText('');
     };
 
@@ -400,10 +409,11 @@ export function PhotosManagement() {
                 {!isLoading && !!imageBeingEdited && <div className="photo-editing-container">
                     <div className="back-button-container">
                         <button className="back-button" onClick={handleCancelEdit} disabled={isSaving}>
-                            <TimesIcon/> <div className="label">Cancel</div>
+                            <TimesIcon/>
+                            <div className="label">Cancel</div>
                         </button>
                         <button className="save-button" onClick={handleSaveCrop} disabled={isSaving}>
-                            {isSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon/>} 
+                            {isSaving ? <CircularProgress size={16} color="inherit"/> : <SaveIcon/>}
                             <div className="label">{isSaving ? 'Saving...' : 'Save'}</div>
                         </button>
                     </div>
@@ -447,25 +457,25 @@ export function PhotosManagement() {
                                 left: 0,
                                 right: 0,
                                 height: cropArea.y
-                            }} />
+                            }}/>
                             <div className="crop-dark" style={{
                                 top: cropArea.y + cropArea.height,
                                 left: 0,
                                 right: 0,
                                 bottom: 0
-                            }} />
+                            }}/>
                             <div className="crop-dark" style={{
                                 top: cropArea.y,
                                 left: 0,
                                 width: cropArea.x,
                                 height: cropArea.height
-                            }} />
+                            }}/>
                             <div className="crop-dark" style={{
                                 top: cropArea.y,
                                 left: cropArea.x + cropArea.width,
                                 right: 0,
                                 height: cropArea.height
-                            }} />
+                            }}/>
 
                             {/* Crop area with handles */}
                             <div
@@ -480,24 +490,28 @@ export function PhotosManagement() {
                                 onPointerDown={isSaving ? undefined : (e) => handlePointerDown(e)}
                             >
                                 {/* Corner handles */}
-                                <div className="crop-handle corner nw" onPointerDown={(e) => handlePointerDown(e, 'nw')} />
-                                <div className="crop-handle corner ne" onPointerDown={(e) => handlePointerDown(e, 'ne')} />
-                                <div className="crop-handle corner sw" onPointerDown={(e) => handlePointerDown(e, 'sw')} />
-                                <div className="crop-handle corner se" onPointerDown={(e) => handlePointerDown(e, 'se')} />
+                                <div className="crop-handle corner nw"
+                                     onPointerDown={(e) => handlePointerDown(e, 'nw')}/>
+                                <div className="crop-handle corner ne"
+                                     onPointerDown={(e) => handlePointerDown(e, 'ne')}/>
+                                <div className="crop-handle corner sw"
+                                     onPointerDown={(e) => handlePointerDown(e, 'sw')}/>
+                                <div className="crop-handle corner se"
+                                     onPointerDown={(e) => handlePointerDown(e, 'se')}/>
 
                                 {/* Grid lines */}
                                 <div className="crop-grid">
-                                    <div className="grid-line horizontal" style={{ top: '33.33%' }} />
-                                    <div className="grid-line horizontal" style={{ top: '66.66%' }} />
-                                    <div className="grid-line vertical" style={{ left: '33.33%' }} />
-                                    <div className="grid-line vertical" style={{ left: '66.66%' }} />
+                                    <div className="grid-line horizontal" style={{top: '33.33%'}}/>
+                                    <div className="grid-line horizontal" style={{top: '66.66%'}}/>
+                                    <div className="grid-line vertical" style={{left: '33.33%'}}/>
+                                    <div className="grid-line vertical" style={{left: '66.66%'}}/>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div className="crop-actions">
                         <button className="reset-button" onClick={resetCrop} disabled={isSaving}>
-                            <RedoIcon /> Reset Crop
+                            <RedoIcon/> Reset Crop
                         </button>
                     </div>
                 </div>}

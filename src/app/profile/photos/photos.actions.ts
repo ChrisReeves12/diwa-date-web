@@ -203,7 +203,7 @@ export async function saveCropData(photoPath: string, cropData: CropData, captio
     return {
       success: true,
       message: 'Photo cropped successfully',
-      croppedImagePath,
+      croppedImageUrl: appendMediaRootToImageUrl(croppedImagePath),
       cropData,
     };
   } catch (error) {
