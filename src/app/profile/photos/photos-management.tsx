@@ -96,6 +96,7 @@ export function PhotosManagement() {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
     const imageRef = useRef<HTMLImageElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -383,6 +384,98 @@ export function PhotosManagement() {
         handleImageLoad();
     }
 
+    const generateCropPreviewStyles = useCallback(() => {
+        if (!imageRef.current || !imageBeingEdited) return {};
+
+        const img = imageRef.current;
+
+        // Calculate actual crop dimensions based on natural image size
+        const scaleX = img.naturalWidth / imageSize.width;
+        const scaleY = img.naturalHeight / imageSize.height;
+
+        // Adjust for image offset and calculate crop data in original image coordinates
+        const cropData = {
+            x: Math.round((cropArea.x - imageOffset.x) * scaleX),
+            y: Math.round((cropArea.y - imageOffset.y) * scaleY),
+            width: Math.round(cropArea.width * scaleX),
+            height: Math.round(cropArea.height * scaleY)
+        };
+
+        // Calculate the scale needed to fit the crop in the preview
+        const maxPreviewSize = Math.min(window.innerWidth * 0.8, window.innerHeight * 0.8);
+        const previewScale = Math.min(maxPreviewSize / cropData.width, maxPreviewSize / cropData.height, 1);
+
+        // For the preview, we need to scale the entire image and position it correctly
+        const imageDisplayWidth = img.naturalWidth * previewScale;
+        const imageDisplayHeight = img.naturalHeight * previewScale;
+        
+        // Position to show the cropped area
+        const offsetX = -cropData.x * previewScale;
+        const offsetY = -cropData.y * previewScale;
+
+        return {
+            cropData,
+            imageStyles: {
+                width: imageDisplayWidth,
+                height: imageDisplayHeight,
+                position: 'absolute' as const,
+                top: offsetY,
+                left: offsetX,
+                objectFit: 'cover' as const,
+            },
+            containerStyles: {
+                width: cropData.width * previewScale,
+                height: cropData.height * previewScale,
+                overflow: 'hidden',
+                borderRadius: '8px',
+                position: 'relative' as const,
+                backgroundColor: '#000',
+            }
+        };
+    }, [imageBeingEdited, cropArea, imageSize, imageOffset]);
+
+    const handlePreview = () => {
+        setShowPreview(true);
+    }
+
+    // Handle preview viewer click to close
+    useEffect(() => {
+        function handlePreviewClick(event: MouseEvent) {
+            if (event.target instanceof Element) {
+                if (event.target.closest('.image-viewer-nav') ||
+                    event.target.closest('.image-viewer-caption')) {
+                    return;
+                }
+            }
+            setShowPreview(false);
+        }
+
+        if (showPreview) {
+            document.addEventListener("click", handlePreviewClick);
+        }
+
+        return () => {
+            document.removeEventListener("click", handlePreviewClick);
+        };
+    }, [showPreview]);
+
+    // Handle keyboard navigation for preview
+    useEffect(() => {
+        function handleKeyDown(event: KeyboardEvent) {
+            if (!showPreview) return;
+
+            if (event.key === 'Escape') {
+                setShowPreview(false);
+            }
+        }
+
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [showPreview]);
+
     // Handle file upload
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
@@ -660,7 +753,7 @@ export function PhotosManagement() {
                         </div>
                     </div>
                     <div className="crop-actions">
-                        <button disabled={isSaving} className="preview-button">
+                        <button disabled={isSaving} className="preview-button" onClick={handlePreview}>
                             <EyeIcon/> Preview
                         </button>
                         <button className="reset-button" onClick={resetCrop} disabled={isSaving}>
@@ -695,6 +788,51 @@ export function PhotosManagement() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Preview Image Viewer */}
+            {showPreview && imageBeingEdited && (() => {
+                const previewStyles = generateCropPreviewStyles();
+                return (
+                    <div 
+                        className="image-viewer-overlay"
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            zIndex: 10000,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center'
+                        }}
+                        onClick={() => setShowPreview(false)}
+                    >
+                        <div className="image-viewer-content">
+                            <div className="image-viewer-image-wrapper">
+                                <div className="image-viewer-image-container">
+                                    <div 
+                                        style={previewStyles.containerStyles}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <img
+                                            src={imageBeingEdited.url}
+                                            alt="Crop Preview"
+                                            style={previewStyles.imageStyles}
+                                        />
+                                    </div>
+                                </div>
+                                {captionText && (
+                                    <div className="image-viewer-caption">
+                                        {captionText}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
         </>
     );
 }
