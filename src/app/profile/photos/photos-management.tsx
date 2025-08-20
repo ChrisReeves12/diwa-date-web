@@ -6,7 +6,7 @@ import { PhotoWithUrl } from '@/types/upload-progress.interface';
 import { getUserPhotos, saveCropData, uploadPhoto, deletePhoto } from './photos.actions';
 import { showAlert } from '@/util';
 import { Button, CircularProgress } from "@mui/material";
-import { ArrowLeftIcon, InfoCircleIcon, SaveIcon, TimesIcon, CropIcon, RedoIcon } from "react-line-awesome";
+import { ArrowLeftIcon, InfoCircleIcon, SaveIcon, TimesIcon, CropIcon, RedoIcon, EyeIcon } from "react-line-awesome";
 import {
     DndContext,
     closestCenter,
@@ -150,11 +150,11 @@ export function PhotosManagement() {
 
     const confirmImageDelete = async () => {
         if (!imageToDelete || isDeleting) return;
-        
+
         setIsDeleting(true);
         try {
             const result = await deletePhoto(imageToDelete.path);
-            
+
             if (result.success) {
                 // Reload photos to get updated list
                 await loadPhotos();
@@ -333,10 +333,10 @@ export function PhotosManagement() {
             if (result.success) {
                 // Add cache-busting parameter to force image reload
                 const timestamp = Date.now();
-                const croppedImageUrlWithCacheBust = result.croppedImageUrl ? 
-                    `${result.croppedImageUrl}?t=${timestamp}` : 
+                const croppedImageUrlWithCacheBust = result.croppedImageUrl ?
+                    `${result.croppedImageUrl}?t=${timestamp}` :
                     result.croppedImageUrl;
-                
+
                 // Update local state to show crop has been applied
                 setPhotos(prevPhotos =>
                     prevPhotos.map(photo => {
@@ -395,23 +395,23 @@ export function PhotosManagement() {
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            
+
             if (!allowedTypes.includes(file.type)) {
                 showAlert(`File ${file.name} is not a supported image format. Please use JPG, PNG, or WebP.`);
                 continue;
             }
-            
+
             if (file.size > maxSize) {
                 showAlert(`File ${file.name} is too large. Maximum file size is 10MB.`);
                 continue;
             }
-            
+
             // Additional validation for potentially problematic files
             if (file.size === 0) {
                 showAlert(`File ${file.name} appears to be empty.`);
                 continue;
             }
-            
+
             validFiles.push(file);
         }
 
@@ -431,23 +431,23 @@ export function PhotosManagement() {
         const uploadPromises = validFiles.map(async (file) => {
             try {
                 setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
-                
+
                 // Create FormData
                 const formData = new FormData();
                 formData.append('file', file);
-                
+
                 // Upload file
                 const response = await uploadPhoto(formData);
-                
+
                 if (response.success) {
                     setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
                     return response.photo;
                 }
-                
+
                 throw new Error(response.message || 'Upload failed');
             } catch (error) {
                 console.error(`Upload error for ${file.name}:`, error);
-                
+
                 // Provide more specific error messages
                 let errorMessage = `Failed to upload ${file.name}.`;
                 if (error instanceof Error) {
@@ -459,7 +459,7 @@ export function PhotosManagement() {
                         errorMessage = `${file.name} is not a supported format.`;
                     }
                 }
-                
+
                 showAlert(errorMessage);
                 return null;
             }
@@ -468,7 +468,7 @@ export function PhotosManagement() {
         try {
             const uploadedPhotos = await Promise.all(uploadPromises);
             const successfulUploads = uploadedPhotos.filter((photo: any) => photo !== null);
-            
+
             if (successfulUploads.length > 0) {
                 // Reload photos to get updated list
                 await loadPhotos();
@@ -515,10 +515,10 @@ export function PhotosManagement() {
                                 </DndContext>
                             </div>}
                         <div className="upload-controls-container">
-                            <input 
-                                multiple={true} 
-                                style={{display: 'none'}} 
-                                ref={fileInputRef} 
+                            <input
+                                multiple={true}
+                                style={{display: 'none'}}
+                                ref={fileInputRef}
                                 type="file"
                                 accept="image/*"
                                 onChange={handleFileUpload}
@@ -526,15 +526,15 @@ export function PhotosManagement() {
                             />
                             {photos.length > 1 && !isUploading &&
                                 <div className="drag-instructions">Tap photo to edit, drag to sort.</div>}
-                            {isUploading && 
+                            {isUploading &&
                                 <div className="upload-progress">
                                     <div className="upload-status">Uploading photos...</div>
                                     {Object.entries(uploadProgress).map(([fileName, progress]) => (
                                         <div key={fileName} className="file-progress">
                                             <div className="file-name">{fileName}</div>
                                             <div className="progress-bar">
-                                                <div 
-                                                    className="progress-fill" 
+                                                <div
+                                                    className="progress-fill"
                                                     style={{ width: `${progress}%` }}
                                                 />
                                             </div>
@@ -543,9 +543,9 @@ export function PhotosManagement() {
                                     ))}
                                 </div>}
                             {photos.length < MAX_PHOTOS &&
-                                <Button 
-                                    onClick={() => fileInputRef.current?.click()} 
-                                    variant="contained" 
+                                <Button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    variant="contained"
                                     type="button"
                                     disabled={isUploading}
                                     startIcon={isUploading ? <CircularProgress size={16} color="inherit" /> : undefined}
@@ -660,6 +660,9 @@ export function PhotosManagement() {
                         </div>
                     </div>
                     <div className="crop-actions">
+                        <button disabled={isSaving} className="preview-button">
+                            <EyeIcon/> Preview
+                        </button>
                         <button className="reset-button" onClick={resetCrop} disabled={isSaving}>
                             <RedoIcon/> Reset Crop
                         </button>
@@ -674,16 +677,16 @@ export function PhotosManagement() {
                     Are you sure you want to delete this photo? This action cannot be undone.
                 </DialogContent>
                 <DialogActions>
-                    <Button 
-                        onClick={cancelImageDelete} 
+                    <Button
+                        onClick={cancelImageDelete}
                         color="primary"
                         disabled={isDeleting}
                     >
                         Cancel
                     </Button>
-                    <Button 
-                        onClick={confirmImageDelete} 
-                        color="error" 
+                    <Button
+                        onClick={confirmImageDelete}
+                        color="error"
                         variant="contained"
                         disabled={isDeleting}
                         startIcon={isDeleting ? <CircularProgress size={16} color="inherit" /> : undefined}
