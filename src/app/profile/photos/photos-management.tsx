@@ -316,6 +316,12 @@ export function PhotosManagement() {
             const result = await saveCropData(imageBeingEdited.path, cropData, captionText);
 
             if (result.success) {
+                // Add cache-busting parameter to force image reload
+                const timestamp = Date.now();
+                const croppedImageUrlWithCacheBust = result.croppedImageUrl ? 
+                    `${result.croppedImageUrl}?t=${timestamp}` : 
+                    result.croppedImageUrl;
+                
                 // Update local state to show crop has been applied
                 setPhotos(prevPhotos =>
                     prevPhotos.map(photo => {
@@ -330,7 +336,7 @@ export function PhotosManagement() {
                                         croppedImagePath: result.croppedImageUrl!
                                     },
                                     caption: captionText,
-                                    croppedImageUrl: result.croppedImageUrl,
+                                    croppedImageUrl: croppedImageUrlWithCacheBust,
                                 }
                             else {
                                 return photo;
