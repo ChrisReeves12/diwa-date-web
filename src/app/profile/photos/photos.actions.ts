@@ -10,16 +10,17 @@ import sharp from 'sharp';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { PhotoWithUrl } from "@/types/upload-progress.interface";
 
 // Helper function to remove media root from URL if present
 function cleanImagePath(imagePath?: string): string | undefined {
   if (!imagePath) return imagePath;
-  
+
   const mediaRoot = process.env.MEDIA_IMAGE_ROOT_URL;
   if (mediaRoot && imagePath.startsWith(mediaRoot + '/')) {
     return imagePath.substring(mediaRoot.length + 1);
   }
-  
+
   return imagePath;
 }
 
@@ -133,12 +134,12 @@ async function uploadToAllBuckets(imagePath: string, imageBuffer: Buffer, conten
 async function deleteFromAllBuckets(imagePath: string): Promise<void> {
   const deletePromises = businessConfig.s3Buckets.map(async (bucketConfig) => {
     const s3Client = createS3Client(bucketConfig);
-    
+
     const command = new DeleteObjectCommand({
       Bucket: bucketConfig.bucketName,
       Key: imagePath,
     });
-    
+
     try {
       await s3Client.send(command);
       console.log(`Deleted ${imagePath} from ${bucketConfig.bucketName}`);
@@ -147,8 +148,29 @@ async function deleteFromAllBuckets(imagePath: string): Promise<void> {
       // Don't throw - continue with other buckets
     }
   });
-  
+
   await Promise.all(deletePromises);
+}
+
+export async function updatePhotoSortOrder(photos: PhotoWithUrl[]) {
+  const currentUser = await getCurrentUser(await cookies());
+  if (!currentUser) {
+    throw new Error('User not found');
+  }
+
+  for (let i = 0; i < photos.length; i++) {
+    photos[i].sortOrder = i;
+  }
+
+  await prismaWrite.users.update({
+    where: { id: currentUser.id },
+    data: {
+      photos: photos.map(cleanPhotoForStorage) as any,
+      updatedAt: new Date(),
+    },
+  });
+
+  return {success: true};
 }
 
 /**
@@ -279,11 +301,11 @@ export async function uploadPhoto(formData: FormData) {
     // Validate file
     const maxSize = 10 * 1024 * 1024; // 10MB
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    
+
     if (!allowedTypes.includes(file.type)) {
       throw new Error('Invalid file type. Please use JPG, PNG, or WebP.');
     }
-    
+
     if (file.size > maxSize) {
       throw new Error('File too large. Maximum size is 10MB.');
     }
@@ -306,11 +328,11 @@ export async function uploadPhoto(formData: FormData) {
         limitInputPixels: false // Remove pixel limit
       })
         .rotate() // Auto-rotate based on EXIF
-        .resize(2000, 2000, { 
-          fit: 'inside', 
-          withoutEnlargement: true 
+        .resize(2000, 2000, {
+          fit: 'inside',
+          withoutEnlargement: true
         })
-        .jpeg({ 
+        .jpeg({
           quality: 90,
           progressive: true,
           mozjpeg: true // Use mozjpeg encoder for better compatibility
@@ -318,14 +340,14 @@ export async function uploadPhoto(formData: FormData) {
         .toBuffer();
     } catch (sharpError) {
       console.warn('Sharp processing failed, trying fallback method:', sharpError);
-      
+
       // Fallback: try to process as PNG first, then convert to JPEG
       try {
         processedImage = await sharp(imageBuffer, { failOnError: false })
           .png() // Convert to PNG first to clean up any corruption
-          .jpeg({ 
+          .jpeg({
             quality: 90,
-            progressive: true 
+            progressive: true
           })
           .toBuffer();
       } catch (fallbackError) {
@@ -386,7 +408,7 @@ export async function deletePhoto(photoPath: string) {
 
     const currentPhotos = (currentUser.photos as unknown as UserPhoto[]) || [];
     const photoToDelete = currentPhotos.find(photo => photo.path === photoPath);
-    
+
     if (!photoToDelete) {
       throw new Error('Photo not found');
     }
@@ -403,9 +425,9 @@ export async function deletePhoto(photoPath: string) {
 
     // Remove photo from user's photos array
     const updatedPhotos = currentPhotos.filter(photo => photo.path !== photoPath);
-    
+
     // Update sort orders to maintain consecutive numbering and clean all photo paths
-    const reorderedPhotos = updatedPhotos.map((photo, index) => 
+    const reorderedPhotos = updatedPhotos.map((photo, index) =>
       cleanPhotoForStorage({
         ...photo,
         sortOrder: index

@@ -3,15 +3,13 @@
 import './photos-management.scss';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PhotoWithUrl } from '@/types/upload-progress.interface';
-import { getUserPhotos, saveCropData, uploadPhoto, deletePhoto } from './photos.actions';
+import { getUserPhotos, saveCropData, uploadPhoto, deletePhoto, updatePhotoSortOrder } from './photos.actions';
 import { showAlert } from '@/util';
 import { Button, CircularProgress } from "@mui/material";
-import { ArrowLeftIcon, InfoCircleIcon, SaveIcon, TimesIcon, CropIcon, RedoIcon, EyeIcon } from "react-line-awesome";
+import { InfoCircleIcon, SaveIcon, TimesIcon, CropIcon, RedoIcon, EyeIcon } from "react-line-awesome";
 import {
     DndContext,
     closestCenter,
-    KeyboardSensor,
-    PointerSensor,
     useSensor,
     useSensors, TouchSensor,
 } from '@dnd-kit/core';
@@ -87,6 +85,7 @@ export function PhotosManagement() {
     const [cropArea, setCropArea] = useState<CropArea>({x: 0, y: 0, width: 200, height: 200});
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
+    const [isSorting, setIsSorting] = useState(false);
     const [dragStart, setDragStart] = useState({x: 0, y: 0});
     const [resizeHandle, setResizeHandle] = useState('');
     const [imageSize, setImageSize] = useState({width: 0, height: 0});
@@ -134,8 +133,16 @@ export function PhotosManagement() {
             setPhotos((aPhotos) => {
                 const oldIndex = aPhotos.findIndex(photo => photo.path === active.id);
                 const newIndex = aPhotos.findIndex(photo => photo.path === over.id);
+                const sortedPhotos = arrayMove(aPhotos, oldIndex, newIndex);
 
-                return arrayMove(aPhotos, oldIndex, newIndex);
+                if (!isSorting && !isDeleting && !isUploading && !isResizing) {
+                    setTimeout(() => {
+                        setIsSorting(true);
+                        updatePhotoSortOrder(sortedPhotos).finally(() => setIsSorting(false))
+                    }, 300);
+                }
+
+                return sortedPhotos;
             });
         }
     }
@@ -408,7 +415,7 @@ export function PhotosManagement() {
         // For the preview, we need to scale the entire image and position it correctly
         const imageDisplayWidth = img.naturalWidth * previewScale;
         const imageDisplayHeight = img.naturalHeight * previewScale;
-        
+
         // Position to show the cropped area
         const offsetX = -cropData.x * previewScale;
         const offsetY = -cropData.y * previewScale;
@@ -793,7 +800,7 @@ export function PhotosManagement() {
             {showPreview && imageBeingEdited && (() => {
                 const previewStyles = generateCropPreviewStyles();
                 return (
-                    <div 
+                    <div
                         className="image-viewer-overlay"
                         style={{
                             position: 'fixed',
@@ -812,7 +819,7 @@ export function PhotosManagement() {
                         <div className="image-viewer-content">
                             <div className="image-viewer-image-wrapper">
                                 <div className="image-viewer-image-container">
-                                    <div 
+                                    <div
                                         style={previewStyles.containerStyles}
                                         onClick={(e) => e.stopPropagation()}
                                     >

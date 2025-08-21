@@ -1,6 +1,10 @@
 @use '@/styles/globals' as globals;
 
 .photos-management {
+  .no-photos-caption {
+    text-align: center;
+  }
+
   .loader-container {
     display: flex;
     align-items: center;
