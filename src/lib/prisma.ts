@@ -8,11 +8,21 @@ declare global {
 }
 
 function createPrismaClient(url: string) {
+    const logConfig = [];
+    
+    // Always log errors
+    logConfig.push('error');
+    
+    // Add SQL query logging if LOG_PRISMA_SQL is set to true
+    if (process.env.LOG_PRISMA_SQL === 'true') {
+        logConfig.push('query', 'info', 'warn');
+    }
+    
     return new PrismaClient({
         datasources: {
             db: { url }
         },
-        // log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+        log: logConfig,
     });
 }
 

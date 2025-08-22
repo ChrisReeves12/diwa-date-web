@@ -160,7 +160,6 @@ export default function NotificationCenter() {
 
     useEffect(() => {
         const handleNotificationCenterRefresh = () => {
-            console.log('notification-center-refresh event received, refetching notification data.');
             refetchNotificationData();
         };
 

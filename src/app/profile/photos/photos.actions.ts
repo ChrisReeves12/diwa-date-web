@@ -162,13 +162,16 @@ export async function updatePhotoSortOrder(photos: PhotoWithUrl[]) {
     photos[i].sortOrder = i;
   }
 
-  await prismaWrite.users.update({
-    where: { id: currentUser.id },
-    data: {
-      photos: photos.map(cleanPhotoForStorage) as any,
-      updatedAt: new Date(),
-    },
-  });
+  // Set the first photo as the main photo
+  const mainPhoto = photos.length > 0 ? cleanImagePath(photos[0].path) || photos[0].path : undefined;
+
+  await prismaWrite.$executeRaw`
+    UPDATE users 
+    SET "photos" = ${JSON.stringify(photos.map(cleanPhotoForStorage))}::jsonb,
+        "mainPhoto" = ${mainPhoto},
+        "updatedAt" = ${new Date()}
+    WHERE id = ${currentUser.id}
+  `;
 
   return {success: true};
 }
@@ -263,13 +266,12 @@ export async function saveCropData(photoPath: string, cropData: CropData, captio
     });
 
     // Update the user record with the new photos data
-    await prismaWrite.users.update({
-      where: { id: currentUser.id },
-      data: {
-        photos: updatedPhotos as any,
-        updatedAt: new Date(),
-      },
-    });
+    await prismaWrite.$executeRaw`
+      UPDATE users 
+      SET "photos" = ${JSON.stringify(updatedPhotos)}::jsonb,
+          "updatedAt" = ${new Date()}
+      WHERE id = ${currentUser.id}
+    `;
 
     return {
       success: true,
@@ -365,6 +367,8 @@ export async function uploadPhoto(formData: FormData) {
       sortOrder: (currentUser.photos as any[])?.length || 0,
       caption: undefined,
       croppedImageData: undefined,
+      isHidden: false,
+      uploadedAt: new Date().toISOString(),
     };
 
     // Update user's photos in database - clean all existing photos first
@@ -372,14 +376,18 @@ export async function uploadPhoto(formData: FormData) {
     const cleanedCurrentPhotos = currentPhotos.map(photo => cleanPhotoForStorage(photo));
     const updatedPhotos = [...cleanedCurrentPhotos, newPhoto];
 
-    await prismaWrite.users.update({
-      where: { id: currentUser.id },
-      data: {
-        photos: updatedPhotos as any,
-        numOfPhotos: updatedPhotos.length,
-        updatedAt: new Date(),
-      },
-    });
+    // Set as main photo if this is the first photo or no main photo exists
+    const shouldSetAsMainPhoto = currentPhotos.length === 0 || !currentUser.mainPhoto;
+    const mainPhoto = shouldSetAsMainPhoto ? cleanImagePath(newPhoto.path) || newPhoto.path : currentUser.mainPhoto;
+
+    await prismaWrite.$executeRaw`
+      UPDATE users 
+      SET "photos" = ${JSON.stringify(updatedPhotos)}::jsonb,
+          "numOfPhotos" = ${updatedPhotos.length},
+          "mainPhoto" = ${mainPhoto},
+          "updatedAt" = ${new Date()}
+      WHERE id = ${currentUser.id}
+    `;
 
     return {
       success: true,
@@ -434,15 +442,24 @@ export async function deletePhoto(photoPath: string) {
       })
     );
 
+    // Check if the deleted photo was the main photo, and reassign if needed
+    let newMainPhoto = currentUser.mainPhoto;
+    const deletedPhotoCleanPath = cleanImagePath(photoPath) || photoPath;
+    const currentMainPhotoCleanPath = cleanImagePath(currentUser.mainPhoto) || currentUser.mainPhoto;
+
+    if (currentMainPhotoCleanPath === deletedPhotoCleanPath) {
+      // The main photo was deleted, set the new first photo as main photo
+      newMainPhoto = reorderedPhotos.length > 0 ? cleanImagePath(reorderedPhotos[0].path) || reorderedPhotos[0].path : undefined;
+    }
+
     // Update database
-    await prismaWrite.users.update({
-      where: { id: currentUser.id },
-      data: {
-        photos: reorderedPhotos as any,
-        numOfPhotos: reorderedPhotos.length,
-        updatedAt: new Date(),
-      },
-    });
+    await prismaWrite.$executeRaw`
+      UPDATE users 
+      SET "photos" = ${JSON.stringify(reorderedPhotos)}::jsonb,
+          "numOfPhotos" = ${reorderedPhotos.length},
+          "mainPhoto" = ${newMainPhoto},
+          "updatedAt" = ${new Date()}
+      WHERE id = ${currentUser.id}`;
 
     return {
       success: true,
