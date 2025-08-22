@@ -161,7 +161,7 @@ function SearchResultsView({ currentUser: initialCurrentUser, searchPromise }: {
                 </div>
             </div>
             <Modal open={isSearchFiltersModalOpen}>
-                <Box sx={{
+                <Box className="modal-background" sx={{
                     position: 'absolute',
                     top: innerWidth <= 768 ? '50%' : '48%',
                     left: '50%',

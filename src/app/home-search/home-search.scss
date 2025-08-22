@@ -20,6 +20,7 @@
     }
 
     @include globals.dark-mode {
+      color: white;
       border-bottom-color: #ffffff;
       background-color: globals.$dark-background-color;
     }

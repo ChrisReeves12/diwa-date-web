@@ -8,7 +8,7 @@ $teal: #1ca9d6;
 $slate: #2d4154;
 $top-bar-height: 68px;
 $error-color-light: #c30000;
-$error-color-dark: #ff0000;
+$error-color-dark: #ff4848;
 $default-font: "Nunito Sans", sans-serif;
 
 // Tailwind-friendly breakpoint mixins
@@ -76,6 +76,16 @@ body {
   margin: 0;
   font-family: $default-font;
   background-color: $light-background-color;
+
+  .modal-background {
+    background-color: #ffffff;
+    color: #000000;
+
+    @include dark-mode {
+      background-color: #212121;
+      color: #ffffff;
+    }
+  }
 
   &.messages {
     background-color: #ebf6ff;

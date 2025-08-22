@@ -14,6 +14,10 @@
   padding: 10px;
   font-size: 14px;
 
+  @include globals.dark-mode {
+    background-color: #131313;
+  }
+
   @include globals.media-min('screens.md') {
     font-size: 16px;
     margin: 8px 8px 14px;
@@ -31,6 +35,11 @@
     justify-content: space-between;
     flex: 1;
     height: 100%;
+    color: #000000;
+
+    @include globals.dark-mode {
+      color: #ffffff;
+    }
 
     .info-photo-count-container {
       display: flex;
@@ -133,6 +142,11 @@
           .count-value {
             padding-right: 4px;
             font-size: 16px;
+            color: #000000;
+
+            @include globals.dark-mode {
+              color: #ffffff;
+            }
           }
         }
 
@@ -328,7 +342,7 @@
         .like-button {
           i {
             font-size: 36px;
-            color: #cccccc;
+            color: #515151;
           }
 
           &.liked {
@@ -378,6 +392,10 @@
 
             &.pass {
               background-color: #c0c0c0;
+
+              @include globals.dark-mode {
+                background-color: #3b3b3b;
+              }
             }
           }
         }

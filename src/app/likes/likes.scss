@@ -24,6 +24,8 @@
     top: 116px;
 
     @include globals.media-min('screens.md') {
+      background-color: globals.$dark-background-color;
+      color: #ffffff;
       flex-direction: row;
       justify-content: space-between;
       align-items: center;

@@ -72,6 +72,10 @@
         border-bottom: 1px solid #eee;
         text-decoration: none;
 
+        @include globals.dark-mode {
+            color: #ffffff;
+        }
+
         .conversation-link {
             display: flex;
             transition: background-color 0.2s ease;
@@ -127,11 +131,19 @@
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
+
+                    @include globals.dark-mode {
+                        color: #c3c3c3;
+                    }
                 }
 
                 .last-sent {
                     color: #999;
                     font-size: 12px;
+
+                    @include  globals.dark-mode {
+                        color: #ffffff;
+                    }
                 }
             }
         }

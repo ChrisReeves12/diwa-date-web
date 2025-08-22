@@ -26,15 +26,19 @@
   .chat-view-header {
     position: fixed;
     z-index: 8;
-    top: 116px;
+    top: 115px;
     width: 100%;
     padding: 8px 3px;
     display: flex;
     align-items: center;
     gap: 8px;
-    background: white;
+    background: #ffffff;
     border-bottom: 1px solid #cdcdcd;
     box-shadow: 1px 0 6px rgba(0, 0, 0, 0.5);
+
+    @include globals.dark-mode {
+      background: #222222;
+    }
 
     .back-button-container {
       width: 10vw;
@@ -49,6 +53,10 @@
         padding: 0;
         margin: 0;
         color: globals.$primary-blue;
+
+        @include globals.dark-mode {
+          color: #ffffff;
+        }
       }
     }
 

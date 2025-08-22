@@ -6,10 +6,12 @@
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  color: #000000;
 
   @include globals.dark-mode {
     background-color: globals.$dark-background-color;
     border: 1px solid #eaeaea;
+    color: #ffffff;
   }
 
   .profile-photo-name-section {
@@ -24,7 +26,7 @@
       cursor: pointer;
       transition: opacity 0.2s ease;
       border-radius: 50%;
-      
+
       &:hover {
         opacity: 0.8;
       }
@@ -102,8 +104,16 @@
       text-decoration: none;
       transition: color 0.2s ease;
 
+      @include globals.dark-mode {
+        color: #ffffff;
+      }
+
       &:hover {
         color: globals.$primary-blue;
+
+        @include globals.dark-mode {
+          color: globals.$primary-blue-dark;
+        }
       }
 
       .icon {
@@ -140,6 +150,10 @@
       background: none;
       cursor: pointer;
       transition: opacity 0.2s ease;
+
+      @include globals.dark-mode {
+        color: #ffffff;
+      }
 
       &:hover {
         opacity: 0.8;

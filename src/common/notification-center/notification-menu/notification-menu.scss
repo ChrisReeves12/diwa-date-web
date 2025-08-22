@@ -136,11 +136,19 @@
             &.like {
               background-color: globals.$primary-blue;
               color: #ffffff;
+
+              @include globals.dark-mode {
+                background-color: globals.$primary-blue-dark;
+              }
             }
 
             &.pass {
               background-color: #b4b4b4;
               color: #ffffff;
+
+              @include globals.dark-mode {
+                background-color: #7d7d7d;
+              }
             }
           }
         }
