@@ -138,7 +138,11 @@ export function PhotosManagement() {
                 if (!isSorting && !isDeleting && !isUploading && !isResizing) {
                     setTimeout(() => {
                         setIsSorting(true);
-                        updatePhotoSortOrder(sortedPhotos).finally(() => setIsSorting(false))
+                        updatePhotoSortOrder(sortedPhotos).finally(() => {
+                            setIsSorting(false);
+                            // Dispatch event to refresh user profile main photo in notification center
+                            window.dispatchEvent(new CustomEvent('refresh-user-profile-main-photo'));
+                        });
                     }, 300);
                 }
 
@@ -166,6 +170,8 @@ export function PhotosManagement() {
             if (result.success) {
                 // Reload photos to get updated list
                 await loadPhotos();
+                // Dispatch event to refresh user profile main photo in notification center
+                window.dispatchEvent(new CustomEvent('refresh-user-profile-main-photo'));
             }
         } catch (error) {
             console.error('Delete photo error:', error);
@@ -370,6 +376,8 @@ export function PhotosManagement() {
 
                 setImageBeingEdited(undefined);
                 setCaptionText('');
+                // Dispatch event to refresh user profile main photo in notification center
+                window.dispatchEvent(new CustomEvent('refresh-user-profile-main-photo'));
             }
         } catch (error) {
             console.error('Error saving crop data:', error);
@@ -572,6 +580,8 @@ export function PhotosManagement() {
             if (successfulUploads.length > 0) {
                 // Reload photos to get updated list
                 await loadPhotos();
+                // Dispatch event to refresh user profile main photo in notification center
+                window.dispatchEvent(new CustomEvent('refresh-user-profile-main-photo'));
             }
         } catch (error) {
             console.error('Upload process error:', error);

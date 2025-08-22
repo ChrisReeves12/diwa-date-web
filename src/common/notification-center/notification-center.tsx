@@ -17,7 +17,7 @@ import {
 import { useNotificationPopovers } from './hooks/use-notification-popovers';
 import NotificationIconsContainer from './notification-icons-container/notification-icons-container';
 import NotificationPopover from './notification-popover/notification-popover';
-import { muteUser, sendUserMatch } from '../server-actions/user-profile.actions';
+import { muteUser, sendUserMatch, fetchCurrentUserMainPhotoUrl } from '../server-actions/user-profile.actions';
 import { useRouter, usePathname } from 'next/navigation';
 import { useWebSocket } from '@/hooks/use-websocket';
 
@@ -32,6 +32,8 @@ export default function NotificationCenter() {
     const [error, setError] = useState<string | null>(null);
     const [newNotificationAnimations, setNewNotificationAnimations] = useState<NewNotificationAnimation>({});
     const [itemLoadingStates, setItemLoadingStates] = useState<{ [key: string]: boolean }>({});
+    const [userMainPhoto, setUserMainPhoto] = useState<string | undefined>(currentUser?.publicMainPhoto);
+    const [userMainPhotoCroppedImageData, setUserMainPhotoCroppedImageData] = useState<any>(currentUser?.mainPhotoCroppedImageData);
     const popovers = useNotificationPopovers();
     const router = useRouter();
     const pathname = usePathname();
@@ -79,6 +81,21 @@ export default function NotificationCenter() {
             setNotificationsData(data);
         } catch (err) {
             console.error('Error refetching notification data:', err);
+        }
+    }, [currentUser]);
+
+    // Refetch user main photo data from server
+    const refetchUserMainPhoto = useCallback(async () => {
+        if (!currentUser) return;
+
+        try {
+            const photoData = await fetchCurrentUserMainPhotoUrl();
+            if (photoData) {
+                setUserMainPhoto(photoData.publicMainPhoto);
+                setUserMainPhotoCroppedImageData(photoData.mainPhotoCroppedImageData);
+            }
+        } catch (err) {
+            console.error('Error refetching user main photo:', err);
         }
     }, [currentUser]);
 
@@ -171,10 +188,26 @@ export default function NotificationCenter() {
     }, [refetchNotificationData]);
 
     useEffect(() => {
+        const handleUserProfileMainPhotoRefresh = () => {
+            refetchUserMainPhoto();
+        };
+
+        window.addEventListener('refresh-user-profile-main-photo', handleUserProfileMainPhotoRefresh);
+
+        return () => {
+            window.removeEventListener('refresh-user-profile-main-photo', handleUserProfileMainPhotoRefresh);
+        };
+    }, [refetchUserMainPhoto]);
+
+    useEffect(() => {
         if (!currentUser) {
             setIsLoading(false);
             return;
         }
+
+        // Initialize user photo state when currentUser changes
+        setUserMainPhoto(currentUser.publicMainPhoto);
+        setUserMainPhotoCroppedImageData(currentUser.mainPhotoCroppedImageData);
 
         const loadData = async () => {
             setIsLoading(true);
@@ -270,8 +303,8 @@ export default function NotificationCenter() {
                         }}
                         className="profile-container">
                         <UserPhotoDisplay gender={currentUser.gender}
-                            croppedImageData={currentUser.mainPhotoCroppedImageData}
-                            imageUrl={currentUser.publicMainPhoto} />
+                            croppedImageData={userMainPhotoCroppedImageData}
+                            imageUrl={userMainPhoto} />
                         <div className="profile-name-container">
                             <h5>{currentUser.displayName}</h5>
                             <h6>My Account</h6>

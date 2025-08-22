@@ -8,7 +8,8 @@ import Image from 'next/image';
 import { logoutAction } from '@/common/server-actions/logout.actions';
 import './user-profile-account-menu.scss';
 import { toggleOnlineStatus } from '@/common/server-actions/user.actions';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { fetchCurrentUserMainPhotoUrl } from '@/common/server-actions/user-profile.actions';
 import { isUserOnline } from '@/helpers/user.helpers';
 import { showAlert } from '@/util';
 import { Switch } from '@mui/material';
@@ -22,6 +23,44 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(currentUser?.lastActiveAt ? isUserOnline(currentUser.lastActiveAt, currentUser.hideOnlineStatus) : false);
   const [hideOnlineStatus, setHideOnlineStatus] = useState(currentUser?.hideOnlineStatus || false);
+  const [userMainPhoto, setUserMainPhoto] = useState<string | undefined>(currentUser?.publicMainPhoto);
+  const [userMainPhotoCroppedImageData, setUserMainPhotoCroppedImageData] = useState<any>(currentUser?.mainPhotoCroppedImageData);
+
+  // Refetch user main photo data from server
+  const refetchUserMainPhoto = useCallback(async () => {
+    if (!currentUser) return;
+
+    try {
+      const photoData = await fetchCurrentUserMainPhotoUrl();
+      if (photoData) {
+        setUserMainPhoto(photoData.publicMainPhoto);
+        setUserMainPhotoCroppedImageData(photoData.mainPhotoCroppedImageData);
+      }
+    } catch (err) {
+      console.error('Error refetching user main photo:', err);
+    }
+  }, [currentUser]);
+
+  // Initialize user photo state when currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      setUserMainPhoto(currentUser.publicMainPhoto);
+      setUserMainPhotoCroppedImageData(currentUser.mainPhotoCroppedImageData);
+    }
+  }, [currentUser]);
+
+  // Event listener for user profile main photo refresh
+  useEffect(() => {
+    const handleUserProfileMainPhotoRefresh = () => {
+      refetchUserMainPhoto();
+    };
+
+    window.addEventListener('refresh-user-profile-main-photo', handleUserProfileMainPhotoRefresh);
+
+    return () => {
+      window.removeEventListener('refresh-user-profile-main-photo', handleUserProfileMainPhotoRefresh);
+    };
+  }, [refetchUserMainPhoto]);
 
   const handleToggleOnlineStatus = async (e: React.ChangeEvent<HTMLInputElement>) => {
     // Prevent event bubbling to avoid closing the popover
@@ -65,8 +104,8 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
             <UserPhotoDisplay
               gender={currentUser.gender}
               alt={currentUser.displayName}
-              croppedImageData={currentUser.mainPhotoCroppedImageData}
-              imageUrl={currentUser.publicMainPhoto}
+              croppedImageData={userMainPhotoCroppedImageData}
+              imageUrl={userMainPhoto}
             />
           </Link>
           <div className="name-online-status-section">

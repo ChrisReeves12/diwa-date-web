@@ -150,4 +150,27 @@ export async function unBlockUserAction(blockedUserId: number): Promise<boolean>
     }
 }
 
+/**
+ * Fetch the current user's main photo URL for profile updates
+ * @returns The updated main photo data or null if error
+ */
+export async function fetchCurrentUserMainPhotoUrl(): Promise<{ publicMainPhoto?: string; mainPhotoCroppedImageData?: any } | null> {
+    try {
+        const currentUser = await getCurrentUser(await cookies());
+        if (!currentUser) {
+            redirect('/login');
+        } else {
+            refreshLastActive(currentUser).then();
+        }
+
+        return {
+            publicMainPhoto: currentUser.publicMainPhoto,
+            mainPhotoCroppedImageData: currentUser.mainPhotoCroppedImageData
+        };
+    } catch (error) {
+        logError(error instanceof Error ? error : new Error(String(error)), 'Error fetching current user main photo');
+        return null;
+    }
+}
+
 
