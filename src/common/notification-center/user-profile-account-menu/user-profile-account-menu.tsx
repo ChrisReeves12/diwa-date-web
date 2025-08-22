@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import UserPhotoDisplay from '@/common/user-photo-display/user-photo-display';
 import { useCurrentUser } from '@/common/context/current-user-context';
 import Link from 'next/link';
@@ -20,7 +19,6 @@ interface UserProfileAccountMenuProps {
 
 export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileAccountMenuProps) {
   const currentUser = useCurrentUser();
-  const router = useRouter();
   const [isOnline, setIsOnline] = useState(currentUser?.lastActiveAt ? isUserOnline(currentUser.lastActiveAt, currentUser.hideOnlineStatus) : false);
   const [hideOnlineStatus, setHideOnlineStatus] = useState(currentUser?.hideOnlineStatus || false);
   const [userMainPhoto, setUserMainPhoto] = useState<string | undefined>(currentUser?.publicMainPhoto);
@@ -51,16 +49,8 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
 
   // Event listener for user profile main photo refresh
   useEffect(() => {
-    const handleUserProfileMainPhotoRefresh = () => {
       refetchUserMainPhoto();
-    };
-
-    window.addEventListener('refresh-user-profile-main-photo', handleUserProfileMainPhotoRefresh);
-
-    return () => {
-      window.removeEventListener('refresh-user-profile-main-photo', handleUserProfileMainPhotoRefresh);
-    };
-  }, [refetchUserMainPhoto]);
+  }, []);
 
   const handleToggleOnlineStatus = async (e: React.ChangeEvent<HTMLInputElement>) => {
     // Prevent event bubbling to avoid closing the popover

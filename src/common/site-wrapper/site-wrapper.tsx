@@ -1,15 +1,29 @@
 'use client';
 
 import { ReactNode, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import SiteTopBar from '../site-top-bar/site-top-bar';
 import './site-wrapper.scss';
 import InfoBar from '../site-info-bar/info-bar';
 import { Alert, Button } from '@mui/material';
 
 export default function SiteWrapper({ children, hideButtons = false, hideFlashMessage = false }: { children: ReactNode, hideButtons?: boolean, hideFlashMessage?: boolean }) {
+    const pathname = usePathname();
     const [alertMessage, setAlertMessage] = useState<string | null>(null);
     const [alertType, setAlertType] = useState<'success' | 'warning' | undefined>();
-    const [hideInfoBar, setHideInfoBar] = useState(false);
+    
+    const shouldHideInfoBar = (): boolean => {
+        return pathname.startsWith('/profile/') || 
+               pathname.startsWith('/account/') || 
+               pathname.startsWith('/messages/');
+    };
+    
+    const [hideInfoBar, setHideInfoBar] = useState(shouldHideInfoBar());
+    
+    useEffect(() => {
+        setHideInfoBar(shouldHideInfoBar());
+    }, [pathname]);
+    
     useEffect(() => {
         if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
             setAlertMessage(window.localStorage.getItem('FlashSuccessMessage') || window.localStorage.getItem('FlashWarningMessage'));

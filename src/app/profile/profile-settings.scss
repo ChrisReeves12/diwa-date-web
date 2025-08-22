@@ -5,6 +5,11 @@
 
     @include globals.media-min('screens.md') {
         padding: 40px 0;
+
+        .subscription-plan-display-container {
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
     }
 
     h2 {

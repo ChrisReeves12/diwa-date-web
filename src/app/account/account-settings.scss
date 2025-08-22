@@ -10,6 +10,7 @@
     @include globals.media-min('screens.md') {
       margin-top: inherit;
       margin-bottom: inherit;
+      padding-left: 0;
     }
   }
 }
@@ -17,6 +18,13 @@
 .account-settings-form-container {
   padding-top: 20px;
   padding-bottom: 50px;
+
+  @include globals.media-min('screens.md') {
+    .subscription-plan-display-container {
+      padding-top: 40px;
+      padding-bottom: 20px;
+    }
+  }
 
   .settings-section {
     padding-right: 12px;

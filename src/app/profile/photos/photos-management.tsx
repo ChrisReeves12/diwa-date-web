@@ -6,12 +6,12 @@ import { PhotoWithUrl } from '@/types/upload-progress.interface';
 import { getUserPhotos, saveCropData, uploadPhoto, deletePhoto, updatePhotoSortOrder } from './photos.actions';
 import { showAlert } from '@/util';
 import { Button, CircularProgress } from "@mui/material";
-import { InfoCircleIcon, SaveIcon, TimesIcon, CropIcon, RedoIcon, EyeIcon } from "react-line-awesome";
+import { InfoCircleIcon, SaveIcon, TimesIcon, RedoIcon, EyeIcon } from "react-line-awesome";
 import {
     DndContext,
     closestCenter,
     useSensor,
-    useSensors, TouchSensor,
+    useSensors, TouchSensor, PointerSensor,
 } from '@dnd-kit/core';
 import {
     arrayMove,
@@ -23,8 +23,6 @@ import {
     CSS,
 } from '@dnd-kit/utilities';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
-
-const innerWidth = window.innerWidth;
 
 function SortablePhotoItem({photoWithUrl, onClick, onDelete}: {
     photoWithUrl: PhotoWithUrl,
@@ -100,7 +98,7 @@ export function PhotosManagement() {
     const containerRef = useRef<HTMLDivElement>(null);
 
     const sensors = useSensors(
-        useSensor(TouchSensor, {
+        useSensor(PointerSensor, {
             activationConstraint: {
                 delay: 150,
                 tolerance: 5,
