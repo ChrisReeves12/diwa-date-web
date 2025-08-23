@@ -76,6 +76,19 @@ body {
   margin: 0;
   font-family: $default-font;
   background-color: $light-background-color;
+  color: #000000;
+
+  @include dark-mode {
+    color: #ffffff;
+  }
+
+  input {
+    color: #000000;
+
+    @include dark-mode {
+      color: #ffffff;
+    }
+  }
 
   .modal-background {
     background-color: #ffffff;

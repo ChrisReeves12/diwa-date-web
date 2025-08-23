@@ -46,7 +46,7 @@ export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleS
     }
 
     return (
-        <Box sx={{
+        <Box className="modal-background" sx={{
             position: 'absolute',
             top: '25%',
             left: '50%',

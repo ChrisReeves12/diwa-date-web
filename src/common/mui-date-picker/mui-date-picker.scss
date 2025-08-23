@@ -1,9 +1,15 @@
+@use '@/styles/globals' as globals;
+
 .mui-date-picker-container {
     margin-bottom: 1rem;
     
     &.error {
         .MuiFormHelperText-root {
             color: #d32f2f;
+            
+            @include globals.dark-mode {
+                color: #ff4848;
+            }
         }
     }
     
@@ -45,6 +51,10 @@
         
         &.Mui-error {
             color: #d32f2f;
+            
+            @include globals.dark-mode {
+                color: #ff4848;
+            }
         }
     }
 }

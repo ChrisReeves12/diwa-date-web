@@ -75,6 +75,10 @@
 
           .online-status-label {
             color: #666;
+
+            @include globals.dark-mode {
+              color: #ffffff;
+            }
           }
         }
 

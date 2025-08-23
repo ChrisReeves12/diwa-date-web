@@ -62,7 +62,8 @@
           background-color: globals.$light-background-color;
 
           @include globals.dark-mode {
-            background-color: globals.$dark-background-color;
+            background-color: #555555;;
+            color: #ffffff;
           }
         }
       }
@@ -83,6 +84,10 @@
       padding-bottom: 8px;
       font-size: 14px;
       color: #676767;
+
+      @include globals.dark-mode {
+        color: #b7b7b7;
+      }
     }
 
     .upload-progress {
@@ -91,12 +96,12 @@
       .upload-status {
         font-size: 14px;
         font-weight: 500;
-        color: #1976d2;
+        color: globals.$primary-blue;
         margin-bottom: 8px;
         text-align: center;
 
         @include globals.dark-mode {
-          color: #4a9eff;
+          color: globals.$primary-blue-dark;
         }
       }
 
@@ -145,7 +150,7 @@
             border-radius: 3px;
 
             @include globals.dark-mode {
-              background-color: #4a9eff;
+              background-color: globals.$primary-blue-dark;
             }
           }
         }
@@ -181,6 +186,11 @@
       border-bottom: 1px solid #bfbfbf;
       justify-content: space-between;
       padding-bottom: 12px;
+      color: #000000;
+
+      @include globals.dark-mode {
+        color: #ffffff;
+      }
 
       @include globals.media-min('screens.md') {
         justify-content: left;
@@ -191,6 +201,11 @@
         display: flex;
         align-items: center;
         transition: opacity 0.2s ease;
+        color: #000000;
+
+        @include globals.dark-mode {
+          color: #ffffff;
+        }
 
         &:disabled {
           opacity: 0.6;
@@ -220,7 +235,7 @@
         font-weight: 500;
 
         @include globals.dark-mode {
-          color: #aaa;
+          color: #d2d2d2;
         }
       }
 
@@ -235,7 +250,7 @@
         transition: opacity 0.2s ease;
 
         &:focus {
-          border-color: #1976d2;
+          border-color: globals.$primary-blue;
         }
 
         &:disabled {
@@ -248,9 +263,10 @@
           background-color: #333;
           border-color: #555;
           color: #fff;
+          border-color: #bfbfbf;
 
           &:focus {
-            border-color: #4a9eff;
+            border-color: globals.$primary-blue-dark;
           }
 
           &:disabled {
@@ -276,6 +292,10 @@
 
       @include globals.media-min('screens.md') {
         height: 50vh;
+      }
+
+      @include globals.dark-mode {
+        border: 1px solid #757575;
       }
 
       &.saving {
@@ -425,6 +445,10 @@
 
       .reset-button {
         background-color: #a1a1a1;
+
+        @include globals.dark-mode {
+          background-color: #858585;
+        }
       }
 
       .preview-button {

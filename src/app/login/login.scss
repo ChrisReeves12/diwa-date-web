@@ -17,6 +17,10 @@
         bottom: 0;
         background: linear-gradient(164deg, #caebff 0%, #0995eb 100%);
         z-index: 1;
+
+        @include globals.dark-mode {
+            background: linear-gradient(164deg, #121212 0%, #1d1d1d 100%);
+        }
     }
 
     .container {
@@ -42,6 +46,10 @@
         border-radius: 12px;
         box-shadow: 0 7px 10px rgba(0, 0, 0, 0.3);
         overflow: hidden;
+
+        @include globals.dark-mode {
+            background: #262626;
+        }
     }
 
     .form-section {
@@ -92,6 +100,10 @@
             margin-top: 0;
             text-align: center;
             font-weight: normal;
+
+            @include globals.dark-mode {
+                color: #ffffff;
+            }
         }
 
         h5 {
@@ -126,6 +138,10 @@
             font-family: 'Nunito Sans', sans-serif;
             font-weight: 600;
             color: #333;
+
+            @include globals.dark-mode {
+                color: #ffffff;
+            }
         }
 
         input {
@@ -142,26 +158,41 @@
             &:focus {
                 outline: none;
                 border-color: globals.$primary-blue;
-                background: #fff;
+
+                @include globals.dark-mode {
+                    border-color: globals.$primary-blue-dark;
+                }
             }
 
             &.error {
-                border-color: #dc3545;
+                border-color: globals.$error-color-light;
+
+                @include globals.dark-mode {
+                    border-color: globals.$error-color-dark;
+                }
             }
         }
 
         &.error {
             label {
-                color: #dc3545;
+                color: globals.$error-color-light;
+
+                @include globals.dark-mode {
+                    border-color: globals.$error-color-dark;
+                }
             }
         }
     }
 
     .error-message {
-        color: #dc3545;
+        color: globals.$error-color-light;
         font-size: 0.875rem;
         margin-top: -12px;
         font-family: 'Nunito Sans', sans-serif;
+
+        @include globals.dark-mode {
+            color: globals.$error-color-dark;
+        }
     }
 
     .submit-button-wrapper {
@@ -176,10 +207,18 @@
         color: #666;
         padding-top: 10px;
 
+        @include globals.dark-mode {
+            color: #ffffff;
+        }
+
         a {
             color: globals.$primary-blue;
             text-decoration: none;
             font-weight: 600;
+
+            @include globals.dark-mode {
+                color: globals.$primary-blue-dark;
+            }
 
             &:hover {
                 text-decoration: underline;
@@ -295,6 +334,10 @@
             color: globals.$primary-blue;
             text-decoration: none;
             font-weight: 500;
+
+            @include globals.dark-mode {
+                color: globals.$primary-blue-dark;
+            }
 
             &:hover {
                 text-decoration: underline;

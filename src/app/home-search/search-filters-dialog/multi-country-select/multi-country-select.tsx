@@ -37,7 +37,7 @@ export default function MultiCountrySelect({ selectedCountries = [], onUpdate, o
     };
 
     return (
-        <Box sx={{
+        <Box className="modal-background" sx={{
             position: 'absolute',
             top: innerWidth <= 768 ? '8vh' : '25%',
             left: '50%',

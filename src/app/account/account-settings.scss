@@ -85,15 +85,28 @@
         min-width: 250px;
         transition: all 0.3s ease;
 
+        @include globals.dark-mode {
+          border-color: #656565;
+          background-color: #282828;
+        }
+
         &:hover {
           border-color: #3182ce;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+          @include globals.dark-mode {
+            border-color: #ffffff;
+          }
         }
 
         &.selected {
           border-color: #3182ce;
           background-color: #ebf8ff;
           box-shadow: 0 4px 12px rgba(49, 130, 206, 0.15);
+
+          @include globals.dark-mode {
+            background-color: #243b52;
+          }
         }
 
         .plan-header {
@@ -107,12 +120,20 @@
             font-size: 18px;
             font-weight: bold;
             color: #2d3748;
+
+            @include globals.dark-mode {
+              color: globals.$primary-blue-dark;
+            }
           }
 
           .plan-price {
             font-size: 16px;
             font-weight: bold;
             color: #3182ce;
+
+            @include globals.dark-mode {
+              color: #ffffff;
+            }
           }
         }
 
@@ -120,6 +141,10 @@
           color: #4a5568;
           margin-bottom: 15px;
           font-size: 14px;
+
+          @include globals.dark-mode {
+            color: #cbcbcb;
+          }
         }
 
         .plan-features {
@@ -127,6 +152,10 @@
             margin: 5px 0;
             font-size: 14px;
             color: #2d3748;
+
+            @include globals.dark-mode {
+              color: #ffffff;
+            }
           }
         }
       }
@@ -140,6 +169,10 @@
         font-size: 14px;
         color: #e53e3e;
         font-style: italic;
+
+        @include globals.dark-mode {
+          color: #bbbbbb;
+        }
       }
     }
   }
@@ -157,6 +190,12 @@
           background-color: #c6f6d5;
           color: #22543d;
           border: 1px solid #9ae6b4;
+
+          @include globals.dark-mode {
+            background-color: #000000;
+            color: #1aee8c;
+            border: 1px solid #1aee8c;
+          }
         }
       }
 
@@ -167,9 +206,17 @@
         padding: 20px;
         margin-top: 15px;
 
+        @include globals.dark-mode {
+          background-color: #242424;
+        }
+
         p {
           margin: 8px 0;
           color: #2d3748;
+
+          @include globals.dark-mode {
+            color: #ffffff;
+          }
         }
 
         .cancel-actions {
@@ -216,17 +263,29 @@
       width: 90%;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 
+      @include globals.dark-mode {
+        background: #383838;
+      }
+
       h4 {
         margin-top: 0;
         margin-bottom: 15px;
         color: #2d3748;
         font-size: 20px;
+
+        @include globals.dark-mode {
+          color: #ffffff;
+        }
       }
 
       p {
         margin-bottom: 15px;
         color: #4a5568;
         line-height: 1.5;
+
+        @include globals.dark-mode {
+          color: #bfbfbf;
+        }
       }
 
       .dialog-actions {
@@ -247,18 +306,15 @@
             background-color: #e2e8f0;
             color: #4a5568;
 
-            &:hover:not(:disabled) {
-              background-color: #cbd5e0;
+            @include globals.dark-mode {
+              background-color: #757575;
+              color: #ffffff;
             }
           }
 
           &.btn-danger {
             background-color: #e53e3e;
             color: white;
-
-            &:hover:not(:disabled) {
-              background-color: #c53030;
-            }
           }
 
           &:disabled {
@@ -329,9 +385,13 @@
     h3 {
       margin-top: 0;
       margin-bottom: 15px;
-      color: #0092e4;
+      color: globals.$primary-blue;
       font-size: 18px;
       font-weight: 600;
+
+      @include globals.dark-mode {
+        color: globals.$primary-blue-dark;
+      }
     }
 
     .form-row {
@@ -364,7 +424,7 @@
     @include globals.dark-mode {
       background-color: #1b5e20;
       border-color: #2e7d32;
-      color: #4caf50;
+      color: #ffffff;
     }
   }
 
@@ -430,7 +490,11 @@
       }
 
       &:focus {
-        border-bottom-color: #0092e4;
+        border-bottom-color: globals.$primary-blue;
+
+        @include globals.dark-mode {
+          border-bottom-color: globals.$primary-blue-dark;
+        }
       }
     }
 
@@ -490,7 +554,11 @@
     padding: 15px;
     background-color: #f8f9fa;
     border-radius: 6px;
-    border-left: 4px solid #0092e4;
+    border-left: 4px solid globals.$primary-blue;
+
+    @include globals.dark-mode {
+      border-left-color: globals.$primary-blue-dark;
+    }
 
     @include globals.dark-mode {
       background-color: #2a2a2a;
@@ -578,7 +646,7 @@
         font-weight: 500;
 
         @include globals.dark-mode {
-          color: #81c784;
+          color: #ffffff;
         }
       }
     }
@@ -791,10 +859,14 @@
         &.payment-method-col {
           div {
             .payment-method {
-              color: #1565c0;
+              color: globals.$primary-blue;
               font-weight: 600;
               font-size: 14px;
               margin-bottom: 2px;
+
+              @include globals.dark-mode {
+                color: globals.$primary-blue-dark;
+              }
             }
 
             .payment-method-number {
@@ -810,10 +882,14 @@
 
         &.receipt-col {
           .view-receipt {
-            color: #0092e4;
+            color: globals.$primary-blue;
             cursor: pointer;
             text-decoration: none;
             font-weight: 500;
+
+            @include globals.dark-mode {
+              color: globals.$primary-blue-dark;
+            }
 
             &:hover {
               text-decoration: underline;
@@ -901,9 +977,13 @@
     h3 {
       margin-top: 0;
       margin-bottom: 10px;
-      color: #0092e4;
+      color: globals.$primary-blue;
       font-size: 18px;
       font-weight: 600;
+
+      @include globals.dark-mode {
+        color: globals.$primary-blue-dark;
+      }
     }
 
     .form-row {
@@ -946,7 +1026,7 @@
         font-weight: 500;
 
         @include globals.dark-mode {
-          color: #4caf50;
+          color: #67d96b;
         }
       }
     }
@@ -999,7 +1079,7 @@
     @include globals.dark-mode {
       background-color: #1b5e20;
       border-color: #2e7d32;
-      color: #4caf50;
+      color: #ffffff;
     }
   }
 
@@ -1342,10 +1422,10 @@
           height: 0;
 
           &:checked + .toggle-slider {
-            background-color: #0092e4;
+            background-color: globals.$primary-blue;
 
             @include globals.dark-mode {
-              background-color: #0092e4;
+              background-color: globals.$primary-blue-dark;
             }
           }
 
@@ -1416,7 +1496,7 @@
           font-weight: 500;
 
           @include globals.dark-mode {
-            color: #4caf50;
+            color: #ffffff;
           }
 
           i {

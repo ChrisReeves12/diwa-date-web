@@ -107,6 +107,11 @@
                     padding: 0 35px 35px;
                     margin-top: 50px;
 
+                    @include globals.dark-mode {
+                        background: #000000;
+                        color: white;
+                    }
+
                     @include globals.media-min('screens.sm') {
                         padding: 35px;
                     }
@@ -215,6 +220,10 @@
             &.feature-one {
                 background-color: #9093e1;
 
+                @include globals.dark-mode {
+                    background-color: #2a2d85;
+                }
+
                 .site-feature-img-container {
                     img {
                         width: 60px;
@@ -225,6 +234,10 @@
             &.feature-two {
                 background-color: #338dbf;
 
+                @include globals.dark-mode {
+                    background-color: #0b2347;
+                }
+
                 .site-feature-img-container {
                     img {
                         width: 80px;
@@ -234,6 +247,10 @@
 
             &.feature-third {
                 background-color: #1ca9d6;
+
+                @include globals.dark-mode {
+                    background-color: #004e78;;
+                }
 
                 .site-feature-img-container {
                     img {
@@ -273,8 +290,16 @@
             margin-left: 100px;
             width: 640px;
 
+            @include globals.dark-mode {
+                display: none;
+            }
+
             @include globals.media-min('screens.xl') {
                 display: block;
+
+                @include globals.dark-mode {
+                    display: none;
+                }
             }
 
             img {
@@ -285,6 +310,10 @@
         .about-content {
             @include globals.media-min('screens.xl') {
                 width: 50%;
+
+                @include globals.dark-mode {
+                    width: 80%;
+                }
             }
 
             h2 {
@@ -292,6 +321,10 @@
                 font-size: 26px;
                 font-weight: 500;
                 padding-bottom: 12px;
+
+                @include globals.dark-mode {
+                    color: #00c1ff;
+                }
 
                 @include globals.media-min('screens.md') {
                     font-size: 32px;
