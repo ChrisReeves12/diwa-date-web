@@ -50,6 +50,13 @@
         img {
             max-height: 100%;
             max-width: 100%;
+            transform: translate(0, 3px);
+            padding-left: 3px;
+
+            @include globals.media-min('screens.md') {
+                padding-left: inherit;
+                transform: none;
+            }
         }
     }
 

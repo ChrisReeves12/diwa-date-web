@@ -15,7 +15,6 @@ interface SiteTopBarProps {
 export default function SiteTopBar({ isLoginPage = false, hideButtons = false }: SiteTopBarProps) {
     const currentUser = useCurrentUser();
     const pathname = usePathname();
-    const innerWidth = window?.innerWidth || 0;
 
     return (
         <>
@@ -24,34 +23,22 @@ export default function SiteTopBar({ isLoginPage = false, hideButtons = false }:
                     <Link href="/">
                         <span className="light-dark">
                             <span className="light">
-                                {innerWidth <= 768 ? <img
+                                <img
                                     title="Diwa Date"
                                     alt="Logo"
-                                    src={`${process.env.NEXT_PUBLIC_IMAGE_ROOT}/images/mobile_logo.png`}
-                                    width={50}
-                                    height={50}
-                                /> : <img
-                                    title="Diwa Date"
-                                    alt="Logo"
-                                    src={`${process.env.NEXT_PUBLIC_IMAGE_ROOT}/images/full_logo.png`}
+                                    src="/images/full_logo.svg"
                                     width={130}
                                     height={40}
-                                />}
+                                />
                             </span>
                             <span className="dark">
-                                {innerWidth <= 768 ? <img
+                               <img
                                     title="Diwa Date"
                                     alt="Logo"
-                                    src={`${process.env.NEXT_PUBLIC_IMAGE_ROOT}/images/mobile_logo_dark.png`}
-                                    width={50}
-                                    height={50}
-                                /> : <img
-                                    title="Diwa Date"
-                                    alt="Logo"
-                                    src={`${process.env.NEXT_PUBLIC_IMAGE_ROOT}/images/full_logo_dark.png`}
+                                    src="/images/full_logo_dark.svg"
                                     width={130}
                                     height={40}
-                                />}
+                                />
                             </span>
                         </span>
                     </Link>

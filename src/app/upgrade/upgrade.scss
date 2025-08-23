@@ -4,6 +4,10 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #ffffff 0%, #e2f6ff 100%);
   padding: 20px 0;
+
+  @include globals.dark-mode {
+    background: linear-gradient(135deg, #282828 0%, #000000 100%);
+  }
 }
 
 .upgrade-container {
@@ -27,6 +31,10 @@
     color: globals.$primary-blue;
     margin: 0 0 20px 0;
     font-weight: 700;
+
+    @include globals.dark-mode {
+      color: #ffffff;
+    }
   }
 
   .upgrade-subtitle {
@@ -35,6 +43,10 @@
     margin: 0;
     max-width: 600px;
     margin: 0 auto;
+
+    @include globals.dark-mode {
+      color: #ffffff;
+    }
   }
 }
 
@@ -70,6 +82,10 @@
     box-shadow: 0 5px 8px rgba(0, 0, 0, 0.3);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
+
+    @include globals.dark-mode {
+      background: #383838;
+    }
 
     &:hover {
       transform: translateY(-5px);
@@ -109,12 +125,20 @@
       color: globals.$primary-blue;
       margin: 0 0 15px 0;
       font-weight: 600;
+
+      @include globals.dark-mode {
+        color: globals.$primary-blue-dark;
+      }
     }
 
     p {
       color: #666;
       line-height: 1.6;
       margin: 0;
+
+      @include globals.dark-mode {
+        color: #ffffff;
+      }
     }
   }
 }
@@ -133,6 +157,10 @@
     max-width: 500px;
     width: 100%;
 
+    @include globals.dark-mode {
+      background: #383838;
+    }
+
     .pricing-header {
       margin-bottom: 40px;
 
@@ -141,6 +169,10 @@
         color: #333;
         margin: 0 0 20px 0;
         font-weight: 600;
+
+        @include globals.dark-mode {
+          color: #ffffff;
+        }
       }
 
       .price {
@@ -159,12 +191,20 @@
           font-size: 4rem;
           color: globals.$primary-blue;
           font-weight: 700;
+
+          @include globals.dark-mode {
+            color: globals.$primary-blue-dark;
+          }
         }
 
         .period {
           font-size: 1.2rem;
           color: #666;
           font-weight: 500;
+
+          @include globals.dark-mode {
+            color: #ffffff;
+          }
         }
       }
     }
@@ -179,6 +219,10 @@
         color: #333;
         font-size: 1.1rem;
         border-bottom: 1px solid #f0f0f0;
+
+        @include globals.dark-mode {
+          color: #ffffff;
+        }
 
         &:last-child {
           border-bottom: none;
@@ -204,6 +248,10 @@
           box-shadow: 0 10px 25px rgba(115, 175, 253, 0.4);
           text-decoration: none;
           color: white;
+
+          @include globals.dark-mode {
+            box-shadow: none;
+          }
         }
 
         &.large {
@@ -216,6 +264,10 @@
         color: #666;
         font-size: 0.9rem;
         margin: 0;
+
+        @include globals.dark-mode {
+          color: #c7c7c7;
+        }
       }
     }
   }
@@ -299,6 +351,10 @@
     color: globals.$primary-blue;
     margin: 0 0 50px 0;
     font-weight: 600;
+
+    @include globals.dark-mode {
+      color: #ffffff;
+    }
   }
 
   .testimonials-grid {
@@ -341,6 +397,10 @@
     color: globals.$primary-blue;
     margin: 0 0 20px 0;
     font-weight: 700;
+
+    @include globals.dark-mode {
+      color: #ffffff;
+    }
   }
 
   p {
@@ -360,11 +420,21 @@
     font-size: 1.2rem;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 
+    @include globals.dark-mode {
+      background: globals.$primary-blue;
+      color: #ffffff;
+    }
+
     &:hover {
       transform: translateY(-3px);
       box-shadow: 0 15px 35px rgba(255, 255, 255, 0.3);
       text-decoration: none;
       color: globals.$primary-blue;
+
+      @include globals.dark-mode {
+        box-shadow: none;
+        color: #ffffff;
+      }
     }
   }
 }

@@ -209,10 +209,10 @@ export default function LoginForm() {
                     <div className="form-section">
                         <div className="logo-container">
                             <Image
-                                src="/images/blue_background_icon_logo.png"
+                                src="/images/logo_square_bkg.svg"
                                 alt="Logo"
-                                width={80}
-                                height={80}
+                                width={90}
+                                height={90}
                                 priority
                             />
                         </div>

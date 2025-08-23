@@ -33,14 +33,28 @@ export default function GuestHome() {
                                 <form action={handleFormSubmit}>
                                     <div className="logo-title-section">
                                         <div className="small-logo-container">
-                                            <Image
-                                                alt="Logo"
-                                                title="Diwa Date"
-                                                src="/images/blue_background_icon_logo.png"
-                                                width={70}
-                                                height={70}
-                                                priority
-                                            />
+                                            <span className="light-dark">
+                                                <span className="light">
+                                                    <Image
+                                                        alt="Logo"
+                                                        title="Diwa Date"
+                                                        src="/images/logo.svg"
+                                                        width={70}
+                                                        height={70}
+                                                        priority
+                                                    />
+                                                </span>
+                                                <span className="dark">
+                                                    <Image
+                                                        alt="Logo"
+                                                        title="Diwa Date"
+                                                        src="/images/logo_dark.svg"
+                                                        width={70}
+                                                        height={70}
+                                                        priority
+                                                    />
+                                                </span>
+                                            </span>
                                         </div>
                                         <div className="seeking-form-info">
                                             <h2>Serious Minded Dating Only</h2>
