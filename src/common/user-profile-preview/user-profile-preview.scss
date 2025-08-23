@@ -342,7 +342,11 @@
         .like-button {
           i {
             font-size: 36px;
-            color: #515151;
+            color: #bfbfbf;
+
+            @include globals.dark-mode {
+              color: #515151;
+            }
           }
 
           &.liked {
