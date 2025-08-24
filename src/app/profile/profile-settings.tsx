@@ -7,12 +7,7 @@ import { ProfileSettingsTabs } from "./profile-settings-tabs";
 import { redirect } from "next/navigation";
 
 interface ProfileSettingsProps {
-    currentUser?: User & {
-        isSubscriptionActive: boolean;
-        mainPhotoCroppedImageData?: CroppedImageData;
-        publicMainPhoto?: string;
-        publicPhotos: UserPhoto[]
-    }
+    currentUser?: User
 }
 
 export function ProfileSettings({ currentUser }: ProfileSettingsProps) {

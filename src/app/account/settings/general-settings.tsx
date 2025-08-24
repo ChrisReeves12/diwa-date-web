@@ -11,12 +11,7 @@ import React, { useState, useEffect } from "react";
 import { UserPreview } from "@/types";
 
 interface AccountSettingsProps {
-    currentUser?: User & {
-        isSubscriptionActive: boolean;
-        mainPhotoCroppedImageData?: CroppedImageData;
-        publicMainPhoto?: string;
-        publicPhotos: UserPhoto[]
-    }
+    currentUser?: User
 }
 
 export function GeneralSettings({ currentUser }: AccountSettingsProps) {

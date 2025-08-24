@@ -24,12 +24,16 @@
     top: 116px;
 
     @include globals.media-min('screens.md') {
-      background-color: globals.$dark-background-color;
-      color: #ffffff;
       flex-direction: row;
       justify-content: space-between;
       align-items: center;
+      background-color: #ffffff;
       gap: 0;
+
+      @include globals.dark-mode {
+        background-color: globals.$dark-background-color;
+        color: #ffffff;
+      }
     }
 
     .filter-section {

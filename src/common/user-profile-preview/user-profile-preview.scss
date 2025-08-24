@@ -116,6 +116,10 @@
           color: globals.$primary-blue;
           display: none;
 
+          @include globals.dark-mode {
+            color: globals.$primary-blue-dark;
+          }
+
           @include globals.media-min('screens.md') {
             display: block;
           }
@@ -361,6 +365,10 @@
           i {
             font-size: 36px;
             color: globals.$primary-blue;
+
+            @include globals.dark-mode {
+              color: globals.$primary-blue-dark;
+            }
           }
         }
 

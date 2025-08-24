@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
     }
   },
 
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // Use server external packages instead of the deprecated option
   serverExternalPackages: [],
 

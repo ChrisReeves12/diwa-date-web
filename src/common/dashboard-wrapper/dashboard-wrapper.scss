@@ -9,12 +9,13 @@
     .dashboard-content-section {
       .tab-bar-container {
         position: fixed;
-        top: 64px;
+        top: 54px;
         background-color: white;
         z-index: 10;
         width: 100%;
 
         @include globals.media-min('screens.md') {
+          top: 64px;
           position: sticky;
         }
 

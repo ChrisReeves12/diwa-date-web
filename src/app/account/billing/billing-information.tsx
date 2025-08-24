@@ -29,12 +29,7 @@ import "../account-settings.scss";
 import { CheckCircleIcon, ExclamationCircleIcon, TrashIcon } from "react-line-awesome";
 
 interface AccountSettingsProps {
-    currentUser?: User & {
-        isSubscriptionActive: boolean;
-        mainPhotoCroppedImageData?: CroppedImageData;
-        publicMainPhoto?: string;
-        publicPhotos: UserPhoto[]
-    }
+    currentUser?: User
 }
 
 interface ExistingBillingInfo {

@@ -15,10 +15,8 @@ import { getUpdatedSearchResults, updateUserSearchPreferences } from "@/app/home
 import Modal from '@mui/material/Modal';
 import { Box } from "@mui/system";
 import SearchFiltersDialog from "@/app/home-search/search-filters-dialog/search-filters-dialog";
-import { NotificationCenterData } from "@/types/notification-center-data.interface";
 import { showAlert } from '@/util';
 import { AngleLeftIcon, AngleRightIcon } from "react-line-awesome";
-import { useWindowWidth } from '@/hooks/use-window-width';
 
 function SearchErrorDisplay() {
     return (
@@ -32,7 +30,6 @@ function SearchResultsView({ currentUser: initialCurrentUser, searchPromise }: {
     currentUser: Omit<User, 'password'>,
     searchPromise: Promise<SearchResponse>
 }) {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const [currentUser, setCurrentUser] = useState(initialCurrentUser);
     const [isSearchFiltersModalOpen, setIsSearchFiltersModalOpen] = useState<boolean>(false);

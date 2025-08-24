@@ -9,13 +9,13 @@
     background-color: #ffffff;
     position: fixed;
     z-index: 5;
-    top: 116px;
+    top: 105px;
     padding-right: 10px;
     width: 100%;
 
     @include globals.media-min('screens.md') {
       position: sticky;
-      top: 140px;
+      top: 139px;
       padding-right: 8px;
     }
 
@@ -139,8 +139,7 @@
   }
 
   .search-results-section {
-    // padding-top: 25px;
-    padding-top: 138px;
+    padding-top: 124px;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -157,7 +156,7 @@
     @include globals.media-min('screens.lg') {
       flex-direction: row;
       flex-wrap: wrap;
-      gap: inherit;
+      gap: 8px;
     }
 
     .center-screen-loader-container {

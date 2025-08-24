@@ -199,16 +199,32 @@
       padding: 1rem;
       margin-bottom: 1.6rem;
 
+      @include globals.dark-mode {
+        background-color: #2b2b2b;
+        border: 1px solid #616161;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-bottom: 1.6rem;
+      }
+
       p {
         margin: 0 0 0.5rem 0;
         color: #333;
         font-size: 14px;
+
+        @include globals.dark-mode {
+          color: #b1b1b1;
+        }
       }
 
       .upgrade-link {
-        color: #4a90e2;
+        color: globals.$primary-blue;
         text-decoration: none;
         font-weight: bold;
+
+        @include globals.dark-mode {
+          color: globals.$primary-blue-dark;
+        }
 
         &:hover {
           text-decoration: underline;
