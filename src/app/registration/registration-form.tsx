@@ -297,7 +297,7 @@ export default function RegistrationForm() {
                     onClick={() => setTermsAccepted(!termsAccepted)}
                   ></div>
                   <div className="caption">
-                    I agree to the <a href="/terms" target="_blank">Terms of Service</a> and <a href="/privacy" target="_blank">Privacy Policy</a>
+                    I agree to the <a href="/terms-of-service" target="_blank">Terms of Service</a> and <a href="/privacy-policy" target="_blank">Privacy Policy</a>
                   </div>
                   {errors.terms && formSubmitted && (
                     <div className="error-message">{errors.terms}</div>
