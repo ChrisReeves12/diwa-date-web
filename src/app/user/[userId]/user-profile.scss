@@ -336,6 +336,22 @@
         flex-wrap: wrap;
         justify-content: center;
 
+        .no-photos-caption {
+          font-size: 15px;
+          font-style: italic;
+          max-width: 300px;
+          color: #717171;
+          text-align: center;
+
+          @include globals.dark-mode {
+            color: #bfbfbf;
+          }
+
+          @include globals.media-min('screens.md') {
+            text-align: left;
+          }
+        }
+
         @include globals.media-min('screens.md') {
           justify-content: flex-start;
         }

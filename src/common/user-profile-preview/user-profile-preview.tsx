@@ -269,7 +269,8 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                         {userPreview.isPremium &&
                             <div className="info-line premium-label">Premium Member</div>}
                     </div>
-                    <div className="photo-count-container">
+                    {(userPreview.publicPhotos || []).length > 0 &&
+                        <div className="photo-count-container">
                         <button
                             className="photo-count"
                             onClick={togglePhotoPopover}
@@ -299,7 +300,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                                 </div>
                             </div>
                         )}
-                    </div>
+                    </div>}
                 </div>
                 <div className="controls-container">
                     <div className="more-options-container">

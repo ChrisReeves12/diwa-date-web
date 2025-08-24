@@ -7,6 +7,7 @@ export type UserPhoto = {
   path: string;
   caption?: string;
   isHidden: boolean;
+  isUnderReview?: boolean;
   sortOrder: number;
   uploadedAt: string;
   croppedImageData?: CroppedImageData;

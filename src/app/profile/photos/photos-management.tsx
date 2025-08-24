@@ -39,19 +39,17 @@ function SortablePhotoItem({photoWithUrl, onClick, onDelete}: {
 
     const style = {
         transform: CSS.Transform.toString(transform),
-        transition,
-        backgroundImage: `url('${photoWithUrl.croppedImageUrl || photoWithUrl.url}')`,
+        transition
     };
 
     return (
-        <div
-            onClick={onClick}
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            {...listeners}
-            className="photo-grid-item"
-        >
+        <div ref={setNodeRef}
+             style={style}
+             className={"photo-grid-item" + (photoWithUrl.isUnderReview ? " under-review" : "")}
+             onClick={onClick}
+             {...attributes}
+             {...listeners}>
+            <div className="photo-display-container" style={{backgroundImage: `url('${photoWithUrl.croppedImageUrl || photoWithUrl.url}')`}}></div>
             <button onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -60,6 +58,7 @@ function SortablePhotoItem({photoWithUrl, onClick, onDelete}: {
             }} className="delete-button">
                 <TimesIcon/>
             </button>
+            {photoWithUrl.isUnderReview && <div className="under-review-label">Under Review</div>}
         </div>
     );
 }
@@ -78,6 +77,7 @@ export function PhotosManagement() {
     const [imageBeingEdited, setImageBeingEdited] = useState<PhotoWithUrl | undefined>();
     const [imageToDelete, setImageToDelete] = useState<PhotoWithUrl | undefined>();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const sortTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
     // Cropping state
     const [cropArea, setCropArea] = useState<CropArea>({x: 0, y: 0, width: 200, height: 200});
@@ -109,6 +109,13 @@ export function PhotosManagement() {
     // Load user photos
     useEffect(() => {
         loadPhotos();
+
+        // Clean up any pending timeout on unmount
+        return () => {
+            if (sortTimeoutRef.current) {
+                clearTimeout(sortTimeoutRef.current);
+            }
+        };
     }, []);
 
     const loadPhotos = async () => {
@@ -131,20 +138,38 @@ export function PhotosManagement() {
             setPhotos((aPhotos) => {
                 const oldIndex = aPhotos.findIndex(photo => photo.path === active.id);
                 const newIndex = aPhotos.findIndex(photo => photo.path === over.id);
-                const sortedPhotos = arrayMove(aPhotos, oldIndex, newIndex);
+                let sortedPhotos = arrayMove(aPhotos, oldIndex, newIndex);
 
                 if (!isSorting && !isDeleting && !isUploading && !isResizing) {
-                    setTimeout(() => {
+                    if (sortTimeoutRef.current) {
+                        clearTimeout(sortTimeoutRef.current);
+                    }
+
+                    // Check if the first photo is under review, and re-sort if needed
+                    if (sortedPhotos[0].isUnderReview) {
+                        const firstNonReviewIndex = sortedPhotos.findIndex(photo => !photo.isUnderReview);
+
+                        if (firstNonReviewIndex > 0) {
+                            const firstNonReviewPhoto = sortedPhotos[firstNonReviewIndex];
+                            sortedPhotos.splice(firstNonReviewIndex, 1);
+                            sortedPhotos.unshift(firstNonReviewPhoto);
+                        }
+                    }
+
+                    // Set new timeout and store the reference
+                    sortTimeoutRef.current = setTimeout(() => {
                         setIsSorting(true);
                         updatePhotoSortOrder(sortedPhotos).finally(() => {
                             setIsSorting(false);
-                            // Dispatch event to refresh user profile main photo in notification center
                             window.dispatchEvent(new CustomEvent('refresh-user-profile-main-photo'));
+                            sortTimeoutRef.current = undefined;
                         });
                     }, 300);
-                }
 
-                return sortedPhotos;
+                    return sortedPhotos
+                } else {
+                    return aPhotos;
+                }
             });
         }
     }

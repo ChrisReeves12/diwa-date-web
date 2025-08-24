@@ -15,7 +15,7 @@ import {
     CheckCircleIcon,
     CommentsIcon, ExclamationTriangleIcon,
     HeartBrokenIcon,
-    HeartIcon, ImageIcon, MapMarkerIcon, StarIcon, TimesIcon, TrophyIcon, UnlockIcon, UserCircleIcon
+    HeartIcon, ImageIcon, InfoCircleIcon, MapMarkerIcon, StarIcon, TimesIcon, TrophyIcon, UnlockIcon, UserCircleIcon
 } from "react-line-awesome";
 import _ from 'lodash';
 import { UserProfileDetail } from "@/types/user-profile-detail.interface";
@@ -600,6 +600,8 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                                 />
                                             </a>
                                         ))}
+                                        {!userProfile.user.publicPhotos?.length &&
+                                            <div className="no-photos-caption"><InfoCircleIcon size={'lg'}/> No photos available, or they are awaiting approval.</div>}
                                     </div>
                                 </div>
 

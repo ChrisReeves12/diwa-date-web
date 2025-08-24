@@ -25,13 +25,16 @@ function cleanImagePath(imagePath?: string): string | undefined {
 }
 
 // Helper function to clean photo paths before database storage
-function cleanPhotoForStorage(photo: UserPhoto): UserPhoto {
+function cleanPhotoForStorage(photo: PhotoWithUrl): UserPhoto {
+  let photoCopy = {...photo};
+  delete photoCopy.url;
+
   return {
-    ...photo,
-    path: cleanImagePath(photo.path) || photo.path,
+    ...photoCopy,
+    path: cleanImagePath(photo.path) || '',
     croppedImageData: photo.croppedImageData ? {
       ...photo.croppedImageData,
-      croppedImagePath: cleanImagePath(photo.croppedImageData.croppedImagePath) || photo.croppedImageData.croppedImagePath
+      croppedImagePath: cleanImagePath(photo.croppedImageData.croppedImagePath) || ''
     } : photo.croppedImageData
   };
 }
@@ -163,7 +166,8 @@ export async function updatePhotoSortOrder(photos: PhotoWithUrl[]) {
   }
 
   // Set the first photo as the main photo
-  const mainPhoto = photos.length > 0 ? cleanImagePath(photos[0].path) || photos[0].path : undefined;
+  const mainPhoto = photos.filter(p => !p.isUnderReview).length > 0 && photos[0].path
+      ? cleanImagePath(photos[0].path) : undefined;
 
   await prismaWrite.$executeRaw`
     UPDATE users 
@@ -367,6 +371,7 @@ export async function uploadPhoto(formData: FormData) {
       sortOrder: (currentUser.photos as any[])?.length || 0,
       caption: undefined,
       croppedImageData: undefined,
+      isUnderReview: true,
       isHidden: false,
       uploadedAt: new Date().toISOString(),
     };
@@ -376,18 +381,12 @@ export async function uploadPhoto(formData: FormData) {
     const cleanedCurrentPhotos = currentPhotos.map(photo => cleanPhotoForStorage(photo));
     const updatedPhotos = [...cleanedCurrentPhotos, newPhoto];
 
-    // Set as main photo if this is the first photo or no main photo exists
-    const shouldSetAsMainPhoto = currentPhotos.length === 0 || !currentUser.mainPhoto;
-    const mainPhoto = shouldSetAsMainPhoto ? cleanImagePath(newPhoto.path) || newPhoto.path : currentUser.mainPhoto;
-
     await prismaWrite.$executeRaw`
       UPDATE users 
       SET "photos" = ${JSON.stringify(updatedPhotos)}::jsonb,
-          "numOfPhotos" = ${updatedPhotos.length},
-          "mainPhoto" = ${mainPhoto},
+          "numOfPhotos" = ${updatedPhotos.filter(p => !p.isUnderReview).length},
           "updatedAt" = ${new Date()}
-      WHERE id = ${currentUser.id}
-    `;
+      WHERE id = ${currentUser.id}`;
 
     return {
       success: true,
@@ -435,7 +434,7 @@ export async function deletePhoto(photoPath: string) {
     const updatedPhotos = currentPhotos.filter(photo => photo.path !== photoPath);
 
     // Update sort orders to maintain consecutive numbering and clean all photo paths
-    const reorderedPhotos = updatedPhotos.map((photo, index) =>
+    let reorderedPhotos = updatedPhotos.map((photo, index) =>
       cleanPhotoForStorage({
         ...photo,
         sortOrder: index
@@ -448,15 +447,24 @@ export async function deletePhoto(photoPath: string) {
     const currentMainPhotoCleanPath = cleanImagePath(currentUser.mainPhoto) || currentUser.mainPhoto;
 
     if (currentMainPhotoCleanPath === deletedPhotoCleanPath) {
+      const firstNonReviewImageIdx = reorderedPhotos.findIndex(p => !p.isUnderReview);
+      if (firstNonReviewImageIdx > 0) {
+        reorderedPhotos[firstNonReviewImageIdx].sortOrder = 0;
+        reorderedPhotos[0].sortOrder = firstNonReviewImageIdx;
+
+        reorderedPhotos.sort((a, b) => a.sortOrder - b.sortOrder);
+      }
+
       // The main photo was deleted, set the new first photo as main photo
-      newMainPhoto = reorderedPhotos.length > 0 ? cleanImagePath(reorderedPhotos[0].path) || reorderedPhotos[0].path : undefined;
+      newMainPhoto = reorderedPhotos.length > 0 && !reorderedPhotos[0].isUnderReview ?
+          cleanImagePath(reorderedPhotos[0].path) || reorderedPhotos[0].path : undefined;
     }
 
     // Update database
     await prismaWrite.$executeRaw`
       UPDATE users 
       SET "photos" = ${JSON.stringify(reorderedPhotos)}::jsonb,
-          "numOfPhotos" = ${reorderedPhotos.length},
+          "numOfPhotos" = ${reorderedPhotos.filter(p => !p.isUnderReview).length},
           "mainPhoto" = ${newMainPhoto},
           "updatedAt" = ${new Date()}
       WHERE id = ${currentUser.id}`;

@@ -31,20 +31,17 @@
 
       @include globals.media-min('screens.md') {
         gap: 45px;
-        cursor: pointer;
       }
 
       .photo-grid-item {
-        width: 25vw;
-        height: 25vw;
-        max-width: 200px;
-        max-height: 200px;
-        margin-bottom: 6px;
-        border-radius: 8%;
         position: relative;
+        margin-bottom: 6px;
         touch-action: none;
-        background-size: cover;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        cursor: pointer;
+
+        .under-review-label {
+          font-size: 12px;
+        }
 
         .delete-button {
           position: absolute;
@@ -65,6 +62,30 @@
             background-color: #555555;;
             color: #ffffff;
           }
+        }
+
+        &.under-review {
+          .photo-display-container {
+            opacity: 0.6;
+          }
+        }
+
+        .photo-display-container {
+          width: 25vw;
+          height: 25vw;
+          max-width: 200px;
+          max-height: 200px;
+          border-radius: 8%;
+          background-size: cover;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        .under-review-label {
+          font-size: 12px;
+          text-align: center;
+          padding-top: 8px;
+          color: #818181;
+          font-style: italic;
         }
       }
     }

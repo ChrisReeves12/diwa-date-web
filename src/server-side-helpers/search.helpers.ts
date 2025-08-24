@@ -138,6 +138,7 @@ export async function searchUsers(currentUser: Omit<User, 'password'>, params: {
               AND U."seekingGender" = '${currentUser.gender}'
               AND U."height" BETWEEN ${currentUser.seekingMinHeight || businessConfig.defaults.minHeight} AND ${currentUser.seekingMaxHeight || businessConfig.defaults.maxHeight}
               AND U."dateOfBirth" BETWEEN '${minDateOfBirth}' AND '${maxDateOfBirth}'
+              AND U."numOfPhotos" >= ${currentUser.seekingNumOfPhotos || businessConfig.defaults.numOfPhotos}   
               ${enumeratedQueries.join("\n")}
             ORDER BY ${resolveSearchSortBy(sortBy || SearchSortBy.LastActive)} LIMIT ${pageSize} OFFSET ${offset})
 
