@@ -283,7 +283,7 @@ model users {
   singleSearchLocation                           Json?
   paymentProfileId                               String?                       @db.VarChar(255)
   customerPaymentProfileId                       String?                       @db.VarChar(255)
-  password                                       String                        @db.VarChar(500)
+  password                                       String?                       @db.VarChar(500)
   refreshToken                                   String?                       @db.VarChar(500)
   createdAt                                      DateTime?                     @db.Timestamp(6)
   updatedAt                                      DateTime?                     @db.Timestamp(6)
@@ -306,6 +306,9 @@ model users {
   twoFactorCodeExpiry                            DateTime?                     @db.Timestamp(6)
   twoFactorCodeAttempts                          Int?                          @default(0)
   lastTwoFactorCodeSentAt                        DateTime?                     @db.Timestamp(6)
+  facebookId                                     String?                       @db.VarChar(255)
+  oauthProvider                                  String?                       @db.VarChar(50)
+  oauthProfile                                   Json?
   billingHolds                                   billingHolds[]
   billingInformationEntries                      billingInformationEntries[]
   blockedUsers_blockedUsers_userIdTousers        blockedUsers[]                @relation("blockedUsers_userIdTousers")
@@ -322,10 +325,13 @@ model users {
   userMatches_userMatches_recipientIdTousers     userMatches[]                 @relation("userMatches_recipientIdTousers")
   userReports_userReports_reportedUserIdTousers  userReports[]                 @relation("reportedUsers")
   userReports_userReports_userIdTousers          userReports[]                 @relation("userReports")
+  userReviews                                    userReviews?
 
   @@index([createdAt(sort: Desc)], map: "users_createdat_index")
   @@index([updatedAt(sort: Desc)], map: "users_updatedat_index")
   @@index([profileCompletedAt], map: "users_profilecompletedat_index")
+  @@index([facebookId], map: "users_facebookid_index")
+  @@index([oauthProvider], map: "users_oauthprovider_index")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -338,7 +344,7 @@ model spatial_ref_sys {
 }
 
 model paymentTransactions {
-  id            Int       @id @default(autoincrement())
+  id            Int       @id(map: "paymenttransactions_pk") @default(autoincrement())
   userId        Int?
   amount        Float?    @default(0)
   transId       String?   @unique(map: "paymenttransactions_transid_index") @db.VarChar(100)
@@ -404,4 +410,12 @@ model states {
   countries countries? @relation(fields: [countryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([countryId], map: "states_countryid_index")
+}
+
+model userReviews {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique(map: "idx_userReviews_userId")
+  updatedAt DateTime @default(now()) @db.Timestamp(6)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  users     users    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
