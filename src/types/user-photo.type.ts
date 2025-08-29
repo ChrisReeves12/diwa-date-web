@@ -10,5 +10,7 @@ export type UserPhoto = {
   isUnderReview?: boolean;
   sortOrder: number;
   uploadedAt: string;
+  messages?: string[];
+  isRejected?: boolean;
   croppedImageData?: CroppedImageData;
 };

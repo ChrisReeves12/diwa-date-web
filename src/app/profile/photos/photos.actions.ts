@@ -388,6 +388,13 @@ export async function uploadPhoto(formData: FormData) {
           "updatedAt" = ${new Date()}
       WHERE id = ${currentUser.id}`;
 
+    // Add user to review queue if not already there
+    await prismaWrite.$executeRaw`
+      INSERT INTO "userReviews" ("userId", "createdAt", "updatedAt")
+      VALUES (${currentUser.id}, ${new Date()}, ${new Date()})
+      ON CONFLICT ("userId") DO NOTHING
+    `;
+
     return {
       success: true,
       message: 'Photo uploaded successfully',
