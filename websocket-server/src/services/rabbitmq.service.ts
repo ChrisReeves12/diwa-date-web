@@ -7,7 +7,7 @@ import {
     EXCHANGES,
     UserMessage,
     BroadcastMessage,
-    RoomMessage
+    RoomMessage, UserMessageType
 } from '../types/rabbitmq.types';
 
 export class RabbitMQService {
@@ -183,7 +183,7 @@ export class RabbitMQService {
         );
     }
 
-    public async publishToUser(userId: string, message: any): Promise<void> {
+    public async publishToUser(userId: string, message: {type: UserMessageType, payload: any}): Promise<void> {
         const userMessage: UserMessage = {
             id: uuidv4(),
             timestamp: new Date(),
@@ -353,4 +353,4 @@ export class RabbitMQService {
     public isConnected(): boolean {
         return !!(this.connection && this.channel);
     }
-} 
+}

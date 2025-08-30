@@ -226,6 +226,9 @@ export class SocketIOService {
             case 'match':
                 this.io.to(`user:${userId}`).emit('match:new', payload);
                 break;
+            case 'account':
+                this.io.to(`user:${userId}`).emit('account:notice', payload);
+                break;
         }
     }
 

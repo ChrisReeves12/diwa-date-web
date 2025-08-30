@@ -49,9 +49,11 @@ export interface BaseMessage {
     serverId: string;
 }
 
+export type UserMessageType = 'notification' | 'message' | 'match' | 'presence' | 'account';
+
 export interface UserMessage extends BaseMessage {
     userId: string;
-    type: 'notification' | 'message' | 'match' | 'presence';
+    type: UserMessageType;
     payload: any;
 }
 
@@ -93,4 +95,4 @@ export interface RabbitMQConfig {
     vhost?: string;
     heartbeat?: number;
     connectionTimeout?: number;
-} 
+}

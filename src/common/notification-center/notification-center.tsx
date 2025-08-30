@@ -154,12 +154,18 @@ export default function NotificationCenter() {
             refetchNotificationData(); // No animation needed for cancellations
         };
 
+        const handleAccountNotice = () => {
+            console.log('Account notice received - triggering refetch');
+            refetchNotificationData(); // Refetch to update any account-related notifications
+        };
+
         // Subscribe to events
         on('match:new', handleNewMatch);
         on('message:new', handleNewMessage);
         on('notification:new', handleNewNotification);
         on('notification:read', handleNotificationRead);
         on('match:cancelled', handleMatchCancelled);
+        on('account:notice', handleAccountNotice);
 
         // Cleanup
         return () => {

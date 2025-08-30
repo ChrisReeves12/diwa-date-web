@@ -3,6 +3,7 @@ import amqplib from 'amqplib';
 import { v4 as uuidv4 } from 'uuid';
 import redis from './redis';
 import { getRedisKey } from '@/server-side-helpers/cache.helpers';
+import { UserMessageType } from "../../websocket-server/src/types/rabbitmq.types";
 
 // RabbitMQ Types and Configurations
 
@@ -57,7 +58,7 @@ export interface BaseMessage {
 
 export interface UserMessage extends BaseMessage {
     userId: string;
-    type: 'notification' | 'message' | 'match' | 'presence';
+    type: UserMessageType;
     payload: any;
 }
 
@@ -286,7 +287,7 @@ export class Rabbitmq {
         );
     }
 
-    public async publishToUser(userId: number, message: any): Promise<void> {
+    public async publishToUser(userId: number, message: {type: UserMessageType, payload: any}): Promise<void> {
         const userMessage: UserMessage = {
             id: uuidv4(),
             timestamp: new Date(),

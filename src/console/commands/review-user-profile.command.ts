@@ -1,7 +1,7 @@
 import ConsoleCommand from "./console.command";
 import { Command } from "commander";
 import { getUser } from "@/server-side-helpers/user.helpers";
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { S3Helper } from "../../../server-side-helpers/s3.helper";
 import { v4 as uuidv4 } from 'uuid';
 import fs from "fs";
 import axios from "axios";
@@ -9,7 +9,10 @@ import http from "http";
 import { prismaRead, prismaWrite } from "@/lib/prisma";
 import FormData from 'form-data';
 import { ImageAnalysisSummary } from "@/types/image-analysis.types";
-import { User, UserPhoto } from "@/types";
+import { UserPhoto } from "@/types";
+import ssim from 'ssim.js';
+import sharp from 'sharp';
+import { Rabbitmq } from "@/lib/rabbitmq";
 
 const axiosInstance = axios.create({
     httpAgent: new http.Agent({keepAlive: true, maxSockets: 100}),
@@ -102,22 +105,21 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             for (const userReview of userReviews) {
                 const result = await this.reviewUser(userReview.userId);
                 if (result?.error) {
-
                     if (result.error.includes('suspended')) {
-                        console.log('User has already been suspended, removing user review from queue.');
-                        await prismaWrite.userReviews.delete({
-                            where: {
-                                id: userReview.id
-                            }
-                        })
-
-                        continue;
+                        console.log('User has already been suspended');
+                    } else {
+                        console.error(result.error);
                     }
-
-                    console.error(result.error);
-                    continue;
                 }
+
+                await prismaWrite.userReviews.delete({
+                    where: {
+                        id: userReview.id
+                    }
+                });
             }
+
+            offset += userReviews.length;
         }
 
         return 0;
@@ -137,73 +139,148 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             return {error: 'User is suspended', success: false};
         }
 
+        const rabbitMQ = Rabbitmq.getInstance();
+        await rabbitMQ.connect();
+
         console.log(`Reviewing profile for user ID: ${userId}, Email: ${user.email}`);
 
         // Review photos
-        const photosUnderReview = (user.photos || []).filter(p => p.isUnderReview);
-        const reviewedPhotos= photosUnderReview.length > 0 ?
-            await this.reviewPhotos(photosUnderReview, user.photos) : null;
+        const reviewPhotosResult= (user.photos || []).filter(p => p.isUnderReview).length > 0 ?
+            await this.reviewPhotos(user.photos!) : null;
 
-        // Review other attributes on the user's profile
+        if (reviewPhotosResult?.error) {
+            return {error: reviewPhotosResult.error, success: false};
+        }
+
+        if (reviewPhotosResult?.photos && reviewPhotosResult.photos.length > 0) {
+            // Update photos in database
+            await prismaWrite.users.update({
+                where: { id: userId },
+                data: {
+                    photos: user.photos!.map(photo => {
+                        const updatedPhoto = reviewPhotosResult.photos!.find(p => p.photo.path === photo.path);
+                        return updatedPhoto ? updatedPhoto.photo : photo;
+                    }) as any
+                }
+            });
+
+            let shouldSuspendUser = false;
+
+            // If any photos were rejected for serious issues, suspend the user
+            for (const photoWithFilePath of reviewPhotosResult.photos) {
+                if (photoWithFilePath.photo.isRejected && photoWithFilePath.photo.messages &&
+                    photoWithFilePath.photo.messages.some(msg =>
+                        msg.toLowerCase().includes('violence') ||
+                        msg.toLowerCase().includes('gore') ||
+                        msg.toLowerCase().includes('nudity') ||
+                        msg.toLowerCase().includes('scam'))) {
+                    shouldSuspendUser = true;
+                    break;
+                }
+            }
+
+            if (shouldSuspendUser) {
+                console.log(`Suspending user ID: ${userId} due to serious infractions.`);
+                await prismaWrite.users.update({
+                    where: {id: userId},
+                    data: {
+                        suspendedAt: new Date(),
+                        suspendedReason: 'Your account was suspended due to policy violations in profile review. Please contact support for more information.'
+                    }
+                });
+
+                // Todo: Send suspension email to user
+                return {error: null, success: true};
+            }
+
+            if (reviewPhotosResult.photos.some(p => p.photo.isRejected)) {
+                // Todo: Send email to user about photo rejections
+                // Todo: Create notification in database
+                // Send push notification to the user that some photos were rejected
+                await rabbitMQ.publishToUser(userId, {
+                    type: 'account',
+                    payload: {
+                        message: 'Some of your photos were rejected during review. Please check your profile for details.',
+                        type: 'photos-rejected',
+                        rejectedPhotos: reviewPhotosResult.photos.filter(p => p.photo.isRejected)
+                    }
+                });
+            } else {
+                // Send push notification to the user that photos were approved
+                // Todo: Create notification in database
+                await rabbitMQ.publishToUser(userId, {
+                    type: 'account',
+                    payload: {
+                        message: 'Your photos have been approved and are now live on your profile.',
+                        type: 'photos-approved',
+                        approvedPhotos: reviewPhotosResult.photos.map(p => p.photo.path),
+                        timestamp: new Date()
+                    }
+                });
+
+            }
+        }
+
+        // Todo: Review other profile data (bio, interests, etc.)
+
         return {error: null, success: true};
     }
 
     /**
      * Review user photos
-     * @param photosUnderReview
+     * @param allUserPhotos
      * @param allUserPhotos
      */
-    async reviewPhotos(photosUnderReview: UserPhoto[], allUserPhotos: UserPhoto[]) {
+    async reviewPhotos(allUserPhotos: UserPhoto[]) {
         // Download images from S3 that are in review
-        const s3Client = new S3Client({
-            endpoint: process.env.S3_ENDPOINT as string,
-            region: process.env.S3_BUCKET as string,
-            credentials: {
-                accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-                secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-            },
-            forcePathStyle: false,
-        });
+        const s3Helper = new S3Helper();
 
-        const photosWithFilePath: { tempFilePath: string, photo: UserPhoto }[] = [];
-        for (const photo of photosUnderReview) {
-            const response = await s3Client.send(new GetObjectCommand({
-                Bucket: process.env.S3_BUCKET,
-                Key: `user-images/${photo.path}`,
-            }));
+        const reviewPhotosWithFilePath: { tempFilePath: string, photo: UserPhoto }[] = [];
+        const allPhotosWithFilePath: { tempFilePath: string, photo: UserPhoto }[] = [];
 
-            if (!response.Body) {
-                return {error: `The S3 response body was empty for: ${photo.path}`, success: false};
-            }
-
-            // Save images to temp files
-            const fileExt = photo.path.split('.').pop();
-            const tempFilePath = `/tmp/temp-img-${uuidv4()}.${fileExt}`;
-
+        for (const photo of allUserPhotos) {
             try {
-                await new Promise((resolve, reject) => {
-                    const writeStream = fs.createWriteStream(tempFilePath);
-                    (response.Body as any).pipe(writeStream);
+                if (photo.isRejected) continue;
 
-                    writeStream.on('finish', () => resolve(true));
-                    writeStream.on('error', reject);
-                });
+                const imageBuffer = await s3Helper.downloadImage(photo.path);
 
-                photosWithFilePath.push({tempFilePath, photo});
+                // Save images to temp files
+                const fileExt = photo.path.split('.').pop();
+                const tempFilePath = `/tmp/temp-img-${uuidv4()}.${fileExt}`;
+
+                await fs.promises.writeFile(tempFilePath, imageBuffer);
+                allPhotosWithFilePath.push({tempFilePath, photo});
+
+                if (photo.isUnderReview) {
+                    reviewPhotosWithFilePath.push({tempFilePath, photo});
+                }
             } catch (e) {
-                return {error: `Failed to write S3 object to temp file for: ${photo.path}`, success: false};
+                return {error: `Failed to download or write temp file for: ${photo.path}`, success: false};
             }
         }
 
         // Send each image to the external review service
-        for (const photoWithFilePath of photosWithFilePath) {
+        for (const photoWithFilePath of reviewPhotosWithFilePath) {
             // First check to see if this image is using the same base image as an existing image
-            const isDupedImageResult = await this.isImageDuplicated(photosWithFilePath, allUserPhotosWithFilePath);
+            const isDupedImageResult = await this.isImageDuplicated(photoWithFilePath.tempFilePath,
+                allPhotosWithFilePath.map(p => p.tempFilePath));
+
             if (isDupedImageResult.error) {
                 return {error: isDupedImageResult.error, success: false};
             }
 
-            // Make call to SightEngine for further image analysis
+            if (isDupedImageResult.isDuplicate) {
+                photoWithFilePath.photo.isRejected = true;
+                photoWithFilePath.photo.messages = ['Photo appears to be a duplicate of another photo'];
+
+                fs.unlink(photoWithFilePath.tempFilePath, (err) => {
+                    if (err) console.error('Failed to delete temp file:', err);
+                });
+
+                continue;
+            }
+
+            // Make a call to SightEngine for further image analysis
             const data = new FormData();
             data.append('media', fs.createReadStream(photoWithFilePath.tempFilePath));
             data.append('models', SIGHTENGINE_MODELS.join(','));
@@ -242,9 +319,13 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             // Add issues for review
             photoWithFilePath.photo.isRejected = true;
             photoWithFilePath.photo.messages = summary.analysis.messages;
+
+            fs.unlink(photoWithFilePath.tempFilePath, (err) => {
+                if (err) console.error('Failed to delete temp file:', err);
+            });
         }
 
-        return {error: null, success: true, photos: photosWithFilePath};
+        return {error: null, success: true, photos: reviewPhotosWithFilePath};
     }
 
     /**
@@ -485,5 +566,54 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             error: null, success: true,
             analysis: analysisReport as ImageAnalysisSummary
         };
+    }
+
+    /**
+     * Check if image is duplicated.
+     * @param tempFilePath
+     * @param allTempImagePaths
+     */
+    async isImageDuplicated(tempFilePath: string, allTempImagePaths: string[]) {
+
+        try {
+            for (const otherTempFilePath of allTempImagePaths) {
+                if (otherTempFilePath === tempFilePath) continue;
+
+                // Convert images to ImageData objects
+                const img1 = await this.loadImageData(tempFilePath);
+                const img2 = await this.loadImageData(otherTempFilePath);
+
+                const result = ssim(img1, img2);
+                if (result.mssim >= 0.95) {
+                    return {error: null, success: true, isDuplicate: true};
+                }
+            }
+
+            return {error: null, success: true, isDuplicate: false};
+        } catch (e) {
+            return {error: 'Failed to compare images for duplication', success: false, isDuplicate: false};
+        }
+    }
+
+    /**
+     * Load image data from file path and convert to ImageData format
+     * Resizes images to a standard size for comparison
+     * @param filePath
+     */
+    private async loadImageData(filePath: string): Promise<ImageData> {
+        const STANDARD_SIZE = 256;
+
+        const image = sharp(filePath);
+        const { data, info } = await image
+            .resize(STANDARD_SIZE, STANDARD_SIZE, { fit: 'fill' })
+            .raw()
+            .ensureAlpha()
+            .toBuffer({ resolveWithObject: true });
+
+        return {
+            data: new Uint8ClampedArray(data),
+            width: info.width,
+            height: info.height
+        } as ImageData;
     }
 }

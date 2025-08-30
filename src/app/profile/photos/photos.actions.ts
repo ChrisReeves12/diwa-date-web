@@ -3,14 +3,12 @@
 import { appendMediaRootToImageUrl, getCurrentUser } from '@/server-side-helpers/user.helpers';
 import { cookies } from 'next/headers';
 import { UserPhoto } from '@/types/user-photo.type';
-import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { businessConfig } from '@/config/business';
 import { prismaWrite } from '@/lib/prisma';
 import sharp from 'sharp';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { PhotoWithUrl } from "@/types/upload-progress.interface";
+import { S3Helper } from "../../../../server-side-helpers/s3.helper";
 
 // Helper function to remove media root from URL if present
 function cleanImagePath(imagePath?: string): string | undefined {
@@ -46,114 +44,6 @@ export interface CropData {
   height: number;
 }
 
-// S3 client configuration for DigitalOcean Spaces
-const createS3Client = (bucketConfig: { endpoint: string; region: string }) => {
-  return new S3Client({
-    endpoint: bucketConfig.endpoint,
-    region: bucketConfig.region,
-    credentials: {
-      accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-    },
-    forcePathStyle: false, // DigitalOcean Spaces uses virtual-hosted-style URLs
-  });
-};
-
-// Download image from S3
-async function downloadImageFromS3(imagePath: string): Promise<Buffer> {
-  // Use the first bucket as the source for downloading
-  const sourceBucket = {
-    endpoint: process.env.S3_ENDPOINT as string,
-    bucketName: process.env.S3_BUCKET as string,
-    region: process.env.S3_DEFAULT_REGION as string
-  };
-  const s3Client = createS3Client(sourceBucket);
-
-  const s3Key = `user-images/${imagePath}`;
-
-  const command = new GetObjectCommand({
-    Bucket: sourceBucket.bucketName,
-    Key: s3Key,
-  });
-
-  const response = await s3Client.send(command);
-
-  if (!response.Body) {
-    throw new Error('Failed to download image from S3');
-  }
-
-  // Convert the response body to Buffer
-  const chunks: Uint8Array[] = [];
-
-  // Handle both Node.js readable stream and web stream
-  if (response.Body instanceof Uint8Array) {
-    return Buffer.from(response.Body);
-  }
-
-  // For readable streams
-  const stream = response.Body as any;
-
-  if (typeof stream.transformToByteArray === 'function') {
-    const byteArray = await stream.transformToByteArray();
-    return Buffer.from(byteArray);
-  }
-
-  // Fallback for other stream types
-  if (stream.getReader) {
-    const reader = stream.getReader();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
-    }
-
-    return Buffer.concat(chunks);
-  }
-
-  throw new Error('Unsupported stream type from S3 response');
-}
-
-// Upload cropped image to all S3 buckets
-async function uploadToAllBuckets(imagePath: string, imageBuffer: Buffer, contentType: string): Promise<void> {
-  const uploadPromises = businessConfig.s3Buckets.map(async (bucketConfig) => {
-    const s3Client = createS3Client(bucketConfig);
-
-    const command = new PutObjectCommand({
-      Bucket: bucketConfig.bucketName,
-      Key: imagePath,
-      Body: imageBuffer,
-      ContentType: contentType,
-      ACL: 'public-read',
-    });
-
-    return s3Client.send(command);
-  });
-
-  await Promise.all(uploadPromises);
-}
-
-// Delete image from all S3 buckets
-async function deleteFromAllBuckets(imagePath: string): Promise<void> {
-  const deletePromises = businessConfig.s3Buckets.map(async (bucketConfig) => {
-    const s3Client = createS3Client(bucketConfig);
-
-    const command = new DeleteObjectCommand({
-      Bucket: bucketConfig.bucketName,
-      Key: imagePath,
-    });
-
-    try {
-      await s3Client.send(command);
-      console.log(`Deleted ${imagePath} from ${bucketConfig.bucketName}`);
-    } catch (error) {
-      console.warn(`Failed to delete ${imagePath} from ${bucketConfig.bucketName}:`, error);
-      // Don't throw - continue with other buckets
-    }
-  });
-
-  await Promise.all(deletePromises);
-}
 
 export async function updatePhotoSortOrder(photos: PhotoWithUrl[]) {
   const currentUser = await getCurrentUser(await cookies());
@@ -225,7 +115,8 @@ export async function saveCropData(photoPath: string, cropData: CropData, captio
     }
 
     // Crop the original photo
-    const originalImageBuffer = await downloadImageFromS3(photoPath);
+    const s3Helper = new S3Helper();
+    const originalImageBuffer = await s3Helper.downloadImage(photoPath);
     const croppedImageBuffer = await sharp(originalImageBuffer)
       .extract({
         left: cropData.x,
@@ -247,7 +138,7 @@ export async function saveCropData(photoPath: string, cropData: CropData, captio
     const s3CroppedImagePath = `user-images/${croppedImagePath}`;
 
     // Upload the cropped image to all S3 buckets
-    await uploadToAllBuckets(s3CroppedImagePath, croppedImageBuffer, 'image/jpeg');
+    await s3Helper.uploadToAllBuckets(s3CroppedImagePath, croppedImageBuffer, 'image/jpeg');
 
     // Update the user's photos in the database
     const currentPhotos = (currentUser.photos as unknown as UserPhoto[]) || [];
@@ -363,7 +254,8 @@ export async function uploadPhoto(formData: FormData) {
     }
 
     // Upload to all S3 buckets
-    await uploadToAllBuckets(s3FilePath, processedImage, 'image/jpeg');
+    const s3Helper = new S3Helper();
+    await s3Helper.uploadToAllBuckets(s3FilePath, processedImage, 'image/jpeg');
 
     // Create photo object
     const newPhoto: UserPhoto = {
@@ -428,13 +320,14 @@ export async function deletePhoto(photoPath: string) {
     }
 
     // Delete original image from S3
+    const s3Helper = new S3Helper();
     const originalS3Path = `user-images/${photoPath}`;
-    await deleteFromAllBuckets(originalS3Path);
+    await s3Helper.deleteFromAllBuckets(originalS3Path);
 
     // Delete cropped image from S3 if it exists
     if (photoToDelete.croppedImageData?.croppedImagePath) {
       const croppedS3Path = `user-images/${photoToDelete.croppedImageData.croppedImagePath}`;
-      await deleteFromAllBuckets(croppedS3Path);
+      await s3Helper.deleteFromAllBuckets(croppedS3Path);
     }
 
     // Remove photo from user's photos array

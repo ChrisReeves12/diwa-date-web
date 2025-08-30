@@ -21,6 +21,15 @@ export interface ServerToClientEvents {
     }) => void;
     'notification:read': (data: { notificationId: string }) => void;
 
+    // Account events
+    'account:notice': (data: {
+        message: string;
+        type: string;
+        approvedPhotos?: string[];
+        rejectedPhotos?: string[];
+        timestamp: Date;
+    }) => void;
+
     // Message events
     'message:new': (data: {
         id: string;
@@ -110,4 +119,4 @@ export interface SocketData {
     userId: string;
     sessionId: string;
     joinedRooms: Set<string>;
-} 
+}
