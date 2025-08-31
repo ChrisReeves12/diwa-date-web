@@ -1,7 +1,7 @@
 import ConsoleCommand from "./console.command";
 import { Command } from "commander";
 import { getUser } from "@/server-side-helpers/user.helpers";
-import { S3Helper } from "../../../server-side-helpers/s3.helper";
+import { S3Helper } from "../../server-side-helpers/s3.helper";
 import { v4 as uuidv4 } from 'uuid';
 import fs from "fs";
 import axios from "axios";

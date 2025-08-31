@@ -70,7 +70,7 @@ export class SocketIOService {
                     isTyping: true
                 };
 
-                await this.emitDirectlyToUser(otherUserId, 'message:typing', typingData);
+                this.emitDirectlyToUser(otherUserId, 'message:typing', typingData);
             });
 
             socket.on('message:typing:stop', async ({ otherUserId }) => {
@@ -79,7 +79,7 @@ export class SocketIOService {
                     isTyping: false
                 };
 
-                await this.emitDirectlyToUser(otherUserId, 'message:typing', typingData);
+                this.emitDirectlyToUser(otherUserId, 'message:typing', typingData);
             });
 
             socket.on('disconnect', async () => {
@@ -114,8 +114,10 @@ export class SocketIOService {
     private handleNotificationPayloads(message: any): void {
         const { userId, type, payload } = message;
 
-        if (type.includes('account')) {
+        if (type === 'account') {
             this.emitDirectlyToUser(userId, 'account:notice', payload);
+        } else if (type === 'block') {
+            this.emitDirectlyToUser(userId, 'user:blocked', payload);
         } else {
             this.emitDirectlyToUser(userId, 'notification:new', payload);
         }
@@ -138,6 +140,7 @@ export class SocketIOService {
 
         this.connectedUsers.get(userId)!.add(socketId);
         this.socketToUser.set(socketId, userId);
+        console.log(`Added socket ID: ${socketId} for user: ${userId}`);
     }
 
     private removeConnectedUser(userId: string, socketId: string): void {
@@ -146,8 +149,10 @@ export class SocketIOService {
             userSockets.delete(socketId);
             if (userSockets.size === 0) {
                 this.connectedUsers.delete(userId);
+                console.log(`Removed user: ${userId} from connected users.`);
             }
         }
+
         this.socketToUser.delete(socketId);
     }
 

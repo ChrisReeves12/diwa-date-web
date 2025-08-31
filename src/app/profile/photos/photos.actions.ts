@@ -8,7 +8,7 @@ import sharp from 'sharp';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { PhotoWithUrl } from "@/types/upload-progress.interface";
-import { S3Helper } from "../../../../server-side-helpers/s3.helper";
+import { S3Helper } from "../../../server-side-helpers/s3.helper";
 
 // Helper function to remove media root from URL if present
 function cleanImagePath(imagePath?: string): string | undefined {

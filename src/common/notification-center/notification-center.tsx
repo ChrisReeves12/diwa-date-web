@@ -174,6 +174,7 @@ export default function NotificationCenter() {
             off('notification:new', handleNewNotification);
             off('notification:read', handleNotificationRead);
             off('match:cancelled', handleMatchCancelled);
+            off('account:notice', handleAccountNotice);
 
             // Clear all animation timeouts
             notificationTimeoutRefs.current.forEach(timeout => clearTimeout(timeout));

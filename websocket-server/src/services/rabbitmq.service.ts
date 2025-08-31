@@ -1,5 +1,5 @@
 import amqplib from 'amqplib';
-import { RabbitMQConfig, EXCHANGES } from '../types/rabbitmq.types';
+import { RabbitMQConfig } from '../types/rabbitmq.types';
 
 export class RabbitMQService {
     private static instance: RabbitMQService;
@@ -34,7 +34,7 @@ export class RabbitMQService {
             });
 
             this.connection.on('error', (err: Error) => {
-                console.log(`[ERROR] RabbitMQ connection error: ${err.message}`);
+                console.error(`[ERROR] RabbitMQ connection error: ${err.message}`);
                 this.handleConnectionError();
             });
 
@@ -47,13 +47,13 @@ export class RabbitMQService {
 
             // Set up error handling for the channel
             this.channel.on('error', (err: Error) => {
-                console.log(`[ERROR] RabbitMQ channel error: ${err.message}`);
+                console.error(`[ERROR] RabbitMQ channel error: ${err.message}`);
             });
 
             await this.setupExchanges();
             await this.setupQueues();
         } catch (error) {
-            console.log(`[ERROR] Failed to connect to RabbitMQ: ${error}`);
+            console.error(`[ERROR] Failed to connect to RabbitMQ: ${error}`);
             throw error;
         }
     }
@@ -61,30 +61,26 @@ export class RabbitMQService {
     private async setupExchanges(): Promise<void> {
         if (!this.channel) throw new Error('Channel not initialized');
 
-        // Set up all exchanges
-        for (const exchange of Object.values(EXCHANGES)) {
-            await this.channel.assertExchange(
-                exchange.name,
-                exchange.type,
-                { durable: exchange.durable }
-            );
-
-            console.log(`[INFO] Exchange ${exchange.name} created/verified`);
-        }
+        await this.channel.assertExchange('app.topic', 'topic', {durable: true});
+        console.log(`[INFO] Exchange app.topic created/verified`);
     }
 
     private async setupQueues(): Promise<void> {
         // Set up notifications, messages, and matches queues
         if (!this.channel) throw new Error('Channel not initialized');
 
-        await this.channel.assertQueue('notifications', { durable: true });
-        await this.channel.assertQueue('messages', { durable: true });
-        await this.channel.assertQueue('matches', { durable: true });
+        await this.channel.assertQueue('notifications', {durable: true});
+        await this.channel.assertQueue('messages', {durable: true});
+        await this.channel.assertQueue('matches', {durable: true});
 
         // Bind queues to their respective exchanges
-        await this.channel.bindQueue('notifications', EXCHANGES.NOTIFICATIONS.name, 'user.*');
-        await this.channel.bindQueue('messages', EXCHANGES.MESSAGES.name, 'user.*');
-        await this.channel.bindQueue('matches', EXCHANGES.NOTIFICATIONS.name, 'user.*');
+        await this.channel.bindQueue('notifications', 'app.topic', 'user.notification');
+        await this.channel.bindQueue('notifications', 'app.topic', 'user.block');
+        await this.channel.bindQueue('notifications', 'app.topic', 'user.account');
+
+        await this.channel.bindQueue('messages', 'app.topic', 'user.message');
+
+        await this.channel.bindQueue('matches', 'app.topic', 'user.match');
     }
 
     public async startConsuming(
@@ -108,7 +104,7 @@ export class RabbitMQService {
                         }
                     }
                 },
-                { noAck: false }
+                {noAck: false}
             );
 
             if (!this.consumerTags) this.consumerTags = {};

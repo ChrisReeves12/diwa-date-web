@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import {
     ServerToClientEvents,
     ClientToServerEvents
-} from '@/types/websocket-events.types';
+} from '../../types/websocket-events.types';
 
 type WebSocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
