@@ -406,7 +406,6 @@ export async function getMatchDetails(
                     lastActiveAt: otherUser.lastActiveAt,
                     hideOnlineStatus: otherUser.hideOnlineStatus,
                     mainPhoto: otherUser.mainPhoto,
-                    photos: otherUser.photos,
                     ...otherUserPublicDetail
                 }
             }
