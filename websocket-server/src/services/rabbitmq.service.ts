@@ -1,9 +1,5 @@
 import amqplib from 'amqplib';
-import {
-    RabbitMQConfig,
-    RabbitMQMessage,
-    EXCHANGES
-} from '../types/rabbitmq.types';
+import { RabbitMQConfig, EXCHANGES } from '../types/rabbitmq.types';
 
 export class RabbitMQService {
     private static instance: RabbitMQService;
@@ -92,7 +88,7 @@ export class RabbitMQService {
     }
 
     public async startConsuming(
-        messageHandler: (queue: string, message: RabbitMQMessage) => Promise<void>
+        messageHandler: (queue: string, message: any) => Promise<void>
     ): Promise<void> {
         if (!this.channel) throw new Error('Channel not initialized');
 
@@ -103,7 +99,7 @@ export class RabbitMQService {
                     if (msg !== null) {
                         try {
                             const content = msg.content.toString();
-                            const message: RabbitMQMessage = JSON.parse(content);
+                            const message = JSON.parse(content);
                             await messageHandler(queue, message);
                             this.channel.ack(msg);
                         } catch (error) {

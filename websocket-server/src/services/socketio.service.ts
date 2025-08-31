@@ -8,7 +8,6 @@ import {
 } from '../types/websocket-events.types';
 import { RabbitMQService } from './rabbitmq.service';
 import { AuthService } from './auth.service';
-import { RabbitMQMessage, UserMessage, BroadcastMessage, RoomMessage } from '../types/rabbitmq.types';
 import { ServerConfig } from '../config/server.config';
 
 export class SocketIOService {
@@ -90,17 +89,21 @@ export class SocketIOService {
     }
 
     private setupRabbitMQConsumer(): void {
-        this.rabbitMQ.startConsuming(async (queue: string, message: RabbitMQMessage) => {
+        this.rabbitMQ.startConsuming(async (queue: string, message: any) => {
             try {
-                if ('userId' in message) {
-                    const userMessage = message as UserMessage;
-                    this.handleUserMessage(userMessage);
-                } else if ('roomId' in message) {
-                    const roomMessage = message as RoomMessage;
-                    this.handleRoomMessage(roomMessage);
-                } else {
-                    const broadcastMessage = message as BroadcastMessage;
-                    this.handleBroadcastMessage(broadcastMessage);
+                switch (queue) {
+                    case 'notifications':
+                        this.handleNotificationPayloads(message);
+                        break;
+                    case 'messages':
+                        this.handleMessagePayloads(message);
+                        break;
+                    case 'matches':
+                        this.handleMatchPayloads(message);
+                        break;
+                    default:
+                        console.warn(`Received message from unknown queue: ${queue}`);
+                        break;
                 }
             } catch (error) {
                 console.error(`Error processing RabbitMQ message: ${error}`);
@@ -108,51 +111,24 @@ export class SocketIOService {
         });
     }
 
-    private handleUserMessage(message: UserMessage): void {
+    private handleNotificationPayloads(message: any): void {
         const { userId, type, payload } = message;
 
-        switch (type) {
-            case 'notification':
-                this.io.to(`user:${userId}`).emit('notification:new', payload);
-                break;
-            case 'message':
-                this.io.to(`user:${userId}`).emit('message:new', payload);
-                break;
-            case 'match':
-                this.io.to(`user:${userId}`).emit('match:new', payload);
-                break;
-            case 'account':
-                this.io.to(`user:${userId}`).emit('account:notice', payload);
-                break;
+        if (type.includes('account')) {
+            this.emitDirectlyToUser(userId, 'account:notice', payload);
+        } else {
+            this.emitDirectlyToUser(userId, 'notification:new', payload);
         }
     }
 
-    private handleRoomMessage(message: RoomMessage): void {
-        const { roomId, payload } = message;
-
-        if (payload.type === 'message') {
-            this.io.to(roomId).emit('message:new', payload.data);
-        } else if (payload.type === 'typing') {
-            this.io.to(roomId).emit('message:typing', payload.data);
-        }
+    private handleMessagePayloads(message: any): void {
+        const { userId, payload } = message;
+        this.emitDirectlyToUser(userId, 'message:new', payload);
     }
 
-    private handleBroadcastMessage(message: BroadcastMessage): void {
-        const { type, payload } = message;
-
-        if (type === 'presence_update') {
-            if (payload.action === 'online') {
-                this.io.emit('user:online', {
-                    userId: payload.userId,
-                    timestamp: new Date()
-                });
-            } else if (payload.action === 'offline') {
-                this.io.emit('user:offline', {
-                    userId: payload.userId,
-                    timestamp: new Date()
-                });
-            }
-        }
+    private handleMatchPayloads(message: any): void {
+        const { userId, payload } = message;
+        this.emitDirectlyToUser(userId, 'match:new', payload);
     }
 
     private addConnectedUser(userId: string, socketId: string): void {
@@ -175,7 +151,7 @@ export class SocketIOService {
         this.socketToUser.delete(socketId);
     }
 
-    public async emitDirectlyToUser(userId: string, event: keyof ServerToClientEvents, data: any): Promise<void> {
+    public emitDirectlyToUser(userId: string, event: keyof ServerToClientEvents, data: any) {
         // Find the sockets for the user
         const userSockets = this.connectedUsers.get(userId);
         if (userSockets) {
@@ -188,36 +164,11 @@ export class SocketIOService {
         }
     }
 
-    public async emitToUser(userId: string, event: keyof ServerToClientEvents, data: any): Promise<void> {
-        this.io.to(`user:${userId}`).emit(event, data);
-
-        await this.rabbitMQ.publishToUser(userId, {
-            type: this.getMessageTypeFromEvent(event),
-            payload: data
-        });
-    }
-
-    public async emitToRoom(roomId: string, event: keyof ServerToClientEvents, data: any): Promise<void> {
-        this.io.to(roomId).emit(event, data);
-        await this.rabbitMQ.publishToRoom(roomId, event, data);
-    }
-
-    private getMessageTypeFromEvent(event: keyof ServerToClientEvents): 'notification' | 'message' | 'match' | 'presence' {
-        if (event.startsWith('notification:')) return 'notification';
-        if (event.startsWith('message:')) return 'message';
-        if (event.startsWith('match:')) return 'match';
-        return 'presence';
-    }
-
     public getIO(): Server {
         return this.io;
     }
 
     public getConnectedUsers(): string[] {
         return Array.from(this.connectedUsers.keys());
-    }
-
-    public isUserConnected(userId: string): boolean {
-        return this.connectedUsers.has(userId);
     }
 }
