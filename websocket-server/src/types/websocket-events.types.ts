@@ -93,10 +93,6 @@ export interface ClientToServerEvents {
     'presence:get': (callback: (users: string[]) => void) => void;
 
     // Messages
-    'message:send': (data: {
-        conversationId: string;
-        content: string;
-    }, callback: (response: { success: boolean; messageId?: string; error?: string }) => void) => void;
     'message:typing:start': (data: { conversationId: string }) => void;
     'message:typing:stop': (data: { conversationId: string }) => void;
     'message:markRead': (data: { messageId: string; conversationId: string }) => void;
@@ -104,10 +100,6 @@ export interface ClientToServerEvents {
     // Notifications
     'notification:markRead': (data: { notificationId: string }) => void;
     'notification:markAllRead': () => void;
-
-    // Room management
-    'room:join': (data: { roomId: string }) => void;
-    'room:leave': (data: { roomId: string }) => void;
 }
 
 export interface InterServerEvents {

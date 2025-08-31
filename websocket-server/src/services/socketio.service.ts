@@ -29,38 +29,18 @@ export class SocketIOService {
             pingInterval: 25000
         });
 
-        this.setupMiddleware(config);
+        this.setupAuthMiddleware();
         this.setupEventHandlers();
         this.setupRabbitMQConsumer();
     }
 
-    private setupMiddleware(config: ServerConfig): void {
+    private setupAuthMiddleware(): void {
         this.io.use(async (socket, next) => {
             try {
-                let sessionToken: string | undefined;
-
-                // First, try to get token from auth object (Socket.IO auth)
-                if (socket.handshake.auth && socket.handshake.auth.token) {
-                    sessionToken = socket.handshake.auth.token;
-                } else {
-                    // Fallback to cookies if available
-                    const cookieHeader = socket.handshake.headers.cookie || '';
-                    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
-                        const [key, value] = cookie.trim().split('=');
-                        if (key && value) {
-                            acc[key] = decodeURIComponent(value);
-                        }
-                        return acc;
-                    }, {} as Record<string, string>);
-
-                    sessionToken = cookies[config.auth.sessionCookieName];
-                    if (sessionToken) {
-                        console.log('Using session token from cookies');
-                    }
-                }
+                const sessionToken = socket.handshake.auth.token;
 
                 if (!sessionToken) {
-                    console.log('No session token found in auth or cookies');
+                    console.error('No session token found in auth');
                     return next(new Error('Authentication required'));
                 }
 
@@ -71,7 +51,6 @@ export class SocketIOService {
 
                 socket.data.userId = sessionData.userId;
                 socket.data.sessionId = sessionToken;
-                socket.data.joinedRooms = new Set();
 
                 next();
             } catch (error) {
@@ -84,113 +63,37 @@ export class SocketIOService {
     private setupEventHandlers(): void {
         this.io.on('connection', async (socket) => {
             const userId = socket.data.userId;
-            console.log(`User ${userId} connected via socket ${socket.id}`);
-
             this.addConnectedUser(userId, socket.id);
-            socket.join(`user:${userId}`);
-            await this.rabbitMQ.bindUserQueue(userId);
 
-            socket.emit('connection:success', {
-                userId,
-                sessionId: socket.data.sessionId
-            });
-
-            await this.broadcastUserStatus(userId, true);
-
-            this.setupSocketEventHandlers(socket);
-
-            socket.on('disconnect', async () => {
-                console.log(`User ${userId} disconnected from socket ${socket.id}`);
-
-                this.removeConnectedUser(userId, socket.id);
-
-                if (!this.connectedUsers.has(userId)) {
-                    await this.rabbitMQ.unbindUserQueue(userId);
-                    await this.broadcastUserStatus(userId, false);
-                }
-            });
-        });
-    }
-
-    private setupSocketEventHandlers(socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>): void {
-        const userId = socket.data.userId;
-
-        socket.on('auth:verify', (callback) => {
-            callback({ success: true });
-        });
-
-        socket.on('presence:get', async (callback) => {
-            const onlineUsers = Array.from(this.connectedUsers.keys());
-            callback(onlineUsers);
-        });
-
-        socket.on('room:join', async ({ roomId }) => {
-            socket.join(roomId);
-            socket.data.joinedRooms.add(roomId);
-
-            if (roomId.startsWith('conversation:')) {
-                await this.rabbitMQ.bindRoomQueue(roomId);
-            }
-        });
-
-        socket.on('room:leave', async ({ roomId }) => {
-            socket.leave(roomId);
-            socket.data.joinedRooms.delete(roomId);
-
-            const room = this.io.sockets.adapter.rooms.get(roomId);
-            if (!room || room.size === 0) {
-                if (roomId.startsWith('conversation:')) {
-                    await this.rabbitMQ.unbindRoomQueue(roomId);
-                }
-            }
-        });
-
-        socket.on('message:send', async ({ conversationId, content }, callback) => {
-            try {
-                const messageId = `msg_${Date.now()}`;
-
-                const messageData = {
-                    id: messageId,
+            socket.on('message:typing:start', async ({ conversationId }) => {
+                const typingData = {
+                    userId,
                     conversationId,
-                    senderId: userId,
-                    content,
-                    timestamp: new Date()
+                    isTyping: true
                 };
 
-                await this.rabbitMQ.publishToRoom(conversationId, 'message', messageData);
-                this.io.to(`conversation:${conversationId}`).emit('message:new', messageData);
+                await this.rabbitMQ.publishToRoom(conversationId, 'typing', typingData);
+                socket.to(`conversation:${conversationId}`).emit('message:typing', typingData);
+            });
 
-                callback({ success: true, messageId });
-            } catch (error) {
-                console.error(`Error sending message: ${error}`);
-                callback({ success: false, error: 'Failed to send message' });
-            }
-        });
+            socket.on('message:typing:stop', async ({ conversationId }) => {
+                const typingData = {
+                    userId,
+                    conversationId,
+                    isTyping: false
+                };
 
-        socket.on('message:typing:start', async ({ conversationId }) => {
-            const typingData = {
-                userId,
-                conversationId,
-                isTyping: true
-            };
+                await this.rabbitMQ.publishToRoom(conversationId, 'typing', typingData);
+                socket.to(`conversation:${conversationId}`).emit('message:typing', typingData);
+            });
 
-            await this.rabbitMQ.publishToRoom(conversationId, 'typing', typingData);
-            socket.to(`conversation:${conversationId}`).emit('message:typing', typingData);
-        });
+            socket.on('notification:markRead', async ({ notificationId }) => {
+                socket.emit('notification:read', { notificationId });
+            });
 
-        socket.on('message:typing:stop', async ({ conversationId }) => {
-            const typingData = {
-                userId,
-                conversationId,
-                isTyping: false
-            };
-
-            await this.rabbitMQ.publishToRoom(conversationId, 'typing', typingData);
-            socket.to(`conversation:${conversationId}`).emit('message:typing', typingData);
-        });
-
-        socket.on('notification:markRead', async ({ notificationId }) => {
-            socket.emit('notification:read', { notificationId });
+            socket.on('disconnect', async () => {
+                this.removeConnectedUser(userId, socket.id);
+            });
         });
     }
 
@@ -264,6 +167,7 @@ export class SocketIOService {
         if (!this.connectedUsers.has(userId)) {
             this.connectedUsers.set(userId, new Set());
         }
+
         this.connectedUsers.get(userId)!.add(socketId);
         this.socketToUser.set(socketId, userId);
     }
@@ -277,20 +181,6 @@ export class SocketIOService {
             }
         }
         this.socketToUser.delete(socketId);
-    }
-
-    private async broadcastUserStatus(userId: string, isOnline: boolean): Promise<void> {
-        await this.rabbitMQ.broadcastPresence({
-            action: isOnline ? 'online' : 'offline',
-            userId,
-            timestamp: new Date()
-        });
-
-        const event = isOnline ? 'user:online' : 'user:offline';
-        this.io.emit(event, {
-            userId,
-            timestamp: new Date()
-        });
     }
 
     public async emitToUser(userId: string, event: keyof ServerToClientEvents, data: any): Promise<void> {

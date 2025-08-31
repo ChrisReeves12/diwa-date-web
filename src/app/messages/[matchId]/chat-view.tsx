@@ -268,10 +268,6 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
             return;
         }
 
-        // Join the conversation room for messages and typing events
-        const roomId = `conversation:${matchId}`;
-        emit('room:join', { roomId });
-
         // Set up event listeners
         const typingHandler = (data: { userId: string; conversationId: string; isTyping: boolean }) => {
             messageHandler.handleTypingStatus(data);

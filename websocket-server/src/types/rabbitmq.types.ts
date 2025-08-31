@@ -25,20 +25,15 @@ export interface QueueConfig {
 
 // Exchange configurations
 export const EXCHANGES = {
-    USER_DIRECT: {
-        name: 'user.direct',
+    MESSAGES: {
+        name: 'messages.direct',
         type: ExchangeType.DIRECT,
         durable: true
     },
-    EVENTS_TOPIC: {
-        name: 'events.topic',
-        type: ExchangeType.TOPIC,
+    NOTIFICATIONS: {
+        name: 'notifications.direct',
+        type: ExchangeType.DIRECT,
         durable: true
-    },
-    PRESENCE_FANOUT: {
-        name: 'presence.fanout',
-        type: ExchangeType.FANOUT,
-        durable: false
     }
 } as const;
 
