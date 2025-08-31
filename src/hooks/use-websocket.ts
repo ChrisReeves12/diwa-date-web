@@ -137,9 +137,13 @@ export function useWebSocket() {
         socketRef.current.emit(event, ...args as any);
     }, [isConnected, status]);
 
-    // Mark notification as read
-    const markNotificationRead = useCallback((notificationId: string) => {
-        emit('notification:markRead', { notificationId });
+    // Typing events
+    const startTyping = useCallback((otherUserId: string) => {
+        emit('message:typing:start', { otherUserId });
+    }, [emit]);
+
+    const stopTyping = useCallback((otherUserId: string) => {
+        emit('message:typing:stop', { otherUserId });
     }, [emit]);
 
     return {
@@ -149,6 +153,7 @@ export function useWebSocket() {
         on,
         off,
         emit,
-        markNotificationRead
+        startTyping,
+        stopTyping
     };
 }

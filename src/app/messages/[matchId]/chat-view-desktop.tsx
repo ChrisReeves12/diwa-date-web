@@ -29,11 +29,13 @@ export function ChatViewDesktop({ currentUser, matchDetails }: ChatViewProps)  {
     const [sendError, setSendError] = useState<string | null>(null);
     const [otherUserTyping, setOtherUserTyping] = useState(false);
     const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
-    const { on, off, isConnected, sendMessage, emit } = useWebSocket();
+    const { on, off, isConnected, emit, startTyping, stopTyping } = useWebSocket();
 
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
+
+    const { otherUser } = matchDetails;
 
     // Scroll to bottom function
     const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
@@ -269,14 +271,12 @@ export function ChatViewDesktop({ currentUser, matchDetails }: ChatViewProps)  {
         on('message:read', readHandler);
 
         return () => {
-            // Leave room
-            emit('room:leave', { roomId });
             // Remove event listeners
             off('message:new', messageHandler.handleNewMessage);
             off('message:typing', typingHandler);
             off('message:read', readHandler);
         };
-    }, [isConnected, matchId, on, off, emit, messageHandler, currentUser.id]);
+    }, [isConnected, matchId, on, off, emit, messageHandler, currentUser.id, otherUser.id]);
 
     // Handle input typing events with debounce
     const handleTyping = useCallback(() => {
@@ -285,9 +285,7 @@ export function ChatViewDesktop({ currentUser, matchDetails }: ChatViewProps)  {
         }
 
         setIsTyping(true);
-        emit('message:typing:start', {
-            conversationId: matchId.toString()
-        });
+        startTyping(otherUser.id.toString());
 
         if (typingTimeout) {
             clearTimeout(typingTimeout);
@@ -295,24 +293,20 @@ export function ChatViewDesktop({ currentUser, matchDetails }: ChatViewProps)  {
 
         const timeout = setTimeout(() => {
             setIsTyping(false);
-            emit('message:typing:stop', {
-                conversationId: matchId.toString()
-            });
+            stopTyping(otherUser.id.toString());
         }, 2000);
 
         setTypingTimeout(timeout);
-    }, [emit, matchId, typingTimeout, isConnected]);
+    }, [startTyping, stopTyping, otherUser.id, typingTimeout, isConnected]);
 
     // Stop typing when message is sent
-    const stopTyping = useCallback(() => {
+    const stopTypingIndicator = useCallback(() => {
         if (typingTimeout) {
             clearTimeout(typingTimeout);
         }
         setIsTyping(false);
-        emit('message:typing:stop', {
-            conversationId: matchId.toString()
-        });
-    }, [emit, matchId, typingTimeout]);
+        stopTyping(otherUser.id.toString());
+    }, [stopTyping, otherUser.id, typingTimeout]);
 
     // Cleanup typing timeout on unmount
     useEffect(() => {
@@ -340,7 +334,7 @@ export function ChatViewDesktop({ currentUser, matchDetails }: ChatViewProps)  {
         }
 
         // Stop typing indicator when sending message
-        stopTyping();
+        stopTypingIndicator();
 
         const messageContent = messageInput.trim();
         setIsSending(true);
@@ -394,7 +388,6 @@ export function ChatViewDesktop({ currentUser, matchDetails }: ChatViewProps)  {
         handleTyping();
     };
 
-    const { otherUser } = matchDetails;
     const isOnline = isUserOnline(new Date(otherUser.lastActiveAt), otherUser.hideOnlineStatus);
 
     return (

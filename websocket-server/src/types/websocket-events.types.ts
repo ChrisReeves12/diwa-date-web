@@ -40,7 +40,6 @@ export interface ServerToClientEvents {
     }) => void;
     'message:typing': (data: {
         userId: string;
-        conversationId: string;
         isTyping: boolean;
     }) => void;
     'message:read': (data: {
@@ -93,13 +92,9 @@ export interface ClientToServerEvents {
     'presence:get': (callback: (users: string[]) => void) => void;
 
     // Messages
-    'message:typing:start': (data: { conversationId: string }) => void;
-    'message:typing:stop': (data: { conversationId: string }) => void;
+    'message:typing:start': (data: { otherUserId: string }) => void;
+    'message:typing:stop': (data: { otherUserId: string }) => void;
     'message:markRead': (data: { messageId: string; conversationId: string }) => void;
-
-    // Notifications
-    'notification:markRead': (data: { notificationId: string }) => void;
-    'notification:markAllRead': () => void;
 }
 
 export interface InterServerEvents {

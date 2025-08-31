@@ -1,5 +1,5 @@
 import { Server as HttpServer } from 'http';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import {
     ServerToClientEvents,
     ClientToServerEvents,
@@ -65,30 +65,22 @@ export class SocketIOService {
             const userId = socket.data.userId;
             this.addConnectedUser(userId, socket.id);
 
-            socket.on('message:typing:start', async ({ conversationId }) => {
+            socket.on('message:typing:start', async ({ otherUserId }) => {
                 const typingData = {
                     userId,
-                    conversationId,
                     isTyping: true
                 };
 
-                await this.rabbitMQ.publishToRoom(conversationId, 'typing', typingData);
-                socket.to(`conversation:${conversationId}`).emit('message:typing', typingData);
+                await this.emitDirectlyToUser(otherUserId, 'message:typing', typingData);
             });
 
-            socket.on('message:typing:stop', async ({ conversationId }) => {
+            socket.on('message:typing:stop', async ({ otherUserId }) => {
                 const typingData = {
                     userId,
-                    conversationId,
                     isTyping: false
                 };
 
-                await this.rabbitMQ.publishToRoom(conversationId, 'typing', typingData);
-                socket.to(`conversation:${conversationId}`).emit('message:typing', typingData);
-            });
-
-            socket.on('notification:markRead', async ({ notificationId }) => {
-                socket.emit('notification:read', { notificationId });
+                await this.emitDirectlyToUser(otherUserId, 'message:typing', typingData);
             });
 
             socket.on('disconnect', async () => {
@@ -98,7 +90,7 @@ export class SocketIOService {
     }
 
     private setupRabbitMQConsumer(): void {
-        this.rabbitMQ.startConsuming(async (message: RabbitMQMessage) => {
+        this.rabbitMQ.startConsuming(async (queue: string, message: RabbitMQMessage) => {
             try {
                 if ('userId' in message) {
                     const userMessage = message as UserMessage;
@@ -181,6 +173,19 @@ export class SocketIOService {
             }
         }
         this.socketToUser.delete(socketId);
+    }
+
+    public async emitDirectlyToUser(userId: string, event: keyof ServerToClientEvents, data: any): Promise<void> {
+        // Find the sockets for the user
+        const userSockets = this.connectedUsers.get(userId);
+        if (userSockets) {
+            for (const socketId of userSockets) {
+                const socket = this.io.sockets.sockets.get(socketId);
+                if (socket) {
+                    socket.emit(event, data);
+                }
+            }
+        }
     }
 
     public async emitToUser(userId: string, event: keyof ServerToClientEvents, data: any): Promise<void> {
