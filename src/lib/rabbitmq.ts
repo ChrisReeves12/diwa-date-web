@@ -1,7 +1,7 @@
 // const amqplib = require('amqplib');
 import amqplib from 'amqplib';
 import { v4 as uuidv4 } from 'uuid';
-import { MessageType } from "@/server-side-helpers/notification-emitter.helper";
+import { MessageCategory } from "../../types/websocket-events.types";
 
 // Connection configuration
 export interface RabbitMQConfig {
@@ -19,8 +19,6 @@ export class Rabbitmq {
     private connection: any = null;
     private channel: any = null;
     private config: RabbitMQConfig;
-    private reconnectTimeout: NodeJS.Timeout | null = null;
-    private isReconnecting: boolean = false;
 
     private constructor(config?: RabbitMQConfig) {
         this.config = config || {
@@ -72,29 +70,22 @@ export class Rabbitmq {
         }
     }
 
-    public async publishToUser(userId: number, message: {type: MessageType, payload: any}): Promise<void> {
-        await this.publish(
-            'app.topic',
-            `user.${message.type}`,
-            {
-                id: uuidv4(),
-                timestamp: new Date(),
-                userId: userId.toString(),
-                type: message.type,
-                payload: message.payload
-            }
-        );
-    }
-
-    private async publish(exchange: string, routingKey: string, message: any): Promise<void> {
+    public async publishToUser(userId: number, message: {category: MessageCategory, eventLabel: string, payload: any}): Promise<void> {
         if (!this.channel) throw new Error('Channel not initialized');
 
-        const messageBuffer = Buffer.from(JSON.stringify(message));
+        const messageBuffer = Buffer.from(JSON.stringify({
+            id: uuidv4(),
+            timestamp: new Date(),
+            userId: userId.toString(),
+            category: message.category,
+            eventLabel: message.eventLabel,
+            payload: message.payload
+        }));
 
         try {
             this.channel.publish(
-                exchange,
-                routingKey,
+                'app.topic',
+                `user.${message.category}`,
                 messageBuffer,
                 {
                     persistent: true,

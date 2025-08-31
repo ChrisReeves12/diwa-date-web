@@ -1,5 +1,6 @@
 import amqplib from 'amqplib';
 import { RabbitMQConfig } from '../types/rabbitmq.types';
+import { WebSocketMessage } from "../types/websocket-events.types";
 
 export class RabbitMQService {
     private static instance: RabbitMQService;
@@ -75,7 +76,6 @@ export class RabbitMQService {
 
         // Bind queues to their respective exchanges
         await this.channel.bindQueue('notifications', 'app.topic', 'user.notification');
-        await this.channel.bindQueue('notifications', 'app.topic', 'user.block');
         await this.channel.bindQueue('notifications', 'app.topic', 'user.account');
 
         await this.channel.bindQueue('messages', 'app.topic', 'user.message');
@@ -84,7 +84,7 @@ export class RabbitMQService {
     }
 
     public async startConsuming(
-        messageHandler: (queue: string, message: any) => Promise<void>
+        messageHandler: (message: WebSocketMessage) => Promise<void>
     ): Promise<void> {
         if (!this.channel) throw new Error('Channel not initialized');
 
@@ -96,7 +96,7 @@ export class RabbitMQService {
                         try {
                             const content = msg.content.toString();
                             const message = JSON.parse(content);
-                            await messageHandler(queue, message);
+                            await messageHandler(message);
                             this.channel.ack(msg);
                         } catch (error) {
                             console.log(`[ERROR] Failed to process message from ${queue}: ${error}`);

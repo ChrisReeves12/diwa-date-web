@@ -4,14 +4,14 @@ import {
     ServerToClientEvents,
     ClientToServerEvents,
     InterServerEvents,
-    SocketData
+    WebSocketMessage
 } from '../types/websocket-events.types';
 import { RabbitMQService } from './rabbitmq.service';
 import { AuthService } from './auth.service';
 import { ServerConfig } from '../config/server.config';
 
 export class SocketIOService {
-    private io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
+    private io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents>;
     private rabbitMQ: RabbitMQService;
     private authService: AuthService;
     private connectedUsers: Map<string, Set<string>> = new Map();
@@ -21,7 +21,7 @@ export class SocketIOService {
         this.rabbitMQ = rabbitMQ;
         this.authService = authService;
 
-        this.io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(httpServer, {
+        this.io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents>(httpServer, {
             cors: config.cors,
             transports: ['websocket', 'polling'],
             pingTimeout: 60000,
@@ -64,24 +64,6 @@ export class SocketIOService {
             const userId = socket.data.userId;
             this.addConnectedUser(userId, socket.id);
 
-            socket.on('message:typing:start', async ({ otherUserId }) => {
-                const typingData = {
-                    userId,
-                    isTyping: true
-                };
-
-                this.emitDirectlyToUser(otherUserId, 'message:typing', typingData);
-            });
-
-            socket.on('message:typing:stop', async ({ otherUserId }) => {
-                const typingData = {
-                    userId,
-                    isTyping: false
-                };
-
-                this.emitDirectlyToUser(otherUserId, 'message:typing', typingData);
-            });
-
             socket.on('disconnect', async () => {
                 this.removeConnectedUser(userId, socket.id);
             });
@@ -89,48 +71,15 @@ export class SocketIOService {
     }
 
     private setupRabbitMQConsumer(): void {
-        this.rabbitMQ.startConsuming(async (queue: string, message: any) => {
+        this.rabbitMQ.startConsuming(async (message: WebSocketMessage) => {
+            const { userId, category } = message;
+
             try {
-                switch (queue) {
-                    case 'notifications':
-                        this.handleNotificationPayloads(message);
-                        break;
-                    case 'messages':
-                        this.handleMessagePayloads(message);
-                        break;
-                    case 'matches':
-                        this.handleMatchPayloads(message);
-                        break;
-                    default:
-                        console.warn(`Received message from unknown queue: ${queue}`);
-                        break;
-                }
+                this.emitToUser(userId, `${category}:notification` as keyof ServerToClientEvents, message);
             } catch (error) {
                 console.error(`Error processing RabbitMQ message: ${error}`);
             }
         });
-    }
-
-    private handleNotificationPayloads(message: any): void {
-        const { userId, type, payload } = message;
-
-        if (type === 'account') {
-            this.emitDirectlyToUser(userId, 'account:notice', payload);
-        } else if (type === 'block') {
-            this.emitDirectlyToUser(userId, 'user:blocked', payload);
-        } else {
-            this.emitDirectlyToUser(userId, 'notification:new', payload);
-        }
-    }
-
-    private handleMessagePayloads(message: any): void {
-        const { userId, payload } = message;
-        this.emitDirectlyToUser(userId, 'message:new', payload);
-    }
-
-    private handleMatchPayloads(message: any): void {
-        const { userId, payload } = message;
-        this.emitDirectlyToUser(userId, 'match:new', payload);
     }
 
     private addConnectedUser(userId: string, socketId: string): void {
@@ -156,7 +105,7 @@ export class SocketIOService {
         this.socketToUser.delete(socketId);
     }
 
-    public emitDirectlyToUser(userId: string, event: keyof ServerToClientEvents, data: any) {
+    public emitToUser(userId: string, event: keyof ServerToClientEvents, data: WebSocketMessage) {
         // Find the sockets for the user
         const userSockets = this.connectedUsers.get(userId);
         if (userSockets) {
@@ -164,6 +113,7 @@ export class SocketIOService {
                 const socket = this.io.sockets.sockets.get(socketId);
                 if (socket) {
                     socket.emit(event, data);
+                    console.log(`Emitted ${data.category} event: ${data.eventLabel} to user ${data.userId}`);
                 }
             }
         }

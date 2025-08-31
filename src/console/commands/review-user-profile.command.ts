@@ -198,7 +198,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 // Todo: Create notification in database
                 // Send push notification to the user that some photos were rejected
                 await rabbitMQ.publishToUser(userId, {
-                    type: 'account',
+                    category: 'account',
                     payload: {
                         message: 'Some of your photos were rejected during review. Please check your profile for details.',
                         type: 'photos-rejected',
@@ -209,7 +209,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 // Send push notification to the user that photos were approved
                 // Todo: Create notification in database
                 await rabbitMQ.publishToUser(userId, {
-                    type: 'account',
+                    category: 'account',
                     payload: {
                         message: 'Your photos have been approved and are now live on your profile.',
                         type: 'photos-approved',

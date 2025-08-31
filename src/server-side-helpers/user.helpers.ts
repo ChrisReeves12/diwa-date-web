@@ -19,7 +19,7 @@ import { UserProfileDetail } from '@/types/user-profile-detail.interface';
 import {
     emitNewMatchNotification,
     emitNewNotification,
-    emitMatchCancelled,
+    emitMatchCanceled,
     emitUserBlocked,
     emitUserUnblocked
 } from '@/server-side-helpers/notification-emitter.helper';
@@ -1014,7 +1014,7 @@ export async function removeUserMatchRequest(userId: number, recipientUserId: nu
             // Determine who the other user is (not the one cancelling)
             const otherUserId = existingMatch.userId === userId ? existingMatch.recipientId : existingMatch.userId;
 
-            await emitMatchCancelled(otherUserId, {
+            await emitMatchCanceled(otherUserId, {
                 matchId: existingMatch.id,
                 cancelledBy: userId
             });
