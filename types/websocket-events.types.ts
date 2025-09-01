@@ -1,11 +1,10 @@
 // WebSocket Event Types
 export interface ServerToClientEvents {
     'connection:success': (data: { userId: string; sessionId: string }) => void;
-    'event:notification': (data: { eventLabel: string, payload: any }) => void;
-    'match:notification': (data: { eventLabel: string, payload: any }) => void;
-    'account:notification': (data: { eventLabel: string, payload: any }) => void;
-    'message:notification': (data: { eventLabel: string, payload: any }) => void;
-    'error': (data: { message: string; code?: string }) => void;
+    'event:notification': (data: WebSocketMessage) => void;
+    'match:notification': (data: WebSocketMessage) => void;
+    'account:notification': (data: WebSocketMessage) => void;
+    'message:notification': (data: WebSocketMessage) => void;
 }
 
 export interface ClientToServerEvents {

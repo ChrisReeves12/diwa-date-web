@@ -113,7 +113,6 @@ export class SocketIOService {
                 const socket = this.io.sockets.sockets.get(socketId);
                 if (socket) {
                     socket.emit(event, data);
-                    console.log(`Emitted ${data.category} event: ${data.eventLabel} to user ${data.userId}`);
                 }
             }
         }

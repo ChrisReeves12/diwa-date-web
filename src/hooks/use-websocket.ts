@@ -139,11 +139,11 @@ export function useWebSocket() {
 
     // Typing events
     const startTyping = useCallback((otherUserId: string) => {
-        emit('message:typing:start', { otherUserId });
+        // Todo: implement startTyping logic
     }, [emit]);
 
     const stopTyping = useCallback((otherUserId: string) => {
-        emit('message:typing:stop', { otherUserId });
+        // Todo: implement stopTyping logic
     }, [emit]);
 
     return {

@@ -20,6 +20,7 @@ import NotificationPopover from './notification-popover/notification-popover';
 import { muteUser, sendUserMatch, fetchCurrentUserMainPhotoUrl } from '../server-actions/user-profile.actions';
 import { useRouter, usePathname } from 'next/navigation';
 import { useWebSocket } from '@/hooks/use-websocket';
+import { WebSocketMessage } from "../../../types/websocket-events.types";
 
 interface NewNotificationAnimation {
     [key: string]: boolean;
@@ -114,67 +115,36 @@ export default function NotificationCenter() {
     useEffect(() => {
         if (!isConnected || !currentUser) return;
 
-        // Handle new match notification - simplified to refetch trigger
-        const handleNewMatch = () => {
-            console.log('New match signal received - triggering refetch');
-            triggerRefetch('match');
+        // Event handlers
+        const handleRealTimeMatchEvents = (data: WebSocketMessage) => {
+            console.log('Received real-time match event:', data);
+        }
+
+        const handleRealTimeMessageEvents = (data: WebSocketMessage) => {
+            console.log('Received real-time message event:', data);
         };
 
-        // Handle new message notification
-        const handleNewMessage = (data: any) => {
-            const messageMatchId = data.conversationId || data.matchId;
-
-            // Check if we are in the chat view for this message
-            const isViewingChat = pathname.includes(`/messages/${messageMatchId}`);
-
-            if (isViewingChat) {
-                console.log(`New message for currently viewed match (${messageMatchId}) - suppressing notification.`);
-                return; // Don't show notification if user is in the chat
-            }
-
-            console.log('New message signal received - triggering refetch');
-            triggerRefetch('message');
+        const handleRealTimeNotificationEvents = (data: WebSocketMessage) => {
+            console.log('Received real-time notification event:', data);
         };
 
-        // Handle general notification - simplified to refetch trigger
-        const handleNewNotification = () => {
-            console.log('New notification signal received - triggering refetch');
-            triggerRefetch('notification');
+        const handleRealTimeAccountEvents = (data: WebSocketMessage) => {
+            console.log('Received real-time account event:', data);
         };
 
-        // Handle notification read event - simplified to refetch trigger
-        const handleNotificationRead = () => {
-            console.log('Notification read signal received - triggering refetch');
-            refetchNotificationData(); // No animation needed for read events
-        };
-
-        // Handle match cancelled event - simplified to refetch trigger
-        const handleMatchCancelled = () => {
-            console.log('Match cancelled signal received - triggering refetch');
-            refetchNotificationData(); // No animation needed for cancellations
-        };
-
-        const handleAccountNotice = () => {
-            console.log('Account notice received - triggering refetch');
-            refetchNotificationData(); // Refetch to update any account-related notifications
-        };
-
-        // Subscribe to events
-        on('match:new', handleNewMatch);
-        on('message:new', handleNewMessage);
-        on('notification:new', handleNewNotification);
-        on('notification:read', handleNotificationRead);
-        on('match:cancelled', handleMatchCancelled);
-        on('account:notice', handleAccountNotice);
+        // Subscribe to event categories
+        on('match:notification', handleRealTimeMatchEvents);
+        on('message:notification', handleRealTimeMessageEvents);
+        on('event:notification', handleRealTimeNotificationEvents);
+        on('account:notification', handleRealTimeAccountEvents);
 
         // Cleanup
         return () => {
-            off('match:new', handleNewMatch);
-            off('message:new', handleNewMessage);
-            off('notification:new', handleNewNotification);
-            off('notification:read', handleNotificationRead);
-            off('match:cancelled', handleMatchCancelled);
-            off('account:notice', handleAccountNotice);
+            // Clean up
+            off('match:notification', handleRealTimeMatchEvents);
+            off('message:notification', handleRealTimeMessageEvents);
+            off('event:notification', handleRealTimeNotificationEvents);
+            off('account:notification', handleRealTimeAccountEvents);
 
             // Clear all animation timeouts
             notificationTimeoutRefs.current.forEach(timeout => clearTimeout(timeout));
