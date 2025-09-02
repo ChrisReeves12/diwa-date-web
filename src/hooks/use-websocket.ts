@@ -137,23 +137,12 @@ export function useWebSocket() {
         socketRef.current.emit(event, ...args as any);
     }, [isConnected, status]);
 
-    // Typing events
-    const startTyping = useCallback((otherUserId: string) => {
-        // Todo: implement startTyping logic
-    }, [emit]);
-
-    const stopTyping = useCallback((otherUserId: string) => {
-        // Todo: implement stopTyping logic
-    }, [emit]);
-
     return {
         status,
         isConnected,
         socket: socketRef.current,
         on,
         off,
-        emit,
-        startTyping,
-        stopTyping
+        emit
     };
 }

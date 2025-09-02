@@ -42,22 +42,9 @@ export default function NotificationCenter() {
     const notificationTimeoutRefs = useRef<Map<string, NodeJS.Timeout>>(new Map());
     const profileButtonRef = useRef<HTMLButtonElement>(null);
 
-    // Compute which categories have new notifications
-    const hasNewMatch = useMemo(() => {
-        return Object.keys(newNotificationAnimations).some(key => key.startsWith('match-'));
-    }, [newNotificationAnimations]);
-
-    const hasNewMessage = useMemo(() => {
-        return Object.keys(newNotificationAnimations).some(key => key.startsWith('message-'));
-    }, [newNotificationAnimations]);
-
-    const hasNewNotification = useMemo(() => {
-        return Object.keys(newNotificationAnimations).some(key => key.startsWith('notification-'));
-    }, [newNotificationAnimations]);
-
-    // Handle new notification with animation
-    const addNotificationAnimation = useCallback((notificationId: string, type: 'match' | 'message' | 'notification') => {
-        // Set animation state
+    // Trigger animation with a state update
+    const triggerNotificationAnimation = useCallback((type: 'match' | 'message' | 'notification') => {
+        const notificationId = Date.now();
         setNewNotificationAnimations(prev => ({ ...prev, [`${type}-${notificationId}`]: true }));
 
         // Remove animation after delay
@@ -68,22 +55,32 @@ export default function NotificationCenter() {
                 return newState;
             });
             notificationTimeoutRefs.current.delete(`${type}-${notificationId}`);
-        }, 3000); // Animation duration
+        }, 3000);
 
         notificationTimeoutRefs.current.set(`${type}-${notificationId}`, timeoutId);
     }, []);
 
-    // Refetch notification data from server
-    const refetchNotificationData = useCallback(async () => {
+    // Fetch notification center data from server
+    const fetchNotificationCenterData = useCallback(async (showLoader = false) => {
         if (!currentUser) return;
 
         try {
+            if (showLoader) {
+                setIsLoading(true);
+            }
+
+            setError(null);
             const data = await loadNotificationCenterData(currentUser);
             setNotificationsData(data);
         } catch (err) {
             console.error('Error refetching notification data:', err);
+            setError(err instanceof Error ? err.message : 'Failed to load notifications');
+        } finally {
+            if (showLoader) {
+                setIsLoading(false);
+            }
         }
-    }, [currentUser]);
+    }, [currentUser, setIsLoading, setError]);
 
     // Refetch user main photo data from server
     const refetchUserMainPhoto = useCallback(async () => {
@@ -100,18 +97,23 @@ export default function NotificationCenter() {
         }
     }, [currentUser]);
 
-    // Trigger refetch with animation
-    const triggerRefetch = useCallback((eventType: 'match' | 'message' | 'notification') => {
-        console.log(`Triggering refetch for event type: ${eventType}`);
+    const handleMessagesClick = (e: React.MouseEvent<HTMLElement>) => {
+        if (notificationsData?.receivedMessages?.length === 0) {
+            router.push('/messages');
+        } else {
+            popovers.messages.handleClick(e);
+        }
+    };
 
-        // Trigger animation immediately for visual feedback
-        addNotificationAnimation(String(Date.now()), eventType);
+    const handleLikesClick = (e: React.MouseEvent<HTMLElement>) => {
+        if (notificationsData?.pendingMatches?.length === 0) {
+            router.push('/likes');
+        } else {
+            popovers.likes.handleClick(e);
+        }
+    };
 
-        // Refetch data from server
-        refetchNotificationData();
-    }, [addNotificationAnimation, refetchNotificationData]);
-
-    // Real-time notification handlers (simplified)
+    // Real-time notification handlers
     useEffect(() => {
         if (!isConnected || !currentUser) return;
 
@@ -150,31 +152,17 @@ export default function NotificationCenter() {
             notificationTimeoutRefs.current.forEach(timeout => clearTimeout(timeout));
             notificationTimeoutRefs.current.clear();
         };
-    }, [isConnected, currentUser, on, off, triggerRefetch, refetchNotificationData, pathname]);
+    }, [isConnected, currentUser, on, off, fetchNotificationCenterData, pathname]);
 
     useEffect(() => {
-        const handleNotificationCenterRefresh = () => {
-            refetchNotificationData();
-        };
-
-        window.addEventListener('notification-center-refresh', handleNotificationCenterRefresh);
+        window.addEventListener('notification-center-refresh', () => fetchNotificationCenterData());
+        window.addEventListener('refresh-user-profile-main-photo', () => refetchUserMainPhoto());
 
         return () => {
-            window.removeEventListener('notification-center-refresh', handleNotificationCenterRefresh);
+            window.removeEventListener('notification-center-refresh', () => fetchNotificationCenterData());
+            window.removeEventListener('refresh-user-profile-main-photo', () => refetchUserMainPhoto());
         };
-    }, [refetchNotificationData]);
-
-    useEffect(() => {
-        const handleUserProfileMainPhotoRefresh = () => {
-            refetchUserMainPhoto();
-        };
-
-        window.addEventListener('refresh-user-profile-main-photo', handleUserProfileMainPhotoRefresh);
-
-        return () => {
-            window.removeEventListener('refresh-user-profile-main-photo', handleUserProfileMainPhotoRefresh);
-        };
-    }, [refetchUserMainPhoto]);
+    }, [fetchNotificationCenterData, refetchUserMainPhoto]);
 
     useEffect(() => {
         if (!currentUser) {
@@ -185,39 +173,8 @@ export default function NotificationCenter() {
         // Initialize user photo state when currentUser changes
         setUserMainPhoto(currentUser.publicMainPhoto);
         setUserMainPhotoCroppedImageData(currentUser.mainPhotoCroppedImageData);
-
-        const loadData = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const data = await loadNotificationCenterData(currentUser);
-                setNotificationsData(data);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to load notifications');
-                console.error('Error loading notification center data:', err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        loadData();
-    }, [currentUser]);
-
-    const handleMessagesClick = (e: React.MouseEvent<HTMLElement>) => {
-        if (notificationsData?.receivedMessages?.length === 0) {
-            router.push('/messages');
-        } else {
-            popovers.messages.handleClick(e);
-        }
-    };
-
-    const handleLikesClick = (e: React.MouseEvent<HTMLElement>) => {
-        if (notificationsData?.pendingMatches?.length === 0) {
-            router.push('/likes');
-        } else {
-            popovers.likes.handleClick(e);
-        }
-    };
+        fetchNotificationCenterData(true);
+    }, []);
 
     if (!currentUser) {
         return null;
@@ -262,9 +219,9 @@ export default function NotificationCenter() {
                                     }
                                 }));
                     }}
-                    hasNewMatch={hasNewMatch}
-                    hasNewMessage={hasNewMessage}
-                    hasNewNotification={hasNewNotification}
+                    hasNewMatch={_.some(_.keys(newNotificationAnimations), key => key.startsWith('match'))}
+                    hasNewMessage={_.some(_.keys(newNotificationAnimations), key => key.startsWith('message'))}
+                    hasNewNotification={_.some(_.keys(newNotificationAnimations), key => key.startsWith('notification'))}
                 />
                 <div className="profile-user">
                     <button
