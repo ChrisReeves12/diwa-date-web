@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { Observable } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import {
     ServerToClientEvents,
@@ -102,27 +103,27 @@ export function useWebSocket() {
 
     // Subscribe to events
     const on = useCallback(<K extends keyof ServerToClientEvents>(
-        event: K,
-        handler: ServerToClientEvents[K]
-    ) => {
-        if (!socketRef.current) {
-            console.warn(`Cannot subscribe to ${String(event)}: socket not initialized`);
-            return;
-        }
-        socketRef.current.on(event, handler as any);
-    }, []);
+        event: K
+    ): Observable<Parameters<ServerToClientEvents[K]>[0]> => {
+        return new Observable(subscriber => {
+            if (!socketRef.current) {
+                subscriber.error(new Error(`Cannot subscribe to ${String(event)}: socket not initialized`));
+                return;
+            }
 
-    // Unsubscribe from events
-    const off = useCallback(<K extends keyof ServerToClientEvents>(
-        event: K,
-        handler?: ServerToClientEvents[K]
-    ) => {
-        if (!socketRef.current) return;
-        if (handler) {
-            socketRef.current.off(event, handler as any);
-        } else {
-            socketRef.current.off(event);
-        }
+            const handler = (data: any) => {
+                subscriber.next(data);
+            };
+
+            socketRef.current.on(event, handler as any);
+
+            // Cleanup
+            return () => {
+                if (socketRef.current) {
+                    socketRef.current.off(event, handler as any);
+                }
+            };
+        });
     }, []);
 
     // Emit events
@@ -142,7 +143,6 @@ export function useWebSocket() {
         isConnected,
         socket: socketRef.current,
         on,
-        off,
         emit
     };
 }

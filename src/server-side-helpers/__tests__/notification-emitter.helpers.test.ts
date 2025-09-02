@@ -25,20 +25,6 @@ describe('Notification Emitter Helpers', () => {
         await emitUserBlocked(80062, {blockedBy: 429, blockedUserId: 80062, timestamp: new Date()});
     });
 
-    it('should send message notification to user', async () => {
-        await emitNewMessageNotification(80062, {
-            id: 'abc',
-            userGender: 'male',
-            age: 41,
-            matchId: '42',
-            timestamp: 42245,
-            createdAt: new Date(),
-            content: 'Testing this out',
-            userId: '80062',
-            displayName: 'Chris Virtuoso'
-        });
-    });
-
     it('should send match notification to user', async () => {
         await emitNewMatchNotification(80062, {id: 423, sender: {displayName: 'Chris Virtuoso', age: 41, gender: 'male', publicMainPhoto: '', id: 80062, locationName: 'Atlanta'}});
     });

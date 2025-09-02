@@ -9,6 +9,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useCurrentUser } from '../context/current-user-context';
 import { userProfileLink, showAlert } from '@/util';
 import _ from 'lodash';
+import { BehaviorSubject, fromEvent } from 'rxjs';
+import { debounceTime, filter } from 'rxjs/operators';
 import { NotificationCenterData } from '@/types/notification-center-data.interface';
 import {
     loadNotificationCenterData,
@@ -38,16 +40,16 @@ export default function NotificationCenter() {
     const popovers = useNotificationPopovers();
     const router = useRouter();
     const pathname = usePathname();
-    const { on, off, isConnected } = useWebSocket();
+    const { on, isConnected } = useWebSocket();
     const notificationTimeoutRefs = useRef<Map<string, NodeJS.Timeout>>(new Map());
     const profileButtonRef = useRef<HTMLButtonElement>(null);
 
-    // Trigger animation with a state update
+    // Trigger the CSS animation that animates the count bubble with a state update
     const triggerNotificationAnimation = useCallback((type: 'match' | 'message' | 'notification') => {
         const notificationId = Date.now();
         setNewNotificationAnimations(prev => ({ ...prev, [`${type}-${notificationId}`]: true }));
 
-        // Remove animation after delay
+        // Remove animation CSS class after delay
         const timeoutId = setTimeout(() => {
             setNewNotificationAnimations(prev => {
                 const newState = { ...prev };
@@ -60,7 +62,6 @@ export default function NotificationCenter() {
         notificationTimeoutRefs.current.set(`${type}-${notificationId}`, timeoutId);
     }, []);
 
-    // Fetch notification center data from server
     const fetchNotificationCenterData = useCallback(async (showLoader = false) => {
         if (!currentUser) return;
 
@@ -82,8 +83,7 @@ export default function NotificationCenter() {
         }
     }, [currentUser, setIsLoading, setError]);
 
-    // Refetch user main photo data from server
-    const refetchUserMainPhoto = useCallback(async () => {
+    const fetchUserMainPhoto = useCallback(async () => {
         if (!currentUser) return;
 
         try {
@@ -113,57 +113,118 @@ export default function NotificationCenter() {
         }
     };
 
-    // Real-time notification handlers
+    const notificationDataFetchTrigger$ = useMemo(() => new BehaviorSubject<number>(0), []);
+    const notificationDataFetchSubRef = useRef<Subscription | null>(null);
+
+    // Trigger we will use to debounce data fetch requests
+    useEffect(() => {
+        if (!fetchNotificationCenterData) return;
+
+        notificationDataFetchSubRef.current = notificationDataFetchTrigger$
+            .pipe(debounceTime(300))
+            .subscribe(({ showLoader }: {showLoader?: boolean}) => {
+                fetchNotificationCenterData(showLoader).catch(err => {
+                    console.error('Error fetching notification data:', err);
+                });
+            });
+
+        return () => {
+            notificationDataFetchSubRef.current?.unsubscribe();
+            notificationDataFetchSubRef.current = null;
+        };
+    }, [fetchNotificationCenterData, notificationDataFetchTrigger$]);
+
+    // Real-time websocket notification handlers (these are debounced to avoid flooding the UI)
     useEffect(() => {
         if (!isConnected || !currentUser) return;
 
-        // Event handlers
         const handleRealTimeMatchEvents = (data: WebSocketMessage) => {
-            console.log('Received real-time match event:', data);
+            if (data.eventLabel === 'match:new') {
+                triggerNotificationAnimation('match');
+            }
+
+            notificationDataFetchTrigger$.next({ showLoader: false });
         }
 
-        const handleRealTimeMessageEvents = (data: WebSocketMessage) => {
-            console.log('Received real-time message event:', data);
+        const handleRealTimeMessageEvents = () => {
+            triggerNotificationAnimation('message');
+            notificationDataFetchTrigger$.next({ showLoader: false });
         };
 
-        const handleRealTimeNotificationEvents = (data: WebSocketMessage) => {
-            console.log('Received real-time notification event:', data);
+        const handleRealTimeNotificationEvents = () => {
+            triggerNotificationAnimation('notification');
+            notificationDataFetchTrigger$.next({ showLoader: false });
         };
 
         const handleRealTimeAccountEvents = (data: WebSocketMessage) => {
             console.log('Received real-time account event:', data);
+            // Todo: Handle account events
         };
 
-        // Subscribe to event categories
-        on('match:notification', handleRealTimeMatchEvents);
-        on('message:notification', handleRealTimeMessageEvents);
-        on('event:notification', handleRealTimeNotificationEvents);
-        on('account:notification', handleRealTimeAccountEvents);
+        // Subscribe to real-time websocket events
+        const debounceTimeMs = 150;
+        const subscriptions = [
+            on('match:notification')
+                .pipe(
+                    debounceTime(debounceTimeMs),
+                    filter((data: WebSocketMessage) => ['match:new', 'match:cancel'].includes(data.eventLabel)
+                ))
+                .subscribe(handleRealTimeMatchEvents),
+
+            on('message:notification')
+                .pipe(
+                    debounceTime(debounceTimeMs),
+                    filter((data: WebSocketMessage) => data.eventLabel === 'message:new'
+                ))
+                .subscribe(handleRealTimeMessageEvents),
+
+            on('event:notification')
+                .pipe(
+                    debounceTime(debounceTimeMs),
+                    filter((data: WebSocketMessage) => data.eventLabel === 'notification:new')
+                )
+                .subscribe(handleRealTimeNotificationEvents),
+
+            on('account:notification')
+                .pipe(debounceTime(debounceTimeMs))
+                .subscribe(handleRealTimeAccountEvents)
+        ];
 
         // Cleanup
         return () => {
-            // Clean up
-            off('match:notification', handleRealTimeMatchEvents);
-            off('message:notification', handleRealTimeMessageEvents);
-            off('event:notification', handleRealTimeNotificationEvents);
-            off('account:notification', handleRealTimeAccountEvents);
+            subscriptions.forEach(sub => sub.unsubscribe());
 
             // Clear all animation timeouts
             notificationTimeoutRefs.current.forEach(timeout => clearTimeout(timeout));
             notificationTimeoutRefs.current.clear();
         };
-    }, [isConnected, currentUser, on, off, fetchNotificationCenterData, pathname]);
+    }, [isConnected, currentUser, on, fetchNotificationCenterData, pathname]);
 
     useEffect(() => {
-        window.addEventListener('notification-center-refresh', () => fetchNotificationCenterData());
-        window.addEventListener('refresh-user-profile-main-photo', () => refetchUserMainPhoto());
+        if (!fetchNotificationCenterData || !fetchUserMainPhoto) return;
 
+        const debounceMs = 150;
+
+        const refreshNotificationsSubscription = fromEvent(window, 'notification-center-refresh')
+            .pipe(debounceTime(debounceMs))
+            .subscribe(() => {
+                notificationDataFetchTrigger$.next({ showLoader: false });
+            });
+
+        const refreshPhotoSubscription = fromEvent(window, 'refresh-user-profile-main-photo')
+            .pipe(debounceTime(debounceMs))
+            .subscribe(() => {
+                notificationDataFetchTrigger$.next({ showLoader: false });
+            });
+
+        // Cleanup
         return () => {
-            window.removeEventListener('notification-center-refresh', () => fetchNotificationCenterData());
-            window.removeEventListener('refresh-user-profile-main-photo', () => refetchUserMainPhoto());
+            refreshNotificationsSubscription.unsubscribe();
+            refreshPhotoSubscription.unsubscribe();
         };
-    }, [fetchNotificationCenterData, refetchUserMainPhoto]);
+    }, [fetchNotificationCenterData, fetchUserMainPhoto]);
 
+    // Initial data fetch
     useEffect(() => {
         if (!currentUser) {
             setIsLoading(false);
