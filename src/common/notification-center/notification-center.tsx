@@ -116,7 +116,7 @@ export default function NotificationCenter() {
     const notificationDataFetchTrigger$ = useMemo(() => new BehaviorSubject<number>(0), []);
     const notificationDataFetchSubRef = useRef<Subscription | null>(null);
 
-    // Trigger we will use to debounce data fetch requests
+    // Trigger that we will use to debounce data fetch requests
     useEffect(() => {
         if (!fetchNotificationCenterData) return;
 
