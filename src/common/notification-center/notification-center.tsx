@@ -9,7 +9,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useCurrentUser } from '../context/current-user-context';
 import { userProfileLink, showAlert } from '@/util';
 import _ from 'lodash';
-import { BehaviorSubject, fromEvent } from 'rxjs';
+import { Subject, Subscription, fromEvent } from 'rxjs';
 import { debounceTime, filter } from 'rxjs/operators';
 import { NotificationCenterData } from '@/types/notification-center-data.interface';
 import {
@@ -113,7 +113,7 @@ export default function NotificationCenter() {
         }
     };
 
-    const notificationDataFetchTrigger$ = useMemo(() => new BehaviorSubject<number>(0), []);
+    const notificationDataFetchTrigger$ = useMemo(() => new Subject<{ showLoader?: boolean }>(), []);
     const notificationDataFetchSubRef = useRef<Subscription | null>(null);
 
     // Trigger that we will use to debounce data fetch requests
