@@ -64,24 +64,25 @@ export async function emitNewNotification(userId: number, notificationData: Noti
 }
 
 /**
- * Emit notification read event
- */
-export async function emitNotificationRead(userId: number, notificationId: number): Promise<void> {
-    await emitToUser(userId, 'notification', 'notification:read', { notificationId });
-}
-
-/**
  * Emit message read event
  */
 export async function emitMessageRead(userId: number, data: { messageId: string; conversationId: string; readBy: string; timestamp: Date }): Promise<void> {
     await emitToUser(userId, 'message', 'message:read', data);
 }
 
+export async function emitMessageTyping(userId: number, data: { conversationId: string; typingBy: string; timestamp: Date }): Promise<void> {
+    await emitToUser(userId, 'message', 'message:typing', data);
+}
+
+export async function emitMessageStoppedTyping(userId: number, data: { conversationId: string; typingBy: string; timestamp: Date }): Promise<void> {
+    await emitToUser(userId, 'message', 'message:stoppedTyping', data);
+}
+
 /**
  * Emit match canceled/removed notification to a specific user
  */
-export async function emitMatchCanceled(userId: number, matchData: { matchId: number; cancelledBy: number }): Promise<void> {
-    await emitToUser(userId, 'match', 'match:canceled', matchData);
+export async function emitMatchCanceled(userId: number, matchData: { matchId: number; canceledBy: number }): Promise<void> {
+    await emitToUser(userId, 'match', 'match:cancel', matchData);
 }
 
 /**

@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, filter, tap } from 'rxjs/operators';
 import { User } from "@/types";
 import { CurrentUserProvider } from "@/common/context/current-user-context";
 import SiteTopBar from "@/common/site-top-bar/site-top-bar";
@@ -12,7 +14,6 @@ import {
     AngleLeftIcon,
     AngleRightIcon,
     BanIcon,
-    CheckCircleIcon,
     CommentsIcon, ExclamationTriangleIcon,
     HeartBrokenIcon,
     HeartIcon, ImageIcon, InfoCircleIcon, MapMarkerIcon, StarIcon, TimesIcon, TrophyIcon, UnlockIcon, UserCircleIcon
@@ -31,6 +32,7 @@ import { useWebSocket } from '@/hooks/use-websocket';
 import { isUserOnline } from '@/helpers/user.helpers';
 import ReportUserDialog from '@/common/report-user-dialog/report-user-dialog';
 import { CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import { WebSocketMessage } from "../../../../types/websocket-events.types";
 
 interface UserProfileProps {
     userProfileDetail: UserProfileDetail,
@@ -48,14 +50,19 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
     const [showBioModal, setShowBioModal] = useState(false);
     const [showUnmatchDialog, setShowUnmatchDialog] = useState(false);
     const imageViewerRef = useRef<HTMLDivElement>(null);
-    const { on, off, isConnected } = useWebSocket();
+    const profileDataFetchTrigger$ = useRef(new Subject<void>()).current;
+    const profileDataFetchSubRef = useRef<Subscription | null>(null);
+    const { on, isConnected } = useWebSocket();
 
     const refetchUserProfile = useCallback(async () => {
         try {
             const result = await loadFullUserProfile(Number(userProfile.user.id));
             if ('userProfileDetails' in result && result.userProfileDetails) {
-                console.log('Successfully refetched user profile, updating state');
                 setUserProfile(result.userProfileDetails);
+
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('notification-center-refresh'));
+                }
             } else if ('error' in result) {
                 console.error('Error refetching user profile:', result.error);
             } else {
@@ -73,6 +80,20 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
             setShowImageViewer(true);
         }
     };
+
+    // Trigger refetching user profile data
+    useEffect(() => {
+        profileDataFetchSubRef.current = profileDataFetchTrigger$
+            .pipe(debounceTime(300))
+            .subscribe(() => {
+                refetchUserProfile();
+            });
+
+        return () => {
+            profileDataFetchSubRef.current?.unsubscribe();
+            profileDataFetchSubRef.current = null;
+        };
+    }, [refetchUserProfile, profileDataFetchTrigger$]);
 
     // Handle image viewer click to close
     useEffect(() => {
@@ -132,65 +153,45 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         };
     }, [showImageViewer, userProfile.user.publicPhotos, navigateImage]);
 
+    // Listen for real-time updates via WebSocket
     useEffect(() => {
         if (!isConnected || !currentUser) return;
 
-        const handleMatchEvent = () => {
-            console.log('Match event received - refreshing user profile');
-            refetchUserProfile();
-        };
+        const debounceTimeMs = 300;
+        const subscriptions = [
+            on('match:notification')
+                .pipe(
+                    debounceTime(debounceTimeMs),
+                    filter((data: WebSocketMessage) =>
+                        ['match:new', 'match:cancel'].includes(data.eventLabel) &&
+                        (data.eventLabel === 'match:new' ?
+                            Number(data.payload.sender.id) === Number(userProfile.user.id) :
+                            Number(data.payload.canceledBy) === Number(userProfile.user.id))
+                    )
+                )
+                .subscribe(() => profileDataFetchTrigger$.next()),
 
-        const handleMessageEvent = () => {
-            console.log('Message event received - refreshing user profile');
-            refetchUserProfile();
-        };
-
-        const handleBlockEvent = (data: { blockedUserId: number; blockedBy: number; timestamp: Date }) => {
-            console.log('Block event received:', data);
-            console.log('Current user ID:', currentUser.id, 'Viewed user ID:', userProfile.user.id);
-
-            // Only update state if the current user was blocked by the user being viewed
-            if (data.blockedBy === userProfile.user.id && data.blockedUserId === currentUser.id) {
-                console.log('Current user was blocked by viewed user - updating local state');
-                setUserProfile(prev => ({
-                    ...prev,
-                    theyBlockedMe: true
-                }));
-            } else {
-                console.log('Block event not relevant to current profile view');
-            }
-        };
-
-        const handleUnblockEvent = (data: { unblockedUserId: number; unblockedBy: number; timestamp: Date }) => {
-            console.log('Unblock event received:', data);
-            console.log('Current user ID:', currentUser.id, 'Viewed user ID:', userProfile.user.id);
-
-            // Only update state if the current user was unblocked by the user being viewed
-            if (data.unblockedBy === userProfile.user.id && data.unblockedUserId === currentUser.id) {
-                console.log('Current user was unblocked by viewed user - updating local state');
-                setUserProfile(prev => ({
-                    ...prev,
-                    theyBlockedMe: false
-                }));
-            } else {
-                console.log('Unblock event not relevant to current profile view');
-            }
-        };
-
-        on('match:new', handleMatchEvent);
-        on('match:cancelled', handleMatchEvent);
-        on('message:new', handleMessageEvent);
-        on('user:blocked', handleBlockEvent);
-        on('user:unblocked', handleUnblockEvent);
+            on('account:notification')
+                .pipe(debounceTime(debounceTimeMs))
+                .subscribe((data: WebSocketMessage) => {
+                    if (
+                        (data.eventLabel === 'account:blocked' && Number(data.payload.blockedBy) === Number(userProfile.user.id)
+                            && Number(data.payload.blockedUserId) === Number(currentUser.id)) ||
+                        (data.eventLabel === 'account:unblocked' && Number(data.payload.unblockedBy) === Number(userProfile.user.id) &&
+                            Number(data.payload.unblockedUserId) === Number(currentUser.id))
+                    ) {
+                        setUserProfile(prev => ({
+                            ...prev,
+                            theyBlockedMe: data.eventLabel === 'account:blocked'
+                        }));
+                    }
+                }),
+        ];
 
         return () => {
-            off('match:new', handleMatchEvent);
-            off('match:cancelled', handleMatchEvent);
-            off('message:new', handleMessageEvent);
-            off('user:blocked', handleBlockEvent);
-            off('user:unblocked', handleUnblockEvent);
+            subscriptions.forEach(sub => sub.unsubscribe());
         };
-    }, [isConnected, currentUser, on, off, refetchUserProfile]);
+    }, [isConnected, currentUser, on, refetchUserProfile, userProfile.user.id]);
 
     const onRequestMatchClick = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -206,16 +207,10 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
 
                 await unMuteUser(Number(userProfile.user.id));
 
-                const result = await loadFullUserProfile(Number(userProfile.user.id));
-                if (!("userProfileDetails" in result) || ("error" in result && result.error) || ("userProfileDetails" in result && !result.userProfileDetails)) {
-                    showAlert(("error" in result && result.error) || 'An error occurred sending update. Please try again later.');
-                    return;
-                }
+                // Refetch full user profile details
+                profileDataFetchTrigger$.next();
 
-                setUserProfile(result.userProfileDetails);
-                if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('notification-center-refresh'));
-                }
+
             } catch (error) {
                 console.error('Error sending match request:', error);
             } finally {
@@ -231,16 +226,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         setTimeout(async () => {
             try {
                 await removeUserMatch(Number(userProfile.user.id));
-                const result = await loadFullUserProfile(Number(userProfile.user.id));
-                if ('error' in result || !result.userProfileDetails) {
-                    showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
-                    return;
-                }
-
-                setUserProfile(result.userProfileDetails);
-                if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('notification-center-refresh'));
-                }
+                profileDataFetchTrigger$.next();
             } catch (error) {
                 console.error('Error canceling match request:', error);
             } finally {
@@ -256,16 +242,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         setTimeout(async () => {
             try {
                 await muteUser(Number(userProfile.user.id));
-                const result = await loadFullUserProfile(Number(userProfile.user.id));
-                if ('error' in result || !result.userProfileDetails) {
-                    showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
-                    return;
-                }
-
-                setUserProfile(result.userProfileDetails);
-                if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('notification-center-refresh'));
-                }
+                profileDataFetchTrigger$.next();
             } catch (error) {
                 console.error('Error rejecting match request:', error);
             } finally {
@@ -281,16 +258,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         setTimeout(async () => {
             try {
                 await blockUserAction(Number(userProfile.user.id));
-                const result = await loadFullUserProfile(Number(userProfile.user.id));
-                if ('error' in result || !result.userProfileDetails) {
-                    showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
-                    return;
-                }
-
-                setUserProfile(result.userProfileDetails);
-                if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('notification-center-refresh'));
-                }
+                profileDataFetchTrigger$.next();
             } catch (error) {
                 console.error('Error blocking user:', error);
             } finally {
@@ -306,16 +274,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         setTimeout(async () => {
             try {
                 await unBlockUserAction(Number(userProfile.user.id));
-                const result = await loadFullUserProfile(Number(userProfile.user.id));
-                if ('error' in result || !result.userProfileDetails) {
-                    showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
-                    return;
-                }
-
-                setUserProfile(result.userProfileDetails);
-                if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('notification-center-refresh'));
-                }
+                profileDataFetchTrigger$.next();
             } catch (error) {
                 console.error('Error unblocking user:', error);
             } finally {
@@ -336,16 +295,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
         setTimeout(async () => {
             try {
                 await removeUserMatch(Number(userProfile.user.id));
-                const result = await loadFullUserProfile(Number(userProfile.user.id));
-                if ('error' in result || !result.userProfileDetails) {
-                    showAlert(('error' in result && result.error) || 'An error occurred sending update. Please try again later.');
-                    return;
-                }
-
-                setUserProfile(result.userProfileDetails);
-                if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('notification-center-refresh'));
-                }
+                profileDataFetchTrigger$.next();
             } catch (error) {
                 console.error('Error unmatching user:', error);
             } finally {
@@ -679,7 +629,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                     onClose={() => setShowReportDialog(false)}
                     userId={Number(userProfile.user.id)}
                     userName={userProfile.user.displayName}
-                    onSuccess={refetchUserProfile}
+                    onSuccess={() => profileDataFetchTrigger$.next()}
                 />
 
                 {showBioModal && (

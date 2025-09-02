@@ -306,6 +306,10 @@ export async function authenticateUser(
         };
     }
 
+    if (!user.password) {
+        throw new Error('User does not have a password set.');
+    }
+
     // Verify password
     const isPasswordValid = await comparePasswords(password, user.password);
 
@@ -1016,7 +1020,7 @@ export async function removeUserMatchRequest(userId: number, recipientUserId: nu
 
             await emitMatchCanceled(otherUserId, {
                 matchId: existingMatch.id,
-                cancelledBy: userId
+                canceledBy: userId
             });
         } catch (wsError) {
             console.error('Failed to emit match cancellation notification:', wsError);

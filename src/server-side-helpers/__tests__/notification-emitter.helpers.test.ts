@@ -1,8 +1,8 @@
 import {
-    emitAccountMessage,
+    emitAccountMessage, emitMatchCanceled,
     emitNewMatchNotification,
     emitNewMessageNotification,
-    emitUserBlocked
+    emitUserBlocked, emitUserUnblocked
 } from "@/server-side-helpers/notification-emitter.helper";
 
 describe('Notification Emitter Helpers', () => {
@@ -11,22 +11,40 @@ describe('Notification Emitter Helpers', () => {
             id: 'abc',
             matchId: '42',
             content: 'Testing this out',
-            userId: '80062',
-            displayName: 'Chris Virtuoso',
-            userGender: 'male',
-            publicMainPhoto: '/path/to/image.jpg',
-            age: 41,
+            userId: '49151',
+            displayName: 'Frances.Okuneva',
+            userGender: 'female',
+            publicMainPhoto: 'random_images/34.jpg',
+            age: 61,
             timestamp: 4232,
             createdAt: new Date()
         });
     });
 
     it('should send blocked notification to user', async () => {
-        await emitUserBlocked(80062, {blockedBy: 429, blockedUserId: 80062, timestamp: new Date()});
+        await emitUserBlocked(80062, {blockedBy: 49151, blockedUserId: 80062, timestamp: new Date()});
+    });
+
+    it('should send unblocked notification to user', async () => {
+        await emitUserUnblocked(80062, {unblockedBy: 49151, unblockedUserId: 80062, timestamp: new Date()});
     });
 
     it('should send match notification to user', async () => {
-        await emitNewMatchNotification(80062, {id: 423, sender: {displayName: 'Chris Virtuoso', age: 41, gender: 'male', publicMainPhoto: '', id: 80062, locationName: 'Atlanta'}});
+        await emitNewMatchNotification(80062, {
+            id: 423,
+            sender: {
+                displayName: 'Frances.Okuneva',
+                age: 61,
+                gender: 'female',
+                publicMainPhoto: '',
+                id: 49151,
+                locationName: 'Delta, LA, USA'
+            }
+        });
+    });
+
+    it('should send canceled match notification to user', async () => {
+        await emitMatchCanceled(80062, {matchId: 423, canceledBy: 49151});
     });
 
     it('should send an account message to user', async () => {

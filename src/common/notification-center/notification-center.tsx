@@ -10,7 +10,7 @@ import { useCurrentUser } from '../context/current-user-context';
 import { userProfileLink, showAlert } from '@/util';
 import _ from 'lodash';
 import { Subject, Subscription, fromEvent } from 'rxjs';
-import { debounceTime, filter } from 'rxjs/operators';
+import { debounceTime, filter, tap } from 'rxjs/operators';
 import { NotificationCenterData } from '@/types/notification-center-data.interface';
 import {
     loadNotificationCenterData,
@@ -121,7 +121,7 @@ export default function NotificationCenter() {
         if (!fetchNotificationCenterData) return;
 
         notificationDataFetchSubRef.current = notificationDataFetchTrigger$
-            .pipe(debounceTime(300))
+            .pipe(debounceTime(500))
             .subscribe(({ showLoader }: {showLoader?: boolean}) => {
                 fetchNotificationCenterData(showLoader).catch(err => {
                     console.error('Error fetching notification data:', err);
@@ -157,12 +157,16 @@ export default function NotificationCenter() {
         };
 
         const handleRealTimeAccountEvents = (data: WebSocketMessage) => {
-            console.log('Received real-time account event:', data);
-            // Todo: Handle account events
+            if (data.eventLabel === 'account:message') {
+                // Todo: show some alert/toast that user's been messaged by admin
+                fetchUserMainPhoto();
+            }
+
+            notificationDataFetchTrigger$.next({ showLoader: false });
         };
 
         // Subscribe to real-time websocket events
-        const debounceTimeMs = 150;
+        const debounceTimeMs = 200;
         const subscriptions = [
             on('match:notification')
                 .pipe(
@@ -186,7 +190,8 @@ export default function NotificationCenter() {
                 .subscribe(handleRealTimeNotificationEvents),
 
             on('account:notification')
-                .pipe(debounceTime(debounceTimeMs))
+                .pipe(debounceTime(debounceTimeMs), filter((data: WebSocketMessage) =>
+                    ['account:message', 'account:blocked', 'account:unblocked'].includes(data.eventLabel)))
                 .subscribe(handleRealTimeAccountEvents)
         ];
 
