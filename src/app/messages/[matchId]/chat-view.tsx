@@ -6,7 +6,13 @@ import { ChatMessage, ChatViewProps } from "@/app/messages/[matchId]/chat-view-p
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useWebSocket } from "@/hooks/use-websocket";
-import { getChatMessages, updateMessagesAsRead, sendChatMessage, sendReadReceipt, sendTypingNotification } from "@/app/messages/messages.actions";
+import {
+    getChatMessages,
+    updateMessagesAsRead,
+    sendChatMessage,
+    sendReadReceipt,
+    sendTypingNotification
+} from "@/app/messages/messages.actions";
 import { isUserOnline } from "@/helpers/user.helpers";
 import DashboardWrapper from "@/common/dashboard-wrapper/dashboard-wrapper";
 import { ArrowLeftIcon, TimesCircleIcon, TimesIcon } from "react-line-awesome";
@@ -17,8 +23,9 @@ import _ from "lodash";
 import { WebSocketMessage } from "../../../../types/websocket-events.types";
 import { Subject } from "rxjs";
 import { debounceTime } from "rxjs/operators";
+import { showAlert } from "@/util";
 
-export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
+export function ChatView({currentUser, matchDetails}: ChatViewProps) {
     const params = useParams();
     const router = useRouter();
     const matchId = params.matchId as string;
@@ -36,7 +43,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
     const [isSending, setIsSending] = useState(false);
     const [sendError, setSendError] = useState<string | null>(null);
     const [otherUserTyping, setOtherUserTyping] = useState(false);
-    const { on, isConnected, emit } = useWebSocket();
+    const {on, isConnected, emit} = useWebSocket();
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const disableTypingIndicator$ = useRef<Subject<any>>(new Subject<any>());
 
@@ -44,10 +51,10 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
     const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
         if (isMobile) {
             if (typeof window !== 'undefined') {
-                window.scrollTo({ top: document.body.scrollHeight - window.innerHeight, behavior});
+                window.scrollTo({top: document.body.scrollHeight - window.innerHeight, behavior});
             }
         } else {
-            messagesEndRef.current?.scrollIntoView({ behavior });
+            messagesEndRef.current?.scrollIntoView({behavior});
         }
     };
 
@@ -70,7 +77,11 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
         }
     }, [messagesLoading, messages, matchId]);
 
-    const loadMessages = useCallback(async (options?: { cursor?: number; direction?: 'before' | 'after'; limit?: number }) => {
+    const loadMessages = useCallback(async (options?: {
+        cursor?: number;
+        direction?: 'before' | 'after';
+        limit?: number
+    }) => {
         const isLoadingMore = !!options?.cursor;
 
         if (isLoadingMore) {
@@ -169,7 +180,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
     }, [isLoadingMore, messages, matchId]);
 
     const handleMessageRead = useCallback((data: WebSocketMessage) => {
-        const { payload } = data;
+        const {payload} = data;
 
         if (payload.conversationId === matchId.toString() && payload.readBy !== currentUser.id.toString()) {
             // Update the readAt timestamp for all messages up to this one
@@ -182,13 +193,13 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
 
     const handleReceivedMessage = useCallback(async (data: WebSocketMessage) => {
         setOtherUserTyping(false);
-        const { payload } = data;
+        const {payload} = data;
         const messageMatchId = payload.conversationId || payload.matchId || payload.match_id || payload.conversation_id;
 
         if (messageMatchId && messageMatchId.toString() === matchId.toString()) {
             const lastMessage = _.last(messages);
             const options = lastMessage
-                ? { cursor: lastMessage.id, direction: 'after' as const, limit: 20 }
+                ? {cursor: lastMessage.id, direction: 'after' as const, limit: 20}
                 : undefined;
 
             try {
@@ -206,7 +217,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
 
     const formatMessageTime = (createdAt: string) => {
         const date = new Date(createdAt);
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
     };
 
     const handleSendMessage = useCallback(async (e: React.FormEvent) => {
@@ -231,7 +242,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
 
                 const lastMessage = messages[messages.length - 1];
                 const options = lastMessage
-                    ? { cursor: lastMessage.id, direction: 'after' as const, limit: 20 }
+                    ? {cursor: lastMessage.id, direction: 'after' as const, limit: 20}
                     : undefined;
 
                 await loadMessages(options);
@@ -258,7 +269,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
         sendTypingNotification(matchDetails.otherUser.id, currentUser.id);
     }, []);
 
-    const { otherUser } = matchDetails;
+    const {otherUser} = matchDetails;
     const isOnline = isUserOnline(new Date(otherUser.lastActiveAt), otherUser.hideOnlineStatus);
 
     // Initial load of messages
@@ -342,8 +353,32 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
             }
         });
 
+        const accountSubscription = on('account:notification').subscribe((data: WebSocketMessage) => {
+            switch (data.eventLabel) {
+                case 'account:blocked':
+                    if (data.payload.blockedUserId === currentUser.id && data.payload.blockedBy === otherUser.id) {
+                        showAlert('You have been blocked by this user. You can no longer send messages to them.');
+                    }
+                    break;
+                case 'account:unblocked':
+                    if (data.payload.unblockedUserId === currentUser.id && data.payload.unblockedBy === otherUser.id) {
+                        showAlert('You have been unblocked by this user. You can now send messages to them.');
+                    }
+                    break;
+            }
+        });
+
+        const matchSubscription = on('match:notification').subscribe((data: WebSocketMessage) => {
+            if (data.eventLabel === 'match:cancel' && (data.payload.canceledBy === otherUser.id || data.payload.canceledBy === currentUser.id)) {
+                showAlert('This match has been canceled. You can no longer send messages to this user.');
+                router.push('/messages');
+            }
+        });
+
         return () => {
             messageSubscription.unsubscribe();
+            accountSubscription.unsubscribe();
+            matchSubscription.unsubscribe();
         };
     }, [isConnected, matchId, on, emit, currentUser.id, messages]);
 
@@ -377,7 +412,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                 <div className="chat-view-header">
                     <div className="back-button-container">
                         <Link href="/messages">
-                            <ArrowLeftIcon />
+                            <ArrowLeftIcon/>
                         </Link>
                     </div>
                     <Link href={`/user/${otherUser.id}`} className="user-info">
@@ -421,7 +456,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                                     onClick={() => setSendError(null)}
                                     aria-label="Dismiss error"
                                 >
-                                    <TimesCircleIcon size={'2x'} />
+                                    <TimesCircleIcon size={'2x'}/>
                                 </button>
                             </div>
                         )}
@@ -446,7 +481,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                                         <div className="send-spinner"></div>
                                     ) : (
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" strokeWidth="2">
+                                             stroke="currentColor" strokeWidth="2">
                                             <line x1="22" y1="2" x2="11" y2="13"></line>
                                             <polygon points="22,2 15,22 11,13 2,9"></polygon>
                                         </svg>
@@ -564,7 +599,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                         className="back-button"
                         onClick={handleBackClick}
                         aria-label="Back to conversations">
-                        <ArrowLeftIcon />
+                        <ArrowLeftIcon/>
                     </button>
 
                     <Link href={`/user/${otherUser.id}`} className="user-info">
@@ -639,7 +674,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                                                 className={`message-bubble ${message.isFromCurrentUser ? 'from-me' : 'from-them'}`}>
                                                 {!message.isFromCurrentUser && (
                                                     <Link href={`/user/${message.sender.id}`}
-                                                        className="message-avatar">
+                                                          className="message-avatar">
                                                         {isOnline && <div className="online-lamp"></div>}
                                                         <UserPhotoDisplay
                                                             alt={message.sender.displayName}
@@ -686,7 +721,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                                     </div>
                                 </div>
                             )}
-                            <div ref={messagesEndRef} />
+                            <div ref={messagesEndRef}/>
                         </div>
                     )}
                 </div>
@@ -701,7 +736,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                                 onClick={() => setSendError(null)}
                                 aria-label="Dismiss error"
                             >
-                                <TimesIcon size={'lg'} />
+                                <TimesIcon size={'lg'}/>
                             </button>
                         </div>
                     )}
@@ -727,7 +762,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                                     <div className="send-spinner"></div>
                                 ) : (
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" strokeWidth="2">
+                                         stroke="currentColor" strokeWidth="2">
                                         <line x1="22" y1="2" x2="11" y2="13"></line>
                                         <polygon points="22,2 15,22 11,13 2,9"></polygon>
                                     </svg>
