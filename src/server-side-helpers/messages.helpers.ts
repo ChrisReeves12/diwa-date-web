@@ -204,6 +204,7 @@ export async function sendMessage(
  *
  * @param matchId The ID of the match.
  * @param userId The ID of the current user (for validation).
+ * @param options Pagination options
  * @returns Array of messages with sender information
  */
 export async function getMessagesForMatch(
@@ -216,9 +217,7 @@ export async function getMessagesForMatch(
     } = {}
 ): Promise<{ error?: string; statusCode: number; data?: any[] }> {
     try {
-        const pageSize = process.env.CHAT_MESSAGES_PAGE_SIZE
-            ? parseInt(process.env.CHAT_MESSAGES_PAGE_SIZE, 10)
-            : 30;
+        const pageSize = 20;
         const { limit = pageSize, cursor, direction = 'before' } = options;
 
         // First verify that the user is part of this match

@@ -36,6 +36,26 @@
     border-bottom: 1px solid #cdcdcd;
     box-shadow: 1px 0 6px rgba(0, 0, 0, 0.5);
 
+    .typing-indicator {
+      .typing-dots {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+        align-items: center;
+        height: 20px;
+        position: absolute;
+        right: 40px;
+        top: 35%;
+        scale: 0.8;
+        opacity: 0.5;
+
+        @include globals.dark-mode {
+          opacity: 1;
+        }
+      }
+    }
+
+
     @include globals.dark-mode {
       background: #222222;
     }

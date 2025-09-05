@@ -68,6 +68,7 @@
     .conversation-container {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         padding: 15px;
         border-bottom: 1px solid #eee;
         text-decoration: none;
@@ -81,6 +82,7 @@
             transition: background-color 0.2s ease;
             flex: 1;
             color: inherit;
+            max-width: 70%;
 
             .profile-container {
                 position: relative;

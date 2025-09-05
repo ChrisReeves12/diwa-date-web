@@ -6,8 +6,11 @@ import { ConversationMatch } from "@/server-side-helpers/messages.helpers";
 import { markConversationsAsAknowledged, getConversations } from "./messages.actions";
 import { User } from "@/types";
 import _ from "lodash";
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, filter, tap } from 'rxjs/operators';
+import { WebSocketMessage } from '../../../types/websocket-events.types';
 import Link from "next/link";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { HeartBrokenIcon, InfoCircleIcon } from "react-line-awesome";
 import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
@@ -22,7 +25,9 @@ export default function ConversationsView({ currentUser, conversations: initialC
     const [showUnmatchDialog, setShowUnmatchDialog] = useState(false);
     const [isUpdatingMatch, setIsUpdatingMatch] = useState(false);
     const [userBeingUnMatched, setUserBeingUnMatched] = useState<{ recipientId: number, displayName: string } | undefined>();
-    const { on, off, isConnected } = useWebSocket();
+    const conversationsRefreshTrigger$ = useRef(new Subject<void>()).current;
+    const conversationsRefreshSubRef = useRef<Subscription | null>(null);
+    const { on, isConnected } = useWebSocket();
 
     // Function to refresh conversations
     const refreshConversations = useCallback(async () => {
@@ -40,11 +45,19 @@ export default function ConversationsView({ currentUser, conversations: initialC
         }
     }, []);
 
-    // Handle new message websocket events
-    const handleNewMessage = useCallback((data: any) => {
-        // Refresh conversations to get updated order and latest messages
-        refreshConversations();
-    }, [refreshConversations]);
+    // Trigger refetching conversations
+    useEffect(() => {
+        conversationsRefreshSubRef.current = conversationsRefreshTrigger$
+            .pipe(debounceTime(300))
+            .subscribe(() => {
+                refreshConversations();
+            });
+
+        return () => {
+            conversationsRefreshSubRef.current?.unsubscribe();
+            conversationsRefreshSubRef.current = null;
+        };
+    }, [refreshConversations, conversationsRefreshTrigger$]);
 
     const onUnMatchClick = (recipientId: number, displayName: string) => {
         setShowUnmatchDialog(true);
@@ -60,7 +73,7 @@ export default function ConversationsView({ currentUser, conversations: initialC
             try {
                 if (userBeingUnMatched) {
                     await removeUserMatch(userBeingUnMatched.recipientId);
-                    refreshConversations();
+                    conversationsRefreshTrigger$.next();
                 }
             } catch (e) {
                 showAlert('An error occurred while removing match. Please try again later', 'An Error Occurred');
@@ -74,18 +87,34 @@ export default function ConversationsView({ currentUser, conversations: initialC
     useEffect(() => {
         if (!isConnected) return;
 
-        // Subscribe to message events
-        on('message:new', handleNewMessage);
+        const debounceTimeMs = 300;
+        const subscriptions = [
+            on('message:notification')
+                .pipe(
+                    debounceTime(debounceTimeMs),
+                    filter((data: WebSocketMessage) =>
+                        data.eventLabel === 'message:new' &&
+                        conversations.some(c => Number(c.matchId) === Number(data.payload.matchId))
+                    )
+                )
+                .subscribe(() => conversationsRefreshTrigger$.next()),
+
+            on('match:notification')
+                .pipe(
+                    debounceTime(debounceTimeMs),
+                    filter((data: WebSocketMessage) =>
+                        ['match:new', 'match:cancel'].includes(data.eventLabel) &&
+                        conversations.some(c =>
+                            Number(c.matchId) === Number(data.payload.id))
+                    )
+                )
+                .subscribe(() => conversationsRefreshTrigger$.next())
+        ];
 
         return () => {
-            off('message:new', handleNewMessage);
+            subscriptions.forEach(sub => sub.unsubscribe());
         };
-    }, [isConnected, on, off, handleNewMessage]);
-
-    // Mark matches as read initially
-    useEffect(() => {
-        markConversationsAsAknowledged(conversations);
-    }, []);
+    }, [isConnected, on, refreshConversations, currentUser.id]);
 
     return (
         <DashboardWrapper activeTab="messages" currentUser={currentUser}>

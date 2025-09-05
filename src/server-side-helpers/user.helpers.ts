@@ -1019,7 +1019,7 @@ export async function removeUserMatchRequest(userId: number, recipientUserId: nu
             const otherUserId = existingMatch.userId === userId ? existingMatch.recipientId : existingMatch.userId;
 
             await emitMatchCanceled(otherUserId, {
-                matchId: existingMatch.id,
+                id: existingMatch.id,
                 canceledBy: userId
             });
         } catch (wsError) {

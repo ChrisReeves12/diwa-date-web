@@ -9,7 +9,7 @@ describe('Notification Emitter Helpers', () => {
     it('should send message notification to user', async () => {
         await emitNewMessageNotification(80062, {
             id: 'abc',
-            matchId: '42',
+            matchId: '11',
             content: 'Testing this out',
             userId: '49151',
             displayName: 'Frances.Okuneva',
@@ -31,7 +31,7 @@ describe('Notification Emitter Helpers', () => {
 
     it('should send match notification to user', async () => {
         await emitNewMatchNotification(80062, {
-            id: 423,
+            id: 11,
             sender: {
                 displayName: 'Frances.Okuneva',
                 age: 61,
@@ -44,7 +44,7 @@ describe('Notification Emitter Helpers', () => {
     });
 
     it('should send canceled match notification to user', async () => {
-        await emitMatchCanceled(80062, {matchId: 423, canceledBy: 49151});
+        await emitMatchCanceled(80062, {id: 423, canceledBy: 49151});
     });
 
     it('should send an account message to user', async () => {

@@ -6,12 +6,12 @@ import {
     sendMessage,
     markMessagesAsRead,
     getMatchDetails,
-    ConversationMatch,
     markMatchesAsRead
 } from '@/server-side-helpers/messages.helpers';
 import { getCurrentUser } from '@/server-side-helpers/user.helpers';
 import { cookies } from 'next/headers';
 import { prismaRead } from '@/lib/prisma';
+import { emitMessageRead, emitMessageTyping } from "@/server-side-helpers/notification-emitter.helper";
 
 /**
  * Get all conversations for the current user.
@@ -34,6 +34,42 @@ export async function getConversations() {
         console.error('Error fetching conversations:', error);
         return {
             error: 'Failed to fetch conversations. Please try again later.',
+            statusCode: 500
+        };
+    }
+}
+
+export async function sendTypingNotification(recipientId: number, senderId: number) {
+    if (!recipientId || isNaN(recipientId)) {
+        return;
+    }
+
+    return emitMessageTyping(recipientId, { typingBy: senderId.toString(), timestamp: new Date() });
+}
+
+export async function sendReadReceipt(recipientId: number, matchId: number, messageId: number) {
+    try {
+        const currentUser = await getCurrentUser(await cookies());
+
+        if (!currentUser) {
+            return {
+                error: 'Authentication required.',
+                statusCode: 401
+            };
+        }
+
+        if (isNaN(matchId)) {
+            return {
+                error: 'Invalid match ID.',
+                statusCode: 400
+            };
+        }
+
+        return await emitMessageRead(recipientId, { messageId: messageId.toString(), conversationId: matchId.toString(), readBy: currentUser.id.toString(), timestamp: new Date() });
+    } catch (error) {
+        console.error('Error in sendReadReceipt:', error);
+        return {
+            error: 'Failed to send read receipt. Please try again later.',
             statusCode: 500
         };
     }
@@ -158,7 +194,7 @@ export async function sendChatMessage(matchId: string, content: string) {
  * @param matchId The match ID as a string
  * @returns Success status or error
  */
-export async function markChatAsRead(matchId: string) {
+export async function updateMessagesAsRead(matchId: string) {
     try {
         const currentUser = await getCurrentUser(await cookies());
 

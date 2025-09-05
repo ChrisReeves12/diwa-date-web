@@ -6,13 +6,17 @@ import { ChatMessage, ChatViewProps } from "@/app/messages/[matchId]/chat-view-p
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useWebSocket } from "@/hooks/use-websocket";
-import { getChatMessages, markChatAsRead, sendChatMessage } from "@/app/messages/messages.actions";
+import { getChatMessages, updateMessagesAsRead, sendChatMessage, sendReadReceipt, sendTypingNotification } from "@/app/messages/messages.actions";
 import { isUserOnline } from "@/helpers/user.helpers";
 import DashboardWrapper from "@/common/dashboard-wrapper/dashboard-wrapper";
 import { ArrowLeftIcon, TimesCircleIcon, TimesIcon } from "react-line-awesome";
 import Link from "next/link";
 import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
 import { formatChatDate, isToday } from "@/server-side-helpers/time.helpers";
+import _ from "lodash";
+import { WebSocketMessage } from "../../../../types/websocket-events.types";
+import { Subject } from "rxjs";
+import { debounceTime } from "rxjs/operators";
 
 export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
     const params = useParams();
@@ -25,7 +29,6 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
     const mobileMessageListRef = useRef<HTMLDivElement>(null);
     const needsFocusRef = useRef(false);
     const isMobile = window.innerWidth <= 768;
-
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [messagesLoading, setMessagesLoading] = useState(true);
     const [messagesError, setMessagesError] = useState<string | null>(null);
@@ -33,26 +36,271 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
     const [isSending, setIsSending] = useState(false);
     const [sendError, setSendError] = useState<string | null>(null);
     const [otherUserTyping, setOtherUserTyping] = useState(false);
-    const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
-    const { on, off, isConnected, sendMessage, emit } = useWebSocket();
-
-    const [hasMoreMessages, setHasMoreMessages] = useState(true);
+    const { on, isConnected, emit } = useWebSocket();
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [isTyping, setIsTyping] = useState(false);
+    const disableTypingIndicator$ = useRef<Subject<any>>(new Subject<any>());
 
     // Scroll to bottom function
-    const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
+    const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
         if (isMobile) {
             if (typeof window !== 'undefined') {
-                window.scrollTo(0, document.body.scrollHeight - window.innerHeight);
+                window.scrollTo({ top: document.body.scrollHeight - window.innerHeight, behavior});
             }
         } else {
             messagesEndRef.current?.scrollIntoView({ behavior });
         }
     };
 
-    // Auto-resize textarea function
-    const autoResizeTextarea = () => {
+    const markAsRead = useCallback(async () => {
+        if (!messagesLoading && messages.length > 0) {
+            try {
+                await updateMessagesAsRead(matchId);
+
+                // Notify other users that messages have been read
+                const lastMessage = _.last(messages);
+                if (lastMessage && !lastMessage.isFromCurrentUser) {
+                    sendReadReceipt(lastMessage.userId, Number(matchId), lastMessage.id)
+                        .catch((err) => console.error('Error sending read receipt:', err));
+                }
+
+                window.dispatchEvent(new CustomEvent('notification-center-refresh'));
+            } catch (error) {
+                console.error('Error marking messages as read:', error);
+            }
+        }
+    }, [messagesLoading, messages, matchId]);
+
+    const loadMessages = useCallback(async (options?: { cursor?: number; direction?: 'before' | 'after'; limit?: number }) => {
+        const isLoadingMore = !!options?.cursor;
+
+        if (isLoadingMore) {
+            if (messages.length === 0) return;
+            setIsLoadingMore(true);
+        } else {
+            setMessagesLoading(true);
+            setMessagesError(null);
+        }
+
+        try {
+            const pageSize = options?.limit || 20;
+            const result = await getChatMessages(matchId, {
+                cursor: options?.cursor,
+                limit: pageSize,
+                direction: options?.direction || 'before'
+            });
+
+            if (result.error) {
+                if (!isLoadingMore) {
+                    setMessagesError(result.error);
+                }
+            } else {
+                const newMessages = result.data || [];
+
+                if (isLoadingMore && options?.direction === 'before') {
+                    // Loading older messages
+                    if (newMessages.length > 0) {
+                        const messageList = messageListRef.current;
+                        const oldScrollHeight = messageList?.scrollHeight || 0;
+                        const oldScrollTop = messageList?.scrollTop || 0;
+
+                        setMessages(prev => {
+                            const existingIds = new Set(prev.map(msg => msg.id));
+                            const filteredMessages = newMessages.filter(msg => !existingIds.has(msg.id));
+                            return [...filteredMessages, ...prev];
+                        });
+
+                        // Restore scroll position after DOM update
+                        if (messageList) {
+                            setTimeout(() => {
+                                const newScrollHeight = messageList.scrollHeight;
+                                messageList.scrollTop = oldScrollTop + (newScrollHeight - oldScrollHeight);
+                            }, 0);
+                        }
+                    }
+                } else if (isLoadingMore && options?.direction === 'after') {
+                    // Loading newer messages
+                    setMessages(prev => {
+                        const existingIds = new Set(prev.map(msg => msg.id));
+                        const filteredMessages = newMessages.filter(msg => !existingIds.has(msg.id));
+                        return [...prev, ...filteredMessages];
+                    });
+
+                    // Scroll to the bottom if the user is near the bottom
+                    let shouldScroll = true;
+
+                    if (isMobile) {
+                        const windowTop = window.scrollY || window.pageYOffset;
+                        const innerHeight = window.innerHeight;
+                        const bodyHeight = document.body.scrollHeight;
+
+                        shouldScroll = (bodyHeight - innerHeight - windowTop) < 420;
+                    } else {
+                        const messageList = messageListRef.current;
+                        if (messageList) {
+                            const scrollTop = messageList.scrollTop;
+                            const clientHeight = messageList.clientHeight;
+                            const scrollHeight = messageList.scrollHeight;
+
+                            shouldScroll = (scrollHeight - clientHeight - scrollTop) < 420;
+                        }
+                    }
+
+                    if (shouldScroll) {
+                        setTimeout(() => scrollToBottom('smooth'), 200);
+                    }
+                } else {
+                    // Initial load
+                    setMessages(newMessages);
+                    setTimeout(() => scrollToBottom(), 200);
+                }
+            }
+        } catch (err) {
+            console.error('Failed to load messages:', err);
+            if (!isLoadingMore) {
+                setMessagesError('Failed to load messages');
+            }
+        } finally {
+            if (isLoadingMore) {
+                setIsLoadingMore(false);
+            } else {
+                setMessagesLoading(false);
+            }
+        }
+    }, [isLoadingMore, messages, matchId]);
+
+    const handleMessageRead = useCallback((data: WebSocketMessage) => {
+        const { payload } = data;
+
+        if (payload.conversationId === matchId.toString() && payload.readBy !== currentUser.id.toString()) {
+            // Update the readAt timestamp for all messages up to this one
+            setMessages(prev => prev.map(msg => ({
+                ...msg,
+                readAt: msg.id <= parseInt(payload.messageId) ? new Date(payload.timestamp).toISOString() : msg.readAt
+            })));
+        }
+    }, [matchId, currentUser.id]);
+
+    const handleReceivedMessage = useCallback(async (data: WebSocketMessage) => {
+        setOtherUserTyping(false);
+        const { payload } = data;
+        const messageMatchId = payload.conversationId || payload.matchId || payload.match_id || payload.conversation_id;
+
+        if (messageMatchId && messageMatchId.toString() === matchId.toString()) {
+            const lastMessage = _.last(messages);
+            const options = lastMessage
+                ? { cursor: lastMessage.id, direction: 'after' as const, limit: 20 }
+                : undefined;
+
+            try {
+                await loadMessages(options);
+                await updateMessagesAsRead(matchId);
+            } catch (error) {
+                console.error('Error loading messages or marking as read after WebSocket event:', error);
+            }
+        }
+    }, [matchId, messages, loadMessages]);
+
+    const handleBackClick = useCallback(() => {
+        router.push('/messages');
+    }, [router]);
+
+    const formatMessageTime = (createdAt: string) => {
+        const date = new Date(createdAt);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const handleSendMessage = useCallback(async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!messageInput.trim() || isSending) {
+            return;
+        }
+
+        const messageContent = messageInput.trim();
+        setIsSending(true);
+        setSendError(null);
+
+        try {
+            const result = await sendChatMessage(matchId, messageContent);
+
+            if (result.error) {
+                setSendError(result.error);
+            } else {
+                setMessageInput('');
+                needsFocusRef.current = true;
+
+                const lastMessage = messages[messages.length - 1];
+                const options = lastMessage
+                    ? { cursor: lastMessage.id, direction: 'after' as const, limit: 20 }
+                    : undefined;
+
+                await loadMessages(options);
+                setTimeout(() => scrollToBottom(), 200);
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            setSendError('Failed to send message. Please try again.');
+        } finally {
+            setIsSending(false);
+        }
+    }, [messageInput, isSending, matchId, sendChatMessage, messages, loadMessages, scrollToBottom]);
+
+    // Handle new lines
+    const handleInputKeyDown = useCallback((e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage(e);
+        }
+    }, [handleSendMessage]);
+
+    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setMessageInput(e.target.value);
+        sendTypingNotification(matchDetails.otherUser.id, currentUser.id);
+    }, []);
+
+    const { otherUser } = matchDetails;
+    const isOnline = isUserOnline(new Date(otherUser.lastActiveAt), otherUser.hideOnlineStatus);
+
+    // Initial load of messages
+    useEffect(() => {
+        if (matchId) {
+            loadMessages();
+        }
+    }, []);
+
+    // Mark messages as read when chat loads or new messages arrive
+    useEffect(() => {
+        markAsRead();
+    }, [messages.length, markAsRead]);
+
+    // Handle scroll for pagination
+    useEffect(() => {
+        const messageList = messageListRef.current;
+        const handleScroll = () => {
+            if (messageList && messageList.scrollTop < 100) {
+                const oldestMessage = messages[0];
+                if (oldestMessage) {
+                    loadMessages({
+                        cursor: oldestMessage.id,
+                        direction: 'before',
+                        limit: 20
+                    });
+                }
+            }
+        };
+
+        if (messageList) {
+            messageList.addEventListener('scroll', handleScroll);
+        }
+        return () => {
+            if (messageList) {
+                messageList.removeEventListener('scroll', handleScroll);
+            }
+        };
+    }, [loadMessages, messages]);
+
+    // Auto-resize textarea when input changes
+    useEffect(() => {
         if (textareaRef.current) {
             const textarea = textareaRef.current;
             textarea.style.height = 'auto';
@@ -71,132 +319,33 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                 mobileMessageListRef.current.style.paddingBottom = `${mobileMessageInputAreaRef.current.clientHeight + 5}px`;
             }
         }
-    };
-
-    const loadMoreMessages = useCallback(async () => {
-        if (!hasMoreMessages || isLoadingMore || messages.length === 0) return;
-
-        setIsLoadingMore(true);
-
-        try {
-            const pageSize = parseInt(process.env.CHAT_MESSAGES_PAGE_SIZE || '20', 10);
-            const oldestMessage = messages[0];
-            const result = await getChatMessages(matchId, {
-                cursor: oldestMessage.id,
-                limit: pageSize,
-                direction: 'before'
-            });
-
-            if (result.data && result.data.length > 0) {
-                const messageList = messageListRef.current;
-                const oldScrollHeight = messageList?.scrollHeight || 0;
-                const oldScrollTop = messageList?.scrollTop || 0;
-
-                setMessages(prev => {
-                    const existingIds = new Set(prev.map(msg => msg.id));
-                    const newMessages = (result.data || []).filter(msg => !existingIds.has(msg.id));
-                    return [...newMessages, ...prev];
-                });
-
-                // Restore scroll position after DOM update
-                if (messageList) {
-                    setTimeout(() => {
-                        const newScrollHeight = messageList.scrollHeight;
-                        messageList.scrollTop = oldScrollTop + (newScrollHeight - oldScrollHeight);
-                    }, 0);
-                }
-            } else {
-                setHasMoreMessages(false);
-            }
-        } catch (err) {
-            console.error('Failed to load older messages:', err);
-        } finally {
-            setIsLoadingMore(false);
-        }
-    }, [hasMoreMessages, isLoadingMore, messages, matchId]);
-
-    useEffect(() => {
-        const fetchInitialMessages = async () => {
-            try {
-                const pageSize = parseInt(process.env.CHAT_MESSAGES_PAGE_SIZE || '20', 10);
-                const result = await getChatMessages(matchId, { limit: pageSize });
-
-                if (result.error) {
-                    setMessagesError(result.error);
-                } else {
-                    setMessages(result.data || []);
-                    if ((result.data || []).length < pageSize) {
-                        setHasMoreMessages(false);
-                    }
-                }
-            } catch (err) {
-                setMessagesError('Failed to load messages');
-            } finally {
-                setMessagesLoading(false);
-            }
-        };
-
-        if (matchId) {
-            fetchInitialMessages();
-        }
-    }, [matchId]);
-
-    // Mark messages as read when chat loads or new messages arrive
-    useEffect(() => {
-        const markAsRead = async () => {
-            if (!messagesLoading && messages.length > 0) {
-                try {
-                    await markChatAsRead(matchId);
-                    // Notify other users that messages have been read
-                    const lastMessage = messages[messages.length - 1];
-                    if (lastMessage && !lastMessage.isFromCurrentUser) {
-                        emit('message:markRead', {
-                            messageId: lastMessage.id.toString(),
-                            conversationId: matchId.toString()
-                        });
-                    }
-                    // Dispatch an event to notify the notification center to refresh
-                    window.dispatchEvent(new CustomEvent('notification-center-refresh'));
-                } catch (error) {
-                    console.error('Error marking messages as read:', error);
-                    // Don't show this error to user as it's not critical
-                }
-            }
-        };
-
-        markAsRead();
-    }, [messagesLoading, matchId, messages.length, emit]);
-
-    // Scroll to bottom on initial load
-    useEffect(() => {
-        if (!messagesLoading && messages.length > 0) {
-            setTimeout(() => scrollToBottom('auto'), 100);
-        }
-    }, [messagesLoading]);
-
-    // Handle scroll for pagination
-    useEffect(() => {
-        const messageList = messageListRef.current;
-        const handleScroll = () => {
-            if (messageList && messageList.scrollTop < 100) {
-                loadMoreMessages();
-            }
-        };
-
-        if (messageList) {
-            messageList.addEventListener('scroll', handleScroll);
-        }
-        return () => {
-            if (messageList) {
-                messageList.removeEventListener('scroll', handleScroll);
-            }
-        };
-    }, [loadMoreMessages]);
-
-    // Auto-resize textarea when input changes
-    useEffect(() => {
-        autoResizeTextarea();
     }, [messageInput]);
+
+    // Subscribe to real-time message events
+    useEffect(() => {
+        if (!isConnected || !matchId) {
+            return;
+        }
+
+        const messageSubscription = on('message:notification').subscribe((data: WebSocketMessage) => {
+            switch (data.eventLabel) {
+                case 'message:new':
+                    handleReceivedMessage(data);
+                    break;
+                case 'message:typing':
+                    setOtherUserTyping(true);
+                    disableTypingIndicator$.current.next(new Date());
+                    break;
+                case 'message:read':
+                    handleMessageRead(data);
+                    break;
+            }
+        });
+
+        return () => {
+            messageSubscription.unsubscribe();
+        };
+    }, [isConnected, matchId, on, emit, currentUser.id, messages]);
 
     // Handle focus after input is cleared
     useLayoutEffect(() => {
@@ -210,209 +359,16 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
         }
     });
 
-    // Handle typing status updates
-    const handleTypingStatus = useCallback((data: { userId: string; conversationId: string; isTyping: boolean }) => {
-        // Only update typing status if it's from the other user in this match
-        if (data.conversationId === matchId.toString() && parseInt(data.userId) !== currentUser.id) {
-            setOtherUserTyping(data.isTyping);
-        }
-    }, [matchId, currentUser.id]);
-
-    // Create a stable callback for handling new messages
-    const handleNewMessage = useCallback((data: any) => {
-        const messageMatchId = data.conversationId || data.matchId || data.match_id || data.conversation_id;
-
-        if (messageMatchId && messageMatchId.toString() === matchId.toString()) {
-            const lastMessage = messages[messages.length - 1];
-            const options: { cursor?: number; direction?: 'before' | 'after' } = lastMessage
-                ? { cursor: lastMessage.id, direction: 'after' }
-                : {};
-
-            getChatMessages(matchId, options).then(result => {
-                if (result.data && result.data.length > 0) {
-                    setMessages(prev => {
-                        const existingIds = new Set(prev.map(msg => msg.id));
-                        const newMessages = (result.data || []).filter(msg => !existingIds.has(msg.id));
-                        return [...prev, ...newMessages];
-                    });
-
-                    const messageList = messageListRef.current;
-                    if (isMobile) {
-                        if (((document.body.scrollHeight - window.innerHeight) - window.scrollY) <= 126) {
-                            setTimeout(() => scrollToBottom(), 100);
-                        }
-                    }
-                    else if (messageList && messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight < 200) {
-                        setTimeout(() => scrollToBottom(), 100);
-                    }
-
-                    markChatAsRead(matchId).catch(error => {
-                        console.error('Error marking messages as read after WebSocket event:', error);
-                    });
-                }
-            }).catch(error => {
-                console.error('Error refetching messages after WebSocket event:', error);
-            });
-        }
-    }, [matchId, messages]);
-
-    // Stable WebSocket event handlers
-    const messageHandler = useMemo(() => ({
-        handleNewMessage,
-        handleTypingStatus
-    }), [handleNewMessage, handleTypingStatus]);
-
-    // WebSocket room management and event subscriptions
     useEffect(() => {
-        if (!isConnected || !matchId) {
-            return;
-        }
-
-        // Set up event listeners
-        const typingHandler = (data: { userId: string; conversationId: string; isTyping: boolean }) => {
-            messageHandler.handleTypingStatus(data);
-        };
-
-        const readHandler = (data: { messageId: string; conversationId: string; readBy: string; timestamp: Date }) => {
-            if (data.conversationId === matchId.toString() && data.readBy !== currentUser.id.toString()) {
-                // Update the readAt timestamp for all messages up to this one
-                setMessages(prev => prev.map(msg => ({
-                    ...msg,
-                    readAt: msg.id <= parseInt(data.messageId) ? new Date(data.timestamp).toISOString() : msg.readAt
-                })));
-            }
-        };
-
-        on('message:new', messageHandler.handleNewMessage);
-        on('message:typing', typingHandler);
-        on('message:read', readHandler);
-
-        return () => {
-            emit('room:leave', { roomId });
-            off('message:new', messageHandler.handleNewMessage);
-            off('message:typing', typingHandler);
-            off('message:read', readHandler);
-        };
-    }, [isConnected, matchId, on, off, emit, messageHandler, currentUser.id]);
-
-    // Handle input typing events with debounce
-    const handleTyping = useCallback(() => {
-        if (!isConnected) {
-            return;
-        }
-
-        setIsTyping(true);
-        emit('message:typing:start', {
-            conversationId: matchId.toString()
-        });
-
-        if (typingTimeout) {
-            clearTimeout(typingTimeout);
-        }
-
-        const timeout = setTimeout(() => {
-            setIsTyping(false);
-            emit('message:typing:stop', {
-                conversationId: matchId.toString()
+        const typingSubscription = disableTypingIndicator$.current
+            .asObservable()
+            .pipe(debounceTime(2000))
+            .subscribe(() => {
+                setOtherUserTyping(false);
             });
-        }, 2000);
 
-        setTypingTimeout(timeout);
-    }, [emit, matchId, typingTimeout, isConnected]);
-
-    // Stop typing when message is sent
-    const stopTyping = useCallback(() => {
-        if (typingTimeout) {
-            clearTimeout(typingTimeout);
-        }
-        setIsTyping(false);
-        emit('message:typing:stop', {
-            conversationId: matchId.toString()
-        });
-    }, [emit, matchId, typingTimeout]);
-
-    // Cleanup typing timeout on unmount
-    useEffect(() => {
-        return () => {
-            if (typingTimeout) {
-                clearTimeout(typingTimeout);
-            }
-        };
-    }, [typingTimeout]);
-
-    const handleBackClick = () => {
-        router.push('/messages');
-    };
-
-    const formatMessageTime = (createdAt: string) => {
-        const date = new Date(createdAt);
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    };
-
-    const handleSendMessage = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!messageInput.trim() || isSending) {
-            return;
-        }
-
-        // Stop typing indicator when sending message
-        stopTyping();
-
-        const messageContent = messageInput.trim();
-        setIsSending(true);
-        setSendError(null);
-
-        try {
-            const result = await sendChatMessage(matchId, messageContent);
-
-            if (result.error) {
-                setSendError(result.error);
-            } else {
-                // Clear the input on successful send
-                setMessageInput('');
-                // Set flag to refocus after render
-                needsFocusRef.current = true;
-
-                // No need to refetch all, just append the new message optimistically
-                // or wait for WebSocket to deliver it. For now, let's refetch just the newest.
-                const lastMessage = messages[messages.length - 1];
-                const options: { cursor?: number; direction?: 'before' | 'after' } = lastMessage
-                    ? { cursor: lastMessage.id, direction: 'after' }
-                    : {};
-                const updatedMessages = await getChatMessages(matchId, options);
-                if (updatedMessages.data) {
-                    setMessages(prev => {
-                        const existingIds = new Set(prev.map(msg => msg.id));
-                        const newMessages = (updatedMessages.data || []).filter(msg => !existingIds.has(msg.id));
-                        return [...prev, ...newMessages];
-                    });
-                    setTimeout(() => scrollToBottom(), 100);
-                }
-            }
-        } catch (error) {
-            console.error('Error sending message:', error);
-            setSendError('Failed to send message. Please try again.');
-        } finally {
-            setIsSending(false);
-        }
-    };
-
-    // Handle new lines
-    const handleInputKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSendMessage(e);
-        }
-    };
-
-    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setMessageInput(e.target.value);
-        handleTyping();
-    }, [handleTyping]);
-
-    const { otherUser } = matchDetails;
-    const isOnline = isUserOnline(new Date(otherUser.lastActiveAt), otherUser.hideOnlineStatus);
+        return () => typingSubscription.unsubscribe();
+    }, [setOtherUserTyping]);
 
     return (
         isMobile ? <DashboardWrapper activeTab="messages" currentUser={currentUser}>
@@ -444,6 +400,14 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                             </div>
                         </div>
                     </Link>
+
+                    {isMobile && otherUserTyping && <div className="typing-indicator">
+                        <div className="typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>}
                 </div>
 
                 {/* Text Container */}
@@ -501,7 +465,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                 {/* Message List */}
                 <div ref={mobileMessageListRef} className="message-list">
                     <div className="messages-container">
-                        {!hasMoreMessages && messages.length > 0 && (
+                        {messages.length > 0 && (
                             <div className="no-more-messages">
                                 <p>This is the beginning of your conversation.</p>
                             </div>
@@ -570,7 +534,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                                 </div>
                             ));
                         })()}
-                        {otherUserTyping && (
+                        {otherUserTyping && !isMobile && (
                             <div className="message-bubble from-them typing-indicator">
                                 <div className="message-content">
                                     <div className="typing-dots">
@@ -641,7 +605,7 @@ export function ChatView({ currentUser, matchDetails }: ChatViewProps) {
                                     <div className="loading-spinner"></div>
                                 </div>
                             )}
-                            {!hasMoreMessages && messages.length > 0 && (
+                            {messages.length > 0 && (
                                 <div className="no-more-messages">
                                     <p>This is the beginning of your conversation.</p>
                                 </div>
