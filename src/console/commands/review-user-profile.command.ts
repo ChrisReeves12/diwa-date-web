@@ -12,7 +12,6 @@ import { ImageAnalysisSummary } from "@/types/image-analysis.types";
 import { UserPhoto } from "@/types";
 import ssim from 'ssim.js';
 import sharp from 'sharp';
-import { Rabbitmq } from "@/lib/rabbitmq";
 
 const axiosInstance = axios.create({
     httpAgent: new http.Agent({keepAlive: true, maxSockets: 100}),
@@ -139,9 +138,6 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             return {error: 'User is suspended', success: false};
         }
 
-        const rabbitMQ = Rabbitmq.getInstance();
-        await rabbitMQ.connect();
-
         console.log(`Reviewing profile for user ID: ${userId}, Email: ${user.email}`);
 
         // Review photos
@@ -196,27 +192,12 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             if (reviewPhotosResult.photos.some(p => p.photo.isRejected)) {
                 // Todo: Send email to user about photo rejections
                 // Todo: Create notification in database
-                // Send push notification to the user that some photos were rejected
-                await rabbitMQ.publishToUser(userId, {
-                    category: 'account',
-                    payload: {
-                        message: 'Some of your photos were rejected during review. Please check your profile for details.',
-                        type: 'photos-rejected',
-                        rejectedPhotos: reviewPhotosResult.photos.filter(p => p.photo.isRejected)
-                    }
-                });
+                // Todo: Send push notification to the user that photos were rejected
+
             } else {
-                // Send push notification to the user that photos were approved
+                // Todo: Send push notification to the user that photos were approved
                 // Todo: Create notification in database
-                await rabbitMQ.publishToUser(userId, {
-                    category: 'account',
-                    payload: {
-                        message: 'Your photos have been approved and are now live on your profile.',
-                        type: 'photos-approved',
-                        approvedPhotos: reviewPhotosResult.photos.map(p => p.photo.path),
-                        timestamp: new Date()
-                    }
-                });
+
 
             }
         }
