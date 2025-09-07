@@ -12,6 +12,7 @@ import { ImageAnalysisSummary } from "@/types/image-analysis.types";
 import { UserPhoto } from "@/types";
 import ssim from 'ssim.js';
 import sharp from 'sharp';
+import { emitAccountMessage } from "@/server-side-helpers/notification-emitter.helper";
 
 const axiosInstance = axios.create({
     httpAgent: new http.Agent({keepAlive: true, maxSockets: 100}),
@@ -189,16 +190,38 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 return {error: null, success: true};
             }
 
-            if (reviewPhotosResult.photos.some(p => p.photo.isRejected)) {
-                // Todo: Send email to user about photo rejections
-                // Todo: Create notification in database
-                // Todo: Send push notification to the user that photos were rejected
+            const rejectedPhotos = reviewPhotosResult.photos.filter(p => p.photo.isRejected).map(p => p.photo);
 
+            // Create database notification for rejected photos
+            if (rejectedPhotos.length > 0) {
+                await prismaWrite.notifications.create({
+                    data: {
+                        userId: userId,
+                        type: "account",
+                        data: {content: "You have some photos that were not approved."}
+                    }
+                });
+
+                await emitAccountMessage(userId, {
+                    noticeType: "account:photosNotApproved",
+                    message: "You have some photos that were not approved",
+                    data: rejectedPhotos
+                });
             } else {
-                // Todo: Send push notification to the user that photos were approved
-                // Todo: Create notification in database
+                // Create database notification for approved photos
+                await prismaWrite.notifications.create({
+                    data: {
+                        userId: userId,
+                        type: "account",
+                        data: {content: "Your photos were approved!"}
+                    }
+                });
 
-
+                await emitAccountMessage(userId, {
+                    noticeType: "account:photosApproved",
+                    message: "Your photos were approved!",
+                    data: []
+                });
             }
         }
 

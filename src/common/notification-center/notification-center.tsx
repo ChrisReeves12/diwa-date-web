@@ -192,7 +192,7 @@ export default function NotificationCenter() {
 
             on('account:notification')
                 .pipe(debounceTime(debounceTimeMs), filter((data: WebSocketMessage) =>
-                    ['account:message', 'account:blocked', 'account:unblocked'].includes(data.eventLabel)))
+                    ['account:message', 'account:blocked', 'account:unblocked', 'account:photosApproved', 'account:photosNotApproved'].includes(data.eventLabel)))
                 .subscribe(handleRealTimeAccountEvents)
         ];
 
