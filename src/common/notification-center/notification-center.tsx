@@ -159,7 +159,6 @@ export default function NotificationCenter() {
 
         const handleRealTimeAccountEvents = (data: WebSocketMessage) => {
             if (data.eventLabel === 'account:message') {
-                // Todo: show some alert/toast that user's been messaged by admin
                 fetchUserMainPhoto();
             }
 

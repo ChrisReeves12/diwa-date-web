@@ -108,6 +108,10 @@
         justify-content: space-between;
         align-items: center;
 
+        &.notifications {
+          display: block;
+        }
+
         .info-section {
           max-width: 190px;
           color: #000000;

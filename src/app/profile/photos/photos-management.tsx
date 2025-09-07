@@ -11,7 +11,7 @@ import {
     DndContext,
     closestCenter,
     useSensor,
-    useSensors, TouchSensor, PointerSensor,
+    useSensors, PointerSensor,
 } from '@dnd-kit/core';
 import {
     arrayMove,
@@ -23,6 +23,7 @@ import {
     CSS,
 } from '@dnd-kit/utilities';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import { useWebSocket } from '@/hooks/use-websocket';
 
 function SortablePhotoItem({photoWithUrl, onClick, onDelete}: {
     photoWithUrl: PhotoWithUrl,
@@ -96,6 +97,7 @@ export function PhotosManagement() {
     const [showPreview, setShowPreview] = useState(false);
     const imageRef = useRef<HTMLImageElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const { on, isConnected } = useWebSocket();
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -117,6 +119,63 @@ export function PhotosManagement() {
             }
         };
     }, []);
+
+    // WebSocket event listeners for photo approval/rejection
+    useEffect(() => {
+        if (!isConnected) return;
+
+        const handlePhotoApprovalEvents = (data: any) => {
+            if (data.eventLabel === 'account:photosApproved') {
+                const approvedPhotos = data.payload?.data || [];
+                const approvedPhotoPaths = approvedPhotos.map((photo: any) => photo.path);
+
+                setPhotos(prevPhotos =>
+                    prevPhotos.map(photo => {
+                        if (approvedPhotoPaths.includes(photo.path)) {
+                            return {
+                                ...photo,
+                                isUnderReview: false,
+                                isRejected: false
+                            };
+                        }
+                        return photo;
+                    })
+                );
+            } else if (data.eventLabel === 'account:photosNotApproved') {
+                // Update specific photos that were not approved
+                const rejectedPhotos = data.payload?.data || [];
+                const rejectedPhotoPaths = rejectedPhotos.map((photo: any) => photo.path);
+
+                setPhotos(prevPhotos =>
+                    prevPhotos.map(photo => {
+                        if (rejectedPhotoPaths.includes(photo.path)) {
+                            const rejectedPhoto = rejectedPhotos.find((rp: any) => rp.path === photo.path);
+                            return {
+                                ...photo,
+                                isUnderReview: false,
+                                isRejected: true,
+                                messages: rejectedPhoto?.messages || []
+                            };
+                        }
+                        return photo;
+                    })
+                );
+
+                showAlert('Some of your photos were not approved and need attention.');
+            }
+        };
+
+        const subscription = on('account:notification')
+            .subscribe((data: any) => {
+                if (['account:photosApproved', 'account:photosNotApproved'].includes(data.eventLabel)) {
+                    handlePhotoApprovalEvents(data);
+                }
+            });
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [isConnected, on]);
 
     const loadPhotos = async () => {
         try {

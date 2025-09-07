@@ -43,8 +43,8 @@ function NotificationListItem({ id, senderUser, content, receivedAtMessage,
 
     return (
         <div className="notification-list-item">
-            <div className="user-photo">
-                {!!senderUser && <Link href={userPhotoUrl}>
+            {!!senderUser && <div className="user-photo">
+                <Link href={userPhotoUrl}>
                     <UserPhotoDisplay
                         gender={senderUser.gender}
                         alt={senderUser.displayName}
@@ -53,9 +53,9 @@ function NotificationListItem({ id, senderUser, content, receivedAtMessage,
                         croppedImageData={senderUser.mainPhotoCroppedImageData}
                         imageUrl={senderUser.publicMainPhoto}
                     />
-                </Link>}
-            </div>
-            <div className="info-button-container">
+                </Link>
+            </div>}
+            <div className={"info-button-container" + (type === 'notifications' ? ' notifications' : '')}>
                 {!senderUser && type === 'notifications' && <div className="account-notification">
                     <div className="info-content-section">
                         <InfoCircleIcon size={"lx"} />

@@ -191,12 +191,13 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             }
 
             const rejectedPhotos = reviewPhotosResult.photos.filter(p => p.photo.isRejected).map(p => p.photo);
+            const approvedPhotos = reviewPhotosResult.photos.filter(p => !p.photo.isRejected).map(p => p.photo);
 
             // Create database notification for rejected photos
             if (rejectedPhotos.length > 0) {
                 await prismaWrite.notifications.create({
                     data: {
-                        userId: userId,
+                        recipientId: userId,
                         type: "account",
                         data: {content: "You have some photos that were not approved."}
                     }
@@ -211,7 +212,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 // Create database notification for approved photos
                 await prismaWrite.notifications.create({
                     data: {
-                        userId: userId,
+                        recipientId: userId,
                         type: "account",
                         data: {content: "Your photos were approved!"}
                     }
@@ -220,7 +221,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 await emitAccountMessage(userId, {
                     noticeType: "account:photosApproved",
                     message: "Your photos were approved!",
-                    data: []
+                    data: approvedPhotos
                 });
             }
         }
