@@ -133,6 +133,35 @@
   }
 
   .info-button-container {
+    .account-notification {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      button {
+        i {
+          font-size: 20px;
+          color: #979797;
+        }
+      }
+
+      .info-content-section {
+        display: flex;
+        align-items: center;
+        max-width: 85%;
+        gap: 5px;
+
+        i {
+          font-size: 22px;
+          color: globals.$primary-blue;
+
+          @include globals.dark-mode {
+            color: #d7d7d7;
+          }
+        }
+      }
+    }
+
     .info-section {
       &.notification {
         .content {

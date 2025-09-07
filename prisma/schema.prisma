@@ -122,7 +122,7 @@ model mutedUsers {
 
 model notifications {
   id                                     Int       @id(map: "notifications_pk") @default(autoincrement())
-  userId                                 Int
+  userId                                 Int?
   recipientId                            Int?
   type                                   String    @db.VarChar(255)
   readAt                                 DateTime? @db.Timestamp(6)
@@ -130,7 +130,7 @@ model notifications {
   createdAt                              DateTime? @db.Timestamp(6)
   updatedAt                              DateTime? @db.Timestamp(6)
   users_notifications_recipientIdTousers users?    @relation("notifications_recipientIdTousers", fields: [recipientId], references: [id], onDelete: Cascade, map: "notifications_users_id_fk")
-  users_notifications_userIdTousers      users     @relation("notifications_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "notifications_users_id_fk_2")
+  users_notifications_userIdTousers      users?    @relation("notifications_userIdTousers", fields: [userId], references: [id], onDelete: Cascade, map: "notifications_users_id_fk_2")
 
   @@index([recipientId], map: "notificationsRecipientIdForeign")
   @@index([userId], map: "notificationsUserIdForeign")

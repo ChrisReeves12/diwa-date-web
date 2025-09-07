@@ -14,7 +14,8 @@ import { debounceTime, filter, tap } from 'rxjs/operators';
 import { NotificationCenterData } from '@/types/notification-center-data.interface';
 import {
     loadNotificationCenterData,
-    markMatchNotificationsAsRead
+    markMatchNotificationsAsRead,
+    deleteNotification
 } from '@/common/server-actions/notifications.actions';
 import { useNotificationPopovers } from './hooks/use-notification-popovers';
 import NotificationIconsContainer from './notification-icons-container/notification-icons-container';
@@ -122,7 +123,7 @@ export default function NotificationCenter() {
 
         notificationDataFetchSubRef.current = notificationDataFetchTrigger$
             .pipe(debounceTime(500))
-            .subscribe(({ showLoader }: {showLoader?: boolean}) => {
+            .subscribe(({ showLoader }: { showLoader?: boolean }) => {
                 fetchNotificationCenterData(showLoader).catch(err => {
                     console.error('Error fetching notification data:', err);
                 });
@@ -172,14 +173,14 @@ export default function NotificationCenter() {
                 .pipe(
                     debounceTime(debounceTimeMs),
                     filter((data: WebSocketMessage) => ['match:new', 'match:cancel'].includes(data.eventLabel)
-                ))
+                    ))
                 .subscribe(handleRealTimeMatchEvents),
 
             on('message:notification')
                 .pipe(
                     debounceTime(debounceTimeMs),
                     filter((data: WebSocketMessage) => data.eventLabel === 'message:new'
-                ))
+                    ))
                 .subscribe(handleRealTimeMessageEvents),
 
             on('event:notification')
@@ -410,12 +411,21 @@ export default function NotificationCenter() {
                 title="Notifications"
                 listItems={(notificationsData?.receivedNotifications || []).map(notification => ({
                     id: notification.id,
-                    content: "",
+                    content: notification.data.content || "",
                     senderUser: notification.sender,
                     receivedAtMessage: "",
                     infoSectionUrl: `/messages/${notification.data.matchId}`,
-                    userPhotoUrl: userProfileLink(notification.sender),
-                    type: "notifications"
+                    userPhotoUrl: !!notification.sender ? userProfileLink(notification.sender) : undefined,
+                    type: "notifications",
+                    onDelete: async (notificationId: string | number) => {
+                        try {
+                            await deleteNotification(currentUser, notificationId as number);
+                            const updatedData = await loadNotificationCenterData(currentUser);
+                            setNotificationsData(updatedData);
+                        } catch (error) {
+                            console.error('Error deleting notification:', error);
+                        }
+                    }
                 }))}
             />
         </>

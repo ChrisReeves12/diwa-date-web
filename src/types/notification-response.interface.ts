@@ -45,9 +45,9 @@ export interface NotificationReceivedMessage {
 }
 
 export interface Notification {
-  data: { matchId: number };
+  data: { matchId?: number, content?: string };
   id: number;
-  sender: NotificationUser;
+  sender?: NotificationUser;
 }
 
 export interface NotificationResponse {

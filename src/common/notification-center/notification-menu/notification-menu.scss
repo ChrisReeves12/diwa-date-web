@@ -47,6 +47,44 @@
   }
 
   .list-item-container {
+    .empty-notifications {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+      text-align: center;
+      min-width: 350px;
+
+      .empty-notifications-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+
+        svg {
+          color: globals.$primary-blue;
+          opacity: 0.6;
+
+          @include globals.dark-mode {
+            color: #ffffff;
+            opacity: 0.7;
+          }
+        }
+
+        .empty-message {
+          color: #666666;
+          font-size: 14px;
+          font-weight: 400;
+          line-height: 20px;
+          max-width: 200px;
+
+          @include globals.dark-mode {
+            color: #cccccc;
+          }
+        }
+      }
+    }
+
     .notification-list-item {
       display: flex;
       font-size: 14px;

@@ -4,6 +4,7 @@ import { User } from '@/types'
 import { NotificationCenterData } from '@/types/notification-center-data.interface'
 import { countAllNotifications, getNotificationCenterData, markNotificationsAsRead } from '@/server-side-helpers/notification.helper'
 import { Notification } from '@/types/notification-response.interface'
+import { prismaWrite } from '@/lib/prisma'
 
 /**
  * Server action to load notification center data
@@ -21,7 +22,7 @@ export async function loadNotificationCenterData(currentUser: User): Promise<Not
 
 /**
  * Mark given notifications as read.
- * @param currentUser 
+ * @param currentUser
  */
 export async function markMatchNotificationsAsRead(currentUser: { id: number }, receivedNotifications?: Notification[]) {
     if (receivedNotifications && receivedNotifications.length > 0) {
@@ -29,4 +30,18 @@ export async function markMatchNotificationsAsRead(currentUser: { id: number }, 
     }
 
     return await countAllNotifications(currentUser);
+}
+
+/**
+ * Delete a single notification by ID.
+ * @param currentUser
+ * @param notificationId - The ID of the notification to delete
+ */
+export async function deleteNotification(currentUser: { id: number }, notificationId: number) {
+    await prismaWrite.notifications.deleteMany({
+        where: {
+            id: notificationId,
+            recipientId: currentUser.id
+        }
+    });
 }

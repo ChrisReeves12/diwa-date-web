@@ -313,6 +313,7 @@ export async function getPendingNotifications(user: User): Promise<Notification[
         select: {
             id: true,
             data: true,
+            type: true,
             users_notifications_userIdTousers: {
                 select: {
                     id: true,
@@ -330,12 +331,13 @@ export async function getPendingNotifications(user: User): Promise<Notification[
     });
 
     return (notifications as unknown as DbNotification[]).map((notification: DbNotification) => {
-        const senderPublicDetails = getPublicUserDetails(notification.users_notifications_userIdTousers);
+        const senderPublicDetails = !!notification.users_notifications_userIdTousers ?
+            getPublicUserDetails(notification.users_notifications_userIdTousers) : null;
 
         return {
             id: notification.id,
             data: notification.data!,
-            sender: {
+            sender: senderPublicDetails ? {
                 id: notification.users_notifications_userIdTousers.id,
                 gender: notification.users_notifications_userIdTousers.gender,
                 displayName: notification.users_notifications_userIdTousers.displayName,
@@ -343,7 +345,7 @@ export async function getPendingNotifications(user: User): Promise<Notification[
                 publicMainPhoto: senderPublicDetails.publicMainPhoto,
                 age: calculateUserAge(notification.users_notifications_userIdTousers),
                 locationName: notification.users_notifications_userIdTousers.locationName
-            }
+            } : undefined
         }
     });
 }

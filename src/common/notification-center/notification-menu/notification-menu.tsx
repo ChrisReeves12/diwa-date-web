@@ -1,7 +1,7 @@
 import './notification-menu.scss';
 import Image from "next/image";
 import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
-import { HeartIcon, TimesIcon } from "react-line-awesome";
+import { HeartIcon, InfoCircleIcon, TimesIcon } from "react-line-awesome";
 import Link from 'next/link';
 import { decodeHtmlEntities } from '@/util';
 import { User } from "@/types";
@@ -19,8 +19,8 @@ interface NotificationMenuProps {
 type NotificationUser = Pick<User, 'mainPhotoCroppedImageData' | 'publicMainPhoto' | 'displayName' | 'age' | 'gender' | 'locationName'>
 
 interface NotificationListItemProps {
-    id: string,
-    senderUser: NotificationUser,
+    id: string | number,
+    senderUser?: NotificationUser,
     receivedAtMessage: string,
     type: NotificationType,
     content: string,
@@ -29,15 +29,22 @@ interface NotificationListItemProps {
     infoSectionUrl: string,
     onLike?: () => void,
     onPass?: () => void,
+    onDelete?: (notificationId: string | number) => void,
     isLoading?: boolean
 }
 
-function NotificationListItem({ senderUser, content, receivedAtMessage,
-    numberOfMessages, userPhotoUrl, infoSectionUrl, onLike, onPass, type, isLoading = false }: NotificationListItemProps) {
+function NotificationListItem({ id, senderUser, content, receivedAtMessage,
+    numberOfMessages, userPhotoUrl, infoSectionUrl, onLike, onPass, onDelete, type, isLoading = false }: NotificationListItemProps) {
+
+    const matchConfirmContent = <>
+        🎉Congratulations on the match! 🎉<br />
+        Go start the conversation with <strong>{senderUser?.displayName || ''}</strong>
+    </>
+
     return (
         <div className="notification-list-item">
             <div className="user-photo">
-                <Link href={userPhotoUrl}>
+                {!!senderUser && <Link href={userPhotoUrl}>
                     <UserPhotoDisplay
                         gender={senderUser.gender}
                         alt={senderUser.displayName}
@@ -46,15 +53,24 @@ function NotificationListItem({ senderUser, content, receivedAtMessage,
                         croppedImageData={senderUser.mainPhotoCroppedImageData}
                         imageUrl={senderUser.publicMainPhoto}
                     />
-                </Link>
+                </Link>}
             </div>
             <div className="info-button-container">
-                <Link href={infoSectionUrl}>
+                {!senderUser && type === 'notifications' && <div className="account-notification">
+                    <div className="info-content-section">
+                        <InfoCircleIcon size={"lx"} />
+                        <div className="account-notification-content">{decodeHtmlEntities(content || '')}</div>
+                    </div>
+                    <button onClick={() => typeof onDelete === 'function' ? onDelete(id) : null}>
+                        <TimesIcon />
+                    </button>
+                </div>}
+                {!!senderUser && <Link href={infoSectionUrl}>
                     <div className={`info-section ${type === 'notifications' ? 'notification' : ''}`}>
                         <div className="name-section">
                             <div className="name">
                                 {type !== "notifications" ?
-                                    <>{senderUser.displayName}, {senderUser.age}</> :
+                                    <>{senderUser?.displayName}, {senderUser?.age}</> :
                                     <>It&apos;s A Match!</>}
                             </div>
                         </div>
@@ -62,13 +78,12 @@ function NotificationListItem({ senderUser, content, receivedAtMessage,
                             {type !== "notifications" ?
                                 <>{decodeHtmlEntities(content)}</> :
                                 <Link href={infoSectionUrl}>
-                                    🎉Congratulations on the match! 🎉<br />
-                                    Go start the conversation with <strong>{senderUser.displayName}</strong>
+                                    {matchConfirmContent}
                                 </Link>}
                         </div>
                         <div className="received-at-message">{receivedAtMessage}</div>
                     </div>
-                </Link>
+                </Link>}
                 {['messages', 'likes'].includes(type) &&
                     <div className="button-section">
                         {type === 'likes' &&
@@ -105,8 +120,19 @@ export default function NotificationMenu({ titleIcon, titleIconDark, title, list
                 <div className="title">{title}</div>
             </div>
             <div className="list-item-container">
-                {listItems.map(listItem => <NotificationListItem
-                    key={listItem.id} {...listItem} />)}
+                {listItems.length > 0 ? (
+                    listItems.map(listItem => <NotificationListItem
+                        key={listItem.id} {...listItem} />)
+                ) : (title.toLowerCase() === 'notifications' ?
+                    <div className="empty-notifications">
+                        <div className="empty-notifications-content">
+                            <InfoCircleIcon size="3x" />
+                            <div className="empty-message">
+                                You don't have any notifications at the moment
+                            </div>
+                        </div>
+                    </div> : null
+                )}
             </div>
         </div>
     );
