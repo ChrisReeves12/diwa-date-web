@@ -46,7 +46,7 @@ export interface CropData {
 
 
 export async function updatePhotoSortOrder(photos: PhotoWithUrl[]) {
-  const currentUser = await getCurrentUser(await cookies());
+  const currentUser = await getCurrentUser(await cookies(), false);
   if (!currentUser) {
     throw new Error('User not found');
   }
@@ -75,7 +75,7 @@ export async function updatePhotoSortOrder(photos: PhotoWithUrl[]) {
  */
 export async function getUserPhotos() {
   try {
-    const currentUser = await getCurrentUser(await cookies());
+    const currentUser = await getCurrentUser(await cookies(), false);
     if (!currentUser) {
       throw new Error('User not found');
     }
@@ -185,7 +185,7 @@ export async function saveCropData(photoPath: string, cropData: CropData, captio
  */
 export async function uploadPhoto(formData: FormData) {
   try {
-    const currentUser = await getCurrentUser(await cookies());
+    const currentUser = await getCurrentUser(await cookies(), false);
     if (!currentUser) {
       throw new Error('User not found');
     }
@@ -307,7 +307,7 @@ export async function uploadPhoto(formData: FormData) {
  */
 export async function deletePhoto(photoPath: string) {
   try {
-    const currentUser = await getCurrentUser(await cookies());
+    const currentUser = await getCurrentUser(await cookies(), false);
     if (!currentUser) {
       throw new Error('User not found');
     }
