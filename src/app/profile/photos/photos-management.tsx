@@ -125,49 +125,41 @@ export function PhotosManagement() {
         if (!isConnected) return;
 
         const handlePhotoApprovalEvents = (data: any) => {
-            if (data.eventLabel === 'account:photosApproved') {
-                const approvedPhotos = data.payload?.data || [];
-                const approvedPhotoPaths = approvedPhotos.map((photo: any) => photo.path);
+            const approvedPhotos = data.payload?.data?.approvedPhotos || [];
+            const rejectedPhotos = data.payload?.data?.rejectedPhotos || [];
+            const approvedPhotoPaths = approvedPhotos.map((photo: any) => photo.path);
+            const rejectedPhotoPaths = rejectedPhotos.map((photo: any) => photo.path);
 
-                setPhotos(prevPhotos =>
-                    prevPhotos.map(photo => {
-                        if (approvedPhotoPaths.includes(photo.path)) {
-                            return {
-                                ...photo,
-                                isUnderReview: false,
-                                isRejected: false
-                            };
-                        }
-                        return photo;
-                    })
-                );
-            } else if (data.eventLabel === 'account:photosNotApproved') {
-                // Update specific photos that were not approved
-                const rejectedPhotos = data.payload?.data || [];
-                const rejectedPhotoPaths = rejectedPhotos.map((photo: any) => photo.path);
+            setPhotos(prevPhotos =>
+                prevPhotos.map(photo => {
+                    if (approvedPhotoPaths.includes(photo.path)) {
+                        return {
+                            ...photo,
+                            isUnderReview: false,
+                            isRejected: false
+                        };
+                    } else if (rejectedPhotoPaths.includes(photo.path)) {
+                        const rejectedPhoto = rejectedPhotos.find((rp: any) => rp.path === photo.path);
+                        return {
+                            ...photo,
+                            isUnderReview: false,
+                            isRejected: true,
+                            messages: rejectedPhoto?.messages || []
+                        };
+                    }
 
-                setPhotos(prevPhotos =>
-                    prevPhotos.map(photo => {
-                        if (rejectedPhotoPaths.includes(photo.path)) {
-                            const rejectedPhoto = rejectedPhotos.find((rp: any) => rp.path === photo.path);
-                            return {
-                                ...photo,
-                                isUnderReview: false,
-                                isRejected: true,
-                                messages: rejectedPhoto?.messages || []
-                            };
-                        }
-                        return photo;
-                    })
-                );
+                    return photo;
+                })
+            );
 
+            if (data.noticeType === 'account:photosNotApproved') {
                 showAlert('Some of your photos were not approved and need attention.');
             }
         };
 
         const subscription = on('account:notification')
             .subscribe((data: any) => {
-                if (['account:photosApproved', 'account:photosNotApproved'].includes(data.eventLabel)) {
+                if (['account:photosApproved', 'account:photosNotApproved'].includes(data.payload.noticeType)) {
                     handlePhotoApprovalEvents(data);
                 }
             });

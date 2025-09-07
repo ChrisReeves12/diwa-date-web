@@ -112,11 +112,11 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                     }
                 }
 
-                await prismaWrite.userReviews.delete({
-                    where: {
-                        id: userReview.id
-                    }
-                });
+                // await prismaWrite.userReviews.delete({
+                //     where: {
+                //         id: userReview.id
+                //     }
+                // });
             }
 
             offset += userReviews.length;
@@ -206,7 +206,10 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 await emitAccountMessage(userId, {
                     noticeType: "account:photosNotApproved",
                     message: "You have some photos that were not approved",
-                    data: rejectedPhotos
+                    data: {
+                        rejectedPhotos,
+                        approvedPhotos
+                    }
                 });
             } else {
                 // Create database notification for approved photos
@@ -221,7 +224,10 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 await emitAccountMessage(userId, {
                     noticeType: "account:photosApproved",
                     message: "Your photos were approved!",
-                    data: approvedPhotos
+                    data: {
+                        rejectedPhotos,
+                        approvedPhotos
+                    }
                 });
             }
         }
