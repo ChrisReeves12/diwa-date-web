@@ -142,7 +142,7 @@ export function PhotosManagement() {
                         const rejectedPhoto = rejectedPhotos.find((rp: any) => rp.path === photo.path);
                         return {
                             ...photo,
-                            isUnderReview: false,
+                            isUnderReview: rejectedPhoto?.isUnderReview,
                             isRejected: true,
                             messages: rejectedPhoto?.messages || []
                         };
