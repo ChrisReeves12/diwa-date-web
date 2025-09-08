@@ -47,7 +47,7 @@ function SortablePhotoItem({photoWithUrl, onClick, onDelete}: {
         <div ref={setNodeRef}
              style={style}
              className={"photo-grid-item" + (photoWithUrl.isRejected ? " rejected" : "") + (photoWithUrl.isUnderReview && !photoWithUrl.isRejected ? " under-review" : "")}
-             onClick={onClick}
+             onClick={photoWithUrl.isRejected ? undefined : onClick}
              {...attributes}
              {...listeners}>
             <div className="photo-display-container" style={{backgroundImage: `url('${photoWithUrl.croppedImageUrl || photoWithUrl.url}')`}}></div>

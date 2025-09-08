@@ -112,11 +112,11 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                     }
                 }
 
-                // await prismaWrite.userReviews.delete({
-                //     where: {
-                //         id: userReview.id
-                //     }
-                // });
+                await prismaWrite.userReviews.delete({
+                    where: {
+                        id: userReview.id
+                    }
+                });
             }
 
             offset += userReviews.length;
