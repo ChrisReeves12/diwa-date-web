@@ -160,6 +160,13 @@ export default function NotificationCenter() {
         const handleRealTimeAccountEvents = (data: WebSocketMessage) => {
             if (data.eventLabel === 'account:message') {
                 fetchUserMainPhoto();
+                
+                // Skip notification center reload for photo approval events when on photos page
+                if (data.payload?.noticeType && 
+                    ['account:photosApproved', 'account:photosNotApproved'].includes(data.payload.noticeType) &&
+                    pathname.includes('profile/photos')) {
+                    return;
+                }
             }
 
             notificationDataFetchTrigger$.next({ showLoader: false });
