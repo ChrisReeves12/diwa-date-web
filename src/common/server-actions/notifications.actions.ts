@@ -45,3 +45,15 @@ export async function deleteNotification(currentUser: { id: number }, notificati
         }
     });
 }
+
+/**
+ * Delete a specific photo notification by ID for the current user.
+ * @param notificationId - The ID of the notification to delete
+ */
+export async function deletePhotoNotification(notificationId: number) {
+    await prismaWrite.notifications.deleteMany({
+        where: {
+            id: notificationId
+        }
+    });
+}

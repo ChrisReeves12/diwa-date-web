@@ -15,7 +15,8 @@ import { NotificationCenterData } from '@/types/notification-center-data.interfa
 import {
     loadNotificationCenterData,
     markMatchNotificationsAsRead,
-    deleteNotification
+    deleteNotification,
+    deletePhotoNotification
 } from '@/common/server-actions/notifications.actions';
 import { useNotificationPopovers } from './hooks/use-notification-popovers';
 import NotificationIconsContainer from './notification-icons-container/notification-icons-container';
@@ -160,11 +161,13 @@ export default function NotificationCenter() {
         const handleRealTimeAccountEvents = (data: WebSocketMessage) => {
             if (data.eventLabel === 'account:message') {
                 fetchUserMainPhoto();
-                
-                // Skip notification center reload for photo approval events when on photos page
-                if (data.payload?.noticeType && 
+
+                // Skip notification center reload for photo approval events when on the photo management page
+                if (data.payload?.noticeType &&
                     ['account:photosApproved', 'account:photosNotApproved'].includes(data.payload.noticeType) &&
-                    pathname.includes('profile/photos')) {
+                    pathname.includes('profile/photos') &&
+                    data.payload?.data?.notificationId) {
+                    deletePhotoNotification(data.payload.data.notificationId);
                     return;
                 }
             }
