@@ -18,6 +18,8 @@ export interface PhotoWithUrl {
   caption?: string;
   isHidden: boolean;
   isUnderReview?: boolean;
+  isRejected?: boolean;
+  messages?: string[];
   sortOrder: number;
   uploadedAt: string;
   croppedImageUrl?: string;

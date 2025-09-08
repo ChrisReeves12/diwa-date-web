@@ -46,7 +46,7 @@ function SortablePhotoItem({photoWithUrl, onClick, onDelete}: {
     return (
         <div ref={setNodeRef}
              style={style}
-             className={"photo-grid-item" + (photoWithUrl.isUnderReview ? " under-review" : "")}
+             className={"photo-grid-item" + (photoWithUrl.isRejected ? " rejected" : "") + (photoWithUrl.isUnderReview && !photoWithUrl.isRejected ? " under-review" : "")}
              onClick={onClick}
              {...attributes}
              {...listeners}>
@@ -59,7 +59,15 @@ function SortablePhotoItem({photoWithUrl, onClick, onDelete}: {
             }} className="delete-button">
                 <TimesIcon/>
             </button>
-            {photoWithUrl.isUnderReview && <div className="under-review-label">Under Review</div>}
+            {photoWithUrl.isRejected && <div className="under-review-label">Not Approved</div>}
+            {photoWithUrl.isUnderReview && !photoWithUrl.isRejected && <div className="under-review-label">Under Review</div>}
+            {photoWithUrl.isRejected && photoWithUrl.messages && photoWithUrl.messages.length > 0 && (
+                <div className="rejection-messages">
+                    {photoWithUrl.messages.map((message, index) => (
+                        <div key={index} className="rejection-message">{message}</div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
@@ -494,11 +502,9 @@ export function PhotosManagement() {
         const maxPreviewSize = Math.min(window.innerWidth * 0.8, window.innerHeight * 0.8);
         const previewScale = Math.min(maxPreviewSize / cropData.width, maxPreviewSize / cropData.height, 1);
 
-        // For the preview, we need to scale the entire image and position it correctly
         const imageDisplayWidth = img.naturalWidth * previewScale;
         const imageDisplayHeight = img.naturalHeight * previewScale;
 
-        // Position to show the cropped area
         const offsetX = -cropData.x * previewScale;
         const offsetY = -cropData.y * previewScale;
 
@@ -618,7 +624,6 @@ export function PhotosManagement() {
                 const formData = new FormData();
                 formData.append('file', file);
 
-                // Upload file
                 const response = await uploadPhoto(formData);
 
                 if (response.success) {
@@ -652,9 +657,7 @@ export function PhotosManagement() {
             const successfulUploads = uploadedPhotos.filter((photo: any) => photo !== null);
 
             if (successfulUploads.length > 0) {
-                // Reload photos to get updated list
                 await loadPhotos();
-                // Dispatch event to refresh user profile main photo in notification center
                 window.dispatchEvent(new CustomEvent('refresh-user-profile-main-photo'));
             }
         } catch (error) {
