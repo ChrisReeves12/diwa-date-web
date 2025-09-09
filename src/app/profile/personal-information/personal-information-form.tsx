@@ -155,6 +155,8 @@ export function PersonalInformationForm({ currentUser }: PersonalInformationForm
         e.preventDefault();
 
         if (!validateForm()) {
+            // Scroll to top when there are validation errors
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
 
@@ -200,10 +202,14 @@ export function PersonalInformationForm({ currentUser }: PersonalInformationForm
                     } else {
                         setErrors({ form: 'Update failed' });
                     }
+                    // Scroll to top when there are server errors
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             } catch (error) {
                 console.error('Update error:', error);
                 setErrors({ form: 'An unexpected error occurred' });
+                // Scroll to top when there's an unexpected error
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             } finally {
                 setIsLoading(false);
             }

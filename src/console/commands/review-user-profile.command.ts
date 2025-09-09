@@ -257,7 +257,43 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             }
         }
 
-        // Todo: Review other profile data (bio, interests, etc.)
+        // Review profile bio
+        if (user.bio && user.bio.trim().length > 0) {
+            try {
+                console.log(`Reviewing bio for user ID: ${userId}`);
+                
+                const moderationResponse = await axiosInstance.post(`${process.env.PROFILE_API_TOOLS_URL}/moderate`, {
+                    content: user.bio
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    validateStatus: (status) => true
+                });
+
+                if (moderationResponse.status !== 200) {
+                    console.error(`Bio moderation API returned status ${moderationResponse.status} for user ${userId}`);
+                } else {
+                    const moderationResult = moderationResponse.data;
+                    
+                    // Check if there are any violations
+                    if (moderationResult.violations && moderationResult.violations.length > 0) {
+                        console.log(`Bio violations found for user ID: ${userId}:`, moderationResult.violations.map((v: any) => v.description));
+                        
+                        // Set user as under review
+                        await prismaWrite.users.update({
+                            where: { id: userId },
+                            data: {
+                                isUnderReview: 1
+                            }
+                        });
+                    }
+                }
+            } catch (moderationError) {
+                console.error(`Bio moderation API error for user ${userId}:`, moderationError);
+                // Continue processing - don't fail the entire review if moderation API is unavailable
+            }
+        }
 
         return {error: null, success: true};
     }
