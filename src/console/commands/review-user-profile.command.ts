@@ -76,7 +76,8 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 return 1;
             }
 
-            const result = await this.reviewUser(userId);
+            // For single user review, we'll do a full review
+            const result = await this.reviewUser(userId, null);
 
             if (result?.error) {
                 console.error(result.error);
@@ -93,6 +94,12 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
 
         while (true) {
             const userReviews = await prismaRead.userReviews.findMany({
+                where: {
+                    OR: [
+                        { needsHumanReview: false },
+                        { needsHumanReview: null }
+                    ]
+                },
                 orderBy: {
                     createdAt: 'asc',
                 },
@@ -103,7 +110,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             if (userReviews.length === 0) break;
 
             for (const userReview of userReviews) {
-                const result = await this.reviewUser(userReview.userId);
+                const result = await this.reviewUser(userReview.userId, userReview);
                 if (result?.error) {
                     if (result.error.includes('suspended')) {
                         console.log('User has already been suspended');
@@ -112,11 +119,17 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                     }
                 }
 
-                await prismaWrite.userReviews.delete({
-                    where: {
-                        id: userReview.id
-                    }
-                });
+                const shouldDelete = result?.reviewType === 'image' ||
+                                   ((result?.reviewType === 'content' || result?.reviewType === 'full') && !result?.hasViolations);
+
+                if (shouldDelete) {
+                    await prismaWrite.userReviews.delete({
+                        where: {
+                            id: userReview.id
+                        }
+                    });
+                    console.log(`Deleted userReview ${userReview.id} for user ${userReview.userId} (reviewType: ${result?.reviewType})`);
+                }
             }
 
             offset += userReviews.length;
@@ -128,8 +141,9 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
     /**
      * Review user.
      * @param userId
+     * @param userReview
      */
-    async reviewUser(userId: number) {
+    async reviewUser(userId: number, userReview: any = null) {
         const user = await getUser(userId);
         if (!user) {
             return {error: 'User not found', success: false};
@@ -141,9 +155,18 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
 
         console.log(`Reviewing profile for user ID: ${userId}, Email: ${user.email}`);
 
-        // Review photos
-        const reviewPhotosResult= (user.photos || []).filter(p => p.isUnderReview).length > 0 ?
-            await this.reviewPhotos(user.photos!) : null;
+        // Determine review type - if no userReview record, do full review
+        const reviewType = userReview?.reviewType || 'full';
+        console.log(`Review type: ${reviewType}`);
+
+        // Track whether violations were found during review
+        let hasViolations = false;
+
+        // Review photos (only for 'image' or 'full' review types)
+        let reviewPhotosResult = null;
+        if ((reviewType === 'image' || reviewType === 'full') && (user.photos || []).filter(p => p.isUnderReview).length > 0) {
+            reviewPhotosResult = await this.reviewPhotos(user.photos!);
+        }
 
         if (reviewPhotosResult?.error) {
             return {error: reviewPhotosResult.error, success: false};
@@ -257,12 +280,13 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             }
         }
 
-        // Review profile bio
-        if (user.bio && user.bio.trim().length > 0) {
+        // Review profile bio (only for 'content' or 'full' review types)
+        if ((reviewType === 'content' || reviewType === 'full') && user.bio && user.bio.trim().length > 0) {
             try {
                 console.log(`Reviewing bio for user ID: ${userId}`);
-                
-                const moderationResponse = await axiosInstance.post(`${process.env.PROFILE_API_TOOLS_URL}/moderate`, {
+
+                const moderationResponse = await axiosInstance
+                    .post(`${process.env.PROFILE_API_TOOLS_URL}/moderate`, {
                     content: user.bio
                 }, {
                     headers: {
@@ -275,11 +299,12 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                     console.error(`Bio moderation API returned status ${moderationResponse.status} for user ${userId}`);
                 } else {
                     const moderationResult = moderationResponse.data;
-                    
+
                     // Check if there are any violations
                     if (moderationResult.violations && moderationResult.violations.length > 0) {
                         console.log(`Bio violations found for user ID: ${userId}:`, moderationResult.violations.map((v: any) => v.description));
-                        
+                        hasViolations = true;
+
                         // Set user as under review
                         await prismaWrite.users.update({
                             where: { id: userId },
@@ -287,6 +312,33 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                                 isUnderReview: 1
                             }
                         });
+
+                        // Update or create userReview record with analysis data
+                        if (userReview) {
+                            await prismaWrite.userReviews.update({
+                                where: { id: userReview.id },
+                                data: {
+                                    needsHumanReview: true,
+                                    analysis: moderationResult,
+                                    reviewType: 'content'
+                                }
+                            });
+                        } else {
+                            await prismaWrite.userReviews.upsert({
+                                where: { userId: userId },
+                                update: {
+                                    needsHumanReview: true,
+                                    analysis: moderationResult,
+                                    reviewType: 'content'
+                                },
+                                create: {
+                                    userId: userId,
+                                    needsHumanReview: true,
+                                    analysis: moderationResult,
+                                    reviewType: 'content'
+                                }
+                            });
+                        }
                     }
                 }
             } catch (moderationError) {
@@ -295,7 +347,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             }
         }
 
-        return {error: null, success: true};
+        return {error: null, success: true, reviewType, hasViolations};
     }
 
     /**

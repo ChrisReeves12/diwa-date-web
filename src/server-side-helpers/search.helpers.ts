@@ -129,7 +129,6 @@ export async function searchUsers(currentUser: Omit<User, 'password'>, params: {
               AND U."suspendedAt" IS NULL
               AND U."emailVerifiedAt" IS NOT NULL
               AND U."profileCompletedAt" IS NOT NULL
-              AND U."isUnderReview" = 0
               AND U."id" != ${currentUser.id}
               AND NOT EXISTS (SELECT 1 FROM "blockedUsers" WHERE "userId" = U."id" AND "blockedUserId" = ${currentUser.id})
               ${countrySearchClause}
