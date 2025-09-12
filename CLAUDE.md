@@ -19,3 +19,4 @@ We do use Prisma for some database transactions, but we don't use any of their m
 - Always use the breakpoint min-media helpers from globals.scss for conditional styling for screen width, and the helper for dark mode
 - Assume a mobile-first approach, in that the default styling is optimized for mobile
 - When adding styling for dark-mode, always use the @include globals.dark-mode helper.
+- When using prisma, always use prismaWrite and prismaRead for write and read operations. We have a read replica and a master database and so you need to always use those.

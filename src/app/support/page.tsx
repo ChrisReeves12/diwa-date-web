@@ -1,17 +1,19 @@
-import SiteWrapper from '@/common/site-wrapper/site-wrapper';
+import SupportCenterView from './support-center-view';
+import { getCurrentUser } from '@/server-side-helpers/user.helpers';
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import './support.scss';
 
 export const metadata = {
     title: `${process.env.APP_NAME} | Support`,
 };
 
-export default function SupportPage() {
-    return (
-        <SiteWrapper>
-            <div className="support-container">
-                <h1>Support</h1>
-                <p>Support content coming soon...</p>
-            </div>
-        </SiteWrapper>
-    );
+export default async function SupportPage() {
+    const currentUser = await getCurrentUser(await cookies());
+    
+    if (!currentUser) {
+        redirect('/login');
+    }
+
+    return <SupportCenterView currentUser={currentUser} />;
 }

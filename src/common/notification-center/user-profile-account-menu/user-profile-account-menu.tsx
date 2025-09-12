@@ -141,6 +141,18 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
           </div>
           <div className="label">Account Settings</div>
         </Link>
+        <Link href="/support" className="menu-item" onClick={handleSelectionMade}>
+          <div className="icon">
+            <Image
+                width={45}
+                height={45}
+                style={{ scale: 1.3 }}
+                src="/images/help.svg"
+                alt="Help Center"
+            />
+          </div>
+          <div className="label">Support Center</div>
+        </Link>
       </div>
       <div className="sign-out-button-section">
         <button onClick={handleSignOut}>
