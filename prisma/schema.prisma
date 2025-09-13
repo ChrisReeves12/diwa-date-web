@@ -344,7 +344,7 @@ model spatial_ref_sys {
 }
 
 model paymentTransactions {
-  id            Int       @id(map: "paymenttransactions_pk") @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   userId        Int?
   amount        Float?    @default(0)
   transId       String?   @unique(map: "paymenttransactions_transid_index") @db.VarChar(100)
@@ -420,5 +420,18 @@ model userReviews {
   needsHumanReview Boolean? @default(false)
   analysis         Json?
   reviewType       String?  @db.VarChar(20)
-  users            users    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users            users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model supportRequests {
+  id          Int       @id(map: "support_requests_pkey") @default(autoincrement())
+  userId      Int
+  issueType   String    @db.VarChar(255)
+  description String
+  status      String    @default("Open") @db.VarChar(50)
+  createdAt   DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([status], map: "supportrequests_status_index")
+  @@index([userId], map: "supportrequests_userid_index")
 }
