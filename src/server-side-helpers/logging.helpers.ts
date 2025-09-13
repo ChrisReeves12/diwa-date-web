@@ -1,4 +1,5 @@
 import winston from "winston";
+import * as Sentry from "@sentry/nextjs";
 
 // Create a Winston logger instance
 const logger = winston.createLogger({
@@ -44,10 +45,12 @@ export function log(message: string, level: 'info' | 'error' | 'warn' = 'info') 
  */
 export function logError(error: Error, context?: string) {
     const message = context ? `${context}: ${error.message}` : error.message;
-    
+
     console.error(`[ERROR] ${message}`);
     console.error(error.stack);
-    
+
+    Sentry.logger.error(error.message, { stack: error.stack });
+
     logger.error(message, {
         stack: error.stack,
         context: context || 'unknown'
