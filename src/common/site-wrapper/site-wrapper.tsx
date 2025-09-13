@@ -97,6 +97,7 @@ export default function SiteWrapper({ children, hideButtons = false, hideFlashMe
                     Copyright &copy; {(new Date()).getFullYear()} by Diwa Date. All rights reserved.
                 </div>
             </footer>}
+            <div style={{textAlign: 'center'}} className="server-location">{process.env.NEXT_PUBLIC_SERVER_LOCATION || 'us-pacific'}</div>
         </div>
     );
 }
