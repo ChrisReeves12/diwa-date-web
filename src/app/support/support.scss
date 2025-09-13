@@ -39,6 +39,8 @@
         opacity: 0;
         transform: translateY(-10px);
         transition: all 0.3s ease;
+        display: flex;
+        justify-content: space-between;
 
         @include globals.dark-mode {
             background: #155724;

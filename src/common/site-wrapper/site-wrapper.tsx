@@ -85,17 +85,16 @@ export default function SiteWrapper({ children, hideButtons = false, hideFlashMe
                         </ul>
                     </div>
                     <div className="links-section">
-                        <h4>Legal &amp; Support</h4>
+                        <h4>Legal &amp; Safety</h4>
                         <ul>
                             <li><a href="/privacy-policy">Privacy Policy</a></li>
                             <li><a href="/terms-of-service">Terms of Service</a></li>
                             <li><a href="/dating-safety">Dating Safety</a></li>
-                            <li><a href="/support">Support</a></li>
                         </ul>
                     </div>
                 </div>
                 <div className="copyright-container">
-                    Copyright &copy; {(new Date()).getFullYear()} by Taktyx
+                    Copyright &copy; {(new Date()).getFullYear()} by Diwa Date. All rights reserved.
                 </div>
             </footer>}
         </div>
