@@ -1,4 +1,4 @@
-import { RabbitMQConfig } from '../../../types/rabbitmq.types';
+import { RabbitMQConfig } from '../types/rabbitmq.types';
 
 export interface ServerConfig {
     port: number;
