@@ -72,6 +72,7 @@ export async function getConversationsFromMatches(userId: number): Promise<Conve
                 MW."createdAt" AS "matchCreatedAt",
                 U."id" AS "userId",
                 U."displayName",
+                U."gender",
                 U."mainPhoto",
                 U."photos",
                 U."hideOnlineStatus",
