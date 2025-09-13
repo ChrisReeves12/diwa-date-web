@@ -156,6 +156,7 @@
                     }
 
                     textarea {
+                        box-sizing: border-box;
                         border: 1px solid #ccc;
                         outline-width: 0;
                         background-color: transparent;
