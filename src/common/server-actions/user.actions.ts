@@ -46,8 +46,8 @@ export async function updatePassword(currentPassword: string, newPassword: strin
         select: { password: true }
     });
 
-    if (!userWithPassword) {
-        return { success: false, error: "User not found" };
+    if (!userWithPassword || !userWithPassword.password) {
+        return { success: false, error: "User not found or password not set" };
     }
 
     // Verify the current password
@@ -100,8 +100,8 @@ export async function deleteAccount(password: string) {
         select: { password: true }
     });
 
-    if (!userWithPassword) {
-        return { success: false, error: "User not found" };
+    if (!userWithPassword || !userWithPassword.password) {
+        return { success: false, error: "User not found or password not set" };
     }
 
     // Verify the current password

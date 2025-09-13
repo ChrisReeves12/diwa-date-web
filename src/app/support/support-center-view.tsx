@@ -40,7 +40,14 @@ export default function SupportCenterView({ currentUser }: SupportCenterViewProp
             setIssueType('');
             setDescription('');
         } else if (result.errors) {
-            setErrors(result.errors);
+            // Ensure all values are strings, not undefined
+            const errorObj: Record<string, string> = {};
+            Object.entries(result.errors).forEach(([key, value]) => {
+                if (value !== undefined) {
+                    errorObj[key] = value;
+                }
+            });
+            setErrors(errorObj);
         }
 
         setIsLoading(false);
