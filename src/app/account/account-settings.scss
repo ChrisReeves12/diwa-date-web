@@ -197,6 +197,18 @@
             border: 1px solid #1aee8c;
           }
         }
+
+        &.founding-member {
+          background-color: #ffd700;
+          color: #8b4513;
+          border: 1px solid #ffa500;
+
+          @include globals.dark-mode {
+            background-color: #2d2d00;
+            color: #ffd700;
+            border: 1px solid #ffd700;
+          }
+        }
       }
 
       .active-subscription-info {
@@ -225,6 +237,28 @@
         }
       }
 
+      .founding-member-subscription-info {
+        background-color: #fffbf0;
+        border: 1px solid #ffd700;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 15px;
+
+        @include globals.dark-mode {
+          background-color: #2d2d00;
+          border-color: #ffd700;
+        }
+
+        p {
+          margin: 8px 0;
+          color: #8b4513;
+
+          @include globals.dark-mode {
+            color: #ffd700;
+          }
+        }
+      }
+
       .cancellation-notice {
         margin-top: 15px;
 
@@ -239,6 +273,35 @@
             font-style: italic;
           }
         }
+      }
+    }
+  }
+
+  .founding-member-notice {
+    background-color: #fffbf0;
+    border: 1px solid #ffd700;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+    text-align: center;
+
+    @include globals.dark-mode {
+      background-color: #2d2d00;
+      border-color: #ffd700;
+    }
+
+    .status-badge {
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin: 0;
+      color: #8b4513;
+      font-size: 16px;
+      line-height: 1.5;
+
+      @include globals.dark-mode {
+        color: #ffd700;
       }
     }
   }
@@ -1593,5 +1656,24 @@
         }
       }
     }
+  }
+
+  // Founding member disabled form styles
+  input:disabled,
+  select:disabled {
+    background-color: #f5f5f5 !important;
+    color: #666 !important;
+    cursor: not-allowed !important;
+    opacity: 0.7;
+
+    @include globals.dark-mode {
+      background-color: #3a3a3a !important;
+      color: #999 !important;
+    }
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }

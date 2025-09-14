@@ -105,6 +105,8 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
     // Payment method deletion state
     const [isLoadingDeletePayment, setIsLoadingDeletePayment] = useState(false);
 
+    const isFoundingMember = currentUser?.isFoundingMember || false;
+
     // Load existing billing information and subscription plans on component mount
     useEffect(() => {
         const loadData = async () => {
@@ -432,6 +434,16 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                 </div>
                             )}
 
+                            {/* Founding Member Notice */}
+                            {isFoundingMember && (
+                                <div className="founding-member-notice">
+                                    <div className="status-badge founding-member">
+                                        <CheckCircleIcon /> Founding Member
+                                    </div>
+                                    <p>As a founding member, you have lifetime premium access and do not need to provide billing information.</p>
+                                </div>
+                            )}
+
                             {/* Subscription Management Section */}
                             <div className="settings-section full-width membership-section">
                                 <h3>Premium Membership</h3>
@@ -474,23 +486,30 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                                 )}
                                                             </div>
                                                         </div>
-                                                    ) : (!currentUser.isFoundingMember &&
-                                                        <div className="active-subscription-info">
-                                                            <p>Next billing date: <strong>{new Date(subscriptionDetails.nextPaymentAt).toLocaleDateString()}</strong></p>
-                                                            {Number(subscriptionDetails.priceUnit) > 0 ?
-                                                                <p>Amount: <strong>${subscriptionDetails.price}/{subscriptionDetails.priceUnit === 'USD' ? 'month' : subscriptionDetails.priceUnit}</strong></p> :
-                                                                <p>Amount: <strong>Free</strong></p>}
-
-                                                            <div className="cancel-actions">
-                                                                <button
-                                                                    className="btn-secondary"
-                                                                    onClick={() => setShowCancelConfirmation(true)}
-                                                                    disabled={isLoadingCancel}
-                                                                >
-                                                                    Cancel Membership
-                                                                </button>
+                                                    ) : (
+                                                        isFoundingMember ? (
+                                                            <div className="founding-member-subscription-info">
+                                                                <p><strong>Lifetime Premium Access</strong></p>
+                                                                <p>Your founding member status provides permanent premium benefits with no billing required.</p>
                                                             </div>
-                                                        </div>
+                                                        ) : (
+                                                            <div className="active-subscription-info">
+                                                                <p>Next billing date: <strong>{new Date(subscriptionDetails.nextPaymentAt).toLocaleDateString()}</strong></p>
+                                                                {Number(subscriptionDetails.priceUnit) > 0 ?
+                                                                    <p>Amount: <strong>${subscriptionDetails.price}/{subscriptionDetails.priceUnit === 'USD' ? 'month' : subscriptionDetails.priceUnit}</strong></p> :
+                                                                    <p>Amount: <strong>Free</strong></p>}
+
+                                                                <div className="cancel-actions">
+                                                                    <button
+                                                                        className="btn-secondary"
+                                                                        onClick={() => setShowCancelConfirmation(true)}
+                                                                        disabled={isLoadingCancel}
+                                                                    >
+                                                                        Cancel Membership
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )
                                                     )}
                                                 </div>
                                             </>
@@ -611,6 +630,8 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                     onChange={(e) => setBillingInfo({ ...billingInfo, name: e.target.value })}
                                                     placeholder="Enter your full name"
                                                     required
+                                                    disabled={isFoundingMember}
+                                                    readOnly={isFoundingMember}
                                                 />
                                             </div>
                                         </div>
@@ -640,6 +661,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                         }
                                                     }}
                                                     required
+                                                    disabled={isFoundingMember}
                                                 >
                                                     <option value=''>Select Country</option>
                                                     {countries.map((country) => (
@@ -662,6 +684,8 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                     onChange={(e) => setBillingInfo({ ...billingInfo, address1: e.target.value })}
                                                     placeholder="Street address"
                                                     required
+                                                    disabled={isFoundingMember}
+                                                    readOnly={isFoundingMember}
                                                 />
                                             </div>
                                         </div>
@@ -676,6 +700,8 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                     value={billingInfo.address2}
                                                     onChange={(e) => setBillingInfo({ ...billingInfo, address2: e.target.value })}
                                                     placeholder="Apartment, suite, etc."
+                                                    disabled={isFoundingMember}
+                                                    readOnly={isFoundingMember}
                                                 />
                                             </div>
                                         </div>
@@ -691,6 +717,8 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                     onChange={(e) => setBillingInfo({ ...billingInfo, city: e.target.value })}
                                                     placeholder="City"
                                                     required
+                                                    disabled={isFoundingMember}
+                                                    readOnly={isFoundingMember}
                                                 />
                                             </div>
                                         </div>
@@ -705,6 +733,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                         name="region"
                                                         value={billingInfo.region}
                                                         onChange={(e) => setBillingInfo({ ...billingInfo, region: e.target.value })}
+                                                        disabled={isFoundingMember}
                                                     >
                                                         <option value="">Select {getRegionLabel(billingInfo.country)}</option>
                                                         {states.map(state =>
@@ -726,6 +755,8 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                     onChange={(e) => setBillingInfo({ ...billingInfo, postalCode: e.target.value })}
                                                     placeholder={getPostalCodeLabel(billingInfo.country)}
                                                     required={isPostalCodeRequired(countries.find(c => c.name === billingInfo.country)?.code || '')}
+                                                    disabled={isFoundingMember}
+                                                    readOnly={isFoundingMember}
                                                 />
                                                 {billingInfo.country && !isPostalCodeRequired(countries.find(c => c.name === billingInfo.country)?.code || '') && (
                                                     <small className="help-text">Postal code is optional for this country</small>
@@ -757,7 +788,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                         type="button"
                                                         className="btn-danger"
                                                         onClick={handleDeletePayment}
-                                                        disabled={isLoadingDeletePayment}
+                                                        disabled={isLoadingDeletePayment || isFoundingMember}
                                                     >
                                                         {isLoadingDeletePayment ? 'Deleting...' : <><TrashIcon /> Delete Payment Method</>}
                                                     </button>
@@ -781,6 +812,8 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                             placeholder="1234 5678 9012 3456"
                                                             maxLength={19}
                                                             required
+                                                            disabled={isFoundingMember}
+                                                            readOnly={isFoundingMember}
                                                         />
                                                     </div>
                                                 </div>
@@ -794,6 +827,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                             value={paymentInfo.expiryMonth}
                                                             onChange={(e) => setPaymentInfo({ ...paymentInfo, expiryMonth: e.target.value })}
                                                             required
+                                                            disabled={isFoundingMember}
                                                         >
                                                             <option value="">Month</option>
                                                             {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
@@ -812,6 +846,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                             value={paymentInfo.expiryYear}
                                                             onChange={(e) => setPaymentInfo({ ...paymentInfo, expiryYear: e.target.value })}
                                                             required
+                                                            disabled={isFoundingMember}
                                                         >
                                                             <option value="">Year</option>
                                                             {yearOptions.map(year => (
@@ -835,6 +870,8 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                             placeholder="123"
                                                             maxLength={4}
                                                             required
+                                                            disabled={isFoundingMember}
+                                                            readOnly={isFoundingMember}
                                                         />
                                                         <small className="help-text">3-4 digit security code on the back of your card</small>
                                                     </div>
@@ -848,7 +885,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                     <button
                                                         className="btn-primary"
                                                         type="submit"
-                                                        disabled={isLoading}
+                                                        disabled={isLoading || isFoundingMember}
                                                     >
                                                         {isLoading ? 'Updating...' : 'Update Payment Information'}
                                                     </button>
@@ -863,7 +900,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                         <button
                                             className="btn-primary"
                                             type="submit"
-                                            disabled={isLoading}
+                                            disabled={isLoading || isFoundingMember}
                                         >
                                             {isLoading ? 'Updating...' : 'Update Billing Address'}
                                         </button>
