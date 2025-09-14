@@ -17,9 +17,9 @@ export default function SiteWrapper({ children, hideButtons = false, hideFlashMe
 
     const shouldHideInfoBar = (): boolean => {
         return pathname.startsWith('/profile') ||
-               pathname.startsWith('/account') ||
-               pathname.startsWith('/likes') ||
-               pathname.startsWith('/messages');
+            pathname.startsWith('/account') ||
+            pathname.startsWith('/likes') ||
+            pathname.startsWith('/messages');
     };
 
     const [hideInfoBar, setHideInfoBar] = useState(shouldHideInfoBar());
@@ -53,10 +53,10 @@ export default function SiteWrapper({ children, hideButtons = false, hideFlashMe
 
     return (
         <div className={`site-wrapper ${!hideInfoBar ? 'info-bar-shown' : ''}`}>
-            {!hideInfoBar && <InfoBar onHide={() => setHideInfoBar(true)}/>}
-            <SiteTopBar hideButtons={hideButtons}/>
+            {!hideInfoBar && <InfoBar onHide={() => setHideInfoBar(true)} />}
+            <SiteTopBar hideButtons={hideButtons} />
             {!hideFlashMessage && alertMessage && alertType &&
-                <div style={{paddingTop: 30}} className='container'>
+                <div style={{ paddingTop: 30 }} className='container'>
                     <Alert
                         severity={alertType}
                         action={
@@ -72,7 +72,7 @@ export default function SiteWrapper({ children, hideButtons = false, hideFlashMe
             {!currentUser && <footer>
                 <div className="logo-container">
                     <a href="/">
-                        <img src="/images/full_logo_dark.svg"/>
+                        <img src="/images/full_logo_dark.svg" />
                     </a>
                 </div>
                 <div className="links-container">
@@ -97,7 +97,7 @@ export default function SiteWrapper({ children, hideButtons = false, hideFlashMe
                     Copyright &copy; {(new Date()).getFullYear()} by Diwa Date. All rights reserved.
                 </div>
             </footer>}
-            <div style={{textAlign: 'center'}} className="server-location">{process.env.NEXT_PUBLIC_SERVER_LOCATION || 'us-pacific'}</div>
+            {/* <div style={{textAlign: 'center'}} className="server-location">{process.env.NEXT_PUBLIC_SERVER_LOCATION || 'us-pacific'}</div> */}
         </div>
     );
 }

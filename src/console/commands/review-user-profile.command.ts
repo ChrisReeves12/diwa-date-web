@@ -15,7 +15,7 @@ import sharp from 'sharp';
 import { emitAccountMessage } from "@/server-side-helpers/notification-emitter.helper";
 
 const axiosInstance = axios.create({
-    httpAgent: new http.Agent({keepAlive: true, maxSockets: 100}),
+    httpAgent: new http.Agent({ keepAlive: true, maxSockets: 100 }),
 });
 
 const SIGHTENGINE_MODELS = [
@@ -61,12 +61,6 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
     async handle(prog: Command): Promise<number> {
         const options = prog.opts();
 
-        if (options.userId) {
-            console.log(`Starting user profile review for user ID: ${options.userId}`);
-        } else {
-            console.log('Starting batch user profile review...');
-        }
-
         // Handle single user review
         if (options.userId) {
             const userId = parseInt(options.userId, 10);
@@ -84,7 +78,6 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 return 1;
             }
 
-            console.log('User profile review completed successfully.');
             return 0;
         }
 
@@ -112,15 +105,13 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             for (const userReview of userReviews) {
                 const result = await this.reviewUser(userReview.userId, userReview);
                 if (result?.error) {
-                    if (result.error.includes('suspended')) {
-                        console.log('User has already been suspended');
-                    } else {
+                    if (!result.error.includes('suspended')) {
                         console.error(result.error);
                     }
                 }
 
                 const shouldDelete = result?.reviewType === 'image' ||
-                                   ((result?.reviewType === 'content' || result?.reviewType === 'full') && !result?.hasViolations);
+                    ((result?.reviewType === 'content' || result?.reviewType === 'full') && !result?.hasViolations);
 
                 if (shouldDelete) {
                     await prismaWrite.userReviews.delete({
@@ -128,7 +119,6 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                             id: userReview.id
                         }
                     });
-                    console.log(`Deleted userReview ${userReview.id} for user ${userReview.userId} (reviewType: ${result?.reviewType})`);
                 }
             }
 
@@ -146,18 +136,15 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
     async reviewUser(userId: number, userReview: any = null) {
         const user = await getUser(userId);
         if (!user) {
-            return {error: 'User not found', success: false};
+            return { error: 'User not found', success: false };
         }
 
         if (user.suspendedAt) {
-            return {error: 'User is suspended', success: false};
+            return { error: 'User is suspended', success: false };
         }
-
-        console.log(`Reviewing profile for user ID: ${userId}, Email: ${user.email}`);
 
         // Determine review type - if no userReview record, do full review
         const reviewType = userReview?.reviewType || 'full';
-        console.log(`Review type: ${reviewType}`);
 
         // Track whether violations were found during review
         let hasViolations = false;
@@ -169,7 +156,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         }
 
         if (reviewPhotosResult?.error) {
-            return {error: reviewPhotosResult.error, success: false};
+            return { error: reviewPhotosResult.error, success: false };
         }
 
         if (reviewPhotosResult?.photos && reviewPhotosResult.photos.length > 0) {
@@ -200,9 +187,8 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             }
 
             if (shouldSuspendUser) {
-                console.log(`Suspending user ID: ${userId} due to serious infractions.`);
                 await prismaWrite.users.update({
-                    where: {id: userId},
+                    where: { id: userId },
                     data: {
                         suspendedAt: new Date(),
                         suspendedReason: 'Your account was suspended due to policy violations in profile review. Please contact support for more information.'
@@ -210,7 +196,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 });
 
                 // Todo: Send suspension email to user
-                return {error: null, success: true};
+                return { error: null, success: true };
             }
 
             const rejectedPhotos = reviewPhotosResult.photos.filter(p =>
@@ -245,7 +231,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                     data: {
                         recipientId: userId,
                         type: "account",
-                        data: {content: "You have some photos that were not approved."}
+                        data: { content: "You have some photos that were not approved." }
                     }
                 });
 
@@ -264,7 +250,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                     data: {
                         recipientId: userId,
                         type: "account",
-                        data: {content: "Your photos were approved!"}
+                        data: { content: "Your photos were approved!" }
                     }
                 });
 
@@ -283,17 +269,15 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         // Review profile bio (only for 'content' or 'full' review types)
         if ((reviewType === 'content' || reviewType === 'full') && user.bio && user.bio.trim().length > 0) {
             try {
-                console.log(`Reviewing bio for user ID: ${userId}`);
-
                 const moderationResponse = await axiosInstance
                     .post(`${process.env.PROFILE_API_TOOLS_URL}/moderate`, {
-                    content: user.bio
-                }, {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    validateStatus: (status) => true
-                });
+                        content: user.bio
+                    }, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        validateStatus: (status) => true
+                    });
 
                 if (moderationResponse.status !== 200) {
                     console.error(`Bio moderation API returned status ${moderationResponse.status} for user ${userId}`);
@@ -302,7 +286,6 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
 
                     // Check if there are any violations
                     if (moderationResult.violations && moderationResult.violations.length > 0) {
-                        console.log(`Bio violations found for user ID: ${userId}:`, moderationResult.violations.map((v: any) => v.description));
                         hasViolations = true;
 
                         // Set user as under review
@@ -347,7 +330,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             }
         }
 
-        return {error: null, success: true, reviewType, hasViolations};
+        return { error: null, success: true, reviewType, hasViolations };
     }
 
     /**
@@ -373,13 +356,13 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 const tempFilePath = `/tmp/temp-img-${uuidv4()}.${fileExt}`;
 
                 await fs.promises.writeFile(tempFilePath, imageBuffer);
-                allPhotosWithFilePath.push({tempFilePath, photo});
+                allPhotosWithFilePath.push({ tempFilePath, photo });
 
                 if (photo.isUnderReview) {
-                    reviewPhotosWithFilePath.push({tempFilePath, photo});
+                    reviewPhotosWithFilePath.push({ tempFilePath, photo });
                 }
             } catch (e) {
-                return {error: `Failed to download or write temp file for: ${photo.path}`, success: false};
+                return { error: `Failed to download or write temp file for: ${photo.path}`, success: false };
             }
         }
 
@@ -390,7 +373,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 allPhotosWithFilePath.map(p => p.tempFilePath));
 
             if (isDupedImageResult.error) {
-                return {error: isDupedImageResult.error, success: false};
+                return { error: isDupedImageResult.error, success: false };
             }
 
             if (isDupedImageResult.isDuplicate) {
@@ -449,7 +432,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             });
         }
 
-        return {error: null, success: true, photos: reviewPhotosWithFilePath};
+        return { error: null, success: true, photos: reviewPhotosWithFilePath };
     }
 
     /**
@@ -460,7 +443,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         const analysisReport: any = {};
 
         if (data.status !== 'success') {
-            return {error: 'Image analysis failed', success: false};
+            return { error: 'Image analysis failed', success: false };
         }
 
         // Process nudity analysis
@@ -474,7 +457,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
 
             if (analysisReport.nudity.isNude) {
                 analysisReport.messages = [...(analysisReport.messages || []),
-                    analysisReport.nudity.isPartialNude ? 'Photo contains partial nudity' : 'Photo contains full nudity'];
+                analysisReport.nudity.isPartialNude ? 'Photo contains partial nudity' : 'Photo contains full nudity'];
             }
         }
 
@@ -709,13 +692,13 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
 
                 const result = ssim(img1, img2);
                 if (result.mssim >= 0.95) {
-                    return {error: null, success: true, isDuplicate: true};
+                    return { error: null, success: true, isDuplicate: true };
                 }
             }
 
-            return {error: null, success: true, isDuplicate: false};
+            return { error: null, success: true, isDuplicate: false };
         } catch (e) {
-            return {error: 'Failed to compare images for duplication', success: false, isDuplicate: false};
+            return { error: 'Failed to compare images for duplication', success: false, isDuplicate: false };
         }
     }
 
