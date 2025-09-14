@@ -201,6 +201,33 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 return { error: null, success: true };
             }
 
+            // Fetch fresh user data and reconcile mainPhoto and numOfPhotos
+            const freshUser = await getUser(userId);
+            if (freshUser && freshUser.photos && freshUser.photos.length > 0) {
+                const validPhotos = freshUser.photos.filter(photo =>
+                    !photo.isRejected && !photo.isUnderReview
+                );
+
+                // Ensure mainPhoto matches the first valid photo
+                const expectedMainPhoto = validPhotos.length > 0 ? validPhotos[0].path : null;
+                const needsMainPhotoUpdate = freshUser.mainPhoto !== expectedMainPhoto;
+
+                // Count valid photos for numOfPhotos
+                const expectedNumOfPhotos = validPhotos.length;
+                const needsNumOfPhotosUpdate = freshUser.numOfPhotos !== expectedNumOfPhotos;
+
+                // Update user if needed
+                if (needsMainPhotoUpdate || needsNumOfPhotosUpdate) {
+                    await prismaWrite.users.update({
+                        where: { id: userId },
+                        data: {
+                            ...(needsMainPhotoUpdate && { mainPhoto: expectedMainPhoto }),
+                            ...(needsNumOfPhotosUpdate && { numOfPhotos: expectedNumOfPhotos })
+                        }
+                    });
+                }
+            }
+
             const rejectedPhotos = reviewPhotosResult.photos.filter(p =>
                 p.photo.isRejected).map(p => p.photo);
             const approvedPhotos = reviewPhotosResult.photos.filter(p =>
