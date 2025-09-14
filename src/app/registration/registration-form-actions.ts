@@ -5,9 +5,11 @@ import { cookies } from 'next/headers';
 import { checkUserExists, hashPassword, sendVerificationEmailToUser } from '@/server-side-helpers/user.helpers';
 import { UserRegistrationData, ValidationErrors, User, SearchFromOrigin } from '@/types';
 import { prismaWrite } from '@/lib/prisma';
+import { pgDbReadPool, pgDbWritePool } from '@/lib/postgres';
 import { createSession } from '@/server-side-helpers/session.helpers';
 import { businessConfig } from "@/config/business";
 import { logError } from '@/server-side-helpers/logging.helpers';
+import * as Sentry from "@sentry/nextjs";
 
 interface RegistrationResult {
   success: boolean;
@@ -106,6 +108,68 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
     // Send verification email
     await sendVerificationEmailToUser(newUser.id);
 
+    // Auto-enroll in premium during launch (feature-flagged)
+    try {
+      if (process.env.AUTO_ENROLL_PREMIUM === 'true') {
+        let premiumPlanId: number | null = null;
+        const envPlanId = process.env.PREMIUM_PLAN_ID ? parseInt(process.env.PREMIUM_PLAN_ID as string, 10) : null;
+
+        if (!envPlanId && !Number.isNaN(envPlanId)) {
+          premiumPlanId = envPlanId;
+        } else {
+          const { rows: planRows } = await pgDbReadPool.query(
+            `SELECT id FROM "subscriptionPlans" WHERE LOWER(name) LIKE '%premium%' ORDER BY "listPrice" DESC LIMIT 1`
+          );
+
+          if (planRows.length > 0) {
+            premiumPlanId = planRows[0].id;
+          }
+        }
+
+        if (premiumPlanId) {
+          const { rows: activeRows } = await pgDbReadPool.query(
+            `SELECT id FROM "subscriptionPlanEnrollments" WHERE "userId" = $1 AND ("endsAt" IS NULL OR "endsAt" > NOW()) LIMIT 1`,
+            [newUser.id]
+          );
+
+          if (activeRows.length === 0) {
+            const startDate = new Date();
+            const endDate = new Date('2500-01-01T00:00:00.000Z');
+
+            // Create lifetime enrollment
+            await pgDbWritePool.query(
+              `INSERT INTO "subscriptionPlanEnrollments" (
+                "userId", "subscriptionPlanId", "startedAt", "lastPaymentAt", "nextPaymentAt",
+                "price", "chargeInterval", "priceUnit", "createdAt", "updatedAt", "lastEvalAt", "endsAt"
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+              [
+                newUser.id,
+                premiumPlanId,
+                startDate,
+                startDate,
+                null,
+                0,
+                'monthly',
+                'USD',
+                startDate,
+                startDate,
+                startDate,
+                endDate
+              ]
+            );
+
+            await pgDbWritePool.query(
+              `UPDATE "users" SET "isPremium" = true, "updatedAt" = NOW() WHERE id = $1`,
+              [newUser.id]
+            );
+          }
+        }
+      }
+    } catch (autoEnrollErr) {
+      console.error('Auto-enroll premium failed:', autoEnrollErr);
+      Sentry.logger.error('Auto-enroll premium failed:', { error: autoEnrollErr });
+    }
+
     // Create a session for the user
     const sessionId = await createSession(newUser as unknown as User);
 
@@ -140,7 +204,7 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
 /**
  * Validate user registration data
  * @param data
- * @returns 
+ * @returns
  */
 async function validateUserData(data: UserRegistrationData): Promise<ValidationErrors> {
   const errors: ValidationErrors = {};
