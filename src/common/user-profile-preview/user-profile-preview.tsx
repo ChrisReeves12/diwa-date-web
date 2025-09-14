@@ -271,36 +271,36 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                     </div>
                     {(userPreview.publicPhotos || []).length > 0 &&
                         <div className="photo-count-container">
-                        <button
-                            className="photo-count"
-                            onClick={togglePhotoPopover}
-                            ref={buttonRef}>
-                            <span className="count-value">{userPreview.numOfPhotos}</span>
-                            <Image className="camera-icon" width="20" height="20" alt="Camera" src="/images/camera.svg" />
-                        </button>
-                        {showPhotoPopover && innerWidth > 768 && (
-                            <div className="photo-popover" ref={popoverRef}>
-                                <div className="photo-grid">
-                                    {userPreview.publicPhotos && userPreview.publicPhotos.map((photo: UserPhoto, index: number) => (
-                                        <div
-                                            key={index}
-                                            className="photo-grid-item"
-                                            onClick={() => openImageViewer(index)}>
-                                            <UserPhotoDisplay
-                                                alt={`${userPreview.displayName}'s photo ${index + 1}`}
-                                                shape="square"
-                                                imageUrl={photo.path}
-                                                croppedImageData={photo.croppedImageData}
-                                                width={64}
-                                                height={64}
-                                                gender={userPreview.gender}
-                                            />
-                                        </div>
-                                    ))}
+                            <button
+                                className="photo-count"
+                                onClick={togglePhotoPopover}
+                                ref={buttonRef}>
+                                <span className="count-value">{userPreview.numOfPhotos}</span>
+                                <Image className="camera-icon" width="20" height="20" alt="Camera" src="/images/camera.svg" />
+                            </button>
+                            {showPhotoPopover && innerWidth > 768 && (
+                                <div className="photo-popover" ref={popoverRef}>
+                                    <div className="photo-grid">
+                                        {userPreview.publicPhotos && userPreview.publicPhotos.map((photo: UserPhoto, index: number) => (
+                                            <div
+                                                key={index}
+                                                className="photo-grid-item"
+                                                onClick={() => openImageViewer(index)}>
+                                                <UserPhotoDisplay
+                                                    alt={`${userPreview.displayName}'s photo ${index + 1}`}
+                                                    shape="square"
+                                                    imageUrl={photo.path}
+                                                    croppedImageData={photo.croppedImageData}
+                                                    width={64}
+                                                    height={64}
+                                                    gender={userPreview.gender}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>}
+                            )}
+                        </div>}
                 </div>
                 <div className="controls-container">
                     <div className="more-options-container">
@@ -415,8 +415,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                         <div className="image-viewer-image-wrapper">
                             <div className="image-viewer-image-container">
                                 <img
-                                    src={userPreview.publicPhotos?.[currentImageIndex].croppedImageData?.croppedImagePath ||
-                                        userPreview.publicPhotos?.[currentImageIndex].path}
+                                    src={userPreview.publicPhotos?.[currentImageIndex].path}
                                     alt={`${userPreview.displayName}'s photo ${currentImageIndex + 1}`}
                                     className="image-viewer-image"
                                 />

@@ -10,7 +10,7 @@ import { useCurrentUser } from '../context/current-user-context';
 import { userProfileLink, showAlert } from '@/util';
 import _ from 'lodash';
 import { Subject, Subscription, fromEvent } from 'rxjs';
-import { debounceTime, filter, tap } from 'rxjs/operators';
+import { debounceTime, filter } from 'rxjs/operators';
 import { NotificationCenterData } from '@/types/notification-center-data.interface';
 import {
     loadNotificationCenterData,
@@ -116,7 +116,9 @@ export default function NotificationCenter() {
     };
 
     const notificationDataFetchTrigger$ = useMemo(() => new Subject<{ showLoader?: boolean }>(), []);
+    const userMainPhotoFetchTrigger$ = useMemo(() => new Subject<void>(), []);
     const notificationDataFetchSubRef = useRef<Subscription | null>(null);
+    const userMainPhotoFetchSubRef = useRef<Subscription | null>(null);
 
     // Trigger that we will use to debounce data fetch requests
     useEffect(() => {
@@ -135,6 +137,23 @@ export default function NotificationCenter() {
             notificationDataFetchSubRef.current = null;
         };
     }, [fetchNotificationCenterData, notificationDataFetchTrigger$]);
+
+    useEffect(() => {
+        if (!fetchUserMainPhoto) return;
+
+        userMainPhotoFetchSubRef.current = userMainPhotoFetchTrigger$
+            .pipe(debounceTime(150))
+            .subscribe(() => {
+                fetchUserMainPhoto().catch(err => {
+                    console.error('Error fetching user main photo:', err);
+                });
+            });
+
+        return () => {
+            userMainPhotoFetchSubRef.current?.unsubscribe();
+            userMainPhotoFetchSubRef.current = null;
+        };
+    }, [fetchUserMainPhoto, userMainPhotoFetchTrigger$]);
 
     // Real-time websocket notification handlers (these are debounced to avoid flooding the UI)
     useEffect(() => {
@@ -160,7 +179,7 @@ export default function NotificationCenter() {
 
         const handleRealTimeAccountEvents = (data: WebSocketMessage) => {
             if (data.eventLabel === 'account:message') {
-                fetchUserMainPhoto();
+                userMainPhotoFetchTrigger$.next();
 
                 // Skip notification center reload for photo approval events when on the photo management page
                 if (data.payload?.noticeType &&
@@ -229,6 +248,7 @@ export default function NotificationCenter() {
         const refreshPhotoSubscription = fromEvent(window, 'refresh-user-profile-main-photo')
             .pipe(debounceTime(debounceMs))
             .subscribe(() => {
+                userMainPhotoFetchTrigger$.next();
                 notificationDataFetchTrigger$.next({ showLoader: false });
             });
 

@@ -47,10 +47,23 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
     }
   }, [currentUser]);
 
-  // Event listener for user profile main photo refresh
   useEffect(() => {
-      refetchUserMainPhoto();
+    refetchUserMainPhoto();
   }, []);
+
+  // Listen for photo update events
+  useEffect(() => {
+    const handlePhotoRefresh = () => {
+      console.log('Refetching user main photo');
+      refetchUserMainPhoto();
+    };
+
+    window.addEventListener('refresh-user-profile-main-photo', handlePhotoRefresh);
+
+    return () => {
+      window.removeEventListener('refresh-user-profile-main-photo', handlePhotoRefresh);
+    };
+  }, [refetchUserMainPhoto]);
 
   const handleToggleOnlineStatus = async (e: React.ChangeEvent<HTMLInputElement>) => {
     // Prevent event bubbling to avoid closing the popover
@@ -120,14 +133,14 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
         <Link href="/profile" className="menu-item" onClick={handleSelectionMade}>
           <div className="icon">
             <Image
-                width={35}
-                height={35}
-                style={{ scale: 1.5 }}
-                src="/images/user.svg"
-                alt="Profile Settings"
+              width={35}
+              height={35}
+              style={{ scale: 1.5 }}
+              src="/images/user.svg"
+              alt="Edit Profile"
             />
           </div>
-          <div className="label">Profile Settings</div>
+          <div className="label">Edit Profile</div>
         </Link>
         <Link href="/account/settings" className="menu-item" onClick={handleSelectionMade}>
           <div className="icon">
@@ -144,11 +157,11 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
         <Link href="/support" className="menu-item" onClick={handleSelectionMade}>
           <div className="icon">
             <Image
-                width={45}
-                height={45}
-                style={{ scale: 1.3 }}
-                src="/images/help.svg"
-                alt="Help Center"
+              width={45}
+              height={45}
+              style={{ scale: 1.3 }}
+              src="/images/help.svg"
+              alt="Help Center"
             />
           </div>
           <div className="label">Support Center</div>

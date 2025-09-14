@@ -551,7 +551,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                             </a>
                                         ))}
                                         {!userProfile.user.publicPhotos?.length &&
-                                            <div className="no-photos-caption"><InfoCircleIcon size={'lg'}/> No photos available, or they are awaiting approval.</div>}
+                                            <div className="no-photos-caption"><InfoCircleIcon size={'lg'} /> No photos available, or they are awaiting approval.</div>}
                                     </div>
                                 </div>
 
@@ -603,8 +603,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                             <div className="image-viewer-image-wrapper">
                                 <div className="image-viewer-image-container">
                                     <img
-                                        src={userProfile.user.publicPhotos[currentImageIndex].croppedImageData?.croppedImagePath ||
-                                            userProfile.user.publicPhotos[currentImageIndex].path}
+                                        src={userProfile.user.publicPhotos[currentImageIndex].path}
                                         alt={`${userProfile.user.displayName}'s photo ${currentImageIndex + 1}`}
                                         className="image-viewer-image"
                                     />

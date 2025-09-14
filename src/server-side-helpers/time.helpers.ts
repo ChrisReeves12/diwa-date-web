@@ -48,7 +48,7 @@ export function humanizeTimeDiff(date?: Date | string): string {
 
     // If exactly now, return 'just now'
     if (diffInSeconds === 0) {
-        return "just now";
+        return "Just now";
     }
 
     const isPast = diffInSeconds > 0;
@@ -74,5 +74,5 @@ export function humanizeTimeDiff(date?: Date | string): string {
         }
     }
 
-    return "just now";
+    return "Just now";
 }
