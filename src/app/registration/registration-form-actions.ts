@@ -157,7 +157,7 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
                 startDate,
                 startDate,
                 startDate,
-                null // endsAt is NULL
+                null
               ]
             );
 

@@ -296,7 +296,10 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         }
 
         // Review profile bio (only for 'content' or 'full' review types)
-        if ((reviewType === 'content' || reviewType === 'full') && user.bio && user.bio.trim().length > 0) {
+        // Check if bio review is enabled via feature flag
+        const isBioReviewEnabled = process.env.ENABLE_USER_BIO_REVIEW?.toLowerCase() === 'true';
+
+        if (isBioReviewEnabled && (reviewType === 'content' || reviewType === 'full') && user.bio && user.bio.trim().length > 0) {
             try {
                 const moderationResponse = await axiosInstance
                     .post(`${process.env.PROFILE_API_TOOLS_URL}/moderate`, {
@@ -355,7 +358,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 }
             } catch (moderationError) {
                 console.error(`Bio moderation API error for user ${userId}:`, moderationError);
-                // Continue processing - don't fail the entire review if moderation API is unavailable
+                Sentry.logger.error('Error during bio moderation API call:', { error: moderationError });
             }
         }
 
