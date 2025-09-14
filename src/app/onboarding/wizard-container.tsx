@@ -34,35 +34,27 @@ export interface WizardData {
 
 // Function to determine which step the user should start on based on currentOnboardingSteps
 const determineStartingStep = (user: User): number => {
-    console.log('🔍 DEBUG: determineStartingStep - Full user object:', user);
-    console.log('🔍 DEBUG: currentOnboardingSteps field:', user.currentOnboardingSteps);
-    console.log('🔍 DEBUG: currentOnboardingSteps type:', typeof user.currentOnboardingSteps);
 
     // Handle case where currentOnboardingSteps might be a string that needs parsing
     let onboardingSteps = user.currentOnboardingSteps;
     if (typeof onboardingSteps === 'string') {
         try {
             onboardingSteps = JSON.parse(onboardingSteps);
-            console.log('🔍 DEBUG: Parsed string to object:', onboardingSteps);
         } catch (e) {
-            console.log('🔍 DEBUG: Failed to parse currentOnboardingSteps string:', e);
             onboardingSteps = undefined;
         }
     }
 
     if (onboardingSteps?.currentStep) {
-        console.log('🔍 DEBUG: Found currentStep:', onboardingSteps.currentStep);
         return onboardingSteps.currentStep;
     }
 
-    console.log('🔍 DEBUG: No currentStep found, defaulting to step 1');
     // Default to step 1 if no onboarding progress is saved
     return 1;
 };
 
 // Function to initialize validation state based on completed steps
 const initializeValidationState = (user: User): Record<number, boolean> => {
-    console.log('🔍 DEBUG: initializeValidationState - currentOnboardingSteps:', user.currentOnboardingSteps);
 
     const validation: Record<number, boolean> = {};
 
@@ -76,24 +68,18 @@ const initializeValidationState = (user: User): Record<number, boolean> => {
     if (typeof onboardingSteps === 'string') {
         try {
             onboardingSteps = JSON.parse(onboardingSteps);
-            console.log('🔍 DEBUG: Parsed string to object in initializeValidationState:', onboardingSteps);
         } catch (e) {
-            console.log('🔍 DEBUG: Failed to parse currentOnboardingSteps string in initializeValidationState:', e);
             onboardingSteps = undefined;
         }
     }
 
     // Mark completed steps as valid based on currentOnboardingSteps
     if (onboardingSteps?.completedSteps) {
-        console.log('🔍 DEBUG: Found completedSteps:', onboardingSteps.completedSteps);
         onboardingSteps.completedSteps.forEach(step => {
             validation[step] = true;
         });
-    } else {
-        console.log('🔍 DEBUG: No completedSteps found');
     }
 
-    console.log('🔍 DEBUG: Final validation state:', validation);
     return validation;
 };
 

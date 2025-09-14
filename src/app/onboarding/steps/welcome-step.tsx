@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { WizardData } from '../wizard-container';
 import { InfoCircleIcon, InfoIcon } from 'react-line-awesome';
+import Image from 'next/image';
 
 interface WelcomeStepProps {
     data: WizardData;
@@ -30,7 +31,13 @@ export function WelcomeStep({ data, updateData, onValidationChange }: WelcomeSte
     return (
         <div className="wizard-step welcome-step">
             <div className="logo-container">
-                <img src="/images/blue_background_icon_logo.png" alt="Diwa Date" />
+                <Image
+                    src="/images/logo_square_bkg.svg"
+                    alt="Logo"
+                    width={90}
+                    height={90}
+                    priority
+                />
             </div>
             <div className="step-header">
                 <h2>Welcome to Diwa Date</h2>
@@ -59,7 +66,7 @@ export function WelcomeStep({ data, updateData, onValidationChange }: WelcomeSte
                             value={displayName}
                             onChange={handleDisplayNameChange}
                             placeholder="Enter your display name"
-                            className={`form-input ${displayName.trim().length > 0 && displayName.trim().length < 2 ? 'error' : ''}`}
+                            className={`form-input ${displayName.trim().length > 0 && displayName.trim().length < 2 ? 'error' : ''} responsive-input`}
                             maxLength={20}
                         />
                         {displayName.trim().length > 0 && displayName.trim().length < 2 && (
