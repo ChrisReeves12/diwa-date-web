@@ -54,6 +54,7 @@ type UserForProfileDetail = Pick<User,
     | "lastActiveAt"
     | "hideOnlineStatus"
     | "isPremium"
+    | "isFoundingMember"
 >
 
 type DbLike = {
