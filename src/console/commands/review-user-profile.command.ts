@@ -13,6 +13,7 @@ import { UserPhoto } from "@/types";
 import ssim from 'ssim.js';
 import sharp from 'sharp';
 import { emitAccountMessage } from "@/server-side-helpers/notification-emitter.helper";
+import * as Sentry from '@sentry/nextjs';
 
 const axiosInstance = axios.create({
     httpAgent: new http.Agent({ keepAlive: true, maxSockets: 100 }),
@@ -75,6 +76,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
 
             if (result?.error) {
                 console.error(result.error);
+                Sentry.logger.error('Error during user reviews polling job:', { error: result.error });
                 return 1;
             }
 

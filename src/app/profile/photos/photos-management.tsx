@@ -25,7 +25,7 @@ import {
 import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { useWebSocket } from '@/hooks/use-websocket';
 
-function SortablePhotoItem({photoWithUrl, onClick, onDelete}: {
+function SortablePhotoItem({ photoWithUrl, onClick, onDelete }: {
     photoWithUrl: PhotoWithUrl,
     onClick: (e: React.MouseEvent) => void,
     onDelete: (e: React.MouseEvent) => void
@@ -36,7 +36,7 @@ function SortablePhotoItem({photoWithUrl, onClick, onDelete}: {
         setNodeRef,
         transform,
         transition,
-    } = useSortable({id: photoWithUrl.path});
+    } = useSortable({ id: photoWithUrl.path });
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -45,19 +45,19 @@ function SortablePhotoItem({photoWithUrl, onClick, onDelete}: {
 
     return (
         <div ref={setNodeRef}
-             style={style}
-             className={"photo-grid-item" + (photoWithUrl.isRejected ? " rejected" : "") + (photoWithUrl.isUnderReview && !photoWithUrl.isRejected ? " under-review" : "")}
-             onClick={photoWithUrl.isRejected ? undefined : onClick}
-             {...attributes}
-             {...listeners}>
-            <div className="photo-display-container" style={{backgroundImage: `url('${photoWithUrl.croppedImageUrl || photoWithUrl.url}')`}}></div>
+            style={style}
+            className={"photo-grid-item" + (photoWithUrl.isRejected ? " rejected" : "") + (photoWithUrl.isUnderReview && !photoWithUrl.isRejected ? " under-review" : "")}
+            onClick={photoWithUrl.isRejected ? undefined : onClick}
+            {...attributes}
+            {...listeners}>
+            <div className="photo-display-container" style={{ backgroundImage: `url('${photoWithUrl.croppedImageUrl || photoWithUrl.url}')` }}></div>
             <button onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
 
                 onDelete(e);
             }} className="delete-button">
-                <TimesIcon/>
+                <TimesIcon />
             </button>
             {photoWithUrl.isRejected && <div className="under-review-label">Not Approved</div>}
             {photoWithUrl.isUnderReview && !photoWithUrl.isRejected && <div className="under-review-label">Under Review</div>}
@@ -89,18 +89,18 @@ export function PhotosManagement() {
     const sortTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
     // Cropping state
-    const [cropArea, setCropArea] = useState<CropArea>({x: 0, y: 0, width: 200, height: 200});
+    const [cropArea, setCropArea] = useState<CropArea>({ x: 0, y: 0, width: 200, height: 200 });
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
     const [isSorting, setIsSorting] = useState(false);
-    const [dragStart, setDragStart] = useState({x: 0, y: 0});
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [resizeHandle, setResizeHandle] = useState('');
-    const [imageSize, setImageSize] = useState({width: 0, height: 0});
-    const [imageOffset, setImageOffset] = useState({x: 0, y: 0});
+    const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+    const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 });
     const [captionText, setCaptionText] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
+    const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
     const [isDeleting, setIsDeleting] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const imageRef = useRef<HTMLImageElement>(null);
@@ -191,7 +191,7 @@ export function PhotosManagement() {
     };
 
     const handleDragEnd = (e: any) => {
-        const {active, over} = e;
+        const { active, over } = e;
 
         if (active.id !== over.id) {
             setPhotos((aPhotos) => {
@@ -289,8 +289,8 @@ export function PhotosManagement() {
         const offsetX = (containerWidth - displayWidth) / 2;
         const offsetY = (containerHeight - displayHeight) / 2;
 
-        setImageSize({width: displayWidth, height: displayHeight});
-        setImageOffset({x: offsetX, y: offsetY});
+        setImageSize({ width: displayWidth, height: displayHeight });
+        setImageOffset({ x: offsetX, y: offsetY });
 
         // Initialize crop area
         if (imageBeingEdited?.croppedImageData) {
@@ -337,7 +337,7 @@ export function PhotosManagement() {
             setIsDragging(true);
         }
 
-        setDragStart({x: x - cropArea.x, y: y - cropArea.y});
+        setDragStart({ x: x - cropArea.x, y: y - cropArea.y });
     }, [cropArea]);
 
     const handlePointerMove = useCallback((e: React.PointerEvent) => {
@@ -354,10 +354,10 @@ export function PhotosManagement() {
             const newX = Math.max(imageOffset.x, Math.min(x - dragStart.x, imageOffset.x + imageSize.width - cropArea.width));
             const newY = Math.max(imageOffset.y, Math.min(y - dragStart.y, imageOffset.y + imageSize.height - cropArea.height));
 
-            setCropArea(prev => ({...prev, x: newX, y: newY}));
+            setCropArea(prev => ({ ...prev, x: newX, y: newY }));
         } else if (isResizing) {
             // Resize crop area
-            const newCropArea = {...cropArea};
+            const newCropArea = { ...cropArea };
             const minSize = 50;
 
             switch (resizeHandle) {
@@ -436,23 +436,23 @@ export function PhotosManagement() {
                 // Update local state to show crop has been applied
                 setPhotos(prevPhotos =>
                     prevPhotos.map(photo => {
-                            if (photo.path === imageBeingEdited.path)
-                                return {
-                                    ...photo,
-                                    croppedImageData: {
-                                        x: result.cropData.x,
-                                        y: result.cropData.y,
-                                        width: result.cropData.width,
-                                        height: result.cropData.height,
-                                        croppedImagePath: result.croppedImageUrl!
-                                    },
-                                    caption: captionText,
-                                    croppedImageUrl: croppedImageUrlWithCacheBust,
-                                }
-                            else {
-                                return photo;
+                        if (photo.path === imageBeingEdited.path)
+                            return {
+                                ...photo,
+                                croppedImageData: {
+                                    x: result.cropData.x,
+                                    y: result.cropData.y,
+                                    width: result.cropData.width,
+                                    height: result.cropData.height,
+                                    croppedImagePath: result.croppedImageUrl!
+                                },
+                                caption: captionText,
+                                croppedImageUrl: croppedImageUrlWithCacheBust,
                             }
+                        else {
+                            return photo;
                         }
+                    }
                     )
                 );
 
@@ -471,9 +471,9 @@ export function PhotosManagement() {
 
     const handleCancelEdit = () => {
         setImageBeingEdited(undefined);
-        setCropArea({x: 0, y: 0, width: 200, height: 200});
-        setImageOffset({x: 0, y: 0});
-        setImageSize({width: 0, height: 0});
+        setCropArea({ x: 0, y: 0, width: 200, height: 200 });
+        setImageOffset({ x: 0, y: 0 });
+        setImageSize({ width: 0, height: 0 });
         setCaptionText('');
     };
 
@@ -674,12 +674,12 @@ export function PhotosManagement() {
         <>
             <div className="photos-management">
                 {isLoading && <div className="loader-container">
-                    <CircularProgress/>
+                    <CircularProgress />
                 </div>}
                 {!isLoading && !imageBeingEdited &&
                     <>
                         {photos.length === 0 &&
-                            <div className="no-photos-caption"><InfoCircleIcon/> You have no uploaded photos.</div>}
+                            <div className="no-photos-caption"><InfoCircleIcon /> You have no uploaded photos.</div>}
                         {photos.length > 0 &&
                             <div className="photo-grid-container">
                                 <DndContext
@@ -704,7 +704,7 @@ export function PhotosManagement() {
                         <div className="upload-controls-container">
                             <input
                                 multiple={true}
-                                style={{display: 'none'}}
+                                style={{ display: 'none' }}
                                 ref={fileInputRef}
                                 type="file"
                                 accept="image/*"
@@ -746,11 +746,11 @@ export function PhotosManagement() {
                 {!isLoading && !!imageBeingEdited && <div className="photo-editing-container">
                     <div className="back-button-container">
                         <button className="back-button" onClick={handleCancelEdit} disabled={isSaving}>
-                            <TimesIcon/>
+                            <TimesIcon />
                             <div className="label">Cancel</div>
                         </button>
                         <button className="save-button" onClick={handleSaveCrop} disabled={isSaving}>
-                            {isSaving ? <CircularProgress size={16} color="inherit"/> : <SaveIcon/>}
+                            {isSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
                             <div className="label">{isSaving ? 'Saving...' : 'Save'}</div>
                         </button>
                     </div>
@@ -794,25 +794,25 @@ export function PhotosManagement() {
                                 left: 0,
                                 right: 0,
                                 height: cropArea.y
-                            }}/>
+                            }} />
                             <div className="crop-dark" style={{
                                 top: cropArea.y + cropArea.height,
                                 left: 0,
                                 right: 0,
                                 bottom: 0
-                            }}/>
+                            }} />
                             <div className="crop-dark" style={{
                                 top: cropArea.y,
                                 left: 0,
                                 width: cropArea.x,
                                 height: cropArea.height
-                            }}/>
+                            }} />
                             <div className="crop-dark" style={{
                                 top: cropArea.y,
                                 left: cropArea.x + cropArea.width,
                                 right: 0,
                                 height: cropArea.height
-                            }}/>
+                            }} />
 
                             {/* Crop area with handles */}
                             <div
@@ -828,31 +828,31 @@ export function PhotosManagement() {
                             >
                                 {/* Corner handles */}
                                 <div className="crop-handle corner nw"
-                                     onPointerDown={(e) => handlePointerDown(e, 'nw')}/>
+                                    onPointerDown={(e) => handlePointerDown(e, 'nw')} />
                                 <div className="crop-handle corner ne"
-                                     onPointerDown={(e) => handlePointerDown(e, 'ne')}/>
+                                    onPointerDown={(e) => handlePointerDown(e, 'ne')} />
                                 <div className="crop-handle corner sw"
-                                     onPointerDown={(e) => handlePointerDown(e, 'sw')}/>
+                                    onPointerDown={(e) => handlePointerDown(e, 'sw')} />
                                 <div className="crop-handle corner se"
-                                     onPointerDown={(e) => handlePointerDown(e, 'se')}/>
+                                    onPointerDown={(e) => handlePointerDown(e, 'se')} />
 
                                 {/* Grid lines */}
                                 <div className="crop-grid">
-                                    <div className="grid-line horizontal" style={{top: '33.33%'}}/>
-                                    <div className="grid-line horizontal" style={{top: '66.66%'}}/>
-                                    <div className="grid-line vertical" style={{left: '33.33%'}}/>
-                                    <div className="grid-line vertical" style={{left: '66.66%'}}/>
+                                    <div className="grid-line horizontal" style={{ top: '33.33%' }} />
+                                    <div className="grid-line horizontal" style={{ top: '66.66%' }} />
+                                    <div className="grid-line vertical" style={{ left: '33.33%' }} />
+                                    <div className="grid-line vertical" style={{ left: '66.66%' }} />
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div className="crop-actions">
                         <button disabled={isSaving} className="preview-button" onClick={handlePreview}>
-                            <EyeIcon/> Preview
+                            <EyeIcon /> Preview
                         </button>
-                        <button className="reset-button" onClick={resetCrop} disabled={isSaving}>
+                        {/* <button className="reset-button" onClick={resetCrop} disabled={isSaving}>
                             <RedoIcon/> Reset Crop
-                        </button>
+                        </button> */}
                     </div>
                 </div>}
             </div>

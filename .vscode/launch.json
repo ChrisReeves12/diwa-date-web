@@ -22,7 +22,7 @@
         "${workspaceFolder}/node_modules/**"
       ],
       "args": [
-        "users:evaluate-subscriptions"
+        "users:review"
       ]
     }
   ]
