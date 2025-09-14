@@ -34,7 +34,7 @@ function createEmailTemplate(content: string): string {
             }
             .header {
                 background-color: ${primaryBlue};
-                padding: 30px 20px;
+                padding: 15px;
                 text-align: center;
             }
             .logo {
@@ -44,7 +44,7 @@ function createEmailTemplate(content: string): string {
                 margin: 0 auto;
             }
             .content {
-                padding: 40px 30px;
+                padding: 30px;
                 color: #333333;
                 font-size: 16px;
             }
@@ -122,7 +122,7 @@ function createEmailTemplate(content: string): string {
     <body>
         <div class="email-container">
             <div class="header">
-                <img src="${logoUrl}" alt="Diwa Date Logo" class="logo" />
+                <img width="250" src="${logoUrl}" alt="Diwa Date Logo" class="logo" />
             </div>
             <div class="content">
                 ${content}
