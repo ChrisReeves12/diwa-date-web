@@ -89,7 +89,7 @@ export function WizardContainer({ currentUser }: WizardContainerProps) {
     const [stepValidation, setStepValidation] = useState<Record<number, boolean>>(
         initializeValidationState(currentUser)
     );
-    const [showResumeNotice, setShowResumeNotice] = useState(startingStep > 1);
+    const [showResumeNotice, setShowResumeNotice] = useState(false);
     const [wizardData, setWizardData] = useState<WizardData>({
         displayName: currentUser.displayName || '',
         height: currentUser.height?.toString() || '',
@@ -109,15 +109,6 @@ export function WizardContainer({ currentUser }: WizardContainerProps) {
 
     const totalSteps = 5;
 
-    // Auto-hide resume notice after 8 seconds
-    useEffect(() => {
-        if (showResumeNotice) {
-            const timer = setTimeout(() => {
-                setShowResumeNotice(false);
-            }, 8000);
-            return () => clearTimeout(timer);
-        }
-    }, [showResumeNotice]);
 
     const updateWizardData = (field: keyof WizardData, value: any) => {
         setWizardData(prev => ({ ...prev, [field]: value }));
@@ -224,21 +215,6 @@ export function WizardContainer({ currentUser }: WizardContainerProps) {
                     completedSteps={stepValidation}
                 />
 
-                {showResumeNotice && (
-                    <div className="resume-notice">
-                        <div className="resume-icon">🔄</div>
-                        <div className="resume-text">
-                            Resuming from where you left off. You can navigate back to previous steps if needed.
-                        </div>
-                        <button
-                            onClick={() => setShowResumeNotice(false)}
-                            className="resume-close-btn"
-                            aria-label="Close notification"
-                        >
-                            ×
-                        </button>
-                    </div>
-                )}
 
                 <div className="wizard-step-content">
                     {renderCurrentStep()}

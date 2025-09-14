@@ -88,16 +88,6 @@ export function InterestsStep({ data, updateData, onValidationChange }: Interest
                     </div>
                 </div>
 
-                <div className="completion-notice">
-                    <div className="notice-icon">🎉</div>
-                    <div className="notice-text">
-                        <h3>Almost done!</h3>
-                        <p>
-                            You&apos;re about to complete your profile setup. Once you finish,
-                            your profile will be visible to other users and you can start connecting with amazing people!
-                        </p>
-                    </div>
-                </div>
             </div>
         </div>
     );

@@ -39,7 +39,6 @@ export async function saveWizardProgress(data: Partial<WizardData>) {
 
         return { success: true, message: 'Progress saved successfully' };
     } catch (error) {
-        console.error('Error saving wizard progress:', error);
         return { success: false, message: 'Failed to save progress' };
     }
 }
@@ -51,8 +50,6 @@ export async function updateOnboardingProgress(currentStep: number, completedSte
         return { success: false, message: 'User not authenticated' };
     }
 
-    console.log('🔍 DEBUG: updateOnboardingProgress called with:', { currentStep, completedSteps });
-
     try {
         const onboardingSteps = {
             currentStep,
@@ -60,18 +57,14 @@ export async function updateOnboardingProgress(currentStep: number, completedSte
             lastUpdated: new Date().toISOString()
         };
 
-        console.log('🔍 DEBUG: About to save onboarding steps:', onboardingSteps);
-
         // Use raw SQL to update the currentOnboardingSteps field
         await pgDbWritePool.query(
             'UPDATE users SET "currentOnboardingSteps" = $1, "updatedAt" = NOW() WHERE id = $2',
             [JSON.stringify(onboardingSteps), currentUser.id]
         );
 
-        console.log('✅ Onboarding progress saved successfully');
         return { success: true, message: 'Onboarding progress updated' };
     } catch (error) {
-        console.error('❌ Error updating onboarding progress:', error);
         return { success: false, message: 'Failed to update progress' };
     }
 }
@@ -124,7 +117,6 @@ export async function completeWizard(data: WizardData) {
 
         return { success: true, message: 'Profile completed successfully' };
     } catch (error) {
-        console.error('Error completing wizard:', error);
         return { success: false, message: 'Failed to complete profile' };
     }
 }

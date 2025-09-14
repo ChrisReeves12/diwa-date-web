@@ -41,7 +41,6 @@ export function WizardNavigation({
             // Redirect to home
             router.push('/');
         } catch (error) {
-            console.error('Error saving progress:', error);
             router.push('/');
         } finally {
             setIsSubmitting(false);
@@ -56,11 +55,9 @@ export function WizardNavigation({
                 if (result.success) {
                     router.push('/');
                 } else {
-                    console.error('Error completing wizard:', result.message);
                     // Could show error message to user here
                 }
             } catch (error) {
-                console.error('Error completing wizard:', error);
             } finally {
                 setIsSubmitting(false);
             }
