@@ -127,7 +127,7 @@ export function PersonalInformationForm({ currentUser }: PersonalInformationForm
 
         // Bio validation
         if (bio && (bio.length < 50 || bio.length > 3000)) {
-            newErrors.bio = 'About me must be between 50 and 3000 characters';
+            newErrors.bio = 'Bio must be between 50 and 3000 characters';
         }
 
         // Multi-select limits

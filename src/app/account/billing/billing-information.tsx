@@ -433,17 +433,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                     {successMessage}
                                 </div>
                             )}
-
-                            {/* Founding Member Notice */}
-                            {isFoundingMember && (
-                                <div className="founding-member-notice">
-                                    <div className="status-badge founding-member">
-                                        <CheckCircleIcon /> Founding Member
-                                    </div>
-                                    <p>As a founding member, you have lifetime premium access and do not need to provide billing information.</p>
-                                </div>
-                            )}
-
+                            
                             {/* Subscription Management Section */}
                             <div className="settings-section full-width membership-section">
                                 <h3>Premium Membership</h3>
@@ -907,9 +897,9 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                     </div>
                                 )}
                             </form>
-
-                            {/* Payment History Section */}
-                            <PaymentHistory />
+                            
+                            {!isFoundingMember && 
+                                <PaymentHistory />}
                         </div>
                     </div>
                 </div>
