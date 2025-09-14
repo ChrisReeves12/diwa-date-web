@@ -2,7 +2,19 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+First, copy the environment file and set up your environment variables:
+
+```bash
+cp env.example .env
+```
+
+Update the `.env` file with your configuration values, including:
+- Database credentials
+- AWS S3 configuration
+- Email service settings
+- API keys (OpenAI, Google Maps, IP2Location)
+
+Then, run the development server:
 
 ```bash
 npm run dev
