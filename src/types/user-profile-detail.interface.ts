@@ -10,6 +10,7 @@ export interface UserProfileDetail {
         | "gender"
         | "age"
         | "locationName"
+        | "isFoundingMember"
         | "bio"
         | "lastActiveAt"
         | "hideOnlineStatus"

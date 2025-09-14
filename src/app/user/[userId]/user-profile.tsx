@@ -446,7 +446,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                 <div className="user-basic-info-section">
                                     <div className="display-name-container">
                                         <h1 className="user-display-name">{userProfile.user.displayName}</h1>
-                                        {userProfile.user.isPremium && (
+                                        {userProfile.user.isPremium && !userProfile.user.isFoundingMember && (
                                             <div className="premium-badge" title="Premium Member">
                                                 <TrophyIcon />
                                             </div>
