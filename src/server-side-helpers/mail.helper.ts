@@ -8,7 +8,7 @@ import { log, logError } from "@/server-side-helpers/logging.helpers";
  * @returns HTML template string
  */
 function createEmailTemplate(content: string): string {
-    const logoUrl = `${process.env.APP_URL_ROOT}/images/full_logo_dark.png`;
+    const logoUrl = `${process.env.APP_URL_ROOT}/images/full_logo_dark.svg`;
     const primaryBlue = '#0092e4';
 
     return `
