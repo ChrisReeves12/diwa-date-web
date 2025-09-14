@@ -26,6 +26,7 @@ export interface User {
   hasChildren?: string;
   dateOfBirth: Date;
   lastActiveAt?: Date;
+  isFoundingMember: boolean;
   suspendedAt?: Date;
   emailVerifiedAt?: Date;
   suspendedReason?: string;

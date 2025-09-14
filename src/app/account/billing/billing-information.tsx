@@ -1,7 +1,6 @@
 'use client';
 
-import { User, UserPhoto } from "@/types";
-import { CroppedImageData } from "@/types/cropped-image-data.interface";
+import { User } from "@/types";
 import { CurrentUserProvider } from "@/common/context/current-user-context";
 import SiteWrapper from "@/common/site-wrapper/site-wrapper";
 import UserSubscriptionPlanDisplay from "@/common/user-subscription-plan-display/user-subscription-plan-display";
@@ -475,11 +474,12 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                                 )}
                                                             </div>
                                                         </div>
-                                                    ) : (
-                                                        /* Active subscription - show cancel option */
+                                                    ) : (!currentUser.isFoundingMember &&
                                                         <div className="active-subscription-info">
                                                             <p>Next billing date: <strong>{new Date(subscriptionDetails.nextPaymentAt).toLocaleDateString()}</strong></p>
-                                                            <p>Amount: <strong>${subscriptionDetails.price}/{subscriptionDetails.priceUnit === 'USD' ? 'month' : subscriptionDetails.priceUnit}</strong></p>
+                                                            {Number(subscriptionDetails.priceUnit) > 0 ?
+                                                                <p>Amount: <strong>${subscriptionDetails.price}/{subscriptionDetails.priceUnit === 'USD' ? 'month' : subscriptionDetails.priceUnit}</strong></p> :
+                                                                <p>Amount: <strong>Free</strong></p>}
 
                                                             <div className="cancel-actions">
                                                                 <button
