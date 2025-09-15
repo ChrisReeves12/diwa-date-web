@@ -27,15 +27,15 @@ async function isPostalCodeRequired(countryNameOrCode: string): Promise<boolean>
     if (countryNameOrCode.length === 2) {
         return isPostalCodeRequiredUtil(countryNameOrCode);
     }
-    
+
     // Otherwise, try to find the country code from the name
     const { countries } = await import('@/config/countries');
     const country = countries.find(c => c.name === countryNameOrCode);
-    
+
     if (country) {
         return isPostalCodeRequiredUtil(country.code);
     }
-    
+
     // Default to false if country not found
     return false;
 }
@@ -595,9 +595,23 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
             LIMIT 1
         `, [currentUser.id]);
 
-        const startDate = new Date();
-        const nextPaymentDate = new Date();
-        nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+        const startDate = moment().startOf('minute');
+
+        // Calculate next payment date (1 month from now)
+        const nextPaymentDate = moment(startDate)
+            .add(1, 'month')
+            .startOf('day')
+            .hours(startDate.hours())
+            .minutes(startDate.minutes());
+
+        // Handle end of month edge cases
+        if (startDate.date() !== nextPaymentDate.date()) {
+            nextPaymentDate.endOf('month');
+        }
+
+        // Convert to Date objects for database storage
+        const startDateObj = startDate.toDate();
+        const nextPaymentDateObj = nextPaymentDate.toDate();
 
         let enrollmentId: number;
 
@@ -621,9 +635,9 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
                 WHERE id = $10
             `, [
                 subscriptionPlanId,
-                startDate,
-                startDate,
-                nextPaymentDate,
+                startDateObj,
+                startDateObj,
+                nextPaymentDateObj,
                 subscriptionPlan.listPrice || 0,
                 'monthly',
                 subscriptionPlan.listPriceUnit || 'USD',
@@ -642,9 +656,9 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
             `, [
                 currentUser.id,
                 subscriptionPlanId,
-                startDate,
-                startDate,
-                nextPaymentDate,
+                startDateObj,
+                startDateObj,
+                nextPaymentDateObj,
                 subscriptionPlan.listPrice || 0,
                 'monthly',
                 subscriptionPlan.listPriceUnit || 'USD',
@@ -655,7 +669,7 @@ export async function enrollInSubscriptionPlan(subscriptionPlanId: number) {
 
             enrollmentId = insertedRows[0].id;
         }
-        
+
         await pgDbWritePool.query(`
             UPDATE "users" 
             SET "isPremium" = true, 
