@@ -25,20 +25,21 @@ import { muteUser, sendUserMatch, fetchCurrentUserMainPhotoUrl } from '../server
 import { useRouter, usePathname } from 'next/navigation';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { WebSocketMessage } from "../../../types/websocket-events.types";
+import { User } from '@/types';
 
 interface NewNotificationAnimation {
     [key: string]: boolean;
 }
 
-export default function NotificationCenter() {
-    const currentUser = useCurrentUser();
+export default function NotificationCenter({ currentUser }: { currentUser?: User }) {
+    const lCurrentUser = currentUser || useCurrentUser();
     const [notificationsData, setNotificationsData] = useState<NotificationCenterData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [newNotificationAnimations, setNewNotificationAnimations] = useState<NewNotificationAnimation>({});
     const [itemLoadingStates, setItemLoadingStates] = useState<{ [key: string]: boolean }>({});
-    const [userMainPhoto, setUserMainPhoto] = useState<string | undefined>(currentUser?.publicMainPhoto);
-    const [userMainPhotoCroppedImageData, setUserMainPhotoCroppedImageData] = useState<any>(currentUser?.mainPhotoCroppedImageData);
+    const [userMainPhoto, setUserMainPhoto] = useState<string | undefined>(lCurrentUser?.publicMainPhoto);
+    const [userMainPhotoCroppedImageData, setUserMainPhotoCroppedImageData] = useState<any>(lCurrentUser?.mainPhotoCroppedImageData);
     const popovers = useNotificationPopovers();
     const router = useRouter();
     const pathname = usePathname();
@@ -65,7 +66,7 @@ export default function NotificationCenter() {
     }, []);
 
     const fetchNotificationCenterData = useCallback(async (showLoader = false) => {
-        if (!currentUser) return;
+        if (!lCurrentUser) return;
 
         try {
             if (showLoader) {
@@ -73,7 +74,7 @@ export default function NotificationCenter() {
             }
 
             setError(null);
-            const data = await loadNotificationCenterData(currentUser);
+            const data = await loadNotificationCenterData(lCurrentUser);
             setNotificationsData(data);
         } catch (err) {
             console.error('Error refetching notification data:', err);
@@ -83,10 +84,10 @@ export default function NotificationCenter() {
                 setIsLoading(false);
             }
         }
-    }, [currentUser, setIsLoading, setError]);
+    }, [lCurrentUser, setIsLoading, setError]);
 
     const fetchUserMainPhoto = useCallback(async () => {
-        if (!currentUser) return;
+        if (!lCurrentUser) return;
 
         try {
             const photoData = await fetchCurrentUserMainPhotoUrl();
@@ -97,7 +98,7 @@ export default function NotificationCenter() {
         } catch (err) {
             console.error('Error refetching user main photo:', err);
         }
-    }, [currentUser]);
+    }, [lCurrentUser]);
 
     const handleMessagesClick = (e: React.MouseEvent<HTMLElement>) => {
         if (notificationsData?.receivedMessages?.length === 0) {
@@ -157,7 +158,7 @@ export default function NotificationCenter() {
 
     // Real-time websocket notification handlers (these are debounced to avoid flooding the UI)
     useEffect(() => {
-        if (!isConnected || !currentUser) return;
+        if (!isConnected || !lCurrentUser) return;
 
         const handleRealTimeMatchEvents = (data: WebSocketMessage) => {
             if (data.eventLabel === 'match:new') {
@@ -232,7 +233,7 @@ export default function NotificationCenter() {
             notificationTimeoutRefs.current.forEach(timeout => clearTimeout(timeout));
             notificationTimeoutRefs.current.clear();
         };
-    }, [isConnected, currentUser, on, fetchNotificationCenterData, pathname]);
+    }, [isConnected, lCurrentUser, on, fetchNotificationCenterData, pathname]);
 
     useEffect(() => {
         if (!fetchNotificationCenterData || !fetchUserMainPhoto) return;
@@ -261,18 +262,18 @@ export default function NotificationCenter() {
 
     // Initial data fetch
     useEffect(() => {
-        if (!currentUser) {
+        if (!lCurrentUser) {
             setIsLoading(false);
             return;
         }
 
         // Initialize user photo state when currentUser changes
-        setUserMainPhoto(currentUser.publicMainPhoto);
-        setUserMainPhotoCroppedImageData(currentUser.mainPhotoCroppedImageData);
+        setUserMainPhoto(lCurrentUser.publicMainPhoto);
+        setUserMainPhotoCroppedImageData(lCurrentUser.mainPhotoCroppedImageData);
         fetchNotificationCenterData(true);
     }, []);
 
-    if (!currentUser) {
+    if (!lCurrentUser) {
         return null;
     }
 
@@ -306,7 +307,7 @@ export default function NotificationCenter() {
                     onMessagesClick={handleMessagesClick}
                     onNotificationsClick={(e) => {
                         popovers.notifications.handleClick(e);
-                        markMatchNotificationsAsRead(currentUser, notificationsData?.receivedNotifications)
+                        markMatchNotificationsAsRead(lCurrentUser, notificationsData?.receivedNotifications)
                             .then((newNotificationCount: number) =>
                                 setNotificationsData({
                                     ...notificationsData,
@@ -332,11 +333,11 @@ export default function NotificationCenter() {
                             }
                         }}
                         className="profile-container">
-                        <UserPhotoDisplay gender={currentUser.gender}
+                        <UserPhotoDisplay gender={lCurrentUser.gender}
                             croppedImageData={userMainPhotoCroppedImageData}
                             imageUrl={userMainPhoto} />
                         <div className="profile-name-container">
-                            <h5>{currentUser.displayName}</h5>
+                            <h5>{lCurrentUser.displayName}</h5>
                             <h6>My Account</h6>
                         </div>
                     </button>
@@ -375,7 +376,7 @@ export default function NotificationCenter() {
                                     showAlert(result.error);
                                     return;
                                 }
-                                const aData = await loadNotificationCenterData(currentUser);
+                                const aData = await loadNotificationCenterData(lCurrentUser);
                                 setNotificationsData(aData);
                                 if (aData.pendingMatches?.length === 0) {
                                     popovers.likes.handleClose();
@@ -390,7 +391,7 @@ export default function NotificationCenter() {
                         setTimeout(async () => {
                             try {
                                 await muteUser(pendingMatch.sender.id);
-                                const aData = await loadNotificationCenterData(currentUser);
+                                const aData = await loadNotificationCenterData(lCurrentUser);
                                 setNotificationsData(aData);
                                 if (aData.pendingMatches?.length === 0) {
                                     popovers.likes.handleClose();
@@ -448,8 +449,8 @@ export default function NotificationCenter() {
                     type: "notifications",
                     onDelete: async (notificationId: string | number) => {
                         try {
-                            await deleteNotification(currentUser, notificationId as number);
-                            const updatedData = await loadNotificationCenterData(currentUser);
+                            await deleteNotification(lCurrentUser, notificationId as number);
+                            const updatedData = await loadNotificationCenterData(lCurrentUser);
                             setNotificationsData(updatedData);
                         } catch (error) {
                             console.error('Error deleting notification:', error);

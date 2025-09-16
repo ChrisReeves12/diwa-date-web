@@ -1,19 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import './site-top-bar.scss';
 import NotificationCenter from "@/common/notification-center/notification-center";
 import { useCurrentUser } from '../context/current-user-context';
-import { useWindowWidth } from "@/hooks/use-window-width";
+import { User } from '@/types';
+
 interface SiteTopBarProps {
     isLoginPage?: boolean;
     hideButtons?: boolean;
+    currentUser?: User;
 }
 
-export default function SiteTopBar({ isLoginPage = false, hideButtons = false }: SiteTopBarProps) {
-    const currentUser = useCurrentUser();
+export default function SiteTopBar({ isLoginPage = false, hideButtons = false, currentUser }: SiteTopBarProps) {
+    const lCurrentUser = currentUser || useCurrentUser();
     const pathname = usePathname();
 
     return (
@@ -32,7 +33,7 @@ export default function SiteTopBar({ isLoginPage = false, hideButtons = false }:
                                 />
                             </span>
                             <span className="dark">
-                               <img
+                                <img
                                     title="Diwa Date"
                                     alt="Logo"
                                     src="/images/full_logo_dark.svg"
@@ -43,8 +44,8 @@ export default function SiteTopBar({ isLoginPage = false, hideButtons = false }:
                         </span>
                     </Link>
                 </div>
-                {currentUser && <NotificationCenter />}
-                {!currentUser && !hideButtons &&
+                {lCurrentUser && <NotificationCenter currentUser={lCurrentUser} />}
+                {!lCurrentUser && !hideButtons &&
                     <div className="top-button-container">
 
                         {pathname !== '/registration' && pathname !== '/login' &&

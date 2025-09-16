@@ -66,7 +66,7 @@ export default function SupportCenterView({ currentUser }: SupportCenterViewProp
             <SiteWrapper>
                 <div className="support-container">
                     <h1>Support Center</h1>
-                    
+
                     {successMessage && (
                         <div className={`success-alert ${showSuccessAlert ? 'show' : ''}`}>
                             <div className="success-alert-content">
@@ -89,7 +89,14 @@ export default function SupportCenterView({ currentUser }: SupportCenterViewProp
 
                     <div className="support-form-section">
                         <p>Use the form below to submit a support request and we'll get back to you as soon as possible.</p>
-                        
+                        <div className="additional-links-section">
+                            <h3>Additional Links</h3>
+                            <ul>
+                                <li><a href="/privacy-policy">Privacy Policy</a></li>
+                                <li><a href="/terms-of-service">Terms of Service</a></li>
+                                <li><a href="/dating-safety">Dating Safety</a></li>
+                            </ul>
+                        </div>
                         <form onSubmit={handleSubmit} className="support-form">
                             <div className="form-section">
                                 <div className={`input-container ${errors.issueType ? 'error' : ''}`}>

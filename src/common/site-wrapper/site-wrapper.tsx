@@ -8,12 +8,15 @@ import InfoBar from '../site-info-bar/info-bar';
 import { Alert, Button } from '@mui/material';
 import Link from "next/link";
 import { useCurrentUser } from "@/common/context/current-user-context";
+import { User } from '@/types';
 
-export default function SiteWrapper({ children, hideButtons = false, hideFlashMessage = false }: { children: ReactNode, hideButtons?: boolean, hideFlashMessage?: boolean }) {
+export default function SiteWrapper({ children, hideButtons = false, hideFlashMessage = false, currentUser }:
+    { children: ReactNode, hideButtons?: boolean, hideFlashMessage?: boolean, currentUser?: User }) {
+
     const pathname = usePathname();
     const [alertMessage, setAlertMessage] = useState<string | null>(null);
     const [alertType, setAlertType] = useState<'success' | 'warning' | undefined>();
-    const currentUser = useCurrentUser();
+    const lCurrentUser = currentUser || useCurrentUser();
 
     const shouldHideInfoBar = (): boolean => {
         return pathname.startsWith('/profile') ||
@@ -54,7 +57,7 @@ export default function SiteWrapper({ children, hideButtons = false, hideFlashMe
     return (
         <div className={`site-wrapper ${!hideInfoBar ? 'info-bar-shown' : ''}`}>
             {!hideInfoBar && <InfoBar onHide={() => setHideInfoBar(true)} />}
-            <SiteTopBar hideButtons={hideButtons} />
+            <SiteTopBar hideButtons={hideButtons} currentUser={lCurrentUser} />
             {!hideFlashMessage && alertMessage && alertType &&
                 <div style={{ paddingTop: 30 }} className='container'>
                     <Alert
@@ -69,7 +72,7 @@ export default function SiteWrapper({ children, hideButtons = false, hideFlashMe
                     </Alert>
                 </div>}
             {children}
-            {!currentUser && <footer>
+            {!lCurrentUser && <footer>
                 <div className="logo-container">
                     <a href="/">
                         <img src="/images/full_logo_dark.svg" />

@@ -106,6 +106,35 @@
     .support-form-section {
         margin-top: 1.5rem;
 
+        p {
+            padding-top: 0;
+            margin-top: 0;
+        }
+
+        .additional-links-section {
+            padding-bottom: 30px;
+
+            h3 {
+                margin-top: 0;
+                margin-bottom: 0;
+                padding-bottom: 5px;
+                font-size: 17px;
+            }
+
+            ul {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+
+                li {
+                    a {
+                        color: globals.$primary-blue;
+                        text-decoration: none;
+                    }
+                }
+            }
+        }
+
         .support-form {
             .form-section {
                 margin-bottom: 2rem;
