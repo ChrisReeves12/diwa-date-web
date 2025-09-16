@@ -297,7 +297,7 @@ export default function RegistrationForm() {
                     onClick={() => setTermsAccepted(!termsAccepted)}
                   ></div>
                   <div className="caption">
-                    I agree to the <a href="/terms-of-service" target="_blank">Terms of Service</a> and <a href="/privacy-policy" target="_blank">Privacy Policy</a>
+                    I agree to the <a href="/terms-of-service" target="_blank">Terms of Service</a> and <a href="/community-guidelines" target="_blank">Community Guidelines</a>
                   </div>
                   {errors.terms && formSubmitted && (
                     <div className="error-message">{errors.terms}</div>
@@ -328,7 +328,8 @@ export default function RegistrationForm() {
               </div>
             </form>
           </div>
-          <div style={{backgroundImage: `url('${process.env.NEXT_PUBLIC_IMAGE_ROOT || ''}/images/registration_photo1.webp')`}} className="image-container"></div>
+          <div style={{ backgroundImage: `url('${process.env.NEXT_PUBLIC_IMAGE_ROOT || ''}/images/registration_photo1.webp')` }}
+            className="image-container"></div>
         </div>
       </div>
     </div>

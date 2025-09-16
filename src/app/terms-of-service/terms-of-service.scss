@@ -6,6 +6,15 @@
     margin: 0 auto;
     min-height: 90vh;
 
+    a {
+        color: globals.$primary-blue;
+        text-decoration: none;
+
+        @include globals.dark-mode {
+            color: globals.$primary-blue-dark;
+        }
+    }
+
     h1 {
         font-family: "Nunito Sans", sans-serif;
         font-size: 2rem;

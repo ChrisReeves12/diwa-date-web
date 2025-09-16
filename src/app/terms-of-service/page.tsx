@@ -154,12 +154,12 @@ export default async function TermsOfServicePage() {
 
                     <section>
                         <h3>6.2 Content Moderation</h3>
-                        <p>We employ both AI-driven and human content moderation to review photos, profiles, and may review messages between users to ensure compliance with our community guidelines.</p>
+                        <p>We employ both AI-driven and human content moderation to review photos, profiles, and may review messages between users to ensure compliance with our <a href="/community-guidelines">Community Guidelines</a>.</p>
                     </section>
 
                     <section>
                         <h3>6.3 Consequences of Violations</h3>
-                        <p>Users who violate our Terms or community guidelines may face immediate suspension or account deletion without warning, consent, or explanation. We reserve the right to determine violations at our sole discretion.</p>
+                        <p>Users who violate our Terms or <a href="/community-guidelines">Community Guidelines</a> may face immediate suspension or account deletion without warning, consent, or explanation. We reserve the right to determine violations at our sole discretion.</p>
                     </section>
 
                     <section>
