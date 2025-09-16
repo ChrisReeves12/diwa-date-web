@@ -348,7 +348,7 @@ export default function NotificationCenter({ currentUser }: { currentUser?: User
                 anchorEl={profileButtonRef.current}
                 onClose={popovers.profileUser.handleClose}
                 open={popovers.profileUser.isOpen}>
-                <UserProfileAccountMenu onSelectionMade={popovers.profileUser.handleClose} />
+                <UserProfileAccountMenu onSelectionMade={popovers.profileUser.handleClose} currentUser={lCurrentUser} />
             </Popover>
 
             <NotificationPopover

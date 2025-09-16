@@ -12,21 +12,23 @@ import { fetchCurrentUserMainPhotoUrl } from '@/common/server-actions/user-profi
 import { isUserOnline } from '@/helpers/user.helpers';
 import { showAlert } from '@/util';
 import { Switch } from '@mui/material';
+import { User } from '@/types';
 
 interface UserProfileAccountMenuProps {
   onSelectionMade?: () => void;
+  currentUser?: User;
 }
 
-export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileAccountMenuProps) {
-  const currentUser = useCurrentUser();
-  const [isOnline, setIsOnline] = useState(currentUser?.lastActiveAt ? isUserOnline(currentUser.lastActiveAt, currentUser.hideOnlineStatus) : false);
-  const [hideOnlineStatus, setHideOnlineStatus] = useState(currentUser?.hideOnlineStatus || false);
-  const [userMainPhoto, setUserMainPhoto] = useState<string | undefined>(currentUser?.publicMainPhoto);
-  const [userMainPhotoCroppedImageData, setUserMainPhotoCroppedImageData] = useState<any>(currentUser?.mainPhotoCroppedImageData);
+export default function UserProfileAccountMenu({ onSelectionMade, currentUser }: UserProfileAccountMenuProps) {
+  const lCurrentUser = currentUser || useCurrentUser();
+  const [isOnline, setIsOnline] = useState(lCurrentUser?.lastActiveAt ? isUserOnline(lCurrentUser.lastActiveAt, lCurrentUser.hideOnlineStatus) : false);
+  const [hideOnlineStatus, setHideOnlineStatus] = useState(lCurrentUser?.hideOnlineStatus || false);
+  const [userMainPhoto, setUserMainPhoto] = useState<string | undefined>(lCurrentUser?.publicMainPhoto);
+  const [userMainPhotoCroppedImageData, setUserMainPhotoCroppedImageData] = useState<any>(lCurrentUser?.mainPhotoCroppedImageData);
 
   // Refetch user main photo data from server
   const refetchUserMainPhoto = useCallback(async () => {
-    if (!currentUser) return;
+    if (!lCurrentUser) return;
 
     try {
       const photoData = await fetchCurrentUserMainPhotoUrl();
@@ -37,15 +39,15 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
     } catch (err) {
       console.error('Error refetching user main photo:', err);
     }
-  }, [currentUser]);
+  }, [lCurrentUser]);
 
   // Initialize user photo state when currentUser changes
   useEffect(() => {
-    if (currentUser) {
-      setUserMainPhoto(currentUser.publicMainPhoto);
-      setUserMainPhotoCroppedImageData(currentUser.mainPhotoCroppedImageData);
+    if (lCurrentUser) {
+      setUserMainPhoto(lCurrentUser.publicMainPhoto);
+      setUserMainPhotoCroppedImageData(lCurrentUser.mainPhotoCroppedImageData);
     }
-  }, [currentUser]);
+  }, [lCurrentUser]);
 
   useEffect(() => {
     refetchUserMainPhoto();
@@ -66,13 +68,12 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
   }, [refetchUserMainPhoto]);
 
   const handleToggleOnlineStatus = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Prevent event bubbling to avoid closing the popover
     e.stopPropagation();
 
     const newHideOnlineStatus = !e.target.checked;
     setHideOnlineStatus(newHideOnlineStatus);
     await toggleOnlineStatus(newHideOnlineStatus);
-    setIsOnline(currentUser?.lastActiveAt ? isUserOnline(currentUser.lastActiveAt, newHideOnlineStatus) : false);
+    setIsOnline(lCurrentUser?.lastActiveAt ? isUserOnline(lCurrentUser.lastActiveAt, newHideOnlineStatus) : false);
   };
 
   const handleSelectionMade = () => {
@@ -97,22 +98,22 @@ export default function UserProfileAccountMenu({ onSelectionMade }: UserProfileA
     }
   };
 
-  if (!currentUser) return null;
+  if (!lCurrentUser) return null;
 
   return (
     <div className="user-profile-account-menu-container">
-      {currentUser && (
+      {lCurrentUser && (
         <div className="profile-photo-name-section">
-          <Link href={`/user/${currentUser.id}`} onClick={handleSelectionMade}>
+          <Link href={`/user/${lCurrentUser.id}`} onClick={handleSelectionMade}>
             <UserPhotoDisplay
-              gender={currentUser.gender}
-              alt={currentUser.displayName}
+              gender={lCurrentUser.gender}
+              alt={lCurrentUser.displayName}
               croppedImageData={userMainPhotoCroppedImageData}
               imageUrl={userMainPhoto}
             />
           </Link>
           <div className="name-online-status-section">
-            <h5>{currentUser.displayName}</h5>
+            <h5>{lCurrentUser.displayName}</h5>
             <div className="online-status">
               <div className="online-lamp-section">
                 <div className={`online-lamp ${!hideOnlineStatus ? 'online' : 'offline'}`}></div>

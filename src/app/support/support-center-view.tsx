@@ -94,7 +94,7 @@ export default function SupportCenterView({ currentUser }: SupportCenterViewProp
                             <ul>
                                 <li><a href="/privacy-policy">Privacy Policy</a></li>
                                 <li><a href="/terms-of-service">Terms of Service</a></li>
-                                <li><a href="/dating-safety">Dating Safety</a></li>
+                                <li><a href="/community-guidelines">Community Guidelines</a></li>
                             </ul>
                         </div>
                         <form onSubmit={handleSubmit} className="support-form">
