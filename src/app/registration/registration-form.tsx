@@ -9,6 +9,7 @@ import { Locality } from "@/types/locality.interface";
 import LocationSearch from "@/common/location-search/location-search";
 import MuiDatePicker from '@/common/mui-date-picker/mui-date-picker';
 import { registerAction } from './registration-form-actions';
+import { CircularProgress } from '@mui/material';
 
 export default function RegistrationForm() {
   const router = useRouter();
@@ -114,6 +115,10 @@ export default function RegistrationForm() {
   };
 
   const handleSubmit = async (formData: FormData) => {
+    if (isLoading) {
+      return;
+    }
+
     setFormSubmitted(true);
 
     // Return early if terms aren't accepted
@@ -141,10 +146,10 @@ export default function RegistrationForm() {
         formData.set('seekingGender', seekingGender);
         formData.set('termsAccepted', termsAccepted.toString());
         formData.set('timezone', timezone);
-  
+
         // Call the server action
         const result = await registerAction(formData);
-  
+
         if (result.success) {
           router.push('/onboarding');
         } else {
@@ -318,14 +323,14 @@ export default function RegistrationForm() {
                   <button
                     className="btn-primary"
                     type="submit"
-                    disabled={isLoading || !termsAccepted}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
                     title={!termsAccepted ? 'You must accept the terms of service' : ''}
                   >
-                    Create Account
+                    {isLoading && <div className="loader">
+                      <CircularProgress size={20} sx={{ color: "white" }} />
+                    </div>}
+                    <span>Create Account</span>
                   </button>
-                  <div className={`loader ${isLoading ? 'is-loading' : ''}`}>
-                    <i className="fa fa-spinner"></i>
-                  </div>
                 </div>
               </div>
             </form>
