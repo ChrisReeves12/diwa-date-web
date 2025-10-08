@@ -128,37 +128,39 @@ export default function RegistrationForm() {
 
     setIsLoading(true);
 
-    try {
-      // Add form data fields
-      formData.set('firstName', firstName);
-      formData.set('lastName', lastName);
-      formData.set('email', email);
-      formData.set('password', password);
-      formData.set('dateOfBirth', dateOfBirth);
-      formData.set('location', JSON.stringify(selectedLocation));
-      formData.set('userGender', userGender);
-      formData.set('seekingGender', seekingGender);
-      formData.set('termsAccepted', termsAccepted.toString());
-      formData.set('timezone', timezone);
-
-      // Call the server action
-      const result = await registerAction(formData);
-
-      if (result.success) {
-        router.push('/onboarding');
-      } else {
-        if (result.errors) {
-          setErrors(result.errors);
+    setTimeout(async () => {
+      try {
+        // Add form data fields
+        formData.set('firstName', firstName);
+        formData.set('lastName', lastName);
+        formData.set('email', email);
+        formData.set('password', password);
+        formData.set('dateOfBirth', dateOfBirth);
+        formData.set('location', JSON.stringify(selectedLocation));
+        formData.set('userGender', userGender);
+        formData.set('seekingGender', seekingGender);
+        formData.set('termsAccepted', termsAccepted.toString());
+        formData.set('timezone', timezone);
+  
+        // Call the server action
+        const result = await registerAction(formData);
+  
+        if (result.success) {
+          router.push('/onboarding');
         } else {
-          setErrors({ form: result.message || 'Registration failed' });
+          if (result.errors) {
+            setErrors(result.errors);
+          } else {
+            setErrors({ form: result.message || 'Registration failed' });
+          }
         }
+      } catch (error) {
+        console.error('Registration error:', error);
+        setErrors({ form: 'An unexpected error occurred' });
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Registration error:', error);
-      setErrors({ form: 'An unexpected error occurred' });
-    } finally {
-      setIsLoading(false);
-    }
+    }, 500);
   };
 
   return (
