@@ -26,7 +26,7 @@ export default function InfoBar({ onHide }: { onHide?: () => void }) {
     const handleResendVerificationEmail = async () => {
         try {
             setIsLoading(true);
-            await resendVerificationEmail(currentUser.id);
+            await resendVerificationEmail(currentUser.id, currentUser.email, currentUser.firstName, currentUser.lastName);
             showAlert('Your verification email has been resent.');
         } catch (e) {
             showAlert('An error occurred while re-sending verification email.');
