@@ -1308,21 +1308,12 @@ export async function getFullUserProfile(userId: number, currentUserId: number):
 /**
  * Sends a verification email to the user's email address on file.
  * @param userId The user's ID
+ * @param email The user's email address
  * @returns True if the email was sent, false otherwise
  */
-export async function sendVerificationEmailToUser(userId: number): Promise<boolean> {
-    // Get the user from the database
-    const user = await prismaRead.users.findUnique({
-        where: { id: userId }
-    });
-
-    if (!user || !user.email) {
-        return false;
-    }
-
-    // Generate a verification token
+export async function sendVerificationEmailToUser(userId: number, email: string, firstName: string, lastName: string): Promise<boolean> {
     const token = generateCryptoRandomString(32);
-    // Store the token and expiry in the database
+    
     await pgDbWritePool.query(
         `UPDATE users 
          SET "emailVerificationToken" = $1,
@@ -1335,7 +1326,7 @@ export async function sendVerificationEmailToUser(userId: number): Promise<boole
     // Email content
     const content = `
         <h1>Email Verification</h1>
-        <p>Hi ${user.firstName}!</p>
+        <p>Hi ${firstName} ${lastName}!</p>
         <p>Thank you for registering with Diwa Date!</p>
         <p>Please verify your email address by clicking the button below:</p>
         <a href="${verificationLink}" class="button">Verify Email</a>
@@ -1344,8 +1335,8 @@ export async function sendVerificationEmailToUser(userId: number): Promise<boole
 
     // Send the email
     const result = await sendEmail([
-        user.email
-    ], `Email verification for ${user.firstName} ${user.lastName}`, content);
+        email
+    ], `Email verification for ${firstName} ${lastName}`, content);
     return !result.hasError;
 }
 

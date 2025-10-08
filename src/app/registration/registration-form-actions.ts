@@ -106,7 +106,7 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
     const newUser = { id: newUserResult[0].id, ...createData };
 
     // Send verification email
-    await sendVerificationEmailToUser(newUser.id);
+    await sendVerificationEmailToUser(newUser.id, createData.email, createData.firstName, createData.lastName);
 
     // Auto-enroll in premium during launch (feature-flagged)
     try {
