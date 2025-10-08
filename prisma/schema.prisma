@@ -17,8 +17,8 @@ model billingInformationEntries {
   region                   String    @db.VarChar(255)
   postalCode               String    @db.VarChar(255)
   country                  String    @db.VarChar(255)
-  paymentMethod            String    @db.VarChar(100)
-  cclast4                  String    @db.VarChar(4)
+  paymentMethod            String?   @db.VarChar(100)
+  cclast4                  String?   @db.VarChar(4)
   createdAt                DateTime? @db.Timestamp(6)
   updatedAt                DateTime? @db.Timestamp(6)
   customerProfileId        String?   @unique(map: "billinginformationentries_customerprofileid_uindex") @db.VarChar(100)
@@ -179,6 +179,7 @@ model subscriptionPlanEnrollments {
   chargeInterval     String?           @default("monthly") @db.VarChar(50)
   priceUnit          String?           @default("USD") @db.VarChar(20)
   lastEvalAt         DateTime?         @db.Timestamp(6)
+  paypalSubscriptionId String?         @db.VarChar(255)
   billingHolds       billingHolds[]
   subscriptionPlans  subscriptionPlans @relation(fields: [subscriptionPlanId], references: [id], onDelete: Cascade, map: "subscriptionplanenrollments_subscriptionplans_id_fk")
   users              users             @relation(fields: [userId], references: [id], onDelete: Cascade, map: "subscriptionplanenrollments_users_id_fk")
@@ -188,6 +189,7 @@ model subscriptionPlanEnrollments {
   @@index([createdAt(sort: Desc)], map: "subscriptionplanenrollments_createdat_index")
   @@index([updatedAt(sort: Desc)], map: "subscriptionplanenrollments_updatedat_index")
   @@index([lastEvalAt], map: "subscriptionplanenrollments_lastevalat_index")
+  @@index([paypalSubscriptionId], map: "subscriptionplanenrollments_paypalsubscriptionid_index")
 }
 
 model subscriptionPlans {

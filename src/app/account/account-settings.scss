@@ -158,6 +158,15 @@
             }
           }
         }
+
+        .paypal-button-wrapper {
+          margin-top: 15px;
+
+          @include globals.media-min('screens.md') {
+            max-width: 300px;
+            margin: 15px auto 0 auto;
+          }
+        }
       }
     }
 
@@ -1484,7 +1493,7 @@
           width: 0;
           height: 0;
 
-          &:checked + .toggle-slider {
+          &:checked+.toggle-slider {
             background-color: globals.$primary-blue;
 
             @include globals.dark-mode {
@@ -1492,11 +1501,11 @@
             }
           }
 
-          &:checked + .toggle-slider:before {
+          &:checked+.toggle-slider:before {
             transform: translateX(26px);
           }
 
-          &:disabled + .toggle-slider {
+          &:disabled+.toggle-slider {
             opacity: 0.6;
             cursor: not-allowed;
           }
