@@ -13,6 +13,7 @@ import {
     generateReceiptHtml,
     generatePaymentReviewEmail, fetchRegionsForCountry
 } from "@/server-side-helpers/billing.helpers";
+import { cancelPayPalSubscription } from "@/server-side-helpers/paypal.helpers";
 import { sendEmail } from "@/server-side-helpers/mail.helper";
 import moment from "moment";
 import { isPostalCodeRequired as isPostalCodeRequiredUtil } from "@/utils/postal-code-utils";
@@ -360,6 +361,7 @@ export async function isBillingInformationComplete() {
 
 /**
  * Cancels a user's subscription by setting the endsAt date to their next payment date
+ * Also cancels the subscription on PayPal's end if it's a PayPal subscription
  * @returns Success status and any error messages
  */
 export async function cancelSubscription() {
@@ -371,7 +373,7 @@ export async function cancelSubscription() {
     try {
         // Find the user's active subscription
         const { rows: enrollmentRows } = await pgDbReadPool.query(`
-            SELECT id, "nextPaymentAt" FROM "subscriptionPlanEnrollments" 
+            SELECT id, "nextPaymentAt", "paypalSubscriptionId" FROM "subscriptionPlanEnrollments" 
             WHERE "userId" = $1 
             AND ("endsAt" IS NULL OR "endsAt" > NOW())
             ORDER BY "createdAt" DESC
@@ -383,6 +385,26 @@ export async function cancelSubscription() {
         }
 
         const enrollment = enrollmentRows[0];
+
+        // If there's a PayPal subscription ID, cancel it on PayPal's end first
+        if (enrollment.paypalSubscriptionId) {
+            console.log(`Cancelling PayPal subscription: ${enrollment.paypalSubscriptionId}`);
+            const paypalResult = await cancelPayPalSubscription(
+                enrollment.paypalSubscriptionId,
+                'User requested cancellation'
+            );
+
+            if (!paypalResult.success) {
+                console.error('Failed to cancel PayPal subscription:', paypalResult.error);
+                // Return error to show alert to user
+                return {
+                    success: false,
+                    error: paypalResult.error || "Failed to cancel PayPal subscription. Please contact support."
+                };
+            }
+
+            console.log('Successfully cancelled PayPal subscription');
+        }
 
         // Set endsAt to the nextPaymentAt date
         await pgDbWritePool.query(`
@@ -401,6 +423,7 @@ export async function cancelSubscription() {
 
 /**
  * Reactivates a user's subscription by removing the endsAt date
+ * Note: PayPal subscriptions cannot be reactivated once cancelled - user must create a new subscription
  * @returns Success status and any error messages
  */
 export async function reactivateSubscription() {
@@ -413,7 +436,7 @@ export async function reactivateSubscription() {
 
         // Find the user's subscription that's scheduled to end
         const { rows: enrollmentRows } = await pgDbReadPool.query(`
-            SELECT id FROM "subscriptionPlanEnrollments" 
+            SELECT id, "paypalSubscriptionId" FROM "subscriptionPlanEnrollments" 
             WHERE "userId" = $1 
             AND "endsAt" IS NOT NULL 
             AND "endsAt" > NOW()
@@ -426,6 +449,14 @@ export async function reactivateSubscription() {
         }
 
         const enrollment = enrollmentRows[0];
+
+        // Check if this is a PayPal subscription
+        if (enrollment.paypalSubscriptionId) {
+            return {
+                success: false,
+                error: "PayPal subscriptions cannot be reactivated once cancelled. Please create a new subscription below."
+            };
+        }
 
         // Remove the endsAt date to reactivate
         await pgDbWritePool.query(`
