@@ -176,7 +176,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
         if (subscriptionPlans.length > 0 && !currentUser?.isSubscriptionActive) {
             // Load PayPal SDK
             const script = document.createElement('script');
-            script.src = 'https://www.paypal.com/sdk/js?client-id=AbSsZd1AYyTt6yLZtzjaTCZMzVIAhsvFMnhwdpWy8WXlURQa4O_T4fuGgmA9UskNFw_2NJfYNV0p4b29&vault=true&intent=subscription';
+            script.src = 'https://www.paypal.com/sdk/js?client-id=ATDzpQ8lmlAFFzCNCXdaxztv71gKS9lMjOQhq9XfinKrRZFkP8iMxk8Kn1ipBjyMRvRk59RIucXeGCpe&vault=true&intent=subscription';
             script.setAttribute('data-sdk-integration-source', 'button-factory');
 
             script.onload = () => {
@@ -191,7 +191,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                         window.paypal.Buttons({
                             style: {
                                 shape: 'rect',
-                                color: 'blue',
+                                color: 'silver',
                                 layout: 'vertical',
                                 label: 'subscribe'
                             },
@@ -199,7 +199,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                 // Use the PayPal plan ID - for now using the hardcoded one from user
                                 // In production, this should map to actual PayPal plan IDs
                                 return actions.subscription.create({
-                                    plan_id: 'P-9DG09790GA524964JNDS57II'
+                                    plan_id: 'P-9AX53268EH3629246NDTEOOQ'
                                 });
                             },
                             onApprove: function (data: any, actions: any) {
