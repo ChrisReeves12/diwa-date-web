@@ -12,6 +12,7 @@ import {
     getSubscriptionPlans,
     cancelSubscription,
     reactivateSubscription,
+    removeSubscription,
     getCurrentSubscriptionDetails,
     handlePayPalSubscription,
     type BillingInformation,
@@ -23,6 +24,7 @@ import { countries } from "@/config/countries";
 import React, { useState, useEffect } from "react";
 import "../account-settings.scss";
 import { CheckCircleIcon, ExclamationCircleIcon, InfoCircleIcon, TrashIcon } from "react-line-awesome";
+import Link from "next/link";
 
 // PayPal SDK types
 declare global {
@@ -72,6 +74,8 @@ interface SubscriptionDetails {
     price: number;
     priceUnit: string;
     planName: string;
+    paymentDisputeMessage?: string | null;
+    paymentDisputeDate?: string | null;
 }
 
 export function BillingInformation({ currentUser }: AccountSettingsProps) {
@@ -104,7 +108,9 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
     const [subscriptionDetails, setSubscriptionDetails] = useState<SubscriptionDetails | null>(null);
     const [isLoadingCancel, setIsLoadingCancel] = useState(false);
     const [isLoadingReactivate, setIsLoadingReactivate] = useState(false);
+    const [isLoadingRemove, setIsLoadingRemove] = useState(false);
     const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+    const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
     const [states, setStates] = useState<Array<{ code: string | null, name: string }>>([]);
 
     const isFoundingMember = currentUser?.isFoundingMember || false;
@@ -361,6 +367,34 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
         }, 500);
     };
 
+    const handleRemoveSubscription = async () => {
+        setErrors({});
+        setSuccessMessage('');
+        setIsLoadingRemove(true);
+
+        setTimeout(async () => {
+            try {
+                const result = await removeSubscription();
+
+                if (!result.success) {
+                    setErrors({ subscriptionForm: result.error || 'Failed to remove subscription' });
+                    return;
+                }
+
+                setSuccessMessage('Your subscription has been removed. You can now create a new subscription with a different payment method.');
+                setShowRemoveConfirmation(false);
+
+                // Force a page reload to update the user's subscription status
+                window.location.reload();
+            } catch (error) {
+                console.error('Subscription removal error:', error);
+                setErrors({ subscriptionForm: 'An unexpected error occurred' });
+            } finally {
+                setIsLoadingRemove(false);
+            }
+        }, 500);
+    };
+
 
     if (isLoadingBillingInfo) {
         return (
@@ -416,59 +450,83 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                     <div className="current-subscription">
                                         {subscriptionDetails && (
                                             <>
-                                                <div className="subscription-status">
-                                                    <div className="status-badge active">
-                                                        <CheckCircleIcon /> Premium Member
-                                                    </div>
-                                                    <p>You are currently enrolled in the <strong>{subscriptionDetails.planName}</strong> plan.</p>
-
-                                                    {subscriptionDetails.endsAt ? (
-                                                        /* Subscription scheduled to end */
-                                                        <div className="cancellation-notice">
-                                                            <div className="warning-message">
-                                                                <p><strong><ExclamationCircleIcon /> Your membership is scheduled to end on {new Date(subscriptionDetails.endsAt).toLocaleDateString()}.</strong></p>
-                                                                <p>You will continue to have premium access until that date.</p>
-                                                            </div>
-                                                            <div className="reactivate-actions">
-                                                                <button
-                                                                    className="btn-primary"
-                                                                    onClick={handleReactivateSubscription}
-                                                                    disabled={isLoadingReactivate || !subscriptionDetails.paypalSubscriptionId}
-                                                                >
-                                                                    {isLoadingReactivate ? 'Processing...' : 'Continue My Membership'}
-                                                                </button>
-                                                                {!subscriptionDetails.paypalSubscriptionId && 
-                                                                    <div className="reactivate-note">
-                                                                        <InfoCircleIcon/> If you want to enroll in auto-billing again, you will need to wait until <strong>{new Date(subscriptionDetails.endsAt).toLocaleDateString()}</strong> or afterward to enroll in a new subscription.
-                                                                    </div>}
-                                                            </div>
+                                                {/* Payment Dispute Warning */}
+                                                {subscriptionDetails.paymentDisputeMessage ? (
+                                                    <div className="subscription-status">
+                                                        <div className="error-message">
+                                                            <ExclamationCircleIcon /> <strong>Billing Issue:</strong> {subscriptionDetails.paymentDisputeMessage}
+                                                            {subscriptionDetails.paymentDisputeDate && (
+                                                                <p>Date: {new Date(subscriptionDetails.paymentDisputeDate).toLocaleDateString()}</p>
+                                                            )}
+                                                            <p>You can resolve the payment issue with PayPal, or remove your subscription enrollment, then subscribe again with a new payment method.</p>
                                                         </div>
-                                                    ) : (
-                                                        isFoundingMember ? (
-                                                            <div className="founding-member-subscription-info">
-                                                                <p><strong>Lifetime Premium Access</strong></p>
-                                                                <p>Your founding member status provides permanent premium benefits with no billing required.</p>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="active-subscription-info">
-                                                                <p>Next billing date: <strong>{new Date(subscriptionDetails.nextPaymentAt).toLocaleDateString()}</strong></p>
-                                                                {Number(subscriptionDetails.price) > 0 ?
-                                                                    <p>Amount: <strong>${subscriptionDetails.price}/{subscriptionDetails.priceUnit === 'USD' ? 'month' : subscriptionDetails.priceUnit}</strong></p> :
-                                                                    <p>Amount: <strong>Free</strong></p>}
+                                                        <div className="cancel-actions">
+                                                            <button
+                                                                className="btn-danger"
+                                                                onClick={() => setShowRemoveConfirmation(true)}
+                                                                disabled={isLoadingRemove}
+                                                            >
+                                                                Remove Subscription
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="subscription-status">
+                                                        <div className="status-badge active">
+                                                            <CheckCircleIcon /> Premium Member
+                                                        </div>
+                                                        <p>You are currently enrolled in the <strong>{subscriptionDetails.planName}</strong> plan.</p>
 
-                                                                <div className="cancel-actions">
-                                                                    <button
-                                                                        className="btn-secondary"
-                                                                        onClick={() => setShowCancelConfirmation(true)}
-                                                                        disabled={isLoadingCancel}
-                                                                    >
-                                                                        Cancel Membership
-                                                                    </button>
+                                                        <>
+                                                            {subscriptionDetails.endsAt ? (
+                                                                /* Subscription scheduled to end */
+                                                                <div className="cancellation-notice">
+                                                                    <div className="warning-message">
+                                                                        <p><strong><ExclamationCircleIcon /> Your membership is scheduled to end on {new Date(subscriptionDetails.endsAt).toLocaleDateString()}.</strong></p>
+                                                                        <p>You will continue to have premium access until that date.</p>
+                                                                    </div>
+                                                                    <div className="reactivate-actions">
+                                                                        <button
+                                                                            className="btn-primary"
+                                                                            onClick={handleReactivateSubscription}
+                                                                            disabled={isLoadingReactivate || !subscriptionDetails.paypalSubscriptionId}
+                                                                        >
+                                                                            {isLoadingReactivate ? 'Processing...' : 'Continue My Membership'}
+                                                                        </button>
+                                                                        {!subscriptionDetails.paypalSubscriptionId &&
+                                                                            <div className="reactivate-note">
+                                                                                <InfoCircleIcon /> Since your subscription was cancelled at PayPal, to enroll in auto-billing again, you will need to wait until your billing period ends on <strong>{new Date(subscriptionDetails.endsAt).toLocaleDateString()}</strong> to enroll in a new subscription.
+                                                                            </div>}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        )
-                                                    )}
-                                                </div>
+                                                            ) : (
+                                                                isFoundingMember ? (
+                                                                    <div className="founding-member-subscription-info">
+                                                                        <p><strong>Lifetime Premium Access</strong></p>
+                                                                        <p>Your founding member status provides permanent premium benefits with no billing required.</p>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="active-subscription-info">
+                                                                        <p>Next billing date: <strong>{new Date(subscriptionDetails.nextPaymentAt).toLocaleDateString()}</strong></p>
+                                                                        {Number(subscriptionDetails.price) > 0 ?
+                                                                            <p>Amount: <strong>${subscriptionDetails.price}/{subscriptionDetails.priceUnit === 'USD' ? 'month' : subscriptionDetails.priceUnit}</strong></p> :
+                                                                            <p>Amount: <strong>Free</strong></p>}
+
+                                                                        <div className="cancel-actions">
+                                                                            <button
+                                                                                className="btn-secondary"
+                                                                                onClick={() => setShowCancelConfirmation(true)}
+                                                                                disabled={isLoadingCancel}
+                                                                            >
+                                                                                Cancel Membership
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                )
+                                                            )}
+                                                        </>
+                                                    </div>
+                                                )}
                                             </>
                                         )}
                                     </div>
@@ -535,12 +593,47 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Remove Subscription Confirmation Dialog */}
+                                {showRemoveConfirmation && (
+                                    <div className="dialog-overlay">
+                                        <div className="dialog">
+                                            <h4>Remove Subscription</h4>
+                                            <p>Are you sure you want to remove your subscription enrollment?</p>
+                                            <p><strong>This action will:</strong></p>
+                                            <ul>
+                                                <li>Permanently delete your current subscription</li>
+                                                <li>Cancel the subscription with PayPal</li>
+                                                <li>Remove your premium access immediately</li>
+                                                <li>Allow you to create a new subscription with a different payment method</li>
+                                            </ul>
+                                            <p><strong>This cannot be undone.</strong></p>
+
+                                            <div className="dialog-actions">
+                                                <button
+                                                    className="btn-secondary"
+                                                    onClick={() => setShowRemoveConfirmation(false)}
+                                                    disabled={isLoadingRemove}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    className="btn-danger"
+                                                    onClick={handleRemoveSubscription}
+                                                    disabled={isLoadingRemove}
+                                                >
+                                                    {isLoadingRemove ? 'Removing...' : 'Yes, Remove Subscription'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="payment-plan-notes">
                                 <FaInfoCircle className={"icon"} />
                                 <div className="note">
-                                    <strong>Note</strong>: Payments will be made via PayPal to <strong>Taktyx</strong>, as Diwa Date is a brand operated by <strong>Taktyx</strong>.
+                                    <strong>Note</strong>: Payments will be made via PayPal to <strong>Taktyx</strong>, as Diwa Date is a brand operated by <strong>Taktyx LLC</strong>, as stated in our <Link target="_blank" href="/terms-of-service">terms of service agreement</Link>.
                                 </div>
                             </div>
 

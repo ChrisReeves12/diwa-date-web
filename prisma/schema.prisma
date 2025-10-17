@@ -166,23 +166,25 @@ model sessions {
 }
 
 model subscriptionPlanEnrollments {
-  id                   Int               @id(map: "subscriptionplanenrollments_pk") @default(autoincrement())
-  userId               Int
-  subscriptionPlanId   Int
-  lastPaymentAt        DateTime?         @db.Timestamp(6)
-  nextPaymentAt        DateTime?         @db.Timestamp(6)
-  startedAt            DateTime?         @db.Timestamp(6)
-  endsAt               DateTime?         @db.Timestamp(6)
-  createdAt            DateTime?         @db.Timestamp(6)
-  updatedAt            DateTime?         @db.Timestamp(6)
-  price                Float?            @default(0)
-  chargeInterval       String?           @default("monthly") @db.VarChar(50)
-  priceUnit            String?           @default("USD") @db.VarChar(20)
-  lastEvalAt           DateTime?         @db.Timestamp(6)
-  paypalSubscriptionId String?           @db.VarChar(255)
-  billingHolds         billingHolds[]
-  subscriptionPlans    subscriptionPlans @relation(fields: [subscriptionPlanId], references: [id], onDelete: Cascade, map: "subscriptionplanenrollments_subscriptionplans_id_fk")
-  users                users             @relation(fields: [userId], references: [id], onDelete: Cascade, map: "subscriptionplanenrollments_users_id_fk")
+  id                    Int               @id(map: "subscriptionplanenrollments_pk") @default(autoincrement())
+  userId                Int
+  subscriptionPlanId    Int
+  lastPaymentAt         DateTime?         @db.Timestamp(6)
+  nextPaymentAt         DateTime?         @db.Timestamp(6)
+  startedAt             DateTime?         @db.Timestamp(6)
+  endsAt                DateTime?         @db.Timestamp(6)
+  createdAt             DateTime?         @db.Timestamp(6)
+  updatedAt             DateTime?         @db.Timestamp(6)
+  price                 Float?            @default(0)
+  chargeInterval        String?           @default("monthly") @db.VarChar(50)
+  priceUnit             String?           @default("USD") @db.VarChar(20)
+  lastEvalAt            DateTime?         @db.Timestamp(6)
+  paypalSubscriptionId  String?           @db.VarChar(255)
+  paymentDisputeDate    DateTime?         @db.Timestamp(6)
+  paymentDisputeMessage String?
+  billingHolds          billingHolds[]
+  subscriptionPlans     subscriptionPlans @relation(fields: [subscriptionPlanId], references: [id], onDelete: Cascade, map: "subscriptionplanenrollments_subscriptionplans_id_fk")
+  users                 users             @relation(fields: [userId], references: [id], onDelete: Cascade, map: "subscriptionplanenrollments_users_id_fk")
 
   @@index([subscriptionPlanId], map: "subscriptionPlanEnrollmentsSubscriptionPlanIdForeign")
   @@index([userId], map: "subscriptionPlanEnrollmentsUserIdForeign")

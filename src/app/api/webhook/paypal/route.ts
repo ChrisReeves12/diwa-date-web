@@ -7,13 +7,10 @@ export async function POST(request: NextRequest) {
         console.log(`Webhook: PayPal Event Type: ${body.event_type}`);
 
         switch (body.event_type) {
-            case 'BILLING.SUBSCRIPTION.SUSPENDED': 
-            case 'BILLING.SUBSCRIPTION.CANCELLED':
-            {
+            case 'BILLING.SUBSCRIPTION.CANCELLED': {
                 const suspendEnrollmentResult = await pgDbReadPool.query(`
-                    SELECT "id", "userId", "endsAt", "nextPaymentAt" FROM "subscriptionPlanEnrollments"
-                    WHERE "paypalSubscriptionId" = $1
-                `, [body.resource.id]);
+                        SELECT "id", "userId", "endsAt", "nextPaymentAt" FROM "subscriptionPlanEnrollments"
+                        WHERE "paypalSubscriptionId" = $1`, [body.resource.id]);
 
                 if (suspendEnrollmentResult.rows.length === 0) {
                     console.log(`Webhook: Subscription plan enrollment not found: ${body.resource.id}`);
@@ -21,18 +18,15 @@ export async function POST(request: NextRequest) {
                 }
 
                 const suspendEnrollment = suspendEnrollmentResult.rows[0];
-             
+
                 if (suspendEnrollment.endsAt === null) {
                     await pgDbWritePool.query(`
                         UPDATE "subscriptionPlanEnrollments" 
-                        SET "endsAt" = $2, 
+                        SET "endsAt" = $1, 
                             "updatedAt" = NOW(),
-                            "paypalSubscriptionId" = CASE 
-                                WHEN $3 = 'BILLING.SUBSCRIPTION.CANCELLED' THEN NULL 
-                                ELSE "paypalSubscriptionId"
-                            END
-                        WHERE "id" = $1
-                    `, [suspendEnrollment.id, suspendEnrollment.nextPaymentAt, body.event_type]);
+                            "paypalSubscriptionId" = NULL
+                        WHERE "id" = $2
+                    `, [suspendEnrollment.nextPaymentAt, suspendEnrollment.id]);
 
                     console.log(`Webhook: Subscription suspended successfully: ${body.resource.id}`);
                 } else {
@@ -61,14 +55,30 @@ export async function POST(request: NextRequest) {
                         ? new Date(body.resource.agreement_details.next_billing_date)
                         : null;
 
-                    // Reactivate the enrollment
+                    // Reactivate the enrollment and clear dispute fields
                     await pgDbWritePool.query(`
                         UPDATE "subscriptionPlanEnrollments" 
                         SET "endsAt" = NULL, 
                             "nextPaymentAt" = $2,
+                            "paymentDisputeMessage" = NULL,
+                            "paymentDisputeDate" = NULL,
                             "updatedAt" = NOW()
                         WHERE "id" = $1
                     `, [enrollment.id, nextBillingDate]);
+
+                    // Clear any pending billing holds for this enrollment
+                    const clearHoldsResult = await pgDbWritePool.query(`
+                        UPDATE "billingHolds"
+                        SET "status" = 'resolved',
+                            "resolvedAt" = NOW(),
+                            "updatedAt" = NOW()
+                        WHERE "enrollmentId" = $1 
+                        AND "status" = 'pending'
+                    `, [enrollment.id]);
+
+                    if (clearHoldsResult.rowCount && clearHoldsResult.rowCount > 0) {
+                        console.log(`Webhook: Cleared ${clearHoldsResult.rowCount} billing hold(s) for enrollment ${enrollment.id}`);
+                    }
 
                     // Update the user's isPremium to true
                     await pgDbWritePool.query(`
@@ -86,7 +96,6 @@ export async function POST(request: NextRequest) {
             }
 
             case 'PAYMENT.SALE.COMPLETED': {
-                // For subscription payments, the resource contains a billing_agreement_id
                 const billingAgreementId = body.resource.billing_agreement_id;
 
                 if (!billingAgreementId) {
@@ -158,84 +167,12 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ message: 'Payment recorded successfully' }, { status: 200 });
             }
 
-            case 'PAYMENT.SALE.REVERSED': {
-                const reversedSaleId = body.resource.id;
-
-                // Find the original payment transaction
-                const reversedTransactionResult = await pgDbReadPool.query(`
-                    SELECT "id", "userId" FROM "paymentTransactions"
-                    WHERE "transId" = $1
-                `, [reversedSaleId]);
-
-                if (reversedTransactionResult.rows.length === 0) {
-                    console.log(`Webhook: Payment transaction not found for reversal: ${reversedSaleId}`);
-                    return NextResponse.json({ message: 'Payment transaction not found' }, { status: 404 });
-                }
-
-                const reversedTransaction = reversedTransactionResult.rows[0];
-
-                // Update the transaction status to reversed
-                await pgDbWritePool.query(`
-                    UPDATE "paymentTransactions"
-                    SET "status" = $2,
-                        "updatedAt" = NOW(),
-                        "apiResponse" = $3
-                    WHERE "id" = $1
-                `, [
-                    reversedTransaction.id,
-                    'reversed',
-                    JSON.stringify(body)
-                ]);
-
-                console.log(`Webhook: Payment reversed for transaction: ${reversedSaleId}, user: ${reversedTransaction.userId}`);
-                return NextResponse.json({ message: 'Payment reversal recorded successfully' }, { status: 200 });
-            }
-
-            case 'PAYMENT.SALE.REFUNDED': {
-                // The parent_payment field contains the original sale ID
-                const refundedSaleId = body.resource.sale_id || body.resource.parent_payment;
-
-                if (!refundedSaleId) {
-                    console.log('Webhook: No sale ID found in refund webhook');
-                    return NextResponse.json({ message: 'Sale ID not found' }, { status: 400 });
-                }
-
-                // Find the original payment transaction
-                const refundedTransactionResult = await pgDbReadPool.query(`
-                    SELECT "id", "userId" FROM "paymentTransactions"
-                    WHERE "transId" = $1
-                `, [refundedSaleId]);
-
-                if (refundedTransactionResult.rows.length === 0) {
-                    console.log(`Webhook: Payment transaction not found for refund: ${refundedSaleId}`);
-                    return NextResponse.json({ message: 'Payment transaction not found' }, { status: 404 });
-                }
-
-                const refundedTransaction = refundedTransactionResult.rows[0];
-
-                // Update the transaction status to refunded
-                await pgDbWritePool.query(`
-                    UPDATE "paymentTransactions"
-                    SET "status" = $2,
-                        "updatedAt" = NOW(),
-                        "apiResponse" = $3
-                    WHERE "id" = $1
-                `, [
-                    refundedTransaction.id,
-                    'refunded',
-                    JSON.stringify(body)
-                ]);
-
-                console.log(`Webhook: Payment refunded for transaction: ${refundedSaleId}, user: ${refundedTransaction.userId}`);
-                return NextResponse.json({ message: 'Payment refund recorded successfully' }, { status: 200 });
-            }
-
             case 'BILLING.SUBSCRIPTION.PAYMENT.FAILED': {
                 const failedSubscriptionId = body.resource.id;
 
                 // Find the subscription enrollment
                 const failedEnrollmentResult = await pgDbReadPool.query(`
-                    SELECT spe.id, spe."userId", spe."price", spe."priceUnit", sp.name as "planName"
+                    SELECT spe.id, spe."userId", spe."price", spe."priceUnit", spe."paymentDisputeMessage", spe."paymentDisputeDate", sp.name as "planName"
                     FROM "subscriptionPlanEnrollments" spe
                     JOIN "subscriptionPlans" sp ON sp.id = spe."subscriptionPlanId"
                     WHERE spe."paypalSubscriptionId" = $1
@@ -267,6 +204,12 @@ export async function POST(request: NextRequest) {
                     LIMIT 1
                 `, [failedEnrollment.userId, `%${failedSubscriptionId}%`]);
 
+                // Update subscription enrollment
+                if (!failedEnrollment.paymentDisputeMessage || !failedEnrollment.paymentDisputeDate) {
+                    await pgDbWritePool.query(`UPDATE "subscriptionPlanEnrollments" SET "paymentDisputeMessage" = $1, "paymentDisputeDate" = NOW() WHERE id = $2`,
+                        [failureReason, failedEnrollment.id]);
+                }
+
                 if (existingFailedTransaction.rows.length === 0) {
                     // Create payment transaction record for the failed payment
                     await pgDbWritePool.query(`
@@ -279,7 +222,7 @@ export async function POST(request: NextRequest) {
                         failedEnrollment.userId,
                         failedEnrollment.price,
                         failedTransId,
-                        null, // No account number for PayPal
+                        null,
                         `PayPal subscription payment failed`,
                         'failed',
                         'paypal',
@@ -320,6 +263,15 @@ export async function POST(request: NextRequest) {
                 } else {
                     console.log(`Webhook: Billing hold already exists for subscription: ${failedSubscriptionId}`);
                 }
+
+                // Set isPremium to false when payment fails
+                await pgDbWritePool.query(`
+                    UPDATE "users" 
+                    SET "isPremium" = false, "updatedAt" = NOW() 
+                    WHERE id = $1 AND "isPremium" = true
+                `, [failedEnrollment.userId]);
+
+                console.log(`Webhook: Set isPremium to false for user ${failedEnrollment.userId} due to payment failure`);
 
                 return NextResponse.json({ message: 'Payment failure recorded successfully' }, { status: 200 });
             }

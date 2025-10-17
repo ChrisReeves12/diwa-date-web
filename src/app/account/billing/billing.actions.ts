@@ -13,7 +13,7 @@ import {
     generateReceiptHtml,
     generatePaymentReviewEmail, fetchRegionsForCountry
 } from "@/server-side-helpers/billing.helpers";
-import { suspendPayPalSubscription, createPayPalSubscription, verifyPayPalSubscription, activatePayPalSubscription } from "@/server-side-helpers/paypal.helpers";
+import { suspendPayPalSubscription, createPayPalSubscription, verifyPayPalSubscription, activatePayPalSubscription, cancelPayPalSubscription } from "@/server-side-helpers/paypal.helpers";
 import { sendEmail } from "@/server-side-helpers/mail.helper";
 import moment from "moment";
 import { isPostalCodeRequired as isPostalCodeRequiredUtil } from "@/utils/postal-code-utils";
@@ -566,6 +566,75 @@ export async function reactivateSubscription() {
 }
 
 /**
+ * Removes a user's subscription enrollment completely
+ * This deletes the enrollment record and cancels on PayPal if applicable
+ * Used when there's a payment dispute and user wants to start fresh
+ * @returns Success status and any error messages
+ */
+export async function removeSubscription() {
+    const currentUser = await getCurrentUser(await cookies());
+    if (!currentUser) {
+        return { success: false, error: "User not found" };
+    }
+
+    try {
+        // Find the user's active subscription
+        const { rows: enrollmentRows } = await pgDbReadPool.query(`
+            SELECT id, "paypalSubscriptionId" FROM "subscriptionPlanEnrollments" 
+            WHERE "userId" = $1 
+            AND ("endsAt" IS NULL OR "endsAt" > NOW())
+            ORDER BY "createdAt" DESC
+            LIMIT 1
+        `, [currentUser.id]);
+
+        if (enrollmentRows.length === 0) {
+            return { success: false, error: "No active subscription found" };
+        }
+
+        const enrollment = enrollmentRows[0];
+
+        // If there's a PayPal subscription ID, cancel it on PayPal's end first
+        if (enrollment.paypalSubscriptionId) {
+            console.log(`Canceling PayPal subscription: ${enrollment.paypalSubscriptionId}`);
+            const paypalResult = await cancelPayPalSubscription(
+                enrollment.paypalSubscriptionId,
+                'User requested removal due to payment dispute'
+            );
+
+            if (!paypalResult.success) {
+                console.error('Failed to cancel PayPal subscription:', paypalResult.error);
+                // Continue with local deletion even if PayPal cancellation fails
+                // Log the error but don't block the user from removing the enrollment
+                console.error('Warning: PayPal cancellation failed but proceeding with local deletion');
+            } else {
+                console.log('Successfully canceled PayPal subscription');
+            }
+        }
+
+        // Delete the subscription enrollment
+        await pgDbWritePool.query(`
+            DELETE FROM "subscriptionPlanEnrollments" 
+            WHERE id = $1
+        `, [enrollment.id]);
+
+        // Set isPremium to false
+        await pgDbWritePool.query(`
+            UPDATE "users" 
+            SET "isPremium" = false, "updatedAt" = NOW() 
+            WHERE id = $1
+        `, [currentUser.id]);
+
+        console.log(`Successfully removed subscription enrollment for user ${currentUser.id}`);
+
+        revalidatePath('/account/billing');
+        return { success: true };
+    } catch (error) {
+        console.error('Subscription removal error:', error);
+        return { success: false, error: "Failed to remove subscription. Please try again." };
+    }
+}
+
+/**
  * Gets the current user's subscription details including cancellation status
  * @returns Subscription details or null if not found
  */
@@ -585,6 +654,8 @@ export async function getCurrentSubscriptionDetails() {
                 spe."price",
                 spe."priceUnit",
                 spe."paypalSubscriptionId",
+                spe."paymentDisputeMessage",
+                spe."paymentDisputeDate",
                 sp.name as "planName"
             FROM "subscriptionPlanEnrollments" spe
             JOIN "subscriptionPlans" sp ON sp.id = spe."subscriptionPlanId"

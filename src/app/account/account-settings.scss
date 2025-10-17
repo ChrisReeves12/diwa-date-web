@@ -440,6 +440,18 @@
     .note {
       font-size: 13px;
       flex: 1;
+
+      a {
+        color: globals.$primary-blue;
+
+        &:hover {
+          text-decoration: underline;
+        }
+
+        @include globals.dark-mode {
+          color: globals.$primary-blue-dark;
+        }
+      }
     }
   }
 
@@ -546,8 +558,8 @@
   .error-message {
     padding: 15px;
     margin-bottom: 20px;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
+    background-color: #fef0f1;
+    border: 1px solid #fcd9dc;
     border-radius: 6px;
     color: #721c24;
 
@@ -1211,8 +1223,8 @@
   .error-message {
     padding: 15px;
     margin-bottom: 20px;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
+    background-color: #fef0f1;
+    border: 1px solid #fcd9dc;
     border-radius: 6px;
     color: #721c24;
 
