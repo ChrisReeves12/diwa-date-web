@@ -51,7 +51,7 @@ export default async function UpgradePage({ searchParams }: { searchParams: any 
 
                         <div className="feature-card">
                             <div className="feature-icon">
-                                <img alt="Messages" title="Messages" src="/images/upgrade-message-blue.svg"/>
+                                <img alt="Messages" title="Messages" src="/images/upgrade-message-blue.svg" />
                             </div>
                             <h3>Unlimited Messages</h3>
                             <p>Send as many messages as you want to your matches without any limits or restrictions.</p>
@@ -59,7 +59,7 @@ export default async function UpgradePage({ searchParams }: { searchParams: any 
 
                         <div className="feature-card">
                             <div className="feature-icon">
-                                <img alt="Search" title="Search" src="/images/upgrade-search-blue.svg"/>
+                                <img alt="Search" title="Search" src="/images/upgrade-search-blue.svg" />
                             </div>
                             <h3>Advanced Search Filters</h3>
                             <p>Find your perfect match with detailed filters for education, interests, lifestyle preferences, and more.</p>
@@ -67,7 +67,7 @@ export default async function UpgradePage({ searchParams }: { searchParams: any 
 
                         <div className="feature-card">
                             <div className="feature-icon">
-                                <img alt="Support" title="Support" src="/images/upgrade-support-blue.svg"/>
+                                <img alt="Support" title="Support" src="/images/upgrade-support-blue.svg" />
                             </div>
                             <h3>Priority Support</h3>
                             <p>Get faster response times and priority assistance from our dedicated support team.</p>
@@ -86,11 +86,9 @@ export default async function UpgradePage({ searchParams }: { searchParams: any 
                             </div>
                         </div>
                         <ul className="features-list">
-                            <li><CheckCircleIcon/> Unlimited messages</li>
-                            <li><CheckCircleIcon/> Advanced search filters</li>
-                            <li><CheckCircleIcon/> Priority support</li>
-                            <li><CheckCircleIcon/> No ads</li>
-                            <li><CheckCircleIcon/> Profile boost</li>
+                            <li><CheckCircleIcon /> Unlimited messages</li>
+                            <li><CheckCircleIcon /> Advanced search filters</li>
+                            <li><CheckCircleIcon /> Priority support</li>
                         </ul>
                         <div className="cta-section">
                             <a href="/account/billing" className="upgrade-btn primary">

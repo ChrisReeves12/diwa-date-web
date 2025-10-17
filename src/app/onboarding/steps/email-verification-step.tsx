@@ -21,7 +21,8 @@ export function EmailVerificationStep({ data, updateData, onValidationChange, us
     // Mark as completed only if email is verified
     useEffect(() => {
         onValidationChange(emailVerified);
-    }, [emailVerified, onValidationChange]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [emailVerified]);
 
     const handleResendEmail = async () => {
         setIsResending(true);

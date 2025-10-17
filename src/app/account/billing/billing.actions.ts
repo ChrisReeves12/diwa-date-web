@@ -584,6 +584,7 @@ export async function getCurrentSubscriptionDetails() {
                 spe."startedAt",
                 spe."price",
                 spe."priceUnit",
+                spe."paypalSubscriptionId",
                 sp.name as "planName"
             FROM "subscriptionPlanEnrollments" spe
             JOIN "subscriptionPlans" sp ON sp.id = spe."subscriptionPlanId"

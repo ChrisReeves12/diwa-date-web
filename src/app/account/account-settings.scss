@@ -281,6 +281,22 @@
             color: #e53e3e;
             font-style: italic;
           }
+
+          .reactivate-note {
+            padding-top: 18px;
+            margin: 0 auto;
+            color: #7c7c7c;
+            font-size: 14px;
+            line-height: 20px;
+
+            @include globals.dark-mode {
+              color: #d3d3d3;
+            }
+
+            @include globals.media-min('screens.md') {
+              max-width: 30vw;
+            }
+          }
         }
       }
     }

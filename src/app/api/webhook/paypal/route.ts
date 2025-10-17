@@ -7,37 +7,9 @@ export async function POST(request: NextRequest) {
         console.log(`Webhook: PayPal Event Type: ${body.event_type}`);
 
         switch (body.event_type) {
-            case 'BILLING.SUBSCRIPTION.CANCELLED': {
-                const subscriptionPlanEnrollmentId = await pgDbReadPool.query(`
-                    SELECT "id", "userId" FROM "subscriptionPlanEnrollments"
-                    WHERE "paypalSubscriptionId" = $1
-                `, [body.resource.id]);
-
-                if (subscriptionPlanEnrollmentId.rows.length === 0) {
-                    console.log(`Webhook: Subscription plan enrollment not found: ${body.resource.id}`);
-                    return NextResponse.json({ message: 'Subscription plan enrollment not found' }, { status: 404 });
-                }
-
-                const subscriptionPlanEnrollment = subscriptionPlanEnrollmentId.rows[0];
-
-                // Delete the enrollment record
-                await pgDbWritePool.query(`
-                    DELETE FROM "subscriptionPlanEnrollments" 
-                    WHERE "id" = $1
-                `, [subscriptionPlanEnrollment.id]);
-
-                // Update the user's isPremium and isFoundingMember to false
-                await pgDbWritePool.query(`
-                    UPDATE "users" 
-                    SET "isPremium" = false, "isFoundingMember" = false, "updatedAt" = NOW() 
-                    WHERE id = $1
-                `, [subscriptionPlanEnrollment.userId]);
-
-                console.log(`Webhook: Subscription cancelled and deleted successfully: ${body.resource.id}`);
-                return NextResponse.json({ message: 'Subscription cancelled successfully' }, { status: 200 });
-            }
-
-            case 'BILLING.SUBSCRIPTION.SUSPENDED': {
+            case 'BILLING.SUBSCRIPTION.SUSPENDED': 
+            case 'BILLING.SUBSCRIPTION.CANCELLED':
+            {
                 const suspendEnrollmentResult = await pgDbReadPool.query(`
                     SELECT "id", "userId", "endsAt", "nextPaymentAt" FROM "subscriptionPlanEnrollments"
                     WHERE "paypalSubscriptionId" = $1
@@ -49,15 +21,18 @@ export async function POST(request: NextRequest) {
                 }
 
                 const suspendEnrollment = suspendEnrollmentResult.rows[0];
-
-                // Only update if the subscription is not already suspended
+             
                 if (suspendEnrollment.endsAt === null) {
-                    // Set endsAt to nextPaymentAt to allow user to use service until next billing date
                     await pgDbWritePool.query(`
                         UPDATE "subscriptionPlanEnrollments" 
-                        SET "endsAt" = $2, "updatedAt" = NOW()
+                        SET "endsAt" = $2, 
+                            "updatedAt" = NOW(),
+                            "paypalSubscriptionId" = CASE 
+                                WHEN $3 = 'BILLING.SUBSCRIPTION.CANCELLED' THEN NULL 
+                                ELSE "paypalSubscriptionId"
+                            END
                         WHERE "id" = $1
-                    `, [suspendEnrollment.id, suspendEnrollment.nextPaymentAt]);
+                    `, [suspendEnrollment.id, suspendEnrollment.nextPaymentAt, body.event_type]);
 
                     console.log(`Webhook: Subscription suspended successfully: ${body.resource.id}`);
                 } else {

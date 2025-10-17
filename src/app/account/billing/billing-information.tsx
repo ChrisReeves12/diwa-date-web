@@ -68,6 +68,7 @@ interface SubscriptionDetails {
     endsAt: string | null;
     nextPaymentAt: string;
     startedAt: string;
+    paypalSubscriptionId?: string;
     price: number;
     priceUnit: string;
     planName: string;
@@ -432,10 +433,14 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                                 <button
                                                                     className="btn-primary"
                                                                     onClick={handleReactivateSubscription}
-                                                                    disabled={isLoadingReactivate}
+                                                                    disabled={isLoadingReactivate || !subscriptionDetails.paypalSubscriptionId}
                                                                 >
                                                                     {isLoadingReactivate ? 'Processing...' : 'Continue My Membership'}
                                                                 </button>
+                                                                {!subscriptionDetails.paypalSubscriptionId && 
+                                                                    <div className="reactivate-note">
+                                                                        <InfoCircleIcon/> If you want to enroll in auto-billing again, you will need to wait until <strong>{new Date(subscriptionDetails.endsAt).toLocaleDateString()}</strong> or afterward to enroll in a new subscription.
+                                                                    </div>}
                                                             </div>
                                                         </div>
                                                     ) : (
@@ -487,7 +492,6 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                         <p className="plan-description">{plan.description}</p>
                                                         <div className="plan-features">
                                                             <p><CheckCircleIcon /> Unlimited messages</p>
-                                                            <p><CheckCircleIcon /> See who liked you</p>
                                                             <p><CheckCircleIcon /> Advanced search filters</p>
                                                             <p><CheckCircleIcon /> Priority support</p>
                                                         </div>

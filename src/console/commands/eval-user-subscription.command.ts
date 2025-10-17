@@ -1,9 +1,7 @@
 import ConsoleCommand from "@/console/commands/console.command";
 import { pgDbReadPool, pgDbWritePool } from "@/lib/postgres";
 import { Command } from "commander";
-import { chargeCustomerByBillingEntry, generateReceiptHtml, generatePaymentReviewEmail, generateBillingFailureEmail } from "@/server-side-helpers/billing.helpers";
-import { sendEmail } from "@/server-side-helpers/mail.helper";
-import moment from "moment";
+import { cancelPayPalSubscription } from "@/server-side-helpers/paypal.helpers";
 
 export default class EvalUserSubscriptionsCommand extends ConsoleCommand {
     constructor() {
@@ -23,23 +21,12 @@ export default class EvalUserSubscriptionsCommand extends ConsoleCommand {
             const users = await pgDbReadPool.query(
                 `SELECT DISTINCT ON (u.id)
                     spe."id" as "enrollmentId",  
-                    spe."lastPaymentAt",
-                    spe."nextPaymentAt",
-                    spe."endsAt",
-                    bie.id as "billingEntryId",
-                    spe."price",
-                    sp."name" as "planName",
-                    spe."priceUnit",
-                    spe."subscriptionPlanId",
-                    CASE WHEN DATE(spe."endsAt") <= CURRENT_DATE THEN 'expired' ELSE 'active' END as "subscriptionStatus",
-                    u.* 
+                    spe."paypalSubscriptionId",
+                    u."id",
+                    u."email"
                 FROM "users" u 
                 INNER JOIN "subscriptionPlanEnrollments" spe ON u.id = spe."userId"
-                INNER JOIN "subscriptionPlans" sp ON spe."subscriptionPlanId" = sp.id
-                LEFT JOIN "billingInformationEntries" bie ON bie."userId" = u.id
-                WHERE u."suspendedAt" IS NULL 
-                AND DATE(spe."nextPaymentAt") <= CURRENT_DATE
-                AND (spe."lastEvalAt" IS NULL OR spe."lastEvalAt" < (CURRENT_TIMESTAMP - INTERVAL '1 day'))
+                WHERE spe."endsAt" IS NOT NULL AND DATE(spe."endsAt") <= CURRENT_DATE
                 LIMIT ${batchSize}`,
             );
 
@@ -48,104 +35,26 @@ export default class EvalUserSubscriptionsCommand extends ConsoleCommand {
             }
 
             for (const user of users.rows) {
-                console.log(`Evaluating subscription for user ${user.id} (${user.email})`);
-                if (user.subscriptionStatus === 'expired' || !user.billingEntryId) {
-                    await pgDbWritePool.query(`DELETE FROM "subscriptionPlanEnrollments" WHERE "id" = $1`, [user.enrollmentId]);
-                    await pgDbWritePool.query(`UPDATE "users" SET "isPremium" = false, "updatedAt" = NOW() WHERE id = $1`, [user.id]);
-                } else {
-                    let paymentSucceeded = false;
-                    let paymentTxnResult;
-                    let responseCode;
+                console.log(`Deleting subscription for user ${user.id} (${user.email})`);
 
-                    if (user.price > 0) {
-                        paymentTxnResult = await chargeCustomerByBillingEntry(user.billingEntryId, user.price, user.planName);
-                        responseCode = paymentTxnResult?.authorizeNetResponse?.transactionResponse?.responseCode;
-                        paymentSucceeded = responseCode === '1';
+                // Cancel PayPal subscription if one exists
+                if (user.paypalSubscriptionId) {
+                    console.log(`Canceling PayPal subscription ${user.paypalSubscriptionId} for user ${user.id}`);
+                    const result = await cancelPayPalSubscription(
+                        user.paypalSubscriptionId,
+                        'Subscription expired'
+                    );
+
+                    if (!result.success) {
+                        console.error(`Failed to cancel PayPal subscription: ${result.error}`);
+                        // Continue with deletion even if PayPal cancellation fails
                     } else {
-                        paymentSucceeded = true;
-                    }
-
-                    const receiptNo = paymentTxnResult?.paymentTransaction?.transId;
-                    const receiptTotal = Number(user.price || 0).toFixed(2);
-                    const receiptAmountPaid = Number(paymentTxnResult?.paymentTransaction?.amount || 0).toFixed(2);
-                    const receiptDate = moment().format('MMMM DD, YYYY');
-                    const receiptPaidForTime = `${receiptDate} - ${moment().add(1, 'month').format('MMMM DD, YYYY')}`;
-
-                    let receiptPayMethod = 'Credit/Debit Card';
-
-                    if (paymentTxnResult?.authorizeNetResponse?.transactionResponse?.accountType &&
-                        paymentTxnResult?.authorizeNetResponse?.transactionResponse?.accountNumber) {
-                        receiptPayMethod = `${paymentTxnResult.authorizeNetResponse.transactionResponse.accountType} - ${paymentTxnResult.authorizeNetResponse.transactionResponse.accountNumber}`;
-                    }
-
-                    if (paymentSucceeded) {
-                        await pgDbWritePool
-                            .query(`UPDATE "subscriptionPlanEnrollments" 
-                                    SET "lastPaymentAt" = CURRENT_DATE, 
-                                        "lastEvalAt" = CURRENT_TIMESTAMP,
-                                        "updatedAt" = CURRENT_TIMESTAMP,
-                                        "nextPaymentAt" = CURRENT_DATE + INTERVAL '1 month' 
-                                WHERE "id" = $1`, [user.enrollmentId]);
-
-                        // Send receipt email to customer
-                        if (receiptNo) {
-                            const receiptHtml = generateReceiptHtml({
-                                receiptNo,
-                                receiptDate,
-                                customerEmail: user.email,
-                                planName: user.planName,
-                                receiptPaidForTime,
-                                receiptTotal,
-                                receiptAmountPaid,
-                                receiptPayMethod
-                            });
-
-                            await sendEmail([user.email], `Your receipt from Diwa Date [#${receiptNo}]`, receiptHtml);
-                            return 0;
-                        }
-                    } else {
-                        // Payment is under review
-                        if (responseCode === '4') {
-                            await pgDbWritePool.query(`
-                                INSERT INTO "billingHolds" ("userId", "enrollmentId", "reason", "responseCode", "amount", "planName", "createdAt", "updatedAt")
-                                VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                            `, [user.id, user.enrollmentId, 'Payment under review', responseCode, user.price, user.planName]);
-
-                            // Update lastEvalAt to 2 days from the current date
-                            await pgDbWritePool.query(`
-                                UPDATE "subscriptionPlanEnrollments" 
-                                SET "lastEvalAt" = CURRENT_TIMESTAMP + INTERVAL '2 days',
-                                    "updatedAt" = CURRENT_TIMESTAMP
-                                WHERE "id" = $1
-                            `, [user.enrollmentId]);
-
-                            // Send payment review email
-                            const paymentReviewHtml = generatePaymentReviewEmail({
-                                customerEmail: user.email,
-                                planName: user.planName,
-                                reviewDate: receiptDate,
-                                receiptPayMethod
-                            });
-
-                            await sendEmail([user.email], `Notice: Payment under review for your Diwa Date membership`, paymentReviewHtml);
-                        } else {
-                            // If the payment was declined for other reasons, remove the subscription
-                            await pgDbWritePool.query(`DELETE FROM "subscriptionPlanEnrollments" WHERE id = $1`, [user.enrollmentId]);
-                            await pgDbWritePool.query(`UPDATE "users" SET "isPremium" = false, "updatedAt" = NOW() WHERE id = $1`, [user.id]);
-
-                            const billingFailureHtml = generateBillingFailureEmail({
-                                customerEmail: user.email,
-                                planName: user.planName,
-                                failureDate: receiptDate,
-                                receiptPayMethod
-                            });
-
-                            await sendEmail([user.email], `Notice: Payment failure for your Diwa Date membership`, billingFailureHtml);
-                        }
+                        console.log(`Successfully canceled PayPal subscription ${user.paypalSubscriptionId}`);
                     }
                 }
 
-                console.log(`Evaluated user ${user.id} (${user.email})`);
+                await pgDbWritePool.query(`DELETE FROM "subscriptionPlanEnrollments" WHERE "id" = $1`, [user.enrollmentId]);
+                await pgDbWritePool.query(`UPDATE "users" SET "isPremium" = false, "updatedAt" = NOW() WHERE "id" = $1`, [user.id]);
             }
         }
 
