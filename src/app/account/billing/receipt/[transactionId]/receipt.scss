@@ -33,6 +33,19 @@
         }
     }
 
+    h2 {
+        font-size: 1rem;
+        font-weight: normal;
+        color: globals.$slate;
+        margin: -18px 0 0 0;
+        text-align: center;
+        letter-spacing: -0.025em;
+
+        @include globals.dark-mode {
+            color: #ffffff;
+        }
+    }
+
     hr {
         border: none;
         border-top: 2px solid #f3f4f6;

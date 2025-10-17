@@ -27,13 +27,14 @@ export default async function ReceiptPage({ params }: any) {
         notFound();
     }
 
-    const { amount, accountNumber, status, description, paymentMethod, transId, createdAt } = paymentTransaction as any;
+    const { amount, status, description, paymentMethod, transId, createdAt } = paymentTransaction as any;
     const receiptDate = moment(createdAt).format('MMMM D, YYYY');
 
     return (
         <div className="receipt-container">
-            <h1>Diwa Date Payment Receipt</h1>
-            <hr/>
+            <h1>Taktyx Payment Receipt</h1>
+            <h2>Diwa Date is a brand operated by Taktyx</h2>
+            <hr />
             <div className="receipt-info">
                 <h2>Receipt Details</h2>
                 <div className="info-row">
@@ -46,7 +47,7 @@ export default async function ReceiptPage({ params }: any) {
                 </div>
                 <div className="info-row">
                     <span className="info-label">Transaction Status:</span>
-                    <span style={{textTransform: 'capitalize'}} className="info-value">{status}</span>
+                    <span style={{ textTransform: 'capitalize' }} className="info-value">{status}</span>
                 </div>
                 <div className="info-row">
                     <span className="info-label">Customer Email:</span>
@@ -59,22 +60,22 @@ export default async function ReceiptPage({ params }: any) {
 
                 <div className="item-row">
                     <div className="item-details">
-                        <div className="item-name">{description} Membership (1 Month)</div>
+                        <div className="item-name">{description} (1 Month)</div>
                     </div>
                     <div className="item-price">
                         <div className="label">Amount Due:</div>
-                        <div className="amount">${amount}</div>
+                        <div className="amount">{amount.toFixed(2)}</div>
                     </div>
                 </div>
 
                 <div className="total-row">
                     <span className="total-label">Total Paid:</span>
-                    <span className="total-amount">${amount}</span>
+                    <span className="total-amount">{amount.toFixed(2)}</span>
                 </div>
 
                 <div className="payment-method">
                     <h4>Payment Method</h4>
-                    <p>{paymentMethod} {accountNumber}</p>
+                    <p>{paymentMethod.toUpperCase()}</p>
                 </div>
             </div>
         </div>

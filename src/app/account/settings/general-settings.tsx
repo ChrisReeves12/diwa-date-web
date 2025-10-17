@@ -1,7 +1,6 @@
 'use client';
 
-import { User, UserPhoto } from "@/types";
-import { CroppedImageData } from "@/types/cropped-image-data.interface";
+import { User } from "@/types";
 import { CurrentUserProvider } from "@/common/context/current-user-context";
 import SiteWrapper from "@/common/site-wrapper/site-wrapper";
 import UserSubscriptionPlanDisplay from "@/common/user-subscription-plan-display/user-subscription-plan-display";
@@ -9,6 +8,7 @@ import { AccountSettingsTabs } from "@/app/account/account-settings-tabs";
 import { updatePassword, toggleAccountDeactivation, deleteAccount, getBlockedUsersList, unblockUser, updateEmail, enableTwoFactor, disableTwoFactor } from "@/common/server-actions/user.actions";
 import React, { useState, useEffect } from "react";
 import { UserPreview } from "@/types";
+import ConfirmDialog from "@/common/confirm-dialog/confirm-dialog";
 
 interface AccountSettingsProps {
     currentUser?: User
@@ -47,6 +47,9 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
     // 2FA state
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(!!currentUser?.require2fa);
     const [isUpdatingTwoFactor, setIsUpdatingTwoFactor] = useState(false);
+
+    // Profile deactivation confirmation dialog state
+    const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
 
     // Load blocked users on component mount
     useEffect(() => {
@@ -178,23 +181,24 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
     };
 
     const handleAccountDeactivation = async () => {
+        const shouldDeactivate = !isDeactivated;
+
+        // Show confirmation dialog only when deactivating
+        if (shouldDeactivate) {
+            setShowDeactivateConfirm(true);
+        } else {
+            // Reactivating doesn't need confirmation
+            await performAccountDeactivation(shouldDeactivate);
+        }
+    };
+
+    const performAccountDeactivation = async (shouldDeactivate: boolean) => {
         setErrors({});
         setSuccessMessage('');
         setIsLoading(true);
+        setShowDeactivateConfirm(false);
 
         try {
-            const shouldDeactivate = !isDeactivated;
-
-            if (shouldDeactivate) {
-                const confirmed = window.confirm(
-                    'Are you sure you want to turn off your profile? Your profile will be hidden from other users until you turn it back on.'
-                );
-                if (!confirmed) {
-                    setIsLoading(false);
-                    return;
-                }
-            }
-
             const result = await toggleAccountDeactivation(shouldDeactivate);
 
             if (!result.success) {
@@ -599,6 +603,7 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
                                                     <li>Prevent you from appearing in search results</li>
                                                     <li>Disable notifications</li>
                                                     <li>You can turn your profile back on at any time</li>
+                                                    <li>If you are a Premium member, you will continue to be charged until you cancel your subscription</li>
                                                 </ul>
                                             </div>
                                         )}
@@ -738,6 +743,27 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
                         </div>
                     </div>
                 </div>
+
+                {/* Profile Deactivation Confirmation Dialog */}
+                <ConfirmDialog
+                    open={showDeactivateConfirm}
+                    title="Turn Off Profile?"
+                    message={
+                        <div>
+                            <p>Are you sure you want to turn off your profile? Your profile will be hidden from other users until you turn it back on.</p>
+                            {currentUser?.isPremium && (
+                                <p className="premium-billing-notice">
+                                    <strong>Note:</strong> You will continue to be billed for your Premium membership until you cancel your subscription in the Billing section.
+                                </p>
+                            )}
+                        </div>
+                    }
+                    confirmText="Turn Off Profile"
+                    cancelText="Cancel"
+                    confirmColor="warning"
+                    onConfirm={() => performAccountDeactivation(true)}
+                    onCancel={() => setShowDeactivateConfirm(false)}
+                />
             </SiteWrapper>
         </CurrentUserProvider>
     );

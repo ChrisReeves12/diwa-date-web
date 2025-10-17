@@ -13,7 +13,7 @@ import {
     generateReceiptHtml,
     generatePaymentReviewEmail, fetchRegionsForCountry
 } from "@/server-side-helpers/billing.helpers";
-import { cancelPayPalSubscription } from "@/server-side-helpers/paypal.helpers";
+import { suspendPayPalSubscription, createPayPalSubscription, verifyPayPalSubscription, activatePayPalSubscription } from "@/server-side-helpers/paypal.helpers";
 import { sendEmail } from "@/server-side-helpers/mail.helper";
 import moment from "moment";
 import { isPostalCodeRequired as isPostalCodeRequiredUtil } from "@/utils/postal-code-utils";
@@ -136,7 +136,77 @@ export async function getRegionsForCountry(country: string) {
 }
 
 /**
- * Handles PayPal subscription enrollment
+ * Initiates a PayPal subscription by creating it via API and returning the approval URL
+ * @param planId Internal plan ID
+ * @returns Success status, approval URL, and any error messages
+ */
+export async function initiatePayPalSubscription(planId: number) {
+    const currentUser = await getCurrentUser(await cookies());
+    if (!currentUser) {
+        return { success: false, error: "User not found" };
+    }
+
+    try {
+        // Get the subscription plan with PayPal plan ID
+        const { rows: planRows } = await pgDbReadPool.query(`
+            SELECT id, name, "listPrice", "listPriceUnit", "paypalPlanId" 
+            FROM "subscriptionPlans" 
+            WHERE id = $1
+        `, [planId]);
+
+        if (planRows.length === 0) {
+            return { success: false, error: "Subscription plan not found" };
+        }
+
+        const subscriptionPlan = planRows[0];
+
+        if (!subscriptionPlan.paypalPlanId) {
+            return { success: false, error: "This plan does not have PayPal configured" };
+        }
+
+        // Check if user already has an active subscription
+        const { rows: activeRows } = await pgDbReadPool.query(`
+            SELECT id FROM "subscriptionPlanEnrollments" 
+            WHERE "userId" = $1 
+            AND ("endsAt" IS NULL OR "endsAt" > NOW())
+        `, [currentUser.id]);
+
+        if (activeRows.length > 0) {
+            return { success: false, error: "You already have an active subscription" };
+        }
+
+        // Get base URL from environment
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://diwadate.com';
+        const returnUrl = `${baseUrl}/account/billing/paypal-return?planId=${planId}`;
+        const cancelUrl = `${baseUrl}/account/billing?cancelled=true`;
+
+        // Create PayPal subscription
+        const paypalResult = await createPayPalSubscription(
+            subscriptionPlan.paypalPlanId,
+            returnUrl,
+            cancelUrl
+        );
+
+        if (!paypalResult.success || !paypalResult.approvalUrl) {
+            return {
+                success: false,
+                error: paypalResult.error || "Failed to create PayPal subscription"
+            };
+        }
+
+        return {
+            success: true,
+            approvalUrl: paypalResult.approvalUrl,
+            subscriptionId: paypalResult.subscriptionId
+        };
+    } catch (error) {
+        console.error('PayPal subscription initiation error:', error);
+        return { success: false, error: "Failed to initiate PayPal subscription. Please try again." };
+    }
+}
+
+/**
+ * Handles PayPal subscription enrollment after user returns from PayPal approval
  * @param subscriptionID PayPal subscription ID
  * @param planId Internal plan ID
  * @returns Success status and any error messages
@@ -148,6 +218,16 @@ export async function handlePayPalSubscription(subscriptionID: string, planId: n
     }
 
     try {
+        // Verify the PayPal subscription is valid
+        const verifyResult = await verifyPayPalSubscription(subscriptionID);
+
+        if (!verifyResult.success) {
+            return {
+                success: false,
+                error: verifyResult.error || "Failed to verify PayPal subscription"
+            };
+        }
+
         // Check if the subscription plan exists
         const { rows: planRows } = await pgDbReadPool.query(`
             SELECT id, name, "listPrice", "listPriceUnit" 
@@ -313,7 +393,7 @@ export async function getBillingInformation() {
 export async function getSubscriptionPlans() {
     try {
         const { rows } = await pgDbReadPool.query(`
-            SELECT id, name, description, "listPrice", "listPriceUnit", "createdAt", "updatedAt"
+            SELECT id, name, description, "listPrice", "listPriceUnit", "paypalPlanId", "createdAt", "updatedAt"
             FROM "subscriptionPlans" 
             ORDER BY "listPrice" ASC
         `);
@@ -386,24 +466,24 @@ export async function cancelSubscription() {
 
         const enrollment = enrollmentRows[0];
 
-        // If there's a PayPal subscription ID, cancel it on PayPal's end first
+        // If there's a PayPal subscription ID, suspend it on PayPal's end first
         if (enrollment.paypalSubscriptionId) {
-            console.log(`Cancelling PayPal subscription: ${enrollment.paypalSubscriptionId}`);
-            const paypalResult = await cancelPayPalSubscription(
+            console.log(`Suspending PayPal subscription: ${enrollment.paypalSubscriptionId}`);
+            const paypalResult = await suspendPayPalSubscription(
                 enrollment.paypalSubscriptionId,
-                'User requested cancellation'
+                'User requested suspension'
             );
 
             if (!paypalResult.success) {
-                console.error('Failed to cancel PayPal subscription:', paypalResult.error);
+                console.error('Failed to suspend PayPal subscription:', paypalResult.error);
                 // Return error to show alert to user
                 return {
                     success: false,
-                    error: paypalResult.error || "Failed to cancel PayPal subscription. Please contact support."
+                    error: paypalResult.error || "Failed to suspend PayPal subscription. Please contact support."
                 };
             }
 
-            console.log('Successfully cancelled PayPal subscription');
+            console.log('Successfully suspended PayPal subscription');
         }
 
         // Set endsAt to the nextPaymentAt date
@@ -423,7 +503,7 @@ export async function cancelSubscription() {
 
 /**
  * Reactivates a user's subscription by removing the endsAt date
- * Note: PayPal subscriptions cannot be reactivated once cancelled - user must create a new subscription
+ * Also reactivates the subscription on PayPal's end if it's a PayPal subscription
  * @returns Success status and any error messages
  */
 export async function reactivateSubscription() {
@@ -450,12 +530,24 @@ export async function reactivateSubscription() {
 
         const enrollment = enrollmentRows[0];
 
-        // Check if this is a PayPal subscription
+        // If there's a PayPal subscription ID, activate it on PayPal's end first
         if (enrollment.paypalSubscriptionId) {
-            return {
-                success: false,
-                error: "PayPal subscriptions cannot be reactivated once cancelled. Please create a new subscription below."
-            };
+            console.log(`Activating PayPal subscription: ${enrollment.paypalSubscriptionId}`);
+            const paypalResult = await activatePayPalSubscription(
+                enrollment.paypalSubscriptionId,
+                'User requested reactivation'
+            );
+
+            if (!paypalResult.success) {
+                console.error('Failed to activate PayPal subscription:', paypalResult.error);
+                // Return error to show alert to user
+                return {
+                    success: false,
+                    error: paypalResult.error || "Failed to activate PayPal subscription. Please contact support."
+                };
+            }
+
+            console.log('Successfully activated PayPal subscription');
         }
 
         // Remove the endsAt date to reactivate

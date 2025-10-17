@@ -400,6 +400,33 @@
 }
 
 .billing-settings {
+  .payment-plan-notes {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding-top: 20px;
+    padding-left: 12px;
+    padding-right: 12px;
+
+    @include globals.media-min('screens.md') {
+      padding: 0;
+    }
+
+    .icon {
+      color: #bfbfbf;
+      font-size: 23px;
+
+      @include globals.dark-mode {
+        color: #ffffff;
+      }
+    }
+
+    .note {
+      font-size: 13px;
+      flex: 1;
+    }
+  }
+
   form {
     padding-bottom: 20px;
 
@@ -1136,6 +1163,16 @@
         li {
           margin-bottom: 5px;
         }
+      }
+    }
+
+    .premium-billing-notice {
+      margin-top: 16px;
+      font-weight: bold;
+      color: globals.$primary-blue;
+
+      @include globals.dark-mode {
+        color: globals.$primary-blue;
       }
     }
   }

@@ -5,6 +5,7 @@ import { CurrentUserProvider } from "@/common/context/current-user-context";
 import SiteWrapper from "@/common/site-wrapper/site-wrapper";
 import UserSubscriptionPlanDisplay from "@/common/user-subscription-plan-display/user-subscription-plan-display";
 import { AccountSettingsTabs } from "@/app/account/account-settings-tabs";
+import { FaInfoCircle } from "react-icons/fa";
 import {
     updateBillingInformation,
     getBillingInformation,
@@ -21,7 +22,7 @@ import { isPostalCodeRequired } from "@/utils/postal-code-utils";
 import { countries } from "@/config/countries";
 import React, { useState, useEffect } from "react";
 import "../account-settings.scss";
-import { CheckCircleIcon, ExclamationCircleIcon, TrashIcon } from "react-line-awesome";
+import { CheckCircleIcon, ExclamationCircleIcon, InfoCircleIcon, TrashIcon } from "react-line-awesome";
 
 // PayPal SDK types
 declare global {
@@ -59,6 +60,7 @@ interface SubscriptionPlan {
     description: string;
     listPrice: number;
     listPriceUnit: string;
+    paypalPlanId?: string;
 }
 
 interface SubscriptionDetails {
@@ -77,6 +79,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingBillingInfo, setIsLoadingBillingInfo] = useState(true);
     const [isLoadingSubscription, setIsLoadingSubscription] = useState(false);
+    const isUsingPayPal = true;
 
     // Billing information state
     const [billingInfo, setBillingInfo] = useState<BillingInformation>({
@@ -174,9 +177,18 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
     // Load PayPal SDK and initialize buttons when subscription plans are loaded
     useEffect(() => {
         if (subscriptionPlans.length > 0 && !currentUser?.isSubscriptionActive) {
+            // Get PayPal Client ID from environment variable
+            const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+
+            if (!paypalClientId) {
+                console.error('NEXT_PUBLIC_PAYPAL_CLIENT_ID is not set in environment variables');
+                setErrors({ subscriptionForm: 'PayPal is not configured. Please contact support.' });
+                return;
+            }
+
             // Load PayPal SDK
             const script = document.createElement('script');
-            script.src = 'https://www.paypal.com/sdk/js?client-id=ATDzpQ8lmlAFFzCNCXdaxztv71gKS9lMjOQhq9XfinKrRZFkP8iMxk8Kn1ipBjyMRvRk59RIucXeGCpe&vault=true&intent=subscription';
+            script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}&vault=true&intent=subscription`;
             script.setAttribute('data-sdk-integration-source', 'button-factory');
 
             script.onload = () => {
@@ -196,10 +208,9 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                 label: 'subscribe'
                             },
                             createSubscription: function (data: any, actions: any) {
-                                // Use the PayPal plan ID - for now using the hardcoded one from user
-                                // In production, this should map to actual PayPal plan IDs
+                                const paypalPlanId = plan.paypalPlanId;
                                 return actions.subscription.create({
-                                    plan_id: 'P-9AX53268EH3629246NDTEOOQ'
+                                    plan_id: paypalPlanId
                                 });
                             },
                             onApprove: function (data: any, actions: any) {
@@ -436,7 +447,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                                         ) : (
                                                             <div className="active-subscription-info">
                                                                 <p>Next billing date: <strong>{new Date(subscriptionDetails.nextPaymentAt).toLocaleDateString()}</strong></p>
-                                                                {Number(subscriptionDetails.priceUnit) > 0 ?
+                                                                {Number(subscriptionDetails.price) > 0 ?
                                                                     <p>Amount: <strong>${subscriptionDetails.price}/{subscriptionDetails.priceUnit === 'USD' ? 'month' : subscriptionDetails.priceUnit}</strong></p> :
                                                                     <p>Amount: <strong>Free</strong></p>}
 
@@ -522,8 +533,15 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                 )}
                             </div>
 
+                            <div className="payment-plan-notes">
+                                <FaInfoCircle className={"icon"} />
+                                <div className="note">
+                                    <strong>Note</strong>: Payments will be made via PayPal to <strong>Taktyx</strong>, as Diwa Date is a brand operated by <strong>Taktyx</strong>.
+                                </div>
+                            </div>
+
                             {/* Billing Address Form */}
-                            <form action={handleBillingSubmit}>
+                            {!isUsingPayPal && <form action={handleBillingSubmit}>
                                 {/* Form-level errors */}
                                 {errors.form && (
                                     <div className="error-message">
@@ -697,7 +715,7 @@ export function BillingInformation({ currentUser }: AccountSettingsProps) {
                                         </button>
                                     </div>
                                 </div>
-                            </form>
+                            </form>}
 
                             {!isFoundingMember &&
                                 <PaymentHistory />}

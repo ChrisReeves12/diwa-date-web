@@ -16,8 +16,8 @@ export default async function TermsOfServicePage() {
                 <h1>Terms of Service Agreement</h1>
 
                 <div className="tos-metadata">
-                    <p>Effective Date: September 15, 2025</p>
-                    <p>Last Updated: September 15, 2025</p>
+                    <p>Effective Date: October 16, 2025</p>
+                    <p>Last Updated: October 16, 2025</p>
                 </div>
 
                 <hr />
@@ -99,7 +99,8 @@ export default async function TermsOfServicePage() {
                         <ul>
                             <li>Premium subscriptions automatically renew monthly on the same calendar day you initially subscribed</li>
                             <li>If the renewal date falls on a day that doesn't exist in the following month, billing will occur on the last day of that month</li>
-                            <li>You will be charged using the payment method on file through our payment processor, Authorize.net</li>
+                            <li>You will be charged through our payment processor, PayPal</li>
+                            <li>Payments are processed to "Taktyx" (Diwa Date is a brand operated by Taktyx LLC). Your receipts and payment confirmations from PayPal will reflect payment to Taktyx</li>
                             <li>All prices displayed include applicable taxes and fees unless otherwise stated</li>
                         </ul>
                     </section>
@@ -121,6 +122,7 @@ export default async function TermsOfServicePage() {
                             <li>Logging into your account</li>
                             <li>Visiting <a href="https://diwadate.com/account/billing">https://diwadate.com/account/billing</a></li>
                             <li>Following the cancellation instructions</li>
+                            <li>If you subscribed to Premium Membership using your PayPal account, you can suspend or cancel your subscription in the PayPal dashboard as well</li>
                         </ol>
                         <p>Upon cancellation, you will retain premium access until the end of your current billing period, after which your account will revert to free membership status.</p>
                     </section>
@@ -134,6 +136,11 @@ export default async function TermsOfServicePage() {
                             <li>Significant site outages or service interruptions that prevent use of the Service</li>
                         </ul>
                         <p>All refund requests must be submitted within 30 days of the billing issue. Refunds are not provided for change of mind, unsuccessful matches, or general dissatisfaction with the Service.</p>
+                    </section>
+
+                    <section>
+                        <h3>5.7 Profile Visibility and Billing</h3>
+                        <p>You have the option to turn off your profile at any time, which will hide your profile from other users. However, turning off your profile does not suspend or cancel your premium membership. Premium members will continue to be charged at the normal rate of their premium membership unless they explicitly cancel or suspend their membership as described in Section 5.5.</p>
                     </section>
                 </section>
 

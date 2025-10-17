@@ -200,10 +200,12 @@ model subscriptionPlans {
   updatedAt                   DateTime?                     @db.Timestamp(6)
   listPrice                   Float?                        @default(0)
   listPriceUnit               String?                       @default("USD") @db.VarChar(20)
+  paypalPlanId                String?                       @db.VarChar(255)
   subscriptionPlanEnrollments subscriptionPlanEnrollments[]
 
   @@index([createdAt(sort: Desc)], map: "subscriptionplans_createdat_index")
   @@index([updatedAt(sort: Desc)], map: "subscriptionplans_updatedat_index")
+  @@index([paypalPlanId], map: "subscriptionplans_paypalplanid_index")
 }
 
 model userMatches {

@@ -7,7 +7,8 @@ import { prismaRead, prismaWrite } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { deleteSession, getSessionId } from "@/server-side-helpers/session.helpers";
 import { sendEmail } from "@/server-side-helpers/mail.helper";
-import { deleteCustomerProfile } from "@/server-side-helpers/billing.helpers";
+import { cancelPayPalSubscription } from "@/server-side-helpers/paypal.helpers";
+import { pgDbReadPool } from "@/lib/postgres";
 
 /**
  * Toggles the online status visibility for the current user.
@@ -111,24 +112,34 @@ export async function deleteAccount(password: string) {
     }
 
     try {
-        // Delete customer profile from Authorize.net if it exists
-        const existingBilling = await prismaRead.billingInformationEntries.findFirst({
-            where: { userId: currentUser.id }
-        });
+        // Cancel any active PayPal subscriptions before deleting the account
+        const { rows: subscriptionRows } = await pgDbReadPool.query(`
+            SELECT id, "paypalSubscriptionId" 
+            FROM "subscriptionPlanEnrollments" 
+            WHERE "userId" = $1 
+            AND "paypalSubscriptionId" IS NOT NULL
+        `, [currentUser.id]);
 
-        if (existingBilling) {
-            const customerProfileId = (existingBilling as any).customerProfileId;
-            if (customerProfileId) {
+        // Attempt to cancel each active PayPal subscription
+        for (const subscription of subscriptionRows) {
+            if (subscription.paypalSubscriptionId) {
                 try {
-                    const deleteResponse = await deleteCustomerProfile(customerProfileId);
+                    console.log(`Cancelling PayPal subscription ${subscription.paypalSubscriptionId} for account deletion`);
+                    const cancelResult = await cancelPayPalSubscription(
+                        subscription.paypalSubscriptionId,
+                        'Account deleted by user'
+                    );
 
-                    if (deleteResponse.messages.resultCode !== 'Ok') {
-                        console.error('Failed to delete Authorize.net customer profile during account deletion:', deleteResponse.messages.message);
-                        // Continue with account deletion even if Authorize.net deletion fails
+                    if (!cancelResult.success) {
+                        console.error(`Failed to cancel PayPal subscription ${subscription.paypalSubscriptionId}:`, cancelResult.error);
+                        // Log the error but continue with account deletion
+                        // The subscription will be orphaned, but the user's account will still be deleted
+                    } else {
+                        console.log(`Successfully cancelled PayPal subscription ${subscription.paypalSubscriptionId}`);
                     }
                 } catch (error) {
-                    console.error('Error deleting Authorize.net customer profile during account deletion:', error);
-                    // Continue with account deletion even if Authorize.net deletion fails
+                    console.error(`Error cancelling PayPal subscription ${subscription.paypalSubscriptionId}:`, error);
+                    // Continue with account deletion even if PayPal cancellation fails
                 }
             }
         }
@@ -318,7 +329,7 @@ export async function enableTwoFactor(password: string) {
     try {
         // Enable 2FA
         const result = await enableTwoFactorAuth(currentUser.id);
-        
+
         if (!result.success) {
             return { success: false, error: result.error || "Failed to enable two-factor authentication" };
         }
@@ -350,7 +361,7 @@ export async function disableTwoFactor(password: string) {
     try {
         // Disable 2FA
         const result = await disableTwoFactorAuth(currentUser.id);
-        
+
         if (!result.success) {
             return { success: false, error: result.error || "Failed to disable two-factor authentication" };
         }

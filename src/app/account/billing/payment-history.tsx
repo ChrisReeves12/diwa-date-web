@@ -45,7 +45,7 @@ export function PaymentHistory() {
     };
 
     const formatAmount = (amount: number) => {
-        return `$${amount.toFixed(2)}`;
+        return amount.toFixed(2);
     };
 
     const getPaymentMethod = (accountNumber: string) => {
@@ -83,14 +83,14 @@ export function PaymentHistory() {
                         <div className="payment-history-info">
                             <div className="payment-date">{formatDate(transaction.createdAt)}</div>
                             <div className="payment-desc">
-                                {`${transaction.description} Membership` || 'Premium Membership'}
+                                {transaction.description || 'Premium Membership'}
                             </div>
                             <div className="payment-method">
-                                <div>{transaction.paymentMethod} {transaction.accountNumber}</div>
+                                <div>{transaction.paymentMethod?.toUpperCase()}</div>
                             </div>
                             <div className="view-receipt">
                                 <Link target='_blank' href={`/account/billing/receipt/${transaction.transId}`} className="view-receipt">
-                                    <EyeIcon size='lg'/> View
+                                    <EyeIcon size='lg' /> View
                                 </Link>
                             </div>
                         </div>
@@ -118,11 +118,11 @@ export function PaymentHistory() {
                         </div>
                         <div className="payment-cell status">{transaction.status}</div>
                         <div className="payment-cell description-col">
-                            {`${transaction.description} Membership` || 'Premium Membership'}
+                            {transaction.description || 'Premium Membership'}
                         </div>
                         <div className="payment-cell payment-method-col">
                             <div>
-                                <div className="payment-method">{transaction.paymentMethod}</div>
+                                <div className="payment-method">{transaction.paymentMethod?.toUpperCase()}</div>
                                 <div className="payment-method-number">
                                     {transaction.accountNumber}
                                 </div>
@@ -130,7 +130,7 @@ export function PaymentHistory() {
                         </div>
                         <div className="payment-cell receipt-col">
                             <Link target='_blank' href={`/account/billing/receipt/${transaction.transId}`} className="view-receipt">
-                                <EyeIcon size='lg'/> View
+                                <EyeIcon size='lg' /> View
                             </Link>
                         </div>
                         <div className="payment-cell total-col">
