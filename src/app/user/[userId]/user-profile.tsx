@@ -16,7 +16,7 @@ import {
     BanIcon,
     CommentsIcon, ExclamationTriangleIcon,
     HeartBrokenIcon,
-    HeartIcon, ImageIcon, InfoCircleIcon, MapMarkerIcon, StarIcon, TimesIcon, TrophyIcon, UnlockIcon, UserCircleIcon
+    HeartIcon, ImageIcon, InfoCircleIcon, MapMarkerIcon, StarIcon, TimesIcon, UnlockIcon, UserCircleIcon
 } from "react-line-awesome";
 import _ from 'lodash';
 import { UserProfileDetail } from "@/types/user-profile-detail.interface";
@@ -33,6 +33,7 @@ import { isUserOnline } from '@/helpers/user.helpers';
 import ReportUserDialog from '@/common/report-user-dialog/report-user-dialog';
 import { CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 import { WebSocketMessage } from "../../../../types/websocket-events.types";
+import { TbDiamond } from "react-icons/tb";
 
 interface UserProfileProps {
     userProfileDetail: UserProfileDetail,
@@ -448,7 +449,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                         <h1 className="user-display-name">{userProfile.user.displayName}</h1>
                                         {userProfile.user.isPremium && !userProfile.user.isFoundingMember && (
                                             <div className="premium-badge" title="Premium Member">
-                                                <TrophyIcon />
+                                                <TbDiamond size={19} />
                                             </div>
                                         )}
                                     </div>

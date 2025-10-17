@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { User } from '@/types/user.interface';
 import { WizardProgress } from '@/app/onboarding/components/wizard-progress';
 import { WizardNavigation } from '@/app/onboarding/components/wizard-navigation';
+import { EmailVerificationStep } from '@/app/onboarding/steps/email-verification-step';
 import { WelcomeStep } from '@/app/onboarding/steps/welcome-step';
 import { AppearanceStep } from '@/app/onboarding/steps/appearance-step';
 import { CultureStep } from '@/app/onboarding/steps/culture-step';
@@ -59,9 +60,13 @@ const initializeValidationState = (user: User): Record<number, boolean> => {
     const validation: Record<number, boolean> = {};
 
     // Initialize all steps as invalid by default
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 6; i++) {
         validation[i] = false;
     }
+
+    // Step 1 (email verification) is always valid - users can skip it
+    // Mark as completed if email is verified
+    validation[1] = user.emailVerifiedAt !== null;
 
     // Handle case where currentOnboardingSteps might be a string that needs parsing
     let onboardingSteps = user.currentOnboardingSteps;
@@ -107,7 +112,7 @@ export function WizardContainer({ currentUser }: WizardContainerProps) {
         bio: currentUser.bio || ''
     });
 
-    const totalSteps = 5;
+    const totalSteps = 6;
 
 
     const updateWizardData = (field: keyof WizardData, value: any) => {
@@ -168,40 +173,50 @@ export function WizardContainer({ currentUser }: WizardContainerProps) {
     const renderCurrentStep = () => {
         switch (currentStep) {
             case 1:
-                return <WelcomeStep
+                return <EmailVerificationStep
                     data={wizardData}
                     updateData={updateWizardData}
                     onValidationChange={(isValid) => updateStepValidation(1, isValid)}
+                    userEmail={currentUser.email}
+                    emailVerified={currentUser.emailVerifiedAt !== null}
                 />;
             case 2:
-                return <AppearanceStep
+                return <WelcomeStep
                     data={wizardData}
                     updateData={updateWizardData}
                     onValidationChange={(isValid) => updateStepValidation(2, isValid)}
                 />;
             case 3:
-                return <CultureStep
+                return <AppearanceStep
                     data={wizardData}
                     updateData={updateWizardData}
                     onValidationChange={(isValid) => updateStepValidation(3, isValid)}
                 />;
             case 4:
-                return <LifestyleStep
+                return <CultureStep
                     data={wizardData}
                     updateData={updateWizardData}
                     onValidationChange={(isValid) => updateStepValidation(4, isValid)}
                 />;
             case 5:
-                return <InterestsStep
+                return <LifestyleStep
                     data={wizardData}
                     updateData={updateWizardData}
                     onValidationChange={(isValid) => updateStepValidation(5, isValid)}
                 />;
+            case 6:
+                return <InterestsStep
+                    data={wizardData}
+                    updateData={updateWizardData}
+                    onValidationChange={(isValid) => updateStepValidation(6, isValid)}
+                />;
             default:
-                return <WelcomeStep
+                return <EmailVerificationStep
                     data={wizardData}
                     updateData={updateWizardData}
                     onValidationChange={(isValid) => updateStepValidation(1, isValid)}
+                    userEmail={currentUser.email}
+                    emailVerified={currentUser.emailVerifiedAt !== null}
                 />;
         }
     };

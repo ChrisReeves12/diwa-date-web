@@ -13,7 +13,6 @@ import {
     TimesIcon,
     UnlockIcon,
     UserCircleIcon,
-    TrophyIcon
 } from "react-line-awesome";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { UserPhoto } from "@/types/user-photo.type";
@@ -23,6 +22,7 @@ import _ from 'lodash';
 import ReportUserDialog from '../report-user-dialog/report-user-dialog';
 import Link from "next/link";
 import { CircularProgress } from "@mui/material";
+import { TbDiamond } from "react-icons/tb";
 
 interface UserProfilePreviewProps {
     userPreview: UserPreview,
@@ -248,7 +248,7 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                             </a>
                             {userPreview.isPremium && (
                                 <div className="premium-badge" title="Premium Member">
-                                    <TrophyIcon />
+                                    <TbDiamond size={16} />
                                 </div>
                             )}
                             {userPreview.isOnline && <div className="online-lamp" title="Online now"></div>}

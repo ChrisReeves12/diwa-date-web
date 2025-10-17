@@ -180,6 +180,95 @@
     }
 }
 
+// Special styling for email verification step
+.email-verification-step {
+    .email-verification-section {
+        max-width: 500px;
+        margin: 30px auto;
+
+        .verification-info {
+            background: #f0f9ff;
+            border: 1px solid globals.$primary-blue;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+
+            .info-icon {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 15px;
+
+                .icon {
+                    font-size: 70px;
+                    color: globals.$primary-blue;
+
+                    &.verified {
+                        color: #10b981;
+                    }
+                }
+            }
+
+            .info-text {
+                text-align: center;
+
+                p {
+                    color: #374151;
+                    font-size: 15px;
+                    line-height: 1.6;
+                    margin: 10px 0;
+                }
+            }
+
+            &.verified {
+                background: #d1fae5;
+                border-color: #10b981;
+
+                .info-text p {
+                    color: #065f46;
+                }
+            }
+        }
+
+        .resend-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+
+            .resend-button {
+                width: 100%;
+                max-width: 300px;
+
+                &:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                }
+            }
+
+            .resend-message {
+                padding: 12px 20px;
+                border-radius: 6px;
+                font-size: 14px;
+                font-weight: 500;
+                text-align: center;
+                width: 100%;
+
+                &.success {
+                    background: #d1fae5;
+                    color: #065f46;
+                    border: 1px solid #10b981;
+                }
+
+                &.error {
+                    background: #fee2e2;
+                    color: #991b1b;
+                    border: 1px solid #ef4444;
+                }
+            }
+        }
+    }
+}
+
 // Special styling for welcome step
 .welcome-step {
     .visibility-notice {
@@ -556,6 +645,52 @@
 
             .input-hint {
                 color: #a3a3a3;
+            }
+        }
+    }
+
+    .email-verification-step {
+        .email-verification-section {
+            .verification-info {
+                background: rgba(59, 130, 246, 0.1);
+                border-color: globals.$primary-blue-dark;
+
+                .info-icon .icon {
+                    color: globals.$primary-blue-dark;
+
+                    &.verified {
+                        color: #10b981;
+                    }
+                }
+
+                .info-text p {
+                    color: #ffffff;
+                }
+
+                &.verified {
+                    background: rgba(16, 185, 129, 0.2);
+                    border-color: #10b981;
+
+                    .info-text p {
+                        color: #6ee7b7;
+                    }
+                }
+            }
+
+            .resend-section {
+                .resend-message {
+                    &.success {
+                        background: rgba(16, 185, 129, 0.2);
+                        color: #6ee7b7;
+                        border-color: #10b981;
+                    }
+
+                    &.error {
+                        background: rgba(239, 68, 68, 0.2);
+                        color: #fca5a5;
+                        border-color: #ef4444;
+                    }
+                }
             }
         }
     }

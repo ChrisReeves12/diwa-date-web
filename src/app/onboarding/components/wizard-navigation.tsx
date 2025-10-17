@@ -68,6 +68,8 @@ export function WizardNavigation({
 
     const isFirstStep = currentStep === 1;
     const isLastStep = currentStep === totalSteps;
+    // Email verification step (step 1) can always be skipped
+    const canProceed = currentStep === 1 || isCurrentStepValid;
 
     return (
         <div className="wizard-navigation">
@@ -97,8 +99,8 @@ export function WizardNavigation({
                         type="button"
                         onClick={handleNext}
                         className="btn-primary next-btn"
-                        disabled={isSubmitting || !isCurrentStepValid}
-                        title={!isCurrentStepValid ? 'Please complete all required fields to continue' : ''}
+                        disabled={isSubmitting || !canProceed}
+                        title={!canProceed ? 'Please complete all required fields to continue' : ''}
                     >
                         {isSubmitting ? 'Saving...' : (isLastStep ? 'Complete Profile' : 'Next')}
                     </button>

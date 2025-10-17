@@ -5,8 +5,8 @@ export function ProfileSettingsTabs({ selectedTab }: {
 }) {
     return (
         <TabBar tabs={[
-            {label: 'Personal Information', icon: 'las la-user', isSelected: selectedTab === 'personal-information', url: '/profile/personal-information'},
-            {label: 'Photos', icon: 'las la-camera', isSelected: selectedTab === 'photos', url: '/profile/photos'}
-        ]}/>
+            { label: 'Personal Information', iconString: 'las la-user', isSelected: selectedTab === 'personal-information', url: '/profile/personal-information' },
+            { label: 'Photos', iconString: 'las la-camera', isSelected: selectedTab === 'photos', url: '/profile/photos' }
+        ]} />
     )
 }

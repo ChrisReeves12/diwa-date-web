@@ -19,7 +19,9 @@
       padding: 24px 40px 24px 0;
     }
 
-    .label, i {
+    .label,
+    i,
+    svg {
       color: #000000;
 
       @include globals.dark-mode() {
@@ -30,7 +32,9 @@
     &.selected {
       border-bottom: 3px solid globals.$primary-blue;
 
-      .label, i {
+      .label,
+      i,
+      svg {
         color: globals.$primary-blue;
 
         @include globals.dark-mode() {

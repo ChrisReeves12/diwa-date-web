@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/server-side-helpers/user.helpers';
+import { getCurrentUser, sendVerificationEmailToUser } from '@/server-side-helpers/user.helpers';
 import { WizardData } from './wizard-container';
 import { prismaWrite } from '@/lib/prisma';
 import { pgDbWritePool } from '@/lib/postgres';
@@ -124,4 +124,33 @@ export async function completeWizard(data: WizardData) {
 export async function exitWizard() {
     // Just redirect to home page
     redirect('/');
+}
+
+export async function resendVerificationEmail() {
+    const currentUser = await getCurrentUser(await cookies());
+
+    if (!currentUser) {
+        return { success: false, message: 'User not authenticated' };
+    }
+
+    if (currentUser.emailVerifiedAt) {
+        return { success: false, message: 'Email is already verified' };
+    }
+
+    try {
+        const emailSent = await sendVerificationEmailToUser(
+            currentUser.id,
+            currentUser.email,
+            currentUser.firstName,
+            currentUser.lastName
+        );
+
+        if (emailSent) {
+            return { success: true, message: 'Verification email sent successfully' };
+        } else {
+            return { success: false, message: 'Failed to send verification email' };
+        }
+    } catch (error) {
+        return { success: false, message: 'An error occurred while sending the email' };
+    }
 } 

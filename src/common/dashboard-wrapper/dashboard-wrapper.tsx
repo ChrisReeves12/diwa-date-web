@@ -8,6 +8,7 @@ import SiteWrapper from "@/common/site-wrapper/site-wrapper";
 import TabBar from "@/common/tab-bar/tab-bar";
 import { useEffect } from "react";
 import { loadGoogleMapsScript } from "@/util";
+import { FaComments } from "react-icons/fa6";
 
 interface DashboardWrapperProps {
     currentUser: User,
@@ -17,9 +18,9 @@ interface DashboardWrapperProps {
 
 export default function DashboardWrapper({ currentUser, activeTab, children }: DashboardWrapperProps) {
     const tabs = [
-        { label: 'Search', url: '/', icon: 'las la-search', isSelected: activeTab === 'search' },
-        { label: 'Likes', url: '/likes', icon: 'las la-heart', isSelected: activeTab === 'likes' },
-        { label: 'Messages', url: '/messages', icon: 'las la-comments', isSelected: activeTab === 'messages' },
+        { label: 'Search', url: '/', iconString: 'las la-search', isSelected: activeTab === 'search' },
+        { label: 'Likes', url: '/likes', iconString: 'las la-heart', isSelected: activeTab === 'likes' },
+        { label: 'Messages', url: '/messages', icon: <FaComments size={23} />, isSelected: activeTab === 'messages' },
     ];
 
     useEffect(() => {
