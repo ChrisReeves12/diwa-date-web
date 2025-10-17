@@ -10,6 +10,9 @@ import Link from 'next/link';
 import { Alert, Button, CircularProgress } from '@mui/material';
 import { getCookieConsentStatus } from '@/common/cookie-consent';
 
+// @ts-ignore
+import { getCurrentBrowserFingerPrint } from "@rajesh896/broprint.js";
+
 export default function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -72,6 +75,14 @@ export default function LoginForm() {
                 const consentStatus = getCookieConsentStatus();
                 formData.set('cookieConsent', consentStatus || 'null');
 
+                const fingerprint = await getCurrentBrowserFingerPrint();
+                const cookies = document.cookie;
+                const userAgent = navigator.userAgent;
+
+                formData.set('browserFingerprint', fingerprint);
+                formData.set('browserCookies', cookies);
+                formData.set('browserUserAgent', userAgent);
+
                 // Call the server action
                 const result = await loginAction(formData);
 
@@ -122,6 +133,15 @@ export default function LoginForm() {
             // Add cookie consent status to form data
             const consentStatus = getCookieConsentStatus();
             formData.set('cookieConsent', consentStatus || 'null');
+
+            // Add browser fingerprint data
+            const fingerprint = await getCurrentBrowserFingerPrint();
+            const cookies = document.cookie;
+            const userAgent = navigator.userAgent;
+
+            formData.set('browserFingerprint', fingerprint);
+            formData.set('browserCookies', cookies);
+            formData.set('browserUserAgent', userAgent);
 
             const result = await verifyTwoFactorCodeAction(formData);
 

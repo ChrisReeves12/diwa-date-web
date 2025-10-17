@@ -2,6 +2,10 @@
 
 import './registration.scss';
 import React, { useState, useEffect } from 'react';
+
+// @ts-ignore
+import { getCurrentBrowserFingerPrint } from "@rajesh896/broprint.js";
+
 import { useRouter, useSearchParams } from 'next/navigation';
 import SeekingMatchForm from '@/common/seeking-match-form/seeking-match-form';
 import { registrationTitle, registrationSubtitle, registrationPasswordHint } from '@/content/registration-content';
@@ -146,6 +150,18 @@ export default function RegistrationForm() {
         formData.set('seekingGender', seekingGender);
         formData.set('termsAccepted', termsAccepted.toString());
         formData.set('timezone', timezone);
+
+        const fingerprint = await getCurrentBrowserFingerPrint();
+        const cookies = document.cookie;
+        const userAgent = navigator.userAgent;
+
+        // Get cookie consent status
+        const cookieConsent = localStorage.getItem('cookieConsent') || 'declined';
+
+        formData.set('browserFingerprint', fingerprint);
+        formData.set('browserCookies', cookies);
+        formData.set('browserUserAgent', userAgent);
+        formData.set('cookieConsent', cookieConsent);
 
         // Call the server action
         const result = await registerAction(formData);

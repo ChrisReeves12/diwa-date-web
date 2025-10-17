@@ -1,3 +1,4 @@
+import { userBrowsers } from './../../../node_modules/.prisma/client/index.d';
 'use server';
 
 import { cookies, headers } from 'next/headers';
@@ -7,6 +8,7 @@ import { logError } from '@/server-side-helpers/logging.helpers';
 import { AuthResponse } from '@/types/auth-response.interface';
 import { redirect } from 'next/navigation';
 import { getIPGeolocation } from '@/server-side-helpers/session-db.helpers';
+import { prismaRead, prismaWrite } from '@/lib/prisma';
 
 interface LoginResult {
   success: boolean;
@@ -14,6 +16,46 @@ interface LoginResult {
   requiresTwoFactor?: boolean;
   userId?: number;
   twoFactorMessage?: string;
+}
+
+/**
+ * Store or update browser tracking data
+ */
+async function storeBrowserData(
+  userId: number,
+  formData: FormData,
+  cookieConsentDeclined: boolean
+): Promise<void> {
+  const existingBrowser = await prismaRead.userBrowsers.findFirst({
+    where: {
+      userId: userId,
+      fingerprintId: formData.get('browserFingerprint') as string
+    }
+  });
+
+  if (existingBrowser) {
+    await prismaWrite.userBrowsers.update({
+      where: {
+        id: existingBrowser.id
+      },
+      data: {
+        count: existingBrowser.count + 1,
+        userAgent: formData.get('browserUserAgent') as string,
+        cookies: !cookieConsentDeclined ? formData.get('browserCookies') as string : null,
+        updatedAt: new Date()
+      }
+    });
+  } else {
+    await prismaWrite.userBrowsers.create({
+      data: {
+        userId: userId,
+        fingerprintId: formData.get('browserFingerprint') as string,
+        count: 1,
+        userAgent: formData.get('browserUserAgent') as string,
+        cookies: !cookieConsentDeclined ? formData.get('browserCookies') as string : null,
+      }
+    });
+  }
 }
 
 export async function loginAction(formData: FormData): Promise<LoginResult> {
@@ -103,6 +145,10 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
       }
 
       cookieStore.set(cookieOptions);
+
+      if (result.userId) {
+        await storeBrowserData(result.userId, formData, cookieConsentDeclined);
+      }
     }
 
     return {
@@ -206,6 +252,10 @@ export async function verifyTwoFactorCodeAction(formData: FormData): Promise<Log
       }
 
       cookieStore.set(cookieOptions);
+
+      if (result.userId) {
+        await storeBrowserData(result.userId, formData, cookieConsentDeclined);
+      }
     }
 
     return {

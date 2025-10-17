@@ -22,6 +22,11 @@ interface RegistrationResult {
  */
 export async function registerAction(formData: FormData): Promise<RegistrationResult> {
   try {
+    const cookieConsent = formData.get('cookieConsent') as string;
+
+    // Check if user has declined cookie consent
+    const cookieConsentDeclined = cookieConsent === 'declined';
+
     // Extract user data from form data
     const userData: UserRegistrationData = {
       firstName: formData.get('firstName') as string,
@@ -105,6 +110,17 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
 
     const newUser = { id: newUserResult[0].id, ...createData };
 
+    // Store browser data
+    await prismaWrite.userBrowsers.create({
+      data: {
+        userId: newUser.id,
+        fingerprintId: formData.get('browserFingerprint') as string,
+        count: 1,
+        userAgent: formData.get('browserUserAgent') as string,
+        cookies: !cookieConsentDeclined ? formData.get('browserCookies') as string : null
+      }
+    });
+
     // Send verification email
     await sendVerificationEmailToUser(newUser.id, createData.email, createData.firstName, createData.lastName);
 
@@ -180,15 +196,22 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
     // Set the session cookie
     if (sessionId) {
       const cookieStore = await cookies();
-      cookieStore.set({
+      const cookieOptions: any = {
         name: process.env.SESSION_COOKIE_NAME as string,
         value: sessionId,
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: parseInt(process.env.SESSION_EXPIRY_MIN || '1440') * 60,
         path: '/'
-      });
+      };
+
+      // If user declined cookies, make it session-only (expires when browser closes)
+      // Otherwise, set maxAge for persistent storage
+      if (!cookieConsentDeclined) {
+        cookieOptions.maxAge = parseInt(process.env.SESSION_EXPIRY_MIN || '1440') * 60;
+      }
+
+      cookieStore.set(cookieOptions);
     }
 
     return {

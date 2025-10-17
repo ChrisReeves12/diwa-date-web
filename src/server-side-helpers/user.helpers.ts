@@ -405,6 +405,7 @@ export async function completeTwoFactorAuth(
     );
 
     return {
+        userId: user.id,
         success: true,
         sessionId
     };
