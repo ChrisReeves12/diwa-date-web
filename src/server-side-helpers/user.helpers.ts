@@ -1313,31 +1313,31 @@ export async function getFullUserProfile(userId: number, currentUserId: number):
  * @returns True if the email was sent, false otherwise
  */
 export async function sendVerificationEmailToUser(userId: number, email: string, firstName: string, lastName: string): Promise<boolean> {
-    const token = generateCryptoRandomString(32);
+    // Generate a random 6-digit code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     
     await pgDbWritePool.query(
         `UPDATE users 
          SET "emailVerificationToken" = $1,
              "emailVerificationTokenExpiry" = NOW() + INTERVAL '20 minutes'
-         WHERE id = $2`, [token, userId]
+         WHERE id = $2`, [verificationCode, userId]
     );
-
-    const verificationLink = `${process.env.APP_URL_ROOT}/user/verify/email?token=${token}`
 
     // Email content
     const content = `
         <h1>Email Verification</h1>
         <p>Hi ${firstName} ${lastName}!</p>
         <p>Thank you for registering with Diwa Date!</p>
-        <p>Please verify your email address by clicking the button below:</p>
-        <a href="${verificationLink}" class="button">Verify Email</a>
+        <p>Your verification code is:</p>
+        <h2 style="font-size: 32px; letter-spacing: 5px; color: #3b82f6; text-align: center; margin: 20px 0;">${verificationCode}</h2>
+        <p>This code will expire in 20 minutes.</p>
         <p>If you did not create an account, you can ignore this email.</p>
     `;
 
     // Send the email
     const result = await sendEmail([
         email
-    ], `Email verification for ${firstName} ${lastName}`, content);
+    ], `Email verification code for ${firstName} ${lastName}`, content);
     return !result.hasError;
 }
 

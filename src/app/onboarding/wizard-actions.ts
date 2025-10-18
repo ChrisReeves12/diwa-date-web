@@ -153,4 +153,50 @@ export async function resendVerificationEmail() {
     } catch (error) {
         return { success: false, message: 'An error occurred while sending the email' };
     }
-} 
+}
+
+export async function verifyEmailCode(code: string) {
+    const currentUser = await getCurrentUser(await cookies());
+
+    if (!currentUser) {
+        return { success: false, message: 'User not authenticated' };
+    }
+
+    if (currentUser.emailVerifiedAt) {
+        return { success: false, message: 'Email is already verified' };
+    }
+
+    // Validate code format (6 digits)
+    if (!/^\d{6}$/.test(code)) {
+        return { success: false, message: 'Invalid code format. Please enter a 6-digit code.' };
+    }
+
+    try {
+        // Check if the code matches and hasn't expired
+        const result = await pgDbWritePool.query(
+            `SELECT id FROM users 
+             WHERE id = $1 
+             AND "emailVerificationToken" = $2 
+             AND "emailVerificationTokenExpiry" > NOW()`,
+            [currentUser.id, code]
+        );
+
+        if (result.rows.length === 0) {
+            return { success: false, message: 'Invalid or expired verification code' };
+        }
+
+        // Mark email as verified
+        await pgDbWritePool.query(
+            `UPDATE users 
+             SET "emailVerifiedAt" = NOW(),
+                 "emailVerificationToken" = NULL,
+                 "emailVerificationTokenExpiry" = NULL
+             WHERE id = $1`,
+            [currentUser.id]
+        );
+
+        return { success: true, message: 'Email verified successfully!' };
+    } catch (error) {
+        return { success: false, message: 'An error occurred while verifying the code' };
+    }
+}
