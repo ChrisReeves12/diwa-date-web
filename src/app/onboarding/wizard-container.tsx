@@ -10,6 +10,7 @@ import { AppearanceStep } from '@/app/onboarding/steps/appearance-step';
 import { CultureStep } from '@/app/onboarding/steps/culture-step';
 import { LifestyleStep } from '@/app/onboarding/steps/lifestyle-step';
 import { InterestsStep } from '@/app/onboarding/steps/interests-step';
+import { PhotosStep } from '@/app/onboarding/steps/photos-step';
 import './onboarding.scss';
 
 interface WizardContainerProps {
@@ -60,7 +61,7 @@ const initializeValidationState = (user: User): Record<number, boolean> => {
     const validation: Record<number, boolean> = {};
 
     // Initialize all steps as invalid by default
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= 7; i++) {
         validation[i] = false;
     }
 
@@ -112,8 +113,7 @@ export function WizardContainer({ currentUser }: WizardContainerProps) {
         bio: currentUser.bio || ''
     });
 
-    const totalSteps = 6;
-
+    const totalSteps = 7;
 
     const updateWizardData = (field: keyof WizardData, value: any) => {
         setWizardData(prev => ({ ...prev, [field]: value }));
@@ -187,28 +187,34 @@ export function WizardContainer({ currentUser }: WizardContainerProps) {
                     onValidationChange={(isValid) => updateStepValidation(2, isValid)}
                 />;
             case 3:
-                return <AppearanceStep
+                return <PhotosStep
                     data={wizardData}
                     updateData={updateWizardData}
                     onValidationChange={(isValid) => updateStepValidation(3, isValid)}
                 />;
             case 4:
-                return <CultureStep
+                return <AppearanceStep
                     data={wizardData}
                     updateData={updateWizardData}
                     onValidationChange={(isValid) => updateStepValidation(4, isValid)}
                 />;
             case 5:
-                return <LifestyleStep
+                return <CultureStep
                     data={wizardData}
                     updateData={updateWizardData}
                     onValidationChange={(isValid) => updateStepValidation(5, isValid)}
                 />;
             case 6:
-                return <InterestsStep
+                return <LifestyleStep
                     data={wizardData}
                     updateData={updateWizardData}
                     onValidationChange={(isValid) => updateStepValidation(6, isValid)}
+                />;
+            case 7:
+                return <InterestsStep
+                    data={wizardData}
+                    updateData={updateWizardData}
+                    onValidationChange={(isValid) => updateStepValidation(7, isValid)}
                 />;
             default:
                 return <EmailVerificationStep
@@ -230,7 +236,6 @@ export function WizardContainer({ currentUser }: WizardContainerProps) {
                     completedSteps={stepValidation}
                 />
 
-
                 <div className="wizard-step-content">
                     {renderCurrentStep()}
                 </div>
@@ -247,4 +252,4 @@ export function WizardContainer({ currentUser }: WizardContainerProps) {
             </div>
         </div>
     );
-} 
+}

@@ -14,7 +14,8 @@ export function InterestsStep({ data, updateData, onValidationChange }: Interest
     const [bio, setBio] = useState(data.bio);
 
     const validateStep = () => {
-        if (interests.length === 0 || bio.trim().length < 50) {
+        // Only require interests to be selected; bio is optional during onboarding
+        if (interests.length === 0) {
             onValidationChange(false);
             return;
         }
@@ -66,7 +67,7 @@ export function InterestsStep({ data, updateData, onValidationChange }: Interest
 
                     <div className="form-row">
                         <div className="input-container">
-                            <label htmlFor="bio">Tell us about yourself</label>
+                            <label htmlFor="bio">Tell us about yourself (optional)</label>
                             <textarea
                                 id="bio"
                                 value={bio}
@@ -77,9 +78,6 @@ export function InterestsStep({ data, updateData, onValidationChange }: Interest
                             />
                             <div className="character-counter">
                                 {bio.length}/3000 characters
-                                {bio.length > 0 && bio.length < 50 && (
-                                    <span className="min-warning"> (minimum 50 characters recommended)</span>
-                                )}
                             </div>
                             <div className="input-hint">
                                 This is your chance to make a great first impression! Tell potential matches what makes you unique.

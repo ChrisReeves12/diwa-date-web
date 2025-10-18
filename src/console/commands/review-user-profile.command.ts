@@ -255,42 +255,52 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 }
             });
 
-            if (rejectedPhotos.length > 0) {
-                const notification = await prismaWrite.notifications.create({
-                    data: {
-                        recipientId: userId,
-                        type: "account",
-                        data: { content: "You have some photos that were not approved." }
-                    }
-                });
+            try {
+                if (rejectedPhotos.length > 0) {
+                    const notification = await prismaWrite.notifications.create({
+                        data: {
+                            recipientId: userId,
+                            type: "account",
+                            data: { content: "You have some photos that were not approved." }
+                        }
+                    });
 
-                await emitAccountMessage(userId, {
-                    noticeType: "account:photosNotApproved",
-                    message: "You have some photos that were not approved",
-                    data: {
-                        notificationId: notification.id,
-                        rejectedPhotos,
-                        approvedPhotos
-                    }
-                });
-            } else {
-                // Create database notification for approved photos
-                const notification = await prismaWrite.notifications.create({
-                    data: {
-                        recipientId: userId,
-                        type: "account",
-                        data: { content: "Your photos were approved!" }
-                    }
-                });
+                    await emitAccountMessage(userId, {
+                        noticeType: "account:photosNotApproved",
+                        message: "You have some photos that were not approved",
+                        data: {
+                            notificationId: notification.id,
+                            rejectedPhotos,
+                            approvedPhotos
+                        }
+                    });
+                } else {
+                    // Create database notification for approved photos
+                    const notification = await prismaWrite.notifications.create({
+                        data: {
+                            recipientId: userId,
+                            type: "account",
+                            data: { content: "Your photos were approved!" }
+                        }
+                    });
 
-                await emitAccountMessage(userId, {
-                    noticeType: "account:photosApproved",
-                    message: "Your photos were approved!",
-                    data: {
-                        notificationId: notification.id,
-                        rejectedPhotos,
-                        approvedPhotos
-                    }
+                    await emitAccountMessage(userId, {
+                        noticeType: "account:photosApproved",
+                        message: "Your photos were approved!",
+                        data: {
+                            notificationId: notification.id,
+                            rejectedPhotos,
+                            approvedPhotos
+                        }
+                    });
+                }
+            } catch (notificationError) {
+                console.error(`Failed to send notification for user ${userId}:`, notificationError);
+                Sentry.logger.error('Error sending photo review notification:', {
+                    userId,
+                    error: notificationError,
+                    rejectedCount: rejectedPhotos.length,
+                    approvedCount: approvedPhotos.length
                 });
             }
         }
@@ -398,11 +408,11 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             }
         }
 
+        const tempFilePaths = allPhotosWithFilePath.map(p => p.tempFilePath);
+
         // Send each image to the external review service
         for (const photoWithFilePath of reviewPhotosWithFilePath) {
-            // First check to see if this image is using the same base image as an existing image
-            const isDupedImageResult = await this.isImageDuplicated(photoWithFilePath.tempFilePath,
-                allPhotosWithFilePath.map(p => p.tempFilePath));
+            const isDupedImageResult = await this.isImageDuplicated(photoWithFilePath.tempFilePath, tempFilePaths);
 
             if (isDupedImageResult.error) {
                 return { error: isDupedImageResult.error, success: false };
@@ -458,8 +468,10 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             // Add issues for review
             photoWithFilePath.photo.isRejected = true;
             photoWithFilePath.photo.messages = summary.analysis.messages;
+        }
 
-            fs.unlink(photoWithFilePath.tempFilePath, (err) => {
+        for (const photosWithFilePath of allPhotosWithFilePath) {
+            fs.unlink(photosWithFilePath.tempFilePath, (err) => {
                 if (err) console.error('Failed to delete temp file:', err);
             });
         }
@@ -617,7 +629,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         if (data.type) {
             analysisReport.aiGenerated = {
                 raw: data.type,
-                isAIGenerated: data.type.ai_generated > 0.5
+                isAIGenerated: data.type.ai_generated >= 0.98
             };
 
             if (analysisReport.aiGenerated.isAIGenerated) {
@@ -730,6 +742,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
 
             return { error: null, success: true, isDuplicate: false };
         } catch (e) {
+            console.error(e);
             return { error: 'Failed to compare images for duplication', success: false, isDuplicate: false };
         }
     }
