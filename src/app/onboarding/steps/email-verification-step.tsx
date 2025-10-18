@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { WizardData } from '../wizard-container';
 import { BsFillEnvelopeFill } from "react-icons/bs";
-import Image from 'next/image';
-import { resendVerificationEmail } from '../wizard-actions';
+import { resendVerificationEmail, verifyEmailCode } from '../wizard-actions';
 
 interface EmailVerificationStepProps {
     data: WizardData;
@@ -14,66 +13,106 @@ interface EmailVerificationStepProps {
     emailVerified: boolean;
 }
 
-export function EmailVerificationStep({ data, updateData, onValidationChange, userEmail, emailVerified }: EmailVerificationStepProps) {
+export function EmailVerificationStep({
+                                          data,
+                                          updateData,
+                                          onValidationChange,
+                                          userEmail,
+                                          emailVerified
+                                      }: EmailVerificationStepProps) {
     const [isResending, setIsResending] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [verificationCode, setVerificationCode] = useState('');
     const [resendMessage, setResendMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [verifyMessage, setVerifyMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [isLocallyVerified, setIsLocallyVerified] = useState(emailVerified);
 
     // Mark as completed only if email is verified
     useEffect(() => {
-        onValidationChange(emailVerified);
+        onValidationChange(isLocallyVerified);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [emailVerified]);
+    }, [isLocallyVerified]);
 
     const handleResendEmail = async () => {
         setIsResending(true);
         setResendMessage(null);
+        setVerifyMessage(null);
 
         try {
             const result = await resendVerificationEmail();
 
             if (result.success) {
-                setResendMessage({ type: 'success', text: 'Verification email has been resent! Please check your inbox.' });
+                setResendMessage({type: 'success', text: 'Verification code has been sent to your email!'});
             } else {
-                setResendMessage({ type: 'error', text: result.message || 'Failed to resend email. Please try again.' });
+                setResendMessage({
+                    type: 'error',
+                    text: result.message || 'Failed to send verification code. Please try again.'
+                });
             }
         } catch (error) {
-            setResendMessage({ type: 'error', text: 'An error occurred. Please try again later.' });
+            setResendMessage({type: 'error', text: 'An error occurred. Please try again later.'});
         } finally {
             setIsResending(false);
         }
     };
 
+    const handleVerifyCode = async () => {
+        if (verificationCode.length !== 6) {
+            setVerifyMessage({type: 'error', text: 'Please enter a 6-digit code'});
+            return;
+        }
+
+        setIsVerifying(true);
+        setVerifyMessage(null);
+
+        try {
+            const result = await verifyEmailCode(verificationCode);
+
+            if (result.success) {
+                setVerifyMessage({type: 'success', text: result.message || 'Email verified successfully!'});
+                setIsLocallyVerified(true);
+                setVerificationCode('');
+            } else {
+                setVerifyMessage({
+                    type: 'error',
+                    text: result.message || 'Invalid verification code. Please try again.'
+                });
+            }
+        } catch (error) {
+            setVerifyMessage({type: 'error', text: 'An error occurred. Please try again later.'});
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+        setVerificationCode(value);
+        setVerifyMessage(null);
+    };
+
+    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && verificationCode.length === 6) {
+            handleVerifyCode();
+        }
+    };
+
     return (
         <div className="wizard-step email-verification-step">
-            <div className="logo-container">
-                <Image
-                    src="/images/logo_square_bkg.svg"
-                    alt="Logo"
-                    width={90}
-                    height={90}
-                    priority
-                />
-            </div>
             <div className="step-header">
                 <h2>Verify Your Email</h2>
-                {emailVerified ? (
+                {isLocallyVerified &&
                     <p className="step-description">
                         Your email <strong>{userEmail}</strong> has been successfully verified! ✓
-                    </p>
-                ) : (
-                    <p className="step-description">
-                        We&apos;ve sent a verification email to <strong>{userEmail}</strong>.
-                        Please check your inbox and click the verification link to complete your email verification.
-                    </p>
-                )}
+                    </p>}
             </div>
 
             <div className="step-content">
-                {emailVerified ? (
+                {isLocallyVerified ? (
                     <div className="email-verification-section">
                         <div className="verification-info verified">
                             <div className="info-icon">
-                                <BsFillEnvelopeFill className='icon verified' />
+                                <BsFillEnvelopeFill className='icon verified'/>
                             </div>
                             <div className="info-text">
                                 <p>
@@ -89,31 +128,55 @@ export function EmailVerificationStep({ data, updateData, onValidationChange, us
                     <div className="email-verification-section">
                         <div className="verification-info">
                             <div className="info-icon">
-                                <BsFillEnvelopeFill className='icon' />
+                                <BsFillEnvelopeFill className='icon'/>
                             </div>
                             <div className="info-text">
                                 <p>
-                                    If you don&apos;t see the email, please check your spam or junk folder.
+                                    Please enter the code we sent to <strong>{userEmail}</strong>. If you don&apos;t see
+                                    the email, please check your spam or junk folder.
                                 </p>
                                 <p>
-                                    You can continue setting up your profile now and verify your email later.
+                                    The code will expire in 20 minutes.
                                 </p>
                             </div>
                         </div>
 
-                        <div className="resend-section">
-                            <button
-                                type="button"
-                                onClick={handleResendEmail}
-                                disabled={isResending}
-                                className="btn-secondary resend-button"
-                            >
-                                {isResending ? 'Sending...' : 'Resend Verification Email'}
-                            </button>
+                        <div className="code-input-section">
+                            <label htmlFor="verification-code">Enter 6-digit code:</label>
+                            <input
+                                id="verification-code"
+                                type="text"
+                                inputMode="numeric"
+                                pattern="\d{6}"
+                                maxLength={6}
+                                value={verificationCode}
+                                onChange={handleCodeChange}
+                                onKeyPress={handleKeyPress}
+                                placeholder="000000"
+                                className="code-input"
+                                disabled={isVerifying}
+                            />
+                            <div className="button-container">
+                                <button
+                                    type="button"
+                                    onClick={handleVerifyCode}
+                                    disabled={isVerifying || verificationCode.length !== 6}
+                                    className="btn-primary verify-button">
+                                    {isVerifying ? 'Verifying...' : 'Verify Code'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleResendEmail}
+                                    disabled={isResending}
+                                    className="btn-secondary resend-button"
+                                >
+                                    {isResending ? 'Sending...' : 'Resend Code'}
+                                </button>
+                            </div>
 
-                            {resendMessage && (
-                                <div className={`resend-message ${resendMessage.type}`}>
-                                    {resendMessage.text}
+                            {verifyMessage && (
+                                <div className={`verify-message ${verifyMessage.type}`}>
+                                    {verifyMessage.text}
                                 </div>
                             )}
                         </div>
@@ -123,4 +186,3 @@ export function EmailVerificationStep({ data, updateData, onValidationChange, us
         </div>
     );
 }
-

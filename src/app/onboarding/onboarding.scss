@@ -229,23 +229,136 @@
             }
         }
 
-        .resend-section {
+        .code-input-section {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 15px;
+            margin: 30px 0;
+            padding: 25px;
+            background: #f9fafb;
+            border-radius: 8px;
 
-            .resend-button {
+            label {
+                font-size: 16px;
+                font-weight: 600;
+                color: #374151;
+                margin-bottom: 5px;
+            }
+
+            .code-input {
                 width: 100%;
-                max-width: 300px;
+                max-width: 250px;
+                padding: 15px 20px;
+                font-size: 24px;
+                letter-spacing: 8px;
+                text-align: center;
+                border: 2px solid #d1d5db;
+                border-radius: 8px;
+                font-weight: 600;
+                transition: border-color 0.3s ease;
+
+                &:focus {
+                    outline: none;
+                    border-color: #3b82f6;
+                }
+
+                &::placeholder {
+                    color: #d1d5db;
+                }
 
                 &:disabled {
-                    opacity: 0.6;
+                    background: #f3f4f6;
                     cursor: not-allowed;
                 }
             }
 
-            .resend-message {
+            .button-container {
+                display: flex;
+                gap: 8px;
+
+                .verify-button {
+                    padding: 12px 24px;
+
+                    &:disabled {
+                        opacity: 0.6;
+                        cursor: not-allowed;
+                    }
+                }
+
+                .resend-button {
+                    background: globals.$primary-blue;
+                    border: 2px solid globals.$primary-blue;
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 6px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    font-size: 16px;
+
+                    &:hover {
+                        background: darken(globals.$primary-blue, 8%);
+                        border-color: darken(globals.$primary-blue, 8%);
+                        transform: translateY(-1px);
+                    }
+
+                    &:disabled {
+                        opacity: 0.6;
+                        cursor: not-allowed;
+                        transform: none;
+                    }
+                }
+
+                .resend-section {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 15px;
+                    margin-top: 30px;
+                    padding-top: 30px;
+                    border-top: 1px solid #e5e7eb;
+
+                    .resend-text {
+                        font-size: 14px;
+                        color: #6b7280;
+                        margin: 0;
+                    }
+
+                    .resend-button {
+                        width: 100%;
+                        max-width: 300px;
+
+                        &:disabled {
+                            opacity: 0.6;
+                            cursor: not-allowed;
+                        }
+                    }
+
+                    .resend-message {
+                        padding: 12px 20px;
+                        border-radius: 6px;
+                        font-size: 14px;
+                        font-weight: 500;
+                        text-align: center;
+                        width: 100%;
+
+                        &.success {
+                            background: #d1fae5;
+                            color: #065f46;
+                            border: 1px solid #10b981;
+                        }
+
+                        &.error {
+                            background: #fee2e2;
+                            color: #991b1b;
+                            border: 1px solid #ef4444;
+                        }
+                    }
+                }
+            }
+
+            .verify-message {
                 padding: 12px 20px;
                 border-radius: 6px;
                 font-size: 14px;
@@ -264,6 +377,22 @@
                     color: #991b1b;
                     border: 1px solid #ef4444;
                 }
+            }
+        }
+
+        .skip-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            text-align: center;
+
+            .skip-text {
+                font-size: 14px;
+                color: #78350f;
+                margin: 0;
+                line-height: 1.5;
             }
         }
     }
@@ -677,7 +806,53 @@
                 }
             }
 
+            .code-input-section {
+                background: rgba(59, 130, 246, 0.05);
+
+                label {
+                    color: #ffffff;
+                }
+
+                .code-input {
+                    background-color: #374151;
+                    color: #ffffff;
+                    border-color: #5ab8ff;
+
+                    &:focus {
+                        border-color: globals.$primary-blue-dark;
+                    }
+
+                    &::placeholder {
+                        color: #6b7280;
+                    }
+
+                    &:disabled {
+                        background: #1f2937;
+                    }
+                }
+
+                .verify-message {
+                    &.success {
+                        background: rgba(16, 185, 129, 0.2);
+                        color: #6ee7b7;
+                        border-color: #10b981;
+                    }
+
+                    &.error {
+                        background: rgba(239, 68, 68, 0.2);
+                        color: #fca5a5;
+                        border-color: #ef4444;
+                    }
+                }
+            }
+
             .resend-section {
+                border-top-color: #374151;
+
+                .resend-text {
+                    color: #9ca3af;
+                }
+
                 .resend-message {
                     &.success {
                         background: rgba(16, 185, 129, 0.2);
@@ -690,6 +865,15 @@
                         color: #fca5a5;
                         border-color: #ef4444;
                     }
+                }
+            }
+
+            .skip-section {
+                background: rgba(251, 191, 36, 0.1);
+                border-color: #fbbf24;
+
+                .skip-text {
+                    color: #fcd34d;
                 }
             }
         }
