@@ -9,6 +9,9 @@ import { deleteSession, getSessionId } from "@/server-side-helpers/session.helpe
 import { sendEmail } from "@/server-side-helpers/mail.helper";
 import { cancelPayPalSubscription } from "@/server-side-helpers/paypal.helpers";
 import { pgDbReadPool } from "@/lib/postgres";
+import { S3Helper } from "@/server-side-helpers/s3.helper";
+import { UserPhoto } from "@/types/user-photo.type";
+import { logError } from "@/server-side-helpers/logging.helpers";
 
 /**
  * Toggles the online status visibility for the current user.
@@ -142,6 +145,40 @@ export async function deleteAccount(password: string) {
                     // Continue with account deletion even if PayPal cancellation fails
                 }
             }
+        }
+
+        // Fetch ALL user photos
+        const userWithPhotos = await prismaRead.users.findUnique({
+            where: { id: currentUser.id },
+            select: { photos: true }
+        });
+
+        const allUserPhotos = (userWithPhotos?.photos as unknown as UserPhoto[]) || [];
+        if (allUserPhotos.length > 0) {
+            console.log(`Deleting ${allUserPhotos.length} photos from S3 for user ${currentUser.id}`);
+            const s3Helper = new S3Helper();
+
+            for (const photo of allUserPhotos) {
+                try {
+                    if (photo.path) {
+                        const originalS3Path = `user-images/${photo.path}`;
+                        await s3Helper.deleteFromAllBuckets(originalS3Path);
+                        console.log(`Deleted original image: ${originalS3Path}`);
+                    }
+
+                    if (photo.croppedImageData?.croppedImagePath) {
+                        const croppedS3Path = `user-images/${photo.croppedImageData.croppedImagePath}`;
+                        await s3Helper.deleteFromAllBuckets(croppedS3Path);
+                        console.log(`Deleted cropped image: ${croppedS3Path}`);
+                    }
+                } catch (error) {
+                    const errorMessage = `Failed to delete photo ${photo.path} from S3 for user ${currentUser.id}`;
+                    console.error(errorMessage, error);
+
+                    logError(error instanceof Error ? error : new Error(errorMessage), `Account deletion - S3 cleanup`);
+                }
+            }
+            console.log(`Successfully deleted all photos from S3 for user ${currentUser.id}`);
         }
 
         // Get the current session ID to delete it after account deletion

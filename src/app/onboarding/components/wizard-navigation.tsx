@@ -25,28 +25,6 @@ export function WizardNavigation({
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleCompleteLater = async () => {
-        setIsSubmitting(true);
-        try {
-            // Save form data first
-            await saveWizardProgress(wizardData);
-
-            // Save onboarding progress
-            const completedSteps = Object.keys(stepValidation)
-                .filter(stepNum => stepValidation[parseInt(stepNum)])
-                .map(stepNum => parseInt(stepNum));
-
-            await updateOnboardingProgress(currentStep, completedSteps);
-
-            // Redirect to home
-            router.push('/');
-        } catch (error) {
-            router.push('/');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
     const handleNext = async () => {
         if (currentStep === totalSteps) {
             setIsSubmitting(true);
@@ -74,15 +52,6 @@ export function WizardNavigation({
     return (
         <div className="wizard-navigation">
             <div className="nav-buttons">
-                <button
-                    type="button"
-                    onClick={handleCompleteLater}
-                    className="btn-secondary complete-later-btn"
-                    disabled={isSubmitting}
-                >
-                    {isSubmitting ? 'Saving...' : 'Complete Later'}
-                </button>
-
                 <div className="nav-controls">
                     {!isFirstStep && (
                         <button
@@ -108,4 +77,4 @@ export function WizardNavigation({
             </div>
         </div>
     );
-} 
+}
