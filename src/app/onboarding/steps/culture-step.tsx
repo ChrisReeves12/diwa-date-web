@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { WizardData } from '../wizard-container';
 import { businessConfig } from '@/config/business';
-import MultiSelect from '@/common/multi-select/multi-select';
 import SingleSelect from '@/common/single-select/single-select';
+import { FormGroup, FormControlLabel, Checkbox, FormLabel, Box } from '@mui/material';
 
 interface CultureStepProps {
     data: WizardData;
@@ -34,9 +34,27 @@ export function CultureStep({ data, updateData, onValidationChange }: CultureSte
         updateData('ethnicities', value);
     };
 
+    const handleEthnicityToggle = (value: string) => {
+        const newValues = ethnicities.includes(value)
+            ? ethnicities.filter(v => v !== value)
+            : ethnicities.length < 3
+                ? [...ethnicities, value]
+                : ethnicities;
+        handleEthnicitiesChange(newValues);
+    };
+
     const handleReligionsChange = (value: string[]) => {
         setReligions(value);
         updateData('religions', value);
+    };
+
+    const handleReligionToggle = (value: string) => {
+        const newValues = religions.includes(value)
+            ? religions.filter(v => v !== value)
+            : religions.length < 3
+                ? [...religions, value]
+                : religions;
+        handleReligionsChange(newValues);
     };
 
     const handleEducationChange = (value: string) => {
@@ -47,6 +65,15 @@ export function CultureStep({ data, updateData, onValidationChange }: CultureSte
     const handleLanguagesChange = (value: string[]) => {
         setLanguages(value);
         updateData('languages', value);
+    };
+
+    const handleLanguageToggle = (value: string) => {
+        const newValues = languages.includes(value)
+            ? languages.filter(v => v !== value)
+            : languages.length < 3
+                ? [...languages, value]
+                : languages;
+        handleLanguagesChange(newValues);
     };
 
     // Convert business config options to component format
@@ -82,25 +109,55 @@ export function CultureStep({ data, updateData, onValidationChange }: CultureSte
 
             <div className="step-content">
                 <div className="form-section">
-                    <MultiSelect
-                        options={ethnicityOptions}
-                        selectedValues={ethnicities}
-                        onChange={handleEthnicitiesChange}
-                        maxSelections={3}
-                        label="Ethnicity"
-                        placeholder="Select ethnicities..."
-                    />
+                    <Box sx={{ mb: 3 }}>
+                        <FormLabel component="legend" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+                            Ethnicity
+                        </FormLabel>
+                        <FormGroup sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1 }}>
+                            {ethnicityOptions.map(option => (
+                                <FormControlLabel
+                                    key={option.value}
+                                    control={
+                                        <Checkbox
+                                            checked={ethnicities.includes(option.value)}
+                                            onChange={() => handleEthnicityToggle(option.value)}
+                                            disabled={!ethnicities.includes(option.value) && ethnicities.length >= 3}
+                                        />
+                                    }
+                                    label={option.label}
+                                />
+                            ))}
+                        </FormGroup>
+                        <Box sx={{ fontSize: '0.875rem', color: 'text.secondary', mt: 1 }}>
+                            {ethnicities.length}/3 selected
+                        </Box>
+                    </Box>
 
-                    <MultiSelect
-                        options={religionOptions}
-                        selectedValues={religions}
-                        onChange={handleReligionsChange}
-                        maxSelections={3}
-                        label="Religion"
-                        placeholder="Select religion..."
-                    />
+                    <Box sx={{ mb: 3 }}>
+                        <FormLabel component="legend" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+                            Religion
+                        </FormLabel>
+                        <FormGroup sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1 }}>
+                            {religionOptions.map(option => (
+                                <FormControlLabel
+                                    key={option.value}
+                                    control={
+                                        <Checkbox
+                                            checked={religions.includes(option.value)}
+                                            onChange={() => handleReligionToggle(option.value)}
+                                            disabled={!religions.includes(option.value) && religions.length >= 3}
+                                        />
+                                    }
+                                    label={option.label}
+                                />
+                            ))}
+                        </FormGroup>
+                        <Box sx={{ fontSize: '0.875rem', color: 'text.secondary', mt: 1 }}>
+                            {religions.length}/3 selected
+                        </Box>
+                    </Box>
 
-                    <div className="form-row form-row-split">
+                    <div className="form-row">
                         <SingleSelect
                             options={educationOptions}
                             selectedValue={education}
@@ -108,18 +165,31 @@ export function CultureStep({ data, updateData, onValidationChange }: CultureSte
                             label="Highest Level of Education *"
                             placeholder="Select education level..."
                         />
-
-                        <div style={{ flex: 1 }}>
-                            <MultiSelect
-                                options={languageOptions}
-                                selectedValues={languages}
-                                onChange={handleLanguagesChange}
-                                maxSelections={3}
-                                label="Languages"
-                                placeholder="Select languages..."
-                            />
-                        </div>
                     </div>
+
+                    <Box sx={{ pt: '10px', mb: 3 }}>
+                        <FormLabel component="legend" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+                            Languages
+                        </FormLabel>
+                        <FormGroup sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1 }}>
+                            {languageOptions.map(option => (
+                                <FormControlLabel
+                                    key={option.value}
+                                    control={
+                                        <Checkbox
+                                            checked={languages.includes(option.value)}
+                                            onChange={() => handleLanguageToggle(option.value)}
+                                            disabled={!languages.includes(option.value) && languages.length >= 3}
+                                        />
+                                    }
+                                    label={option.label}
+                                />
+                            ))}
+                        </FormGroup>
+                        <Box sx={{ fontSize: '0.875rem', color: 'text.secondary', mt: 1 }}>
+                            {languages.length}/3 selected
+                        </Box>
+                    </Box>
                 </div>
             </div>
         </div>

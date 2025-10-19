@@ -6,9 +6,9 @@ import { Locality } from '@/types/locality.interface';
 import { businessConfig } from '@/config/business';
 import SeekingMatchForm from '@/common/seeking-match-form/seeking-match-form';
 import LocationSearch from '@/common/location-search/location-search';
-import MultiSelect from '@/common/multi-select/multi-select';
 import SingleSelect from '@/common/single-select/single-select';
 import MuiDatePicker from '@/common/mui-date-picker/mui-date-picker';
+import { FormGroup, FormControlLabel, Checkbox, FormLabel, Box } from '@mui/material';
 import { updatePersonalInformation } from './personal-information-actions';
 import '../profile-settings.scss';
 
@@ -71,6 +71,43 @@ export function PersonalInformationForm({ currentUser }: PersonalInformationForm
     const [isLoading, setIsLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+
+    // Toggle handlers for checkbox groups
+    const handleEthnicityToggle = (value: string) => {
+        const newValues = ethnicities.includes(value)
+            ? ethnicities.filter(v => v !== value)
+            : ethnicities.length < 3
+                ? [...ethnicities, value]
+                : ethnicities;
+        setEthnicities(newValues);
+    };
+
+    const handleReligionToggle = (value: string) => {
+        const newValues = religions.includes(value)
+            ? religions.filter(v => v !== value)
+            : religions.length < 3
+                ? [...religions, value]
+                : religions;
+        setReligions(newValues);
+    };
+
+    const handleLanguageToggle = (value: string) => {
+        const newValues = languages.includes(value)
+            ? languages.filter(v => v !== value)
+            : languages.length < 3
+                ? [...languages, value]
+                : languages;
+        setLanguages(newValues);
+    };
+
+    const handleInterestToggle = (value: string) => {
+        const newValues = interests.includes(value)
+            ? interests.filter(v => v !== value)
+            : interests.length < 7
+                ? [...interests, value]
+                : interests;
+        setInterests(newValues);
+    };
 
     // Calculate max date (18 years ago)
     const getMaxDate = () => {
@@ -447,27 +484,65 @@ export function PersonalInformationForm({ currentUser }: PersonalInformationForm
                 <div className="form-section">
                     <h3>Culture and Background</h3>
 
-                    <MultiSelect
-                        options={ethnicityOptions}
-                        selectedValues={ethnicities}
-                        onChange={setEthnicities}
-                        maxSelections={3}
-                        label="Ethnicity"
-                        placeholder="Select up to 3 ethnicities..."
-                        error={errors.ethnicities}
-                    />
+                    <Box sx={{ mb: 3 }}>
+                        <FormLabel component="legend" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+                            Ethnicity
+                        </FormLabel>
+                        <FormGroup sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1 }}>
+                            {ethnicityOptions.map(option => (
+                                <FormControlLabel
+                                    key={option.value}
+                                    control={
+                                        <Checkbox
+                                            checked={ethnicities.includes(option.value)}
+                                            onChange={() => handleEthnicityToggle(option.value)}
+                                            disabled={!ethnicities.includes(option.value) && ethnicities.length >= 3}
+                                        />
+                                    }
+                                    label={option.label}
+                                />
+                            ))}
+                        </FormGroup>
+                        <Box sx={{ fontSize: '0.875rem', color: 'text.secondary', mt: 1 }}>
+                            {ethnicities.length}/3 selected
+                        </Box>
+                        {errors.ethnicities && (
+                            <Box sx={{ color: 'error.main', fontSize: '0.875rem', mt: 1 }}>
+                                {errors.ethnicities}
+                            </Box>
+                        )}
+                    </Box>
 
-                    <MultiSelect
-                        options={religionOptions}
-                        selectedValues={religions}
-                        onChange={setReligions}
-                        maxSelections={3}
-                        label="Religion"
-                        placeholder="Select up to 3 religions..."
-                        error={errors.religions}
-                    />
+                    <Box sx={{ mb: 3 }}>
+                        <FormLabel component="legend" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+                            Religion
+                        </FormLabel>
+                        <FormGroup sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1 }}>
+                            {religionOptions.map(option => (
+                                <FormControlLabel
+                                    key={option.value}
+                                    control={
+                                        <Checkbox
+                                            checked={religions.includes(option.value)}
+                                            onChange={() => handleReligionToggle(option.value)}
+                                            disabled={!religions.includes(option.value) && religions.length >= 3}
+                                        />
+                                    }
+                                    label={option.label}
+                                />
+                            ))}
+                        </FormGroup>
+                        <Box sx={{ fontSize: '0.875rem', color: 'text.secondary', mt: 1 }}>
+                            {religions.length}/3 selected
+                        </Box>
+                        {errors.religions && (
+                            <Box sx={{ color: 'error.main', fontSize: '0.875rem', mt: 1 }}>
+                                {errors.religions}
+                            </Box>
+                        )}
+                    </Box>
 
-                    <div className="form-row form-row-split">
+                    <div className="form-row">
                         <SingleSelect
                             options={educationOptions}
                             selectedValue={education}
@@ -475,19 +550,36 @@ export function PersonalInformationForm({ currentUser }: PersonalInformationForm
                             label="Highest Level of Education"
                             placeholder="Select education level..."
                         />
-
-                        <div style={{ flex: 1 }}>
-                            <MultiSelect
-                                options={languageOptions}
-                                selectedValues={languages}
-                                onChange={setLanguages}
-                                maxSelections={3}
-                                label="Languages"
-                                placeholder="Select up to 3 languages..."
-                                error={errors.languages}
-                            />
-                        </div>
                     </div>
+
+                    <Box sx={{ pt: '10px', mb: 3 }}>
+                        <FormLabel component="legend" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+                            Languages
+                        </FormLabel>
+                        <FormGroup sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1 }}>
+                            {languageOptions.map(option => (
+                                <FormControlLabel
+                                    key={option.value}
+                                    control={
+                                        <Checkbox
+                                            checked={languages.includes(option.value)}
+                                            onChange={() => handleLanguageToggle(option.value)}
+                                            disabled={!languages.includes(option.value) && languages.length >= 3}
+                                        />
+                                    }
+                                    label={option.label}
+                                />
+                            ))}
+                        </FormGroup>
+                        <Box sx={{ fontSize: '0.875rem', color: 'text.secondary', mt: 1 }}>
+                            {languages.length}/3 selected
+                        </Box>
+                        {errors.languages && (
+                            <Box sx={{ color: 'error.main', fontSize: '0.875rem', mt: 1 }}>
+                                {errors.languages}
+                            </Box>
+                        )}
+                    </Box>
                 </div>
 
                 {/* Family Section */}
@@ -545,15 +637,39 @@ export function PersonalInformationForm({ currentUser }: PersonalInformationForm
                         />
                     </div>
 
-                    <MultiSelect
-                        options={interestOptions}
-                        selectedValues={interests}
-                        onChange={setInterests}
-                        maxSelections={7}
-                        label="Interests"
-                        placeholder="Select up to 7 interests..."
-                        error={errors.interests}
-                    />
+                    <Box sx={{ mb: 3 }}>
+                        <FormLabel component="legend" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+                            Interests
+                        </FormLabel>
+                        <FormGroup sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1 }}>
+                            {interestOptions.map(option => (
+                                <FormControlLabel
+                                    key={option.value}
+                                    control={
+                                        <Checkbox
+                                            checked={interests.includes(option.value)}
+                                            onChange={() => handleInterestToggle(option.value)}
+                                            disabled={!interests.includes(option.value) && interests.length >= 7}
+                                        />
+                                    }
+                                    label={
+                                        <span>
+                                            {option.emoji && <span style={{ marginRight: '8px' }}>{option.emoji}</span>}
+                                            {option.label}
+                                        </span>
+                                    }
+                                />
+                            ))}
+                        </FormGroup>
+                        <Box sx={{ fontSize: '0.875rem', color: 'text.secondary', mt: 1 }}>
+                            {interests.length}/7 selected
+                        </Box>
+                        {errors.interests && (
+                            <Box sx={{ color: 'error.main', fontSize: '0.875rem', mt: 1 }}>
+                                {errors.interests}
+                            </Box>
+                        )}
+                    </Box>
                 </div>
 
                 {/* Form Actions */}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { WizardData } from '../wizard-container';
 import { businessConfig } from '@/config/business';
-import MultiSelect from '@/common/multi-select/multi-select';
+import { FormGroup, FormControlLabel, Checkbox, FormLabel, Box } from '@mui/material';
 
 interface InterestsStepProps {
     data: WizardData;
@@ -32,6 +32,15 @@ export function InterestsStep({ data, updateData, onValidationChange }: Interest
         updateData('interests', value);
     };
 
+    const handleInterestToggle = (value: string) => {
+        const newValues = interests.includes(value)
+            ? interests.filter(v => v !== value)
+            : interests.length < 7
+                ? [...interests, value]
+                : interests;
+        handleInterestsChange(newValues);
+    };
+
     const handleBioChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const value = e.target.value;
         setBio(value);
@@ -56,14 +65,34 @@ export function InterestsStep({ data, updateData, onValidationChange }: Interest
 
             <div className="step-content">
                 <div className="form-section">
-                    <MultiSelect
-                        options={interestOptions}
-                        selectedValues={interests}
-                        onChange={handleInterestsChange}
-                        maxSelections={7}
-                        label="Interests"
-                        placeholder="Select interests..."
-                    />
+                    <Box sx={{ mb: 3 }}>
+                        <FormLabel component="legend" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+                            Interests
+                        </FormLabel>
+                        <FormGroup sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1 }}>
+                            {interestOptions.map(option => (
+                                <FormControlLabel
+                                    key={option.value}
+                                    control={
+                                        <Checkbox
+                                            checked={interests.includes(option.value)}
+                                            onChange={() => handleInterestToggle(option.value)}
+                                            disabled={!interests.includes(option.value) && interests.length >= 7}
+                                        />
+                                    }
+                                    label={
+                                        <span>
+                                            {option.emoji && <span style={{ marginRight: '8px' }}>{option.emoji}</span>}
+                                            {option.label}
+                                        </span>
+                                    }
+                                />
+                            ))}
+                        </FormGroup>
+                        <Box sx={{ fontSize: '0.875rem', color: 'text.secondary', mt: 1 }}>
+                            {interests.length}/7 selected
+                        </Box>
+                    </Box>
 
                     <div className="form-row">
                         <div className="input-container">
