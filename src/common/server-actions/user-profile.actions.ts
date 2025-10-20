@@ -151,10 +151,14 @@ export async function unBlockUserAction(blockedUserId: number): Promise<boolean>
 }
 
 /**
- * Fetch the current user's main photo URL for profile updates
- * @returns The updated main photo data or null if error
+ * Fetch the current user's main photo URL and hide online status
+ * @returns The updated main photo data or null
  */
-export async function fetchCurrentUserMainPhotoUrl(): Promise<{ publicMainPhoto?: string; mainPhotoCroppedImageData?: any } | null> {
+export async function fetchCurrentUserPhotoAndOnlineVisibility(): Promise<{
+    publicMainPhoto?: string;
+    hideOnlineStatus: boolean;
+    mainPhotoCroppedImageData?: any
+} | null> {
     try {
         const currentUser = await getCurrentUser(await cookies());
         if (!currentUser) {
@@ -165,7 +169,8 @@ export async function fetchCurrentUserMainPhotoUrl(): Promise<{ publicMainPhoto?
 
         return {
             publicMainPhoto: currentUser.publicMainPhoto,
-            mainPhotoCroppedImageData: currentUser.mainPhotoCroppedImageData
+            mainPhotoCroppedImageData: currentUser.mainPhotoCroppedImageData,
+            hideOnlineStatus: currentUser.hideOnlineStatus
         };
     } catch (error) {
         logError(error instanceof Error ? error : new Error(String(error)), 'Error fetching current user main photo');

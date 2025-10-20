@@ -8,7 +8,7 @@ import { logoutAction } from '@/common/server-actions/logout.actions';
 import './user-profile-account-menu.scss';
 import { toggleOnlineStatus } from '@/common/server-actions/user.actions';
 import { useState, useEffect, useCallback } from 'react';
-import { fetchCurrentUserMainPhotoUrl } from '@/common/server-actions/user-profile.actions';
+import { fetchCurrentUserPhotoAndOnlineVisibility } from '@/common/server-actions/user-profile.actions';
 import { isUserOnline } from '@/helpers/user.helpers';
 import { showAlert } from '@/util';
 import { Switch } from '@mui/material';
@@ -21,43 +21,43 @@ interface UserProfileAccountMenuProps {
 
 export default function UserProfileAccountMenu({ onSelectionMade, currentUser }: UserProfileAccountMenuProps) {
   const lCurrentUser = currentUser || useCurrentUser();
-  const [isOnline, setIsOnline] = useState(lCurrentUser?.lastActiveAt ? isUserOnline(lCurrentUser.lastActiveAt, lCurrentUser.hideOnlineStatus) : false);
   const [hideOnlineStatus, setHideOnlineStatus] = useState(lCurrentUser?.hideOnlineStatus || false);
   const [userMainPhoto, setUserMainPhoto] = useState<string | undefined>(lCurrentUser?.publicMainPhoto);
   const [userMainPhotoCroppedImageData, setUserMainPhotoCroppedImageData] = useState<any>(lCurrentUser?.mainPhotoCroppedImageData);
 
-  // Refetch user main photo data from server
-  const refetchUserMainPhoto = useCallback(async () => {
+  // Refetch user main photo and profile visibility status data from server
+  const refetchUserMainPhotoAndOnlineVisibility = useCallback(async () => {
     if (!lCurrentUser) return;
 
     try {
-      const photoData = await fetchCurrentUserMainPhotoUrl();
-      if (photoData) {
-        setUserMainPhoto(photoData.publicMainPhoto);
-        setUserMainPhotoCroppedImageData(photoData.mainPhotoCroppedImageData);
+      const partialUserData = await fetchCurrentUserPhotoAndOnlineVisibility();
+      if (partialUserData) {
+        setUserMainPhoto(partialUserData.publicMainPhoto);
+        setUserMainPhotoCroppedImageData(partialUserData.mainPhotoCroppedImageData);
+        setHideOnlineStatus(partialUserData.hideOnlineStatus);
       }
     } catch (err) {
-      console.error('Error refetching user main photo:', err);
+      console.error('Error refetching user partial data:', err);
     }
   }, [lCurrentUser]);
 
-  // Initialize user photo state when currentUser changes
+  // Initialize user photo and online visibility state when the currentUser changes
   useEffect(() => {
     if (lCurrentUser) {
       setUserMainPhoto(lCurrentUser.publicMainPhoto);
       setUserMainPhotoCroppedImageData(lCurrentUser.mainPhotoCroppedImageData);
+      setHideOnlineStatus(lCurrentUser.hideOnlineStatus);
     }
   }, [lCurrentUser]);
 
   useEffect(() => {
-    refetchUserMainPhoto();
+    refetchUserMainPhotoAndOnlineVisibility();
   }, []);
 
   // Listen for photo update events
   useEffect(() => {
     const handlePhotoRefresh = () => {
-      console.log('Refetching user main photo');
-      refetchUserMainPhoto();
+      refetchUserMainPhotoAndOnlineVisibility();
     };
 
     window.addEventListener('refresh-user-profile-main-photo', handlePhotoRefresh);
@@ -65,7 +65,7 @@ export default function UserProfileAccountMenu({ onSelectionMade, currentUser }:
     return () => {
       window.removeEventListener('refresh-user-profile-main-photo', handlePhotoRefresh);
     };
-  }, [refetchUserMainPhoto]);
+  }, [refetchUserMainPhotoAndOnlineVisibility]);
 
   const handleToggleOnlineStatus = async (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
@@ -73,7 +73,6 @@ export default function UserProfileAccountMenu({ onSelectionMade, currentUser }:
     const newHideOnlineStatus = !e.target.checked;
     setHideOnlineStatus(newHideOnlineStatus);
     await toggleOnlineStatus(newHideOnlineStatus);
-    setIsOnline(lCurrentUser?.lastActiveAt ? isUserOnline(lCurrentUser.lastActiveAt, newHideOnlineStatus) : false);
   };
 
   const handleSelectionMade = () => {

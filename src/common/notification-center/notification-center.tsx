@@ -21,7 +21,7 @@ import {
 import { useNotificationPopovers } from './hooks/use-notification-popovers';
 import NotificationIconsContainer from './notification-icons-container/notification-icons-container';
 import NotificationPopover from './notification-popover/notification-popover';
-import { muteUser, sendUserMatch, fetchCurrentUserMainPhotoUrl } from '../server-actions/user-profile.actions';
+import { muteUser, sendUserMatch, fetchCurrentUserPhotoAndOnlineVisibility } from '../server-actions/user-profile.actions';
 import { useRouter, usePathname } from 'next/navigation';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { WebSocketMessage } from "../../../types/websocket-events.types";
@@ -90,7 +90,7 @@ export default function NotificationCenter({ currentUser }: { currentUser?: User
         if (!lCurrentUser) return;
 
         try {
-            const photoData = await fetchCurrentUserMainPhotoUrl();
+            const photoData = await fetchCurrentUserPhotoAndOnlineVisibility();
             if (photoData) {
                 setUserMainPhoto(photoData.publicMainPhoto);
                 setUserMainPhotoCroppedImageData(photoData.mainPhotoCroppedImageData);
