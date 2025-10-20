@@ -2,7 +2,7 @@
 
 import './notification-center.scss';
 import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
-import { CircularProgress, Popover } from '@mui/material';
+import { CircularProgress, Popover, Dialog, useMediaQuery } from '@mui/material';
 import UserProfileAccountMenu from './user-profile-account-menu/user-profile-account-menu';
 import * as React from 'react';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -46,6 +46,7 @@ export default function NotificationCenter({ currentUser }: { currentUser?: User
     const { on, isConnected } = useWebSocket();
     const notificationTimeoutRefs = useRef<Map<string, NodeJS.Timeout>>(new Map());
     const profileButtonRef = useRef<HTMLButtonElement>(null);
+    const isMobile = useMediaQuery('(max-width:768px)');
 
     // Trigger the CSS animation that animates the count bubble with a state update
     const triggerNotificationAnimation = useCallback((type: 'match' | 'message' | 'notification') => {
@@ -343,13 +344,50 @@ export default function NotificationCenter({ currentUser }: { currentUser?: User
                     </button>
                 </div>
             </div>
-            <Popover anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                id="profile-user-account-popover"
-                anchorEl={profileButtonRef.current}
-                onClose={popovers.profileUser.handleClose}
-                open={popovers.profileUser.isOpen}>
-                <UserProfileAccountMenu onSelectionMade={popovers.profileUser.handleClose} currentUser={lCurrentUser} />
-            </Popover>
+            {isMobile ? (
+                <Dialog
+                    id="profile-user-account-popover"
+                    open={popovers.profileUser.isOpen}
+                    onClose={popovers.profileUser.handleClose}
+                    maxWidth={false}
+                    BackdropProps={{
+                        sx: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }}
+                    PaperProps={{
+                        sx: {
+                            width: '95%',
+                            height: '90%',
+                            maxWidth: 'none',
+                            maxHeight: 'none',
+                            margin: 0,
+                            borderRadius: 0,
+                            backgroundColor: 'transparent',
+                            boxShadow: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }
+                    }}
+                >
+                    <UserProfileAccountMenu
+                        onSelectionMade={popovers.profileUser.handleClose}
+                        currentUser={lCurrentUser}
+                        onClose={popovers.profileUser.handleClose}
+                    />
+                </Dialog>
+            ) : (
+                <Popover
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    id="profile-user-account-popover"
+                    anchorEl={profileButtonRef.current}
+                    onClose={popovers.profileUser.handleClose}
+                    open={popovers.profileUser.isOpen}
+                >
+                    <UserProfileAccountMenu onSelectionMade={popovers.profileUser.handleClose} currentUser={lCurrentUser} />
+                </Popover>
+            )}
 
             <NotificationPopover
                 id="likes-popover"

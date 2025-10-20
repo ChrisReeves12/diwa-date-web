@@ -13,7 +13,8 @@ interface NotificationMenuProps {
     titleIcon: string,
     titleIconDark: string,
     title: string,
-    listItems: NotificationListItemProps[]
+    listItems: NotificationListItemProps[],
+    onClose?: () => void
 }
 
 type NotificationUser = Pick<User, 'mainPhotoCroppedImageData' | 'publicMainPhoto' | 'displayName' | 'age' | 'gender' | 'locationName'>
@@ -103,7 +104,7 @@ function NotificationListItem({ id, senderUser, content, receivedAtMessage,
     );
 }
 
-export default function NotificationMenu({ titleIcon, titleIconDark, title, listItems }: NotificationMenuProps) {
+export default function NotificationMenu({ titleIcon, titleIconDark, title, listItems, onClose }: NotificationMenuProps) {
     return (
         <div className="notification-menu-container">
             <div className="header-section">
@@ -118,6 +119,11 @@ export default function NotificationMenu({ titleIcon, titleIconDark, title, list
                     </div>
                 </div>
                 <div className="title">{title}</div>
+                {onClose && (
+                    <button className="close-button" onClick={onClose} aria-label="Close">
+                        <TimesIcon />
+                    </button>
+                )}
             </div>
             <div className="list-item-container">
                 {listItems.length > 0 ? (

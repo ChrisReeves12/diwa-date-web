@@ -7,11 +7,58 @@
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   color: #000000;
+  position: relative;
+
+  @media (max-width: 768px) {
+    width: calc(100% - 32px);
+    height: calc(100vh - 32px);
+    margin: 16px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
 
   @include globals.dark-mode {
     background-color: globals.$dark-background-color;
     border: 1px solid #eaeaea;
     color: #ffffff;
+  }
+
+  .close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: globals.$primary-blue;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+    z-index: 1;
+
+    @include globals.dark-mode {
+      color: #ffffff;
+    }
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+
+      @include globals.dark-mode {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    i {
+      font-size: 24px;
+    }
   }
 
   .profile-photo-name-section {
@@ -46,6 +93,7 @@
 
           a {
             color: globals.$primary-blue;
+
             svg {
               font-size: 10px;
             }
@@ -121,6 +169,11 @@
     margin-bottom: 15px;
     padding-bottom: 15px;
     border-bottom: 1px solid #eaeaea;
+
+    @media (max-width: 768px) {
+      flex: 1;
+      overflow-y: auto;
+    }
 
     .menu-item {
       display: flex;

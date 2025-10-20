@@ -1,4 +1,4 @@
-import { Popover } from '@mui/material';
+import { Popover, Dialog, useMediaQuery } from '@mui/material';
 import NotificationMenu from "@/common/notification-center/notification-menu/notification-menu";
 
 interface NotificationPopoverProps {
@@ -22,6 +22,51 @@ export default function NotificationPopover({
     title,
     listItems
 }: NotificationPopoverProps) {
+    const isMobile = useMediaQuery('(max-width:768px)');
+
+    const content = (
+        <NotificationMenu
+            titleIcon={titleIcon}
+            titleIconDark={titleIconDark}
+            title={title}
+            listItems={listItems}
+            onClose={isMobile ? onClose : undefined}
+        />
+    );
+
+    if (isMobile) {
+        return (
+            <Dialog
+                id={id}
+                open={open}
+                onClose={onClose}
+                maxWidth={false}
+                BackdropProps={{
+                    sx: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                }}
+                PaperProps={{
+                    sx: {
+                        width: '95%',
+                        height: '90%',
+                        maxWidth: 'none',
+                        maxHeight: 'none',
+                        margin: 0,
+                        borderRadius: 0,
+                        backgroundColor: 'transparent',
+                        boxShadow: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }
+                }}
+            >
+                {content}
+            </Dialog>
+        );
+    }
+
     return (
         <Popover
             anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
@@ -30,12 +75,7 @@ export default function NotificationPopover({
             onClose={onClose}
             open={open}
         >
-            <NotificationMenu
-                titleIcon={titleIcon}
-                titleIconDark={titleIconDark}
-                title={title}
-                listItems={listItems}
-            />
+            {content}
         </Popover>
     );
 } 

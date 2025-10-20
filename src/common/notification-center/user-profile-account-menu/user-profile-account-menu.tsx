@@ -15,13 +15,15 @@ import { Switch } from '@mui/material';
 import { User } from '@/types';
 import { BiSolidHide } from "react-icons/bi";
 import { FaArrowUpRightFromSquare } from "react-icons/fa6";
+import { TimesIcon } from "react-line-awesome";
 
 interface UserProfileAccountMenuProps {
   onSelectionMade?: () => void;
   currentUser?: User;
+  onClose?: () => void;
 }
 
-export default function UserProfileAccountMenu({ onSelectionMade, currentUser }: UserProfileAccountMenuProps) {
+export default function UserProfileAccountMenu({ onSelectionMade, currentUser, onClose }: UserProfileAccountMenuProps) {
   const lCurrentUser = currentUser || useCurrentUser();
   const [hideOnlineStatus, setHideOnlineStatus] = useState(lCurrentUser?.hideOnlineStatus || false);
   const [userMainPhoto, setUserMainPhoto] = useState<string | undefined>(lCurrentUser?.publicMainPhoto);
@@ -105,6 +107,11 @@ export default function UserProfileAccountMenu({ onSelectionMade, currentUser }:
 
   return (
     <div className="user-profile-account-menu-container">
+      {onClose && (
+        <button className="close-button" onClick={onClose} aria-label="Close">
+          <TimesIcon />
+        </button>
+      )}
       {lCurrentUser && (
         <div className="profile-photo-name-section">
           <Link href={`/user/${lCurrentUser.id}`} onClick={handleSelectionMade}>
