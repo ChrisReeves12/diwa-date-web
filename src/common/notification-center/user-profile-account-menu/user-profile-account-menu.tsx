@@ -13,6 +13,8 @@ import { isUserOnline } from '@/helpers/user.helpers';
 import { showAlert } from '@/util';
 import { Switch } from '@mui/material';
 import { User } from '@/types';
+import { BiSolidHide } from "react-icons/bi";
+import { FaArrowUpRightFromSquare } from "react-icons/fa6";
 
 interface UserProfileAccountMenuProps {
   onSelectionMade?: () => void;
@@ -24,6 +26,7 @@ export default function UserProfileAccountMenu({ onSelectionMade, currentUser }:
   const [hideOnlineStatus, setHideOnlineStatus] = useState(lCurrentUser?.hideOnlineStatus || false);
   const [userMainPhoto, setUserMainPhoto] = useState<string | undefined>(lCurrentUser?.publicMainPhoto);
   const [userMainPhotoCroppedImageData, setUserMainPhotoCroppedImageData] = useState<any>(lCurrentUser?.mainPhotoCroppedImageData);
+  const [isDeactivated, setIsDeactivated] = useState<boolean>(!!lCurrentUser?.deactivatedAt);
 
   // Refetch user main photo and profile visibility status data from server
   const refetchUserMainPhotoAndOnlineVisibility = useCallback(async () => {
@@ -35,6 +38,7 @@ export default function UserProfileAccountMenu({ onSelectionMade, currentUser }:
         setUserMainPhoto(partialUserData.publicMainPhoto);
         setUserMainPhotoCroppedImageData(partialUserData.mainPhotoCroppedImageData);
         setHideOnlineStatus(partialUserData.hideOnlineStatus);
+        setIsDeactivated(!!partialUserData.deactivatedAt);
       }
     } catch (err) {
       console.error('Error refetching user partial data:', err);
@@ -113,6 +117,10 @@ export default function UserProfileAccountMenu({ onSelectionMade, currentUser }:
           </Link>
           <div className="name-online-status-section">
             <h5>{lCurrentUser.displayName}</h5>
+            {isDeactivated && <div className='deactivated-notice'>
+              <BiSolidHide className='icon' />
+              <div className='label'>Your profile is hidden. <Link href='/account/settings'>Turn On <FaArrowUpRightFromSquare /></Link></div>
+            </div>}
             <div className="online-status">
               <div className="online-lamp-section">
                 <div className={`online-lamp ${!hideOnlineStatus ? 'online' : 'offline'}`}></div>

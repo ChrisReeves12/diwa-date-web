@@ -35,6 +35,28 @@
     .name-online-status-section {
       padding-left: 8px;
 
+      .deactivated-notice {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 6px;
+
+        .label {
+          font-size: 11px;
+
+          a {
+            color: globals.$primary-blue;
+            svg {
+              font-size: 10px;
+            }
+
+            @include globals.dark-mode {
+              color: globals.$primary-blue-dark;
+            }
+          }
+        }
+      }
+
       h5 {
         margin: 0 0 5px 0;
         font-size: 16px;

@@ -157,6 +157,7 @@ export async function unBlockUserAction(blockedUserId: number): Promise<boolean>
 export async function fetchCurrentUserPhotoAndOnlineVisibility(): Promise<{
     publicMainPhoto?: string;
     hideOnlineStatus: boolean;
+    deactivatedAt?: Date;
     mainPhotoCroppedImageData?: any
 } | null> {
     try {
@@ -170,7 +171,8 @@ export async function fetchCurrentUserPhotoAndOnlineVisibility(): Promise<{
         return {
             publicMainPhoto: currentUser.publicMainPhoto,
             mainPhotoCroppedImageData: currentUser.mainPhotoCroppedImageData,
-            hideOnlineStatus: currentUser.hideOnlineStatus
+            hideOnlineStatus: currentUser.hideOnlineStatus,
+            deactivatedAt: currentUser.deactivatedAt,
         };
     } catch (error) {
         logError(error instanceof Error ? error : new Error(String(error)), 'Error fetching current user main photo');

@@ -21,6 +21,37 @@
   }
 
   .user-content-wrapper {
+    .go-back {
+      position: absolute;
+      top: 72px;
+      left: 12px;
+      color: globals.$primary-blue;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0;
+
+      .icon {
+        font-size: 1.2rem;
+      }
+
+      .label {
+        font-size: 1.1rem;
+      }
+
+      @include globals.dark-mode {
+        color: globals.$primary-blue-dark;
+      }
+
+      @include globals.media-min('screens.md') {
+        top: 90px;
+      }
+
+      @include globals.media-min('screens.lg') {
+        display: none;
+      }
+    }
+
     .subscription-plan-display-container {
       padding-top: 118px;
       padding-bottom: 25px;
@@ -261,9 +292,9 @@
             display: flex;
             padding-bottom: 4px;
             justify-content: center;
-            max-width: 610px;
 
             @include globals.media-min('screens.lg') {
+              max-width: 610px;
               justify-content: flex-start;
             }
 

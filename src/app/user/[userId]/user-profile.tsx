@@ -10,6 +10,7 @@ import UserPhotoDisplay from "@/common/user-photo-display/user-photo-display";
 import { showAlert } from '@/util';
 import { UserPhoto } from "@/types/user-photo.type";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
     AngleLeftIcon,
     AngleRightIcon,
@@ -34,6 +35,7 @@ import ReportUserDialog from '@/common/report-user-dialog/report-user-dialog';
 import { CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 import { WebSocketMessage } from "../../../../types/websocket-events.types";
 import { TbDiamond } from "react-icons/tb";
+import { BsArrowLeft } from "react-icons/bs";
 
 interface UserProfileProps {
     userProfileDetail: UserProfileDetail,
@@ -54,6 +56,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
     const profileDataFetchTrigger$ = useRef(new Subject<void>()).current;
     const profileDataFetchSubRef = useRef<Subscription | null>(null);
     const { on, isConnected } = useWebSocket();
+    const router = useRouter();
 
     const refetchUserProfile = useCallback(async () => {
         try {
@@ -431,6 +434,10 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                     ) : (
                         <div className="user-content-wrapper">
                             <UserSubscriptionPlanDisplay />
+                            <button className='go-back' onClick={() => router.back()}>
+                                <BsArrowLeft className='icon' />
+                                <div className='label'>Back</div>
+                            </button>
 
                             <div className="user-profile-info-section">
                                 <a onClick={(e) => onPhotoView(e, 0)}>
