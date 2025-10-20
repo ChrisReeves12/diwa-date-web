@@ -350,24 +350,26 @@ export default function NotificationCenter({ currentUser }: { currentUser?: User
                     open={popovers.profileUser.isOpen}
                     onClose={popovers.profileUser.handleClose}
                     maxWidth={false}
-                    BackdropProps={{
-                        sx: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.5)'
-                        }
-                    }}
-                    PaperProps={{
-                        sx: {
-                            width: '95%',
-                            height: '90%',
-                            maxWidth: 'none',
-                            maxHeight: 'none',
-                            margin: 0,
-                            borderRadius: 0,
-                            backgroundColor: 'transparent',
-                            boxShadow: 'none',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
+                    slotProps={{
+                        backdrop: {
+                            sx: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        },
+                        paper: {
+                            sx: {
+                                width: '95%',
+                                height: '90%',
+                                maxWidth: 'none',
+                                maxHeight: 'none',
+                                margin: 0,
+                                borderRadius: 0,
+                                backgroundColor: 'transparent',
+                                boxShadow: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }
                         }
                     }}
                 >
