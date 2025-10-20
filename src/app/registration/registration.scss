@@ -270,6 +270,11 @@
           text-align: center;
           font-weight: normal;
           color: globals.$primary-blue;
+          padding-top: 16px;
+
+          @include globals.media-min('screens.md') {
+            padding-top: inherit;
+          }
 
           @include globals.dark-mode {
             color: globals.$primary-blue-dark;
