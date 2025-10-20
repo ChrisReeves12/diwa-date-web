@@ -920,6 +920,18 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
                                 publicMainPhoto: senderUser.publicMainPhoto
                             }
                         });
+
+                        await emitNewMatchNotification(existingMatch.userId, {
+                            id: existingMatch.id,
+                            sender: {
+                                id: senderUser.id,
+                                locationName: senderUser.locationName || '',
+                                gender: senderUser.gender,
+                                displayName: senderUser.displayName,
+                                age: calculateUserAge(senderUser),
+                                publicMainPhoto: senderUser.publicMainPhoto
+                            }
+                        });
                     }
                 } catch (wsError) {
                     console.error('Failed to emit confirmed match notification:', wsError);
@@ -1315,7 +1327,7 @@ export async function getFullUserProfile(userId: number, currentUserId: number):
 export async function sendVerificationEmailToUser(userId: number, email: string, firstName: string, lastName: string): Promise<boolean> {
     // Generate a random 6-digit code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    
+
     await pgDbWritePool.query(
         `UPDATE users 
          SET "emailVerificationToken" = $1,

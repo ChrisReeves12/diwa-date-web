@@ -75,7 +75,8 @@ export class SocketIOService {
             const { userId, category } = message;
 
             try {
-                this.emitToUser(userId, `${category}:notification` as keyof ServerToClientEvents, message);
+                const eventName = category === 'notification' ? 'event:notification' : `${category}:notification`;
+                this.emitToUser(userId, eventName as keyof ServerToClientEvents, message);
             } catch (error) {
                 console.error(`Error processing RabbitMQ message: ${error}`);
             }
