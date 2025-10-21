@@ -718,14 +718,13 @@ export function PhotosManagement() {
                                     <div className="upload-status">Uploading photos...</div>
                                     {Object.entries(uploadProgress).map(([fileName, progress]) => (
                                         <div key={fileName} className="file-progress">
-                                            <div className="file-name">{fileName}</div>
-                                            <div className="progress-bar">
-                                                <div
-                                                    className="progress-fill"
-                                                    style={{ width: `${progress}%` }}
-                                                />
+                                            <div className="spinner-container">
+                                                <CircularProgress size={20} color="inherit"/>
                                             </div>
-                                            <div className="progress-text">{progress}%</div>
+                                            <div className="file-info-container">
+                                                <div className="file-name">{fileName}</div>
+                                                <div className="progress-text">{progress >= 99 ? 'Complete' : 'Uploading'}</div>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>}

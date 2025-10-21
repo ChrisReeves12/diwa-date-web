@@ -654,7 +654,7 @@
 
         .upload-section {
             margin-bottom: 30px;
-            text-align: center;
+            text-align: left;
 
             .upload-progress {
                 margin-bottom: 20px;
@@ -670,39 +670,47 @@
                 }
 
                 .file-progress {
-                    margin-bottom: 12px;
-                    padding: 10px;
-                    background: white;
-                    border-radius: 6px;
-                    border: 1px solid #e5e7eb;
+                    margin-bottom: 8px;
+                    padding: 8px;
+                    background-color: #f5f5f5;
+                    border-radius: 4px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
 
-                    .file-name {
-                        font-size: 13px;
-                        color: #6b7280;
-                        margin-bottom: 6px;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
+                    @include globals.dark-mode {
+                        background-color: #333;
                     }
 
-                    .progress-bar {
-                        height: 8px;
-                        background: #e5e7eb;
-                        border-radius: 4px;
-                        overflow: hidden;
-                        margin-bottom: 4px;
+                    .spinner-container {
+                        flex-shrink: 0;
+                    }
 
-                        .progress-fill {
-                            height: 100%;
-                            background: globals.$primary-blue;
-                            transition: width 0.3s ease;
+                    .file-info-container {
+                        flex: 1;
+
+                        .file-name {
+                            font-size: 12px;
+                            color: #666;
+                            margin-bottom: 4px;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+
+                            @include globals.dark-mode {
+                                color: #aaa;
+                            }
                         }
-                    }
 
-                    .progress-text {
-                        font-size: 12px;
-                        color: #6b7280;
-                        text-align: right;
+                        .progress-text {
+                            font-size: 11px;
+                            color: #666;
+                            text-align: left;
+
+                            @include globals.dark-mode {
+                                color: #aaa;
+                            }
+                        }
                     }
                 }
             }
@@ -854,29 +862,32 @@
     }
 }
 
-// Button overrides for consistency
-.btn-primary {
-    background: #3b82f6;
-    border: 2px solid #3b82f6;
-    color: white;
-    padding: 12px 24px;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 16px;
+.button-container {
+    text-align: center;
 
-    &:hover {
-        background: #2563eb;
-        border-color: #2563eb;
-        transform: translateY(-1px);
-    }
+    .btn-primary {
+        background: #3b82f6;
+        border: 2px solid #3b82f6;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 16px;
 
-    &:disabled {
-        background: #9ca3af;
-        border-color: #9ca3af;
-        cursor: not-allowed;
-        transform: none;
+        &:hover {
+            background: #2563eb;
+            border-color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        &:disabled {
+            background: #9ca3af;
+            border-color: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
     }
 }
 

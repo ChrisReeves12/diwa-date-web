@@ -35,12 +35,9 @@ export function PhotosStep({
         loadPhotos();
     }, []);
 
-    // Validate step based on photo count
-    // During onboarding, we count all uploaded photos regardless of approval status
-    // The automatic approval process will handle validation offline
     useEffect(() => {
         onValidationChange(photos.length >= MIN_PHOTOS);
-    }, [photos, onValidationChange]);
+    }, [photos]);
 
     const loadPhotos = async () => {
         try {
@@ -239,29 +236,30 @@ export function PhotosStep({
                                         <div className="upload-status">Uploading photos...</div>
                                         {Object.entries(uploadProgress).map(([fileName, progress]) => (
                                             <div key={fileName} className="file-progress">
-                                                <div className="file-name">{fileName}</div>
-                                                <div className="progress-bar">
-                                                    <div
-                                                        className="progress-fill"
-                                                        style={{ width: `${progress}%` }}
-                                                    />
+                                                <div className="spinner-container">
+                                                    <CircularProgress size={20} color="inherit" />
                                                 </div>
-                                                <div className="progress-text">{progress}%</div>
+                                                <div className="file-info-container">
+                                                    <div className="file-name">{fileName}</div>
+                                                    <div className="progress-text">{progress >= 99 ? 'Complete' : 'Uploading'}</div>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
                                 )}
 
-                                {photos.length < MAX_PHOTOS && (
-                                    <button
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="btn-primary upload-button"
-                                        disabled={isUploading}
-                                        type="button"
-                                    >
-                                        {isUploading ? 'Uploading...' : 'Upload Photos'}
-                                    </button>
-                                )}
+                                <div className="button-container">
+                                    {photos.length < MAX_PHOTOS && (
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="btn-primary upload-button"
+                                            disabled={isUploading}
+                                            type="button"
+                                        >
+                                            {isUploading ? 'Uploading...' : 'Upload Photos'}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="photo-tips">
