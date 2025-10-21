@@ -494,9 +494,9 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         if (data.nudity) {
             analysisReport.nudity = {
                 raw: data.nudity,
-                isNude: data.nudity.raw > 0.5 || data.nudity.partial > 0.5,
-                isPartialNude: data.nudity.partial > 0.5 && data.nudity.raw <= 0.5,
-                isSafe: data.nudity.safe > 0.5
+                isNude: data.nudity.raw > 0.85 || data.nudity.partial > 0.85,
+                isPartialNude: data.nudity.partial > 0.85 && data.nudity.raw <= 0.85,
+                isSafe: data.nudity.safe > 0.85
             };
 
             if (analysisReport.nudity.isNude) {
@@ -509,7 +509,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         if (data.weapon) {
             analysisReport.weapon = {
                 raw: data.weapon,
-                containsWeapon: data.weapon > 0.5
+                containsWeapon: data.weapon > 0.85
             };
 
             if (analysisReport.weapon.containsWeapon) {
@@ -521,7 +521,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         if (data.recreational_drug) {
             analysisReport.recreational_drug = {
                 raw: data.recreational_drug,
-                containsRecreationalDrug: data.recreational_drug > 0.5
+                containsRecreationalDrug: data.recreational_drug > 0.85
             };
 
             if (analysisReport.recreational_drug.containsRecreationalDrug) {
@@ -533,7 +533,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         if (data.medical) {
             analysisReport.medical = {
                 raw: data.medical,
-                containsMedicalContent: data.medical > 0.5
+                containsMedicalContent: data.medical > 0.85
             };
 
             if (analysisReport.medical.containsMedicalContent) {
@@ -545,7 +545,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         if (data.offensive) {
             analysisReport.offensive = {
                 raw: data.offensive,
-                isOffensive: data.offensive > 0.5
+                isOffensive: data.offensive > 0.85
             };
 
             if (analysisReport.offensive.isOffensive) {
@@ -557,7 +557,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         if (data.gore) {
             analysisReport.gore = {
                 raw: data.gore,
-                containsGore: data.gore > 0.5
+                containsGore: data.gore > 0.85
             };
 
             if (analysisReport.gore.containsGore) {
@@ -569,7 +569,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         if (data.violence) {
             analysisReport.violence = {
                 raw: data.violence,
-                containsViolence: data.violence > 0.5
+                containsViolence: data.violence > 0.85
             };
 
             if (analysisReport.violence.containsViolence) {
@@ -581,7 +581,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         if (data['self-harm']) {
             analysisReport.self_harm = {
                 raw: data['self-harm'],
-                containsSelfHarmContent: data['self-harm'] > 0.5
+                containsSelfHarmContent: data['self-harm'] > 0.85
             };
 
             if (analysisReport.self_harm.containsSelfHarmContent) {
@@ -593,7 +593,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         if (data.scam) {
             analysisReport.scam = {
                 raw: data.scam,
-                containsScamContent: data.scam > 0.5
+                containsScamContent: data.scam > 0.85
             };
 
             if (analysisReport.scam.containsScamContent) {
@@ -605,7 +605,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         if (data.gambling) {
             analysisReport.gambling = {
                 raw: data.gambling,
-                containsGamblingContent: data.gambling > 0.5
+                containsGamblingContent: data.gambling > 0.85
             };
 
             if (analysisReport.gambling.containsGamblingContent) {
@@ -617,7 +617,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         if (data.tobacco) {
             analysisReport.tobacco = {
                 raw: data.tobacco,
-                containsTobaccoContent: data.tobacco > 0.5
+                containsTobaccoContent: data.tobacco > 0.85
             };
 
             if (analysisReport.tobacco.containsTobaccoContent) {
@@ -641,7 +641,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
         if (data.type) {
             analysisReport.isIllustration = {
                 raw: data.type,
-                isIllustration: data.type.illustration > 0.5
+                isIllustration: data.type.illustration > 0.85
             };
 
             if (analysisReport.isIllustration.isIllustration) {
@@ -683,8 +683,8 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 hasSpam: Array.isArray(data.text.spam) && data.text.spam.length > 0,
                 hasViolence: Array.isArray(data.text.violence) && data.text.violence.length > 0,
                 hasSelfHarm: Array.isArray(data.text["self-harm"]) && data.text["self-harm"].length > 0,
-                hasArtificialText: data.text.has_artificial > 0.5,
-                hasNaturalText: data.text.has_natural > 0.5
+                hasArtificialText: data.text.has_artificial > 0.85,
+                hasNaturalText: data.text.has_natural > 0.85
             };
 
             if (analysisReport.text.hasProfanity) {
@@ -699,9 +699,9 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 count: Array.isArray(data.faces) ? data.faces.length : 0,
                 hasFaces: Array.isArray(data.faces) && data.faces.length > 0,
                 hasMinors: Array.isArray(data.faces) && data.faces.some((face: any) =>
-                    face.attributes && face.attributes.minor > 0.5),
+                    face.attributes && face.attributes.minor >= 0.98),
                 hasSunglasses: Array.isArray(data.faces) && data.faces.some((face: any) =>
-                    face.attributes && face.attributes.sunglasses > 0.5)
+                    face.attributes && face.attributes.sunglasses > 0.85)
             };
 
             if (analysisReport.faces.hasMinors) {
