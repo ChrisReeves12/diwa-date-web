@@ -170,13 +170,13 @@ export default function NotificationCenter({ currentUser }: { currentUser?: User
                 // Show browser notification if tab is not visible
                 if (data.payload?.sender) {
                     const sender = data.payload.sender;
-                    showNotification('New Match! 💖', {
+                    const title = data.payload.status === 'matched' ? 'It\'s A Match! ❤️' : 'Someone Liked You! 😍';
+                    const url = data.payload.status === 'matched' ? `/messages/${data.payload.id}` : '/likes';
+
+                    showNotification(title, {
                         body: `${sender.displayName}${sender.age ? `, ${sender.age}` : ''}${sender.locationName ? ` • ${sender.locationName}` : ''}`,
                         icon: '/images/blue-heart.svg',
-                        tag: 'match-notification',
-                        data: {
-                            url: '/likes'
-                        }
+                        data: { url }
                     });
                 }
             }
@@ -188,12 +188,10 @@ export default function NotificationCenter({ currentUser }: { currentUser?: User
             triggerNotificationAnimation('message');
 
             // Show browser notification if tab is not visible
-            if (data.payload?.sender) {
-                const sender = data.payload.sender;
+            if (data.payload?.displayName) {
                 showNotification('New Message 💬', {
-                    body: `From ${sender.displayName || 'someone'}`,
+                    body: `From ${data.payload.displayName}`,
                     icon: '/images/blue-messages.svg',
-                    tag: 'message-notification',
                     data: {
                         url: data.payload.matchId ? `/messages/${data.payload.matchId}` : '/messages'
                     }

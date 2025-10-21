@@ -73,7 +73,6 @@ export async function getPendingMatches(user: User): Promise<NotificationPending
             LEFT JOIN "mutedUsers" MU ON MU."userId" = ${user.id} AND MU."recipientId" = UM."userId"
             LEFT JOIN "blockedUsers" BU ON BU."blockedUserId" = ${user.id} AND MU."userId" = BU."userId"
         WHERE MU."recipientId" IS NULL AND BU."blockedUserId" IS NULL AND UM."status" = 'pending'
-          AND U."profileCompletedAt" IS NOT NULL
           AND UM."recipientId" = ${user.id}
         ORDER BY UM."createdAt" DESC LIMIT 5
     `;

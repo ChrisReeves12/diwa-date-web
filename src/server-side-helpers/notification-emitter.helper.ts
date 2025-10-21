@@ -3,6 +3,7 @@ import { MessageCategory } from "../../types/websocket-events.types";
 
 export interface MatchNotificationData {
     id: number;
+    status?: string;
     sender: {
         id: number;
         locationName: string;

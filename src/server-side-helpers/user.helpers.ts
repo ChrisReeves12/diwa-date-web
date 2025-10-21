@@ -923,6 +923,7 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
 
                         await emitNewMatchNotification(existingMatch.userId, {
                             id: existingMatch.id,
+                            status: 'matched',
                             sender: {
                                 id: senderUser.id,
                                 locationName: senderUser.locationName || '',
@@ -964,6 +965,7 @@ export async function sendUserMatchRequest(userId: number, recipientUserId: numb
         if (senderUser) {
             await emitNewMatchNotification(recipientUserId, {
                 id: newMatch.id,
+                status: 'pending',
                 sender: {
                     id: senderUser.id,
                     locationName: senderUser.locationName || '',
@@ -1225,7 +1227,6 @@ export async function getUserLikes(
         INNER JOIN "users" U ON U."id" = UM."userId"
         WHERE UM."recipientId" = $1 
           AND UM."status" = 'pending'
-          AND U."profileCompletedAt" IS NOT NULL
           AND U."id" NOT IN (
               SELECT MU."recipientId" 
               FROM "mutedUsers" MU 
