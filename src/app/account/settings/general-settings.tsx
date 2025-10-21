@@ -9,6 +9,7 @@ import { updatePassword, toggleAccountDeactivation, deleteAccount, getBlockedUse
 import React, { useState, useEffect } from "react";
 import { UserPreview } from "@/types";
 import ConfirmDialog from "@/common/confirm-dialog/confirm-dialog";
+import { useBrowserNotifications } from "@/hooks/use-browser-notifications";
 
 interface AccountSettingsProps {
     currentUser?: User
@@ -50,6 +51,10 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
 
     // Profile deactivation confirmation dialog state
     const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+
+    // Browser notifications state
+    const { isSupported: notificationsSupported, isEnabled: notificationsEnabled, permission: notificationPermission, toggleNotifications } = useBrowserNotifications();
+    const [isUpdatingNotifications, setIsUpdatingNotifications] = useState(false);
 
     // Load blocked users on component mount
     useEffect(() => {
@@ -255,6 +260,27 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
             setErrors({ twoFactorForm: 'An unexpected error occurred' });
         } finally {
             setIsUpdatingTwoFactor(false);
+        }
+    };
+
+    const handleBrowserNotificationsToggle = async () => {
+        setErrors({});
+        setSuccessMessage('');
+        setIsUpdatingNotifications(true);
+
+        try {
+            const enabled = await toggleNotifications();
+
+            if (enabled) {
+                setSuccessMessage('Browser notifications enabled successfully');
+            } else {
+                setSuccessMessage('Browser notifications disabled');
+            }
+        } catch (error) {
+            console.error('Browser notifications toggle error:', error);
+            setErrors({ notificationsForm: 'An unexpected error occurred' });
+        } finally {
+            setIsUpdatingNotifications(false);
         }
     };
 
@@ -559,6 +585,88 @@ export function GeneralSettings({ currentUser }: AccountSettingsProps) {
                                                     <li><i className="las la-check"></i> Prevents unauthorized access even if your password is compromised</li>
                                                     <li><i className="las la-check"></i> Adds an extra layer of account security</li>
                                                     <li><i className="las la-check"></i> Email-based codes are secure and convenient</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Browser Notifications Section */}
+                                <div className="settings-section">
+                                    <h3>Browser Notifications</h3>
+                                    <div className="two-factor-container">
+                                        <div className="two-factor-toggle-section">
+                                            <div className="toggle-header">
+                                                <div className="toggle-info">
+                                                    <h4>Enable Browser Notifications</h4>
+                                                    <p>Receive browser notifications for new matches and messages when you&apos;re away from the tab.</p>
+                                                </div>
+                                                <div className="toggle-switch-container">
+                                                    <label className="toggle-switch">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={notificationsEnabled}
+                                                            onChange={handleBrowserNotificationsToggle}
+                                                            disabled={isUpdatingNotifications || !notificationsSupported}
+                                                        />
+                                                        <span className="toggle-slider"></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            {/* Notifications Form Errors */}
+                                            {errors.notificationsForm && (
+                                                <div className="error-message">
+                                                    {errors.notificationsForm}
+                                                </div>
+                                            )}
+
+                                            {!notificationsSupported ? (
+                                                <div className="disabled-notice">
+                                                    <p className="security-warning">
+                                                        <i className="las la-exclamation-triangle"></i>
+                                                        Your browser does not support notifications.
+                                                    </p>
+                                                </div>
+                                            ) : notificationPermission === 'denied' ? (
+                                                <div className="disabled-notice">
+                                                    <p className="security-warning">
+                                                        <i className="las la-exclamation-triangle"></i>
+                                                        Browser notifications are blocked. To enable them, please update your browser settings to allow notifications for this site.
+                                                    </p>
+                                                </div>
+                                            ) : notificationsEnabled ? (
+                                                <div className="enabled-notice">
+                                                    <p className="security-notice">
+                                                        <i className="las la-bell"></i>
+                                                        Browser notifications are enabled. You&apos;ll be notified when you receive matches and messages.
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div className="disabled-notice">
+                                                    <p className="security-warning">
+                                                        <i className="las la-bell-slash"></i>
+                                                        Browser notifications are disabled. Enable them to stay updated.
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="two-factor-info">
+                                            <p><strong>How it works:</strong></p>
+                                            <ul>
+                                                <li>You&apos;ll receive notifications for new matches and messages</li>
+                                                <li>Notifications only appear when you&apos;re not actively viewing the tab</li>
+                                                <li>Click on a notification to go directly to the relevant page</li>
+                                                <li>You can disable notifications at any time</li>
+                                            </ul>
+                                            <div className="security-benefits">
+                                                <p><strong>Benefits:</strong></p>
+                                                <ul>
+                                                    <li><i className="las la-check"></i> Never miss an important match</li>
+                                                    <li><i className="las la-check"></i> Respond to messages faster</li>
+                                                    <li><i className="las la-check"></i> Stay connected even when multitasking</li>
+                                                    <li><i className="las la-check"></i> Only notifies when you&apos;re away from the tab</li>
                                                 </ul>
                                             </div>
                                         </div>

@@ -9,6 +9,7 @@ import { Alert, Button } from '@mui/material';
 import Link from "next/link";
 import { useCurrentUser } from "@/common/context/current-user-context";
 import { User } from '@/types';
+import BrowserNotificationBanner from '../browser-notification-banner/browser-notification-banner';
 
 export default function SiteWrapper({ children, hideButtons = false, hideFlashMessage = false, currentUser }:
     { children: ReactNode, hideButtons?: boolean, hideFlashMessage?: boolean, currentUser?: User }) {
@@ -58,6 +59,7 @@ export default function SiteWrapper({ children, hideButtons = false, hideFlashMe
         <div className={`site-wrapper ${!hideInfoBar ? 'info-bar-shown' : ''}`}>
             {!hideInfoBar && <InfoBar onHide={() => setHideInfoBar(true)} />}
             <SiteTopBar hideButtons={hideButtons} currentUser={lCurrentUser} />
+            {lCurrentUser && <BrowserNotificationBanner />}
             {!hideFlashMessage && alertMessage && alertType &&
                 <div style={{ paddingTop: 30 }} className='container'>
                     <Alert

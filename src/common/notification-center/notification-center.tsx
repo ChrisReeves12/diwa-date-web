@@ -24,6 +24,7 @@ import NotificationPopover from './notification-popover/notification-popover';
 import { muteUser, sendUserMatch, fetchCurrentUserPhotoAndOnlineVisibility } from '../server-actions/user-profile.actions';
 import { useRouter, usePathname } from 'next/navigation';
 import { useWebSocket } from '@/hooks/use-websocket';
+import { useBrowserNotifications } from '@/hooks/use-browser-notifications';
 import { WebSocketMessage } from "../../../types/websocket-events.types";
 import { User } from '@/types';
 
@@ -44,6 +45,7 @@ export default function NotificationCenter({ currentUser }: { currentUser?: User
     const router = useRouter();
     const pathname = usePathname();
     const { on, isConnected } = useWebSocket();
+    const { showNotification } = useBrowserNotifications();
     const notificationTimeoutRefs = useRef<Map<string, NodeJS.Timeout>>(new Map());
     const profileButtonRef = useRef<HTMLButtonElement>(null);
     const isMobile = useMediaQuery('(max-width:768px)');
@@ -164,13 +166,40 @@ export default function NotificationCenter({ currentUser }: { currentUser?: User
         const handleRealTimeMatchEvents = (data: WebSocketMessage) => {
             if (data.eventLabel === 'match:new') {
                 triggerNotificationAnimation('match');
+
+                // Show browser notification if tab is not visible
+                if (data.payload?.sender) {
+                    const sender = data.payload.sender;
+                    showNotification('New Match! 💖', {
+                        body: `${sender.displayName}${sender.age ? `, ${sender.age}` : ''}${sender.locationName ? ` • ${sender.locationName}` : ''}`,
+                        icon: '/images/blue-heart.svg',
+                        tag: 'match-notification',
+                        data: {
+                            url: '/likes'
+                        }
+                    });
+                }
             }
 
             notificationDataFetchTrigger$.next({ showLoader: false });
         }
 
-        const handleRealTimeMessageEvents = () => {
+        const handleRealTimeMessageEvents = (data: WebSocketMessage) => {
             triggerNotificationAnimation('message');
+
+            // Show browser notification if tab is not visible
+            if (data.payload?.sender) {
+                const sender = data.payload.sender;
+                showNotification('New Message 💬', {
+                    body: `From ${sender.displayName || 'someone'}`,
+                    icon: '/images/blue-messages.svg',
+                    tag: 'message-notification',
+                    data: {
+                        url: data.payload.matchId ? `/messages/${data.payload.matchId}` : '/messages'
+                    }
+                });
+            }
+
             notificationDataFetchTrigger$.next({ showLoader: false });
         };
 

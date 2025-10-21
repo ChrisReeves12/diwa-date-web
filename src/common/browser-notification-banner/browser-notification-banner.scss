@@ -1,0 +1,212 @@
+.browser-notification-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background: linear-gradient(135deg, #49b1f4 0%, #3c8ec3 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideDown 0.4s ease-out;
+
+    @keyframes slideDown {
+        from {
+            transform: translateY(-100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .banner-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        position: relative;
+
+        @media (max-width: 768px) {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+            padding: 1.25rem 1rem;
+        }
+    }
+
+    .banner-icon {
+        font-size: 2.5rem;
+        line-height: 1;
+        flex-shrink: 0;
+
+        i {
+            animation: bellRing 2s ease-in-out infinite;
+        }
+
+        @keyframes bellRing {
+
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+
+            10%,
+            30% {
+                transform: rotate(-10deg);
+            }
+
+            20%,
+            40% {
+                transform: rotate(10deg);
+            }
+
+            50% {
+                transform: rotate(0deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            font-size: 2rem;
+        }
+    }
+
+    .banner-text {
+        flex: 1;
+        min-width: 0;
+
+        h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+
+            @media (max-width: 768px) {
+                font-size: 1rem;
+            }
+        }
+
+        p {
+            margin: 0;
+            font-size: 0.9rem;
+            opacity: 0.95;
+            line-height: 1.4;
+
+            @media (max-width: 768px) {
+                font-size: 0.85rem;
+            }
+        }
+    }
+
+    .banner-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-shrink: 0;
+
+        @media (max-width: 768px) {
+            width: 100%;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        button {
+            padding: 0.6rem 1.25rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+
+            @media (max-width: 768px) {
+                width: 100%;
+                justify-content: center;
+                padding: 0.75rem 1rem;
+            }
+
+            i {
+                font-size: 1.1rem;
+            }
+
+            &.btn-primary {
+                background: white;
+                color: #47a9ea;
+
+                @media (prefers-color-scheme: dark) {
+                    background: #1f2a3c;
+                    color: #ffffff;
+                }
+
+                &:hover {
+                    background: #f8f9fa;
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+
+                    @media (prefers-color-scheme: dark) {
+                        background: #1f2a3c;
+                        color: #ffffff;
+                    }
+                }
+            }
+
+            &.btn-secondary {
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+
+                &:hover {
+                    background: rgba(255, 255, 255, 0.3);
+                }
+            }
+        }
+    }
+
+    .banner-close {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 1.2rem;
+
+        @media (max-width: 768px) {
+            top: 0.5rem;
+            right: 0.5rem;
+            width: 28px;
+            height: 28px;
+            font-size: 1rem;
+        }
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        i {
+            line-height: 1;
+        }
+    }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+    .browser-notification-banner {
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    }
+}
