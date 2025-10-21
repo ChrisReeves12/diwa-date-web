@@ -24,6 +24,35 @@ export function registerAlertUpdater(updater: (state: AlertState) => void) {
 }
 
 /**
+ * Fetches the geographical bounds for a given country using its name and code.
+ * Utilizes the Google Maps Geocoding service to obtain the geocoding result.
+ *
+ * @param {Object} country An object representing the country for which to determine geographical bounds.
+ * @param {string} country.name The full name of the country (e.g., "United States").
+ * @param {string} country.code The ISO 3166-1 alpha-2 region code for the country (e.g., "US").
+ * @return {Promise<google.maps.GeocoderResult>} A promise that resolves with the geocoding result if successful,
+ *                                               or rejects with an error if the geocoding process fails.
+ */
+export function getGeoBoundsForCountry(country: { name: string, code: string }) {
+    return new Promise<google.maps.GeocoderResult>((resolve, reject) => {
+        google.maps.importLibrary("geocoding").then((library) => {
+            // @ts-expect-error dynamically loaded library
+            const geocoder = new library.Geocoder();
+            geocoder.geocode({
+                address: country.name,
+                region: country.code
+            }, (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
+                if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+                    resolve(results[0]);
+                } else {
+                    reject(new Error('Geocoding failed'));
+                }
+            });
+        });
+    });
+}
+
+/**
  * Checks if a user has been onboarded in which they filled out all the necessary attributes to
  * be visible in search.
  * @param user

@@ -224,8 +224,10 @@
 
                 .input-container {
                     &.error {
+
                         input,
-                        textarea {
+                        textarea,
+                        select {
                             border-color: globals.$error-color-light;
 
                             @include globals.dark-mode {
@@ -261,6 +263,43 @@
 
                         @include globals.media-min('screens.md') {
                             font-size: 14px;
+                        }
+
+                        &:focus {
+                            outline: none;
+                            border-bottom-color: globals.$primary-blue;
+                        }
+
+                        &.error {
+                            border-bottom-color: globals.$error-color-light;
+
+                            @include globals.dark-mode {
+                                border-bottom-color: globals.$error-color-dark;
+                            }
+                        }
+
+                        @include globals.dark-mode {
+                            border-bottom-color: #666;
+
+                            &:focus {
+                                border-bottom-color: globals.$primary-blue-dark;
+                            }
+                        }
+                    }
+
+                    select {
+                        @include globals.underlined-select;
+                        width: 100%;
+                        max-width: inherit;
+                        padding-bottom: 8px;
+                        border-bottom: 1px solid #cccccc;
+                        background: transparent;
+                        font-size: 16px;
+                        transition: border-color 0.2s ease;
+
+                        @include globals.media-min('screens.md') {
+                            font-size: 14px;
+                            max-width: 375px;
                         }
 
                         &:focus {

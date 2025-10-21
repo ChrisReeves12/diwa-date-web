@@ -9,6 +9,7 @@ export interface UserRegistrationData {
   location: Locality;
   userGender: string;
   seekingGender: string;
+  country: string;
   termsAccepted: boolean;
   timezone: string;
 }

@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import "@/styles/globals.scss";
 import GlobalAlertProvider from "@/common/alert-dialog/global-alert-provider";
-import { ThemeProvider } from '@mui/material/styles';
-import { theme, darkTheme } from '@/theme/theme';
 import { CookieConsentProvider } from '@/common/cookie-consent/cookie-consent-provider';
 import CookieConsentPopup from '@/common/cookie-consent/cookie-consent-popup';
 import DynamicThemeProvider from '@/theme/dynamic-theme-provider';

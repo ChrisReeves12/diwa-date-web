@@ -68,6 +68,22 @@
       .form-row {
         margin-bottom: 24px;
 
+        .input-container {
+          label {
+            padding-bottom: 8px;
+          }
+
+          select {
+            @include globals.underlined-select;
+          }
+
+          select {
+            width: 100%;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #cccccc;
+          }
+        }
+
         .form-row-loader-container {
           display: flex;
           justify-content: center;

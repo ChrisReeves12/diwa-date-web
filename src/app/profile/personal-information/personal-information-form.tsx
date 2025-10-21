@@ -10,6 +10,8 @@ import SingleSelect from '@/common/single-select/single-select';
 import MuiDatePicker from '@/common/mui-date-picker/mui-date-picker';
 import { FormGroup, FormControlLabel, Checkbox, FormLabel, Box } from '@mui/material';
 import { updatePersonalInformation } from './personal-information-actions';
+import { countries } from "@/config/countries";
+import { getGeoBoundsForCountry, loadGoogleMapsScript } from "@/util";
 import '../profile-settings.scss';
 
 interface PersonalInformationFormProps {
@@ -41,6 +43,8 @@ export function PersonalInformationForm({ currentUser }: PersonalInformationForm
             viewport: currentUser.locationViewport
         } : undefined
     );
+    const [country, setCountry] = useState(currentUser.country || '');
+    const [countryBounds, setCountryBounds] = useState<google.maps.LatLngBounds | undefined>();
 
     // Gender Information
     const [userGender, setUserGender] = useState(currentUser.gender || '');
@@ -209,6 +213,7 @@ export function PersonalInformationForm({ currentUser }: PersonalInformationForm
                     dateOfBirth,
                     bio,
                     location: selectedLocation,
+                    country,
                     userGender,
                     seekingGender,
                     height: height ? parseInt(height) : undefined,
@@ -260,6 +265,11 @@ export function PersonalInformationForm({ currentUser }: PersonalInformationForm
             setShowSuccessAlert(false);
         }
     }, [successMessage]);
+
+    // Load Google Maps script when component mounts
+    useEffect(() => {
+        loadGoogleMapsScript();
+    }, []);
 
     // Convert business config options to component format
     const heightOptions = Object.entries(businessConfig.options.height).map(([value, label]) => ({
@@ -435,7 +445,50 @@ export function PersonalInformationForm({ currentUser }: PersonalInformationForm
                 {/* Location Information Section */}
                 <div className="form-section">
                     <h3>Location Information</h3>
+
+                    <div className="form-row">
+                        <div className={`input-container ${errors.country ? 'error' : ''}`}>
+                            <label htmlFor="country">Country</label>
+                            <select value={country} onChange={async (e: any) => {
+                                setCountry(e.target.value);
+
+                                if (!e.target.value) {
+                                    setCountryBounds(undefined);
+                                    return;
+                                }
+
+                                const countryObj = countries.find(c => c.name === e.target.value);
+                                if (!countryObj) {
+                                    return;
+                                }
+
+                                try {
+                                    // Ensure Google Maps is loaded
+                                    if (typeof google === 'undefined' || !google.maps) {
+                                        console.error('Google Maps not loaded');
+                                        setErrors({ country: 'Google Maps is not available. Please refresh the page and try again.' });
+                                        return;
+                                    }
+
+                                    const geoCodeResult = await getGeoBoundsForCountry(countryObj);
+                                    setCountryBounds(geoCodeResult.geometry.viewport);
+                                } catch (error) {
+                                    console.error('Error getting country bounds:', error);
+                                    setErrors({ country: 'Failed to load country data. Please try again.' });
+                                }
+                            }} name="country">
+                                {countries.map((countryOption) =>
+                                    <option key={countryOption.code} value={countryOption.name}>{countryOption.name}</option>)}
+                            </select>
+                            {errors.country && (
+                                <div className="error-message">{errors.country}</div>
+                            )}
+                        </div>
+                    </div>
+
                     <LocationSearch
+                        label="City"
+                        geoBounds={countryBounds}
                         onUpdate={(locality) => setSelectedLocation(locality)}
                         error={errors.location}
                         initialLocality={selectedLocation}

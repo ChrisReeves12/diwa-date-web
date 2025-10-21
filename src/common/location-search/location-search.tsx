@@ -10,12 +10,13 @@ interface LocationSearchProps {
     onUpdate?: (locality?: Locality) => void;
     error?: string;
     initialLocality?: Locality;
+    label?: string;
     geoBounds?: google.maps.LatLngBounds;
     showMap?: boolean;
 }
 
 
-export default function LocationSearch({ onUpdate, error, initialLocality, geoBounds, showMap = true }: LocationSearchProps) {
+export default function LocationSearch({ onUpdate, error, initialLocality, geoBounds, showMap = true, label }: LocationSearchProps) {
     const [locationSearchText, setLocationSearchText] = useState('');
     const [selectedLocation, setSelectedLocation] = useState<Locality | undefined>(initialLocality);
     const [locationSuggestions, setLocationSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
@@ -200,7 +201,7 @@ export default function LocationSearch({ onUpdate, error, initialLocality, geoBo
                         }
                     }} location={selectedLocation} />}
                 {!selectedLocation && <div className={`input-container ${error ? 'error' : ''}`}>
-                    <label htmlFor="location">Location</label>
+                    <label htmlFor="location">{label || 'Location'}</label>
                     <div className="location-input-container">
                         <input
                             type="text"

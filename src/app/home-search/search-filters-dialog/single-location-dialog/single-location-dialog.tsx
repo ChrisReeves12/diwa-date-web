@@ -9,7 +9,7 @@ import { businessConfig } from "@/config/business";
 import { SingleSearchLocation } from "@/types";
 import SelectedSingleLocationDisplay
     from "@/app/home-search/search-filters-dialog/selected-single-location-display/selected-single-location-display";
-import { useWindowWidth } from "@/hooks/use-window-width";
+import { getGeoBoundsForCountry } from "@/util";
 
 interface SingleLocationDialogProps {
     onClose: () => void,
@@ -23,27 +23,6 @@ export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleS
     const [singleSearchLocation, setSingleSearchLocation] = useState<SingleSearchLocation | undefined>(defaultSingleSearchLocation);
     const [countryBounds, setCountryBounds] = useState<google.maps.LatLngBounds | undefined>();
     const innerWidth = window.innerWidth;
-
-    const getGeoBoundsForCountry = async (country: { name: string, code: string }) => {
-        const geoCodeResult = await new Promise<google.maps.GeocoderResult>((resolve, reject) => {
-            google.maps.importLibrary("geocoding").then((library) => {
-                // @ts-expect-error dynamically loaded library
-                const geocoder = new library.Geocoder();
-                geocoder.geocode({
-                    address: country.name,
-                    region: country.code
-                }, (results: google.maps.GeocoderResult[] | null, status: google.maps.GeocoderStatus) => {
-                    if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
-                        resolve(results[0]);
-                    } else {
-                        reject(new Error('Geocoding failed'));
-                    }
-                });
-            });
-        });
-
-        setCountryBounds(geoCodeResult.geometry.viewport);
-    }
 
     return (
         <Box className="modal-background" sx={{
@@ -80,7 +59,8 @@ export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleS
                                         const countryObj = countries.find(country => country.name === newValue);
 
                                         if (newValue && countryObj) {
-                                            await getGeoBoundsForCountry(countryObj);
+                                            const geoCodeResult = await getGeoBoundsForCountry(countryObj);
+                                            setCountryBounds(geoCodeResult.geometry.viewport);
                                         }
                                     }}
                                     displayEmpty
@@ -103,7 +83,8 @@ export default function SingleLocationDialog({ onClose, onUpdate, defaultSingleS
                                     const countryObj = countries.find(country => country.name === newValue);
 
                                     if (newValue && countryObj) {
-                                        await getGeoBoundsForCountry(countryObj);
+                                        const geoCodeResult = await getGeoBoundsForCountry(countryObj);
+                                        setCountryBounds(geoCodeResult.geometry.viewport);
                                     }
                                 }}
                                 renderInput={(params) => <TextField {...params} placeholder="Select Country" />}

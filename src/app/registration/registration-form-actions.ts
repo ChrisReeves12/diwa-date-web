@@ -37,6 +37,7 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
       location: JSON.parse(formData.get('location') as string),
       userGender: formData.get('userGender') as string,
       seekingGender: formData.get('seekingGender') as string,
+      country: formData.get('country') as string,
       termsAccepted: formData.get('termsAccepted') === 'true',
       timezone: formData.get('timezone') as string
     };
@@ -77,7 +78,7 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
       longitude: userData.location.coordinates?.longitude ?? null,
       locationName: userData.location.name,
       locationViewport: userData.location.viewport,
-      country: userData.location.country,
+      country: userData.country,
       height: businessConfig.defaults.minHeight,
       updatedAt: new Date(),
       lastActiveAt: new Date()
