@@ -188,6 +188,7 @@ export function WizardContainer({ currentUser }: WizardContainerProps) {
                 />;
             case 3:
                 return <PhotosStep
+                    currentUser={currentUser}
                     data={wizardData}
                     updateData={updateWizardData}
                     onValidationChange={(isValid) => updateStepValidation(3, isValid)}

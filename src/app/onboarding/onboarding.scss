@@ -550,10 +550,14 @@
             }
 
             .photos-complete {
-                color: #065f46;
+                color: globals.$primary-blue;
                 font-size: 16px;
                 font-weight: 600;
                 margin: 0;
+
+                @include globals.dark-mode {
+                    color: globals.$primary-blue-dark;
+                }
             }
         }
 
@@ -568,85 +572,110 @@
                 gap: 15px;
             }
 
-            .photo-item {
-                position: relative;
-                aspect-ratio: 1;
-                border-radius: 8px;
-                overflow: hidden;
-
-                &.rejected {
-                    .photo-display {
-                        opacity: 0.4;
-                    }
+            .photo-item-container {
+                .circle-loader-container {
+                    position: absolute;
+                    left: 50%;
+                    top: 50%;
+                    transform: translate(-50%, -50%);
                 }
 
-                &.under-review {
-                    .photo-display {
-                        opacity: 0.6;
-                    }
-                }
-
-                .photo-display {
-                    width: 100%;
-                    height: 100%;
-                    background-size: cover;
-                    background-position: center;
+                .photo-item {
+                    position: relative;
+                    aspect-ratio: 1;
                     border-radius: 8px;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                    overflow: hidden;
+
+                    &.rejected {
+                        .photo-display {
+                            opacity: 0.4;
+                        }
+                    }
+
+                    &.under-review {
+                        .photo-display {
+                            opacity: 0.6;
+                        }
+                    }
+
+                    .photo-display {
+                        width: 100%;
+                        height: 100%;
+                        background-size: cover;
+                        background-position: center;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+                        &.approval-in-progress {
+                            opacity: 0.5;
+                        }
+                    }
+
+                    .delete-button {
+                        position: absolute;
+                        top: 4px;
+                        right: 4px;
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 50%;
+                        background: white;
+                        border: 1px solid #d1d5db;
+                        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        z-index: 10;
+
+                        &:hover {
+                            background: #fee2e2;
+                            border-color: #ef4444;
+                            transform: scale(1.1);
+                        }
+
+                        &:disabled {
+                            opacity: 0.5;
+                            cursor: not-allowed;
+                        }
+
+                        i {
+                            font-size: 16px;
+                            color: #6b7280;
+                        }
+                    }
+
+                    .photo-status {
+                        position: absolute;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        padding: 6px;
+                        font-size: 12px;
+                        text-align: center;
+                        font-weight: 600;
+                        background: rgba(0, 0, 0, 0.7);
+                        color: white;
+
+                        &.rejected-label {
+                            background: rgba(239, 68, 68, 0.9);
+                        }
+
+                        &.review-label {
+                            background: rgba(251, 191, 36, 0.9);
+                        }
+                    }
                 }
 
-                .delete-button {
-                    position: absolute;
-                    top: 4px;
-                    right: 4px;
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 50%;
-                    background: white;
-                    border: 1px solid #d1d5db;
-                    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.4);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                    z-index: 10;
-
-                    &:hover {
-                        background: #fee2e2;
-                        border-color: #ef4444;
-                        transform: scale(1.1);
-                    }
-
-                    &:disabled {
-                        opacity: 0.5;
-                        cursor: not-allowed;
-                    }
-
-                    i {
-                        font-size: 16px;
-                        color: #6b7280;
-                    }
-                }
-
-                .photo-status {
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    padding: 6px;
-                    font-size: 12px;
+                .approval-status {
+                    font-size: 14px;
+                    padding-top: 4px;
                     text-align: center;
-                    font-weight: 600;
-                    background: rgba(0, 0, 0, 0.7);
-                    color: white;
+                    font-style: italic;
+                    color: #878787;
 
-                    &.rejected-label {
-                        background: rgba(239, 68, 68, 0.9);
-                    }
-
-                    &.review-label {
-                        background: rgba(251, 191, 36, 0.9);
+                    @include globals.dark-mode {
+                        color: #9b9b9b;
                     }
                 }
             }

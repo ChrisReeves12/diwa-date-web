@@ -6,6 +6,7 @@ import { getCurrentUser, sendVerificationEmailToUser } from '@/server-side-helpe
 import { WizardData } from './wizard-container';
 import { prismaWrite } from '@/lib/prisma';
 import { pgDbWritePool } from '@/lib/postgres';
+import { reviewPhotos } from "@/server-side-helpers/compliance.helper";
 
 export async function saveWizardProgress(data: Partial<WizardData>) {
     const currentUser = await getCurrentUser(await cookies());
@@ -41,6 +42,10 @@ export async function saveWizardProgress(data: Partial<WizardData>) {
     } catch (error) {
         return { success: false, message: 'Failed to save progress' };
     }
+}
+
+export async function doPhotoReview(imageFiles: {imageFile: File, s3Path: string}[], userId: number) {
+    return await reviewPhotos(imageFiles, userId);
 }
 
 export async function updateOnboardingProgress(currentStep: number, completedSteps: number[]) {

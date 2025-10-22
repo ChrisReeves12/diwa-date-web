@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
     CHAT_MESSAGES_PAGE_SIZE: process.env.CHAT_MESSAGES_PAGE_SIZE || '20',
   },
 
+  allowedDevOrigins: [
+      'localhost:3000', '*.loca.lt'
+  ],
+
   experimental: {
     serverActions: {
       bodySizeLimit: '50mb'

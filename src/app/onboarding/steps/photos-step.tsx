@@ -7,18 +7,21 @@ import { PhotoWithUrl } from '@/types/upload-progress.interface';
 import { showAlert } from '@/util';
 import { CircularProgress } from "@mui/material";
 import { TimesIcon } from "react-line-awesome";
-import { FaCamera } from "react-icons/fa";
 import { IoIosImages } from "react-icons/io";
+import { doPhotoReview } from "@/app/onboarding/wizard-actions";
+import { User } from "@/types";
 
 interface PhotosStepProps {
     data: WizardData;
     updateData: (field: keyof WizardData, value: any) => void;
     onValidationChange: (isValid: boolean) => void;
+    currentUser: User
 }
 
 export function PhotosStep({
     data,
     updateData,
+    currentUser,
     onValidationChange
 }: PhotosStepProps) {
     const MIN_PHOTOS = 3;
@@ -28,6 +31,8 @@ export function PhotosStep({
     const [isUploading, setIsUploading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+    const [photoReviews, setPhotoReviews] = useState<{s3Path: string, status: string}[]>([]);
+    const [validPhotoCount, setValidPhotoCount] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Load photos on mount
@@ -44,6 +49,14 @@ export function PhotosStep({
             setIsLoading(true);
             const result = await getUserPhotos();
             setPhotos(result.photos);
+            setPhotoReviews((result.photos || []).filter(p => !p.isUnderReview).map(p => ({
+                s3Path: p.path,
+                status: p.isRejected ? `Photo Not Approved: ${(p.messages || []).join(', ')}` : 'Approved'
+            })));
+
+            setValidPhotoCount((result.photos || []).filter(p => !p.isRejected).length);
+
+            return result.photos;
         } catch (err) {
             showAlert('An error occurred while loading photos. Please try again later.');
             console.error('Load photos error:', err);
@@ -58,6 +71,7 @@ export function PhotosStep({
 
         // Validate files
         const validFiles: File[] = [];
+        const filesToReview: {imageFile: File, s3Path: string}[] = [];
         const maxSize = 10 * 1024 * 1024; // 10MB
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
@@ -106,6 +120,7 @@ export function PhotosStep({
 
                 if (response.success) {
                     setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
+                    filesToReview.push({imageFile: file, s3Path: response.photo.path});
                     return response.photo;
                 }
 
@@ -129,20 +144,47 @@ export function PhotosStep({
             }
         });
 
+        let hasError = false;
+        let successfulUploads = [];
+
         try {
             const uploadedPhotos = await Promise.all(uploadPromises);
-            const successfulUploads = uploadedPhotos.filter((photo: any) => photo !== null);
+            successfulUploads = uploadedPhotos.filter((photo: any) => photo !== null);
 
             if (successfulUploads.length > 0) {
                 await loadPhotos();
             }
         } catch (error) {
+            hasError = true;
             console.error('Upload process error:', error);
             showAlert('An error occurred during upload. Please try again.');
         } finally {
             setIsUploading(false);
             setUploadProgress({});
             event.target.value = '';
+        }
+
+        // Check photos for approval
+        if (!hasError && filesToReview.length > 0) {
+            setPhotoReviews(prevState => {
+                return [...prevState, ...filesToReview.map(p => ({s3Path: p.s3Path, status: 'Checking photo...'}))];
+            });
+
+            const reviewResults = await doPhotoReview(filesToReview, currentUser.id);
+
+            setPhotoReviews(prevState => {
+                return prevState.map(p => {
+                    const photoReview = (reviewResults.photos || []).find(v => v.s3Path === p.s3Path);
+                    if (photoReview) {
+                        return {...p, ...{status: !photoReview.isRejected ? 'Approved' : 'Photo Not Approved: ' + (photoReview.messages || []).join(', ')}};
+                    }
+
+                    return p;
+                });
+            });
+
+            setValidPhotoCount(prevState =>
+                prevState + (reviewResults.photos || []).filter(p => !p.isRejected).length);
         }
     };
 
@@ -163,8 +205,7 @@ export function PhotosStep({
         }
     };
 
-    // During onboarding, count all photos regardless of approval status
-    const photosNeeded = Math.max(0, MIN_PHOTOS - photos.length);
+    const photosNeeded = Math.max(0, MIN_PHOTOS - validPhotoCount);
 
     return (
         <div className="wizard-step photos-step">
@@ -197,26 +238,33 @@ export function PhotosStep({
 
                             {photos.length > 0 && (
                                 <div className="photo-grid">
-                                    {photos.map((photo) => (
-                                        <div
-                                            key={photo.path}
-                                            className="photo-item"
-                                        >
-                                            <div
-                                                className="photo-display"
-                                                style={{
-                                                    backgroundImage: `url('${photo.croppedImageUrl || photo.url}')`
-                                                }}
-                                            />
-                                            <button
-                                                onClick={() => handleDeletePhoto(photo.path)}
-                                                className="delete-button"
-                                                disabled={isDeleting}
-                                            >
-                                                <TimesIcon />
-                                            </button>
-                                        </div>
-                                    ))}
+                                    {photos.map((photo) => {
+                                        const photoBeingReviewed = photoReviews
+                                            .find(p => p.s3Path === photo.path);
+
+                                        return (
+                                            <div className='photo-item-container'>
+                                                <div key={photo.path} className="photo-item">
+                                                    {photoBeingReviewed?.status?.includes('Checking') &&
+                                                        <div className="circle-loader-container">
+                                                            <CircularProgress size={50} />
+                                                        </div>}
+                                                    <div
+                                                        className={`photo-display ${photoBeingReviewed?.status?.includes('Checking') ? 'approval-in-progress' : ''}`}
+                                                        style={{ backgroundImage: `url('${photo.croppedImageUrl || photo.url}')`}}
+                                                    />
+                                                    <button
+                                                        onClick={() => handleDeletePhoto(photo.path)}
+                                                        className="delete-button"
+                                                        disabled={isDeleting}>
+                                                        <TimesIcon />
+                                                    </button>
+                                                </div>
+                                                {!!photoBeingReviewed &&
+                                                    <div className="approval-status">{photoBeingReviewed.status}</div>}
+                                            </div>
+                                        )
+                                    })}
                                 </div>
                             )}
 
