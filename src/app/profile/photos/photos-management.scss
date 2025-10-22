@@ -1,6 +1,20 @@
 @use '@/styles/globals' as globals;
 
 .photos-management {
+
+  .approval-status {
+    font-size: 13px;
+    max-width: 160px;
+    text-align: center;
+    margin: 0 auto;
+    padding-top: 10px;
+    color: #565656cc;
+
+    @include globals.dark-mode {
+      color: #878787;
+    }
+  }
+
   .no-photos-caption {
     text-align: center;
   }
@@ -39,6 +53,14 @@
         margin-bottom: 6px;
         touch-action: none;
         cursor: pointer;
+
+        .circle-loader-container {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 100;
+        }
 
         &.rejected {
           .rejection-messages {

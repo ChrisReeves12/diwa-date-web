@@ -3,7 +3,7 @@
 import './photos-management.scss';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PhotoWithUrl } from '@/types/upload-progress.interface';
-import { getUserPhotos, saveCropData, uploadPhoto, deletePhoto, updatePhotoSortOrder } from './photos.actions';
+import { getUserPhotos, saveCropData, uploadPhoto, deletePhoto, updatePhotoSortOrder, doPhotoReview } from './photos.actions';
 import { showAlert } from '@/util';
 import { Button, CircularProgress } from "@mui/material";
 import { InfoCircleIcon, SaveIcon, TimesIcon, RedoIcon, EyeIcon } from "react-line-awesome";
@@ -24,11 +24,13 @@ import {
 } from '@dnd-kit/utilities';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { useWebSocket } from '@/hooks/use-websocket';
+import { useCurrentUser } from '@/common/context/current-user-context';
 
-function SortablePhotoItem({ photoWithUrl, onClick, onDelete }: {
+function SortablePhotoItem({ photoWithUrl, onClick, onDelete, photoReviews }: {
     photoWithUrl: PhotoWithUrl,
     onClick: (e: React.MouseEvent) => void,
-    onDelete: (e: React.MouseEvent) => void
+    onDelete: (e: React.MouseEvent) => void,
+    photoReviews: {s3Path: string, status: string}[]
 }) {
     const {
         attributes,
@@ -36,12 +38,17 @@ function SortablePhotoItem({ photoWithUrl, onClick, onDelete }: {
         setNodeRef,
         transform,
         transition,
-    } = useSortable({ id: photoWithUrl.path });
+    } = useSortable({
+        id: photoWithUrl.path,
+        disabled: photoWithUrl.isRejected
+    });
 
     const style = {
         transform: CSS.Transform.toString(transform),
         transition
     };
+
+    const photoBeingReviewed = photoReviews.find(p => p.s3Path === photoWithUrl.path);
 
     return (
         <div ref={setNodeRef}
@@ -50,7 +57,14 @@ function SortablePhotoItem({ photoWithUrl, onClick, onDelete }: {
             onClick={photoWithUrl.isRejected ? undefined : onClick}
             {...attributes}
             {...listeners}>
-            <div className="photo-display-container" style={{ backgroundImage: `url('${photoWithUrl.croppedImageUrl || photoWithUrl.url}')` }}></div>
+            {photoBeingReviewed?.status?.includes('Checking') &&
+                <div className="circle-loader-container">
+                    <CircularProgress size={50} />
+                </div>}
+            <div
+                className={`photo-display-container ${photoBeingReviewed?.status?.includes('Checking') ? 'approval-in-progress' : ''}`}
+                style={{ backgroundImage: `url('${photoWithUrl.croppedImageUrl || photoWithUrl.url}')` }}
+            ></div>
             <button onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -59,15 +73,8 @@ function SortablePhotoItem({ photoWithUrl, onClick, onDelete }: {
             }} className="delete-button">
                 <TimesIcon />
             </button>
-            {photoWithUrl.isRejected && <div className="under-review-label">Not Approved</div>}
-            {photoWithUrl.isUnderReview && !photoWithUrl.isRejected && <div className="under-review-label">Under Review</div>}
-            {photoWithUrl.isRejected && photoWithUrl.messages && photoWithUrl.messages.length > 0 && (
-                <div className="rejection-messages">
-                    {photoWithUrl.messages.map((message, index) => (
-                        <div key={index} className="rejection-message">{message}</div>
-                    ))}
-                </div>
-            )}
+            {!!photoBeingReviewed && photoBeingReviewed.status !== 'Approved' &&
+                <div className="approval-status">{photoBeingReviewed.status}</div>}
         </div>
     );
 }
@@ -87,6 +94,7 @@ export function PhotosManagement() {
     const [imageToDelete, setImageToDelete] = useState<PhotoWithUrl | undefined>();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const sortTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+    const currentUser = useCurrentUser();
 
     // Cropping state
     const [cropArea, setCropArea] = useState<CropArea>({ x: 0, y: 0, width: 200, height: 200 });
@@ -103,6 +111,7 @@ export function PhotosManagement() {
     const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
     const [isDeleting, setIsDeleting] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+    const [photoReviews, setPhotoReviews] = useState<{s3Path: string, status: string}[]>([]);
     const imageRef = useRef<HTMLImageElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const { on, isConnected } = useWebSocket();
@@ -182,6 +191,17 @@ export function PhotosManagement() {
             setIsLoading(true);
             const result = await getUserPhotos();
             setPhotos(result.photos);
+            setPhotoReviews((result.photos || []).map(p => {
+                let status = 'Checking photo...';
+                if (p.isRejected || !p.isUnderReview) {
+                    status = p.isRejected ? (p.messages || []).join(', ') : 'Approved';
+                }
+
+                return {
+                    s3Path: p.path,
+                    status
+                }
+            }));
         } catch (err) {
             showAlert('An error occurred while loading photos. Please try again later.');
             console.error('Load photos error:', err);
@@ -197,6 +217,13 @@ export function PhotosManagement() {
             setPhotos((aPhotos) => {
                 const oldIndex = aPhotos.findIndex(photo => photo.path === active.id);
                 const newIndex = aPhotos.findIndex(photo => photo.path === over.id);
+
+                // Prevent sorting of disapproved photos
+                const activePhoto = aPhotos[oldIndex];
+                if (activePhoto?.isRejected) {
+                    return aPhotos;
+                }
+
                 let sortedPhotos = arrayMove(aPhotos, oldIndex, newIndex);
 
                 if (!isSorting && !isDeleting && !isUploading && !isResizing) {
@@ -204,14 +231,14 @@ export function PhotosManagement() {
                         clearTimeout(sortTimeoutRef.current);
                     }
 
-                    // Check if the first photo is under review, and re-sort if needed
-                    if (sortedPhotos[0].isUnderReview) {
-                        const firstNonReviewIndex = sortedPhotos.findIndex(photo => !photo.isUnderReview);
+                    // Check if the first photo is under review or rejected, and re-sort if needed
+                    if (sortedPhotos[0].isUnderReview || sortedPhotos[0].isRejected) {
+                        const firstApprovedIndex = sortedPhotos.findIndex(photo => !photo.isUnderReview && !photo.isRejected);
 
-                        if (firstNonReviewIndex > 0) {
-                            const firstNonReviewPhoto = sortedPhotos[firstNonReviewIndex];
-                            sortedPhotos.splice(firstNonReviewIndex, 1);
-                            sortedPhotos.unshift(firstNonReviewPhoto);
+                        if (firstApprovedIndex > 0) {
+                            const firstApprovedPhoto = sortedPhotos[firstApprovedIndex];
+                            sortedPhotos.splice(firstApprovedIndex, 1);
+                            sortedPhotos.unshift(firstApprovedPhoto);
                         }
                     }
 
@@ -481,6 +508,14 @@ export function PhotosManagement() {
         handleImageLoad();
     }
 
+    const isCheckingPhotos = photoReviews.some(p => p.status.includes('Checking'));
+    let uploadButtonLabel = 'Upload Photos';
+    if (isUploading) {
+        uploadButtonLabel = 'Uploading...';
+    } else if (isCheckingPhotos) {
+        uploadButtonLabel = 'Checking Photos';
+    }
+
     const generateCropPreviewStyles = useCallback(() => {
         if (!imageRef.current || !imageBeingEdited) return {};
 
@@ -652,21 +687,63 @@ export function PhotosManagement() {
             }
         });
 
+        let hasError = false;
+        let successfulUploads = [];
+        const filesToReview: {imageFile: File, s3Path: string}[] = [];
+
         try {
             const uploadedPhotos = await Promise.all(uploadPromises);
-            const successfulUploads = uploadedPhotos.filter((photo: any) => photo !== null);
+            successfulUploads = uploadedPhotos.filter((photo: any) => photo !== null);
 
             if (successfulUploads.length > 0) {
+                // Create files to review array
+                for (let i = 0; i < validFiles.length; i++) {
+                    const file = validFiles[i];
+                    const uploadedPhoto = successfulUploads[i];
+                    if (uploadedPhoto) {
+                        filesToReview.push({imageFile: file, s3Path: uploadedPhoto.path});
+                    }
+                }
+
                 await loadPhotos();
                 window.dispatchEvent(new CustomEvent('refresh-user-profile-main-photo'));
             }
         } catch (error) {
+            hasError = true;
             console.error('Upload process error:', error);
             showAlert('An error occurred during upload. Please try again.');
         } finally {
             setIsUploading(false);
             setUploadProgress({});
             event.target.value = ''; // Reset file input
+        }
+
+        // Check photos for approval
+        if (!hasError && filesToReview.length > 0) {
+            setPhotoReviews(prevState => {
+                return [...prevState, ...filesToReview.map(p => ({s3Path: p.s3Path, status: 'Checking photo...'}))];
+            });
+
+            try {
+                const reviewResults = await doPhotoReview(filesToReview, currentUser!.id);
+
+                setPhotoReviews(prevState => {
+                    return prevState.map(p => {
+                        const photoReview = (reviewResults.photos || []).find((v: any) => v.s3Path === p.s3Path);
+                        if (photoReview) {
+                            return {...p, ...{status: !photoReview.isRejected ? 'Approved' : 'Photo Not Approved: ' + (photoReview.messages || []).join(', ')}};
+                        }
+
+                        return p;
+                    });
+                });
+
+                // Reload photos to get updated status from database
+                await loadPhotos();
+            } catch (error) {
+                console.error('Photo review error:', error);
+                showAlert('Photos uploaded but review failed. Please try again.');
+            }
         }
     };
 
@@ -695,6 +772,7 @@ export function PhotosManagement() {
                                                         onDelete={() => handleImageDelete(photoWithUrl)}
                                                         key={photoWithUrl.path}
                                                         photoWithUrl={photoWithUrl}
+                                                        photoReviews={photoReviews}
                                                     />
                                                 ))}
                                         </div>
@@ -709,7 +787,7 @@ export function PhotosManagement() {
                                 type="file"
                                 accept="image/*"
                                 onChange={handleFileUpload}
-                                disabled={isUploading}
+                                disabled={isUploading || isCheckingPhotos}
                             />
                             {photos.length > 1 && !isUploading &&
                                 <div className="drag-instructions">Tap photo to edit, drag to sort.</div>}
@@ -733,10 +811,10 @@ export function PhotosManagement() {
                                     onClick={() => fileInputRef.current?.click()}
                                     variant="contained"
                                     type="button"
-                                    disabled={isUploading}
+                                    disabled={isUploading || isCheckingPhotos}
                                     startIcon={isUploading ? <CircularProgress size={16} color="inherit" /> : undefined}
                                 >
-                                    {isUploading ? 'Uploading...' : 'Upload Photos'}
+                                    {uploadButtonLabel}
                                 </Button>}
                         </div>
                     </>

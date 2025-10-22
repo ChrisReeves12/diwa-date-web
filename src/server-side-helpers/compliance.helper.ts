@@ -2,7 +2,6 @@ import { UserPhoto } from "@/types";
 import { v4 as uuidv4 } from 'uuid';
 import fs from "fs";
 import FormData from 'form-data';
-import { S3Helper } from "@/server-side-helpers/s3.helper";
 import axios from "axios";
 import http from "http";
 import ssim from 'ssim.js';
@@ -154,9 +153,12 @@ export async function reviewPhotos(imageFiles: { imageFile: File, s3Path: string
         });
     }
 
+    const mainPhoto = storedPhotos.find(p => !p.isUnderReview && !p.isRejected);
+
     await prismaWrite.users.update({
         where: { id: userId },
         data: {
+            mainPhoto: mainPhoto?.path,
             photos: storedPhotos as any,
             numOfPhotos: storedPhotos.filter(p => !p.isUnderReview && !p.isRejected).length,
             updatedAt: new Date()
