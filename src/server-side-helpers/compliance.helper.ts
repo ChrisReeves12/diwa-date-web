@@ -98,7 +98,7 @@ export async function reviewPhotos(imageFiles: { imageFile: File, s3Path: string
         const response = await axiosInstance
             .post('https://api.sightengine.com/1.0/check.json', data, {
                 headers: data.getHeaders(),
-                validateStatus: (status) => true
+                validateStatus: () => true
             });
 
         if (response.status !== 200) {

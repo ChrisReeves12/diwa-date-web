@@ -19,8 +19,6 @@ interface PhotosStepProps {
 }
 
 export function PhotosStep({
-    data,
-    updateData,
     currentUser,
     onValidationChange
 }: PhotosStepProps) {
@@ -41,20 +39,27 @@ export function PhotosStep({
     }, []);
 
     useEffect(() => {
-        onValidationChange(photos.length >= MIN_PHOTOS);
-    }, [photos]);
+        onValidationChange(validPhotoCount >= MIN_PHOTOS);
+    }, [validPhotoCount]);
 
     const loadPhotos = async () => {
         try {
             setIsLoading(true);
             const result = await getUserPhotos();
             setPhotos(result.photos);
-            setPhotoReviews((result.photos || []).filter(p => !p.isUnderReview).map(p => ({
-                s3Path: p.path,
-                status: p.isRejected ? `Photo Not Approved: ${(p.messages || []).join(', ')}` : 'Approved'
-            })));
+            setPhotoReviews((result.photos || []).map(p => {
+                let status = 'Checking photo...';
+                if (p.isRejected || !p.isUnderReview) {
+                    status = p.isRejected ? `Photo Not Approved: ${(p.messages || []).join(', ')}` : 'Approved';
+                }
 
-            setValidPhotoCount((result.photos || []).filter(p => !p.isRejected).length);
+                return {
+                    s3Path: p.path,
+                    status
+                }
+            }));
+
+            setValidPhotoCount((result.photos || []).filter(p => !p.isUnderReview && !p.isRejected).length);
 
             return result.photos;
         } catch (err) {
@@ -206,6 +211,13 @@ export function PhotosStep({
     };
 
     const photosNeeded = Math.max(0, MIN_PHOTOS - validPhotoCount);
+    const isCheckingPhotos = photoReviews.some(p => p.status.includes('Checking'));
+    let uploadButtonLabel = 'Upload Photos';
+    if (isUploading) {
+        uploadButtonLabel = 'Uploading Photos'
+    } else if (isCheckingPhotos) {
+        uploadButtonLabel = 'Checking Photos'
+    }
 
     return (
         <div className="wizard-step photos-step">
@@ -301,10 +313,10 @@ export function PhotosStep({
                                         <button
                                             onClick={() => fileInputRef.current?.click()}
                                             className="btn-primary upload-button"
-                                            disabled={isUploading}
+                                            disabled={isUploading || isCheckingPhotos}
                                             type="button"
                                         >
-                                            {isUploading ? 'Uploading...' : 'Upload Photos'}
+                                            {uploadButtonLabel}
                                         </button>
                                     )}
                                 </div>
