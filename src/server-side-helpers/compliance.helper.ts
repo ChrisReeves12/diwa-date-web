@@ -181,11 +181,16 @@ function summarizeImageAnalysis(data: any) {
 
     // Process nudity analysis
     if (data.nudity) {
+        const nudity = data.nudity;
+        const isNude = nudity.sexual_activity > 0.85 || nudity.sexual_display > 0.85 || nudity.erotica > 0.85;
+        const isPartialNude = nudity.very_suggestive > 0.85 || nudity.suggestive > 0.85;
+        const isSafe = nudity.none > 0.85;
+
         analysisReport.nudity = {
-            raw: data.nudity,
-            isNude: data.nudity.raw > 0.85 || data.nudity.partial > 0.85,
-            isPartialNude: data.nudity.partial > 0.85 && data.nudity.raw <= 0.85,
-            isSafe: data.nudity.safe > 0.85
+            raw: nudity,
+            isNude,
+            isPartialNude,
+            isSafe
         };
 
         if (analysisReport.nudity.isNude) {
@@ -196,9 +201,15 @@ function summarizeImageAnalysis(data: any) {
 
     // Process weapon detection
     if (data.weapon) {
+        const weapon = data.weapon;
+        const containsWeapon = weapon.classes.firearm > 0.85 ||
+            weapon.classes.firearm_gesture > 0.85 ||
+            weapon.classes.firearm_toy > 0.85 ||
+            weapon.classes.knife > 0.85;
+
         analysisReport.weapon = {
-            raw: data.weapon,
-            containsWeapon: data.weapon > 0.85
+            raw: weapon,
+            containsWeapon
         };
 
         if (analysisReport.weapon.containsWeapon) {
@@ -208,9 +219,17 @@ function summarizeImageAnalysis(data: any) {
 
     // Process recreational drug detection
     if (data.recreational_drug) {
+        const recreationalDrug = data.recreational_drug;
+        const containsRecreationalDrug = recreationalDrug.prob > 0.85 ||
+            recreationalDrug.classes.cannabis > 0.85 ||
+            recreationalDrug.classes.cannabis_logo_only > 0.85 ||
+            recreationalDrug.classes.cannabis_plant > 0.85 ||
+            recreationalDrug.classes.cannabis_drug > 0.85 ||
+            recreationalDrug.classes.recreational_drugs_not_cannabis > 0.85;
+
         analysisReport.recreational_drug = {
-            raw: data.recreational_drug,
-            containsRecreationalDrug: data.recreational_drug > 0.85
+            raw: recreationalDrug,
+            containsRecreationalDrug
         };
 
         if (analysisReport.recreational_drug.containsRecreationalDrug) {
@@ -220,9 +239,14 @@ function summarizeImageAnalysis(data: any) {
 
     // Process medical content detection
     if (data.medical) {
+        const medical = data.medical;
+        const containsMedicalContent = medical.prob > 0.85 ||
+            medical.classes.pills > 0.85 ||
+            medical.classes.paraphernalia > 0.85;
+
         analysisReport.medical = {
-            raw: data.medical,
-            containsMedicalContent: data.medical > 0.85
+            raw: medical,
+            containsMedicalContent
         };
 
         if (analysisReport.medical.containsMedicalContent) {
@@ -232,9 +256,17 @@ function summarizeImageAnalysis(data: any) {
 
     // Process offensive content detection
     if (data.offensive) {
+        const offensive = data.offensive;
+        const isOffensive = offensive.nazi > 0.85 ||
+            offensive.asian_swastika > 0.85 ||
+            offensive.confederate > 0.85 ||
+            offensive.supremacist > 0.85 ||
+            offensive.terrorist > 0.85 ||
+            offensive.middle_finger > 0.85;
+
         analysisReport.offensive = {
-            raw: data.offensive,
-            isOffensive: data.offensive > 0.85
+            raw: offensive,
+            isOffensive
         };
 
         if (analysisReport.offensive.isOffensive) {
@@ -244,9 +276,22 @@ function summarizeImageAnalysis(data: any) {
 
     // Process gore detection
     if (data.gore) {
+        const gore = data.gore;
+        const containsGore = gore.prob > 0.85 ||
+            gore.classes.very_bloody > 0.85 ||
+            gore.classes.slightly_bloody > 0.85 ||
+            gore.classes.body_organ > 0.85 ||
+            gore.classes.serious_injury > 0.85 ||
+            gore.classes.superficial_injury > 0.85 ||
+            gore.classes.corpse > 0.85 ||
+            gore.classes.skull > 0.85 ||
+            gore.classes.unconscious > 0.85 ||
+            gore.classes.body_waste > 0.85 ||
+            gore.classes.other > 0.85;
+
         analysisReport.gore = {
-            raw: data.gore,
-            containsGore: data.gore > 0.85
+            raw: gore,
+            containsGore
         };
 
         if (analysisReport.gore.containsGore) {
@@ -256,9 +301,15 @@ function summarizeImageAnalysis(data: any) {
 
     // Process violence detection
     if (data.violence) {
+        const violence = data.violence;
+        const containsViolence = violence.prob > 0.85 ||
+            violence.classes.physical_violence > 0.85 ||
+            violence.classes.firearm_threat > 0.85 ||
+            violence.classes.combat_sport > 0.85;
+
         analysisReport.violence = {
-            raw: data.violence,
-            containsViolence: data.violence > 0.85
+            raw: violence,
+            containsViolence
         };
 
         if (analysisReport.violence.containsViolence) {
@@ -268,9 +319,15 @@ function summarizeImageAnalysis(data: any) {
 
     // Process self-harm detection
     if (data['self-harm']) {
+        const selfHarm = data['self-harm'];
+        const containsSelfHarmContent = selfHarm.prob > 0.85 ||
+            selfHarm.type.real > 0.85 ||
+            selfHarm.type.fake > 0.85 ||
+            selfHarm.type.animated > 0.85;
+
         analysisReport.self_harm = {
-            raw: data['self-harm'],
-            containsSelfHarmContent: data['self-harm'] > 0.85
+            raw: selfHarm,
+            containsSelfHarmContent
         };
 
         if (analysisReport.self_harm.containsSelfHarmContent) {
@@ -280,9 +337,12 @@ function summarizeImageAnalysis(data: any) {
 
     // Process scam detection
     if (data.scam) {
+        const scam = data.scam;
+        const containsScamContent = scam.prob > 0.85;
+
         analysisReport.scam = {
-            raw: data.scam,
-            containsScamContent: data.scam > 0.85
+            raw: scam,
+            containsScamContent
         };
 
         if (analysisReport.scam.containsScamContent) {
@@ -292,9 +352,12 @@ function summarizeImageAnalysis(data: any) {
 
     // Process gambling detection
     if (data.gambling) {
+        const gambling = data.gambling;
+        const containsGamblingContent = gambling.prob > 0.85;
+
         analysisReport.gambling = {
-            raw: data.gambling,
-            containsGamblingContent: data.gambling > 0.85
+            raw: gambling,
+            containsGamblingContent
         };
 
         if (analysisReport.gambling.containsGamblingContent) {
@@ -304,9 +367,14 @@ function summarizeImageAnalysis(data: any) {
 
     // Process tobacco detection
     if (data.tobacco) {
+        const tobacco = data.tobacco;
+        const containsTobaccoContent = tobacco.prob > 0.85 ||
+            tobacco.classes.regular_tobacco > 0.85 ||
+            tobacco.classes.ambiguous_tobacco > 0.85;
+
         analysisReport.tobacco = {
-            raw: data.tobacco,
-            containsTobaccoContent: data.tobacco > 0.85
+            raw: tobacco,
+            containsTobaccoContent
         };
 
         if (analysisReport.tobacco.containsTobaccoContent) {
