@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PhotoWithUrl } from '@/types/upload-progress.interface';
 import { getUserPhotos, saveCropData, uploadPhoto, deletePhoto, updatePhotoSortOrder } from './photos.actions';
 import { showAlert } from '@/util';
-import { Button, CircularProgress } from "@mui/material";
+import { Button, CircularProgress, Tooltip } from "@mui/material";
 import { InfoCircleIcon, SaveIcon, TimesIcon, RedoIcon, EyeIcon } from "react-line-awesome";
 import {
     DndContext,
@@ -25,6 +25,7 @@ import {
 import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useCurrentUser } from '@/common/context/current-user-context';
+import _ from 'lodash';
 
 function SortablePhotoItem({ photoWithUrl, onClick, onDelete, photoReviews }: {
     photoWithUrl: PhotoWithUrl,
@@ -49,6 +50,7 @@ function SortablePhotoItem({ photoWithUrl, onClick, onDelete, photoReviews }: {
     };
 
     const photoBeingReviewed = photoReviews.find(p => p.s3Path === photoWithUrl.path);
+    const isQueuedOrChecking = !!photoBeingReviewed && (photoBeingReviewed.status.includes('Queued') || photoBeingReviewed.status.includes('Checking'));
 
     return (
         <div ref={setNodeRef}
@@ -65,14 +67,29 @@ function SortablePhotoItem({ photoWithUrl, onClick, onDelete, photoReviews }: {
                 className={`photo-display-container ${photoBeingReviewed?.status?.includes('Checking') ? 'approval-in-progress' : ''}`}
                 style={{ backgroundImage: `url('${photoWithUrl.croppedImageUrl || photoWithUrl.url}')` }}
             ></div>
-            <button onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
+            {isQueuedOrChecking ? (
+                <Tooltip title="This photo is queued or being reviewed and cannot be deleted.">
+                    <span>
+                        <button onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
 
-                onDelete(e);
-            }} className="delete-button">
-                <TimesIcon />
-            </button>
+                            onDelete(e);
+                        }} className="delete-button" disabled={true}>
+                            <TimesIcon />
+                        </button>
+                    </span>
+                </Tooltip>
+            ) : (
+                <button onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    onDelete(e);
+                }} className="delete-button">
+                    <TimesIcon />
+                </button>
+            )}
             {!!photoBeingReviewed && photoBeingReviewed.status !== 'Approved' &&
                 <div className="approval-status">{photoBeingReviewed.status}</div>}
         </div>
@@ -262,11 +279,25 @@ export function PhotosManagement() {
     }
 
     const handleImageDelete = (photoWithUrl: PhotoWithUrl) => {
+        const review = photoReviews.find(p => p.s3Path === photoWithUrl.path);
+        const isQueuedOrChecking = !!review && (review.status.includes('Queued') || review.status.includes('Checking'));
+        if (isQueuedOrChecking) {
+            showAlert('This photo is currently queued or being reviewed and cannot be deleted right now.');
+            return;
+        }
+
         setImageToDelete(photoWithUrl);
     }
 
     const confirmImageDelete = async () => {
         if (!imageToDelete || isDeleting) return;
+
+        const review = photoReviews.find(p => p.s3Path === imageToDelete.path);
+        const isQueuedOrChecking = !!review && (review.status.includes('Queued') || review.status.includes('Checking'));
+        if (isQueuedOrChecking) {
+            showAlert('This photo is currently queued or being reviewed and cannot be deleted right now.');
+            return;
+        }
 
         setIsDeleting(true);
         try {
@@ -716,45 +747,77 @@ export function PhotosManagement() {
 
         // Check photos for approval
         if (!hasError && filesToReview.length > 0) {
+            // Mark all as queued first
             setPhotoReviews(prevState => {
-                return [...prevState, ...filesToReview.map(p => ({ s3Path: p.s3Path, status: 'Checking photo...' }))];
+                const byPath = new Map(prevState.map(p => [p.s3Path, p]));
+                for (const f of filesToReview) {
+                    const existing = byPath.get(f.s3Path);
+                    if (existing) {
+                        byPath.set(f.s3Path, { ...existing, status: 'Queued for review...' });
+                    } else {
+                        byPath.set(f.s3Path, { s3Path: f.s3Path, status: 'Queued for review...' });
+                    }
+                }
+                return Array.from(byPath.values());
             });
 
             try {
-                const formData = new FormData();
-                for (const f of filesToReview) {
-                    formData.append('files', f.imageFile);
-                    formData.append('s3Paths', f.s3Path);
-                }
+                const chunks = _.chunk(filesToReview, 3);
 
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
-
-                const response = await fetch('/api/photos/review', {
-                    method: 'POST',
-                    body: formData,
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
-
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({}));
-                    throw new Error(err.error || 'Failed to review photos');
-                }
-
-                const reviewResults = await response.json();
-
-                setPhotoReviews(prevState => {
-                    return prevState.map(p => {
-                        const photoReview = (reviewResults.photos || []).find((v: any) => v.s3Path === p.s3Path);
-                        if (photoReview) {
-                            return { ...p, ...{ status: !photoReview.isRejected ? 'Approved' : 'Photo Not Approved: ' + (photoReview.messages || []).join(', ') } };
+                for (const chunk of chunks) {
+                    // Mark current chunk as checking
+                    setPhotoReviews(prevState => {
+                        const byPath = new Map(prevState.map(p => [p.s3Path, p]));
+                        for (const f of chunk) {
+                            const existing = byPath.get(f.s3Path);
+                            if (existing) {
+                                byPath.set(f.s3Path, { ...existing, status: 'Checking photo...' });
+                            } else {
+                                byPath.set(f.s3Path, { s3Path: f.s3Path, status: 'Checking photo...' });
+                            }
                         }
-
-                        return p;
+                        return Array.from(byPath.values());
                     });
-                });
+                    const reviewPromises = chunk.map(async (f) => {
+                        const formData = new FormData();
+                        formData.append('files', f.imageFile);
+                        formData.append('s3Paths', f.s3Path);
+
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+                        try {
+                            const response = await fetch('/api/photos/review', {
+                                method: 'POST',
+                                body: formData,
+                                signal: controller.signal
+                            });
+
+                            if (!response.ok) {
+                                const err = await response.json().catch(() => ({}));
+                                throw new Error(err.error || 'Failed to review photo');
+                            }
+
+                            const reviewResults = await response.json();
+                            return { s3Path: f.s3Path, review: (reviewResults.photos || [])[0] };
+                        } finally {
+                            clearTimeout(timeoutId);
+                        }
+                    });
+
+                    const chunkResults: { s3Path: string, review: any }[] = await Promise.all(reviewPromises);
+
+                    setPhotoReviews(prevState => {
+                        return prevState.map(p => {
+                            const r = chunkResults.find(cr => cr.s3Path === p.s3Path);
+                            if (r && r.review) {
+                                return { ...p, status: !r.review.isRejected ? 'Approved' : 'Photo Not Approved: ' + (r.review.messages || []).join(', ') };
+                            }
+
+                            return p;
+                        });
+                    });
+                }
 
                 // Reload photos to get updated status from database
                 await loadPhotos();
