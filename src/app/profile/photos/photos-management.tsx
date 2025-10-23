@@ -678,60 +678,61 @@ export function PhotosManagement() {
         }
 
         setIsUploading(true);
-        const uploadPromises = validFiles.map(async (file) => {
-            try {
-                setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
-
-                // Create FormData
-                const formData = new FormData();
-                formData.append('file', file);
-
-                const response = await uploadPhoto(formData);
-
-                if (response.success) {
-                    setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
-                    return response.photo;
-                }
-
-                throw new Error(response.message || 'Upload failed');
-            } catch (error) {
-                console.error(`Upload error for ${file.name}:`, error);
-
-                // Provide more specific error messages
-                let errorMessage = `Failed to upload ${file.name}.`;
-                if (error instanceof Error) {
-                    if (error.message.includes('corrupted') || error.message.includes('Invalid SOS')) {
-                        errorMessage = `${file.name} appears to be corrupted. Try taking the photo again.`;
-                    } else if (error.message.includes('too large')) {
-                        errorMessage = `${file.name} is too large. Please use a smaller image.`;
-                    } else if (error.message.includes('Invalid file type')) {
-                        errorMessage = `${file.name} is not a supported format.`;
-                    }
-                }
-
-                showAlert(errorMessage);
-                return null;
+        // Pre-populate progress entries for all files as queued
+        setUploadProgress(prev => {
+            const next = { ...prev } as { [key: string]: number };
+            for (const file of validFiles) {
+                if (next[file.name] === undefined) next[file.name] = -1; // -1 indicates queued
             }
+            return next;
         });
-
         let hasError = false;
-        let successfulUploads = [];
+        let successfulCount = 0;
         const filesToReview: { imageFile: File, s3Path: string }[] = [];
 
         try {
-            const uploadedPhotos = await Promise.all(uploadPromises);
-            successfulUploads = uploadedPhotos.filter((photo: any) => photo !== null);
+            const chunks = _.chunk(validFiles, 3);
+            for (const chunk of chunks) {
+                const uploadChunkPromises = chunk.map(async (file) => {
+                    try {
+                        setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
 
-            if (successfulUploads.length > 0) {
-                // Create files to review array
-                for (let i = 0; i < validFiles.length; i++) {
-                    const file = validFiles[i];
-                    const uploadedPhoto = successfulUploads[i];
-                    if (uploadedPhoto) {
-                        filesToReview.push({ imageFile: file, s3Path: uploadedPhoto.path });
+                        const formData = new FormData();
+                        formData.append('file', file);
+
+                        const response = await uploadPhoto(formData);
+
+                        if (response.success) {
+                            setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
+                            filesToReview.push({ imageFile: file, s3Path: response.photo.path });
+                            successfulCount += 1;
+                            return response.photo;
+                        }
+
+                        throw new Error(response.message || 'Upload failed');
+                    } catch (error) {
+                        console.error(`Upload error for ${file.name}:`, error);
+
+                        let errorMessage = `Failed to upload ${file.name}.`;
+                        if (error instanceof Error) {
+                            if (error.message.includes('corrupted') || error.message.includes('Invalid SOS')) {
+                                errorMessage = `${file.name} appears to be corrupted. Try taking the photo again.`;
+                            } else if (error.message.includes('too large')) {
+                                errorMessage = `${file.name} is too large. Please use a smaller image.`;
+                            } else if (error.message.includes('Invalid file type')) {
+                                errorMessage = `${file.name} is not a supported format.`;
+                            }
+                        }
+
+                        showAlert(errorMessage);
+                        return null;
                     }
-                }
+                });
 
+                await Promise.all(uploadChunkPromises);
+            }
+
+            if (successfulCount > 0) {
                 await loadPhotos();
                 window.dispatchEvent(new CustomEvent('refresh-user-profile-main-photo'));
             }
@@ -882,7 +883,7 @@ export function PhotosManagement() {
                                             </div>
                                             <div className="file-info-container">
                                                 <div className="file-name">{fileName}</div>
-                                                <div className="progress-text">{progress >= 99 ? 'Complete' : 'Uploading'}</div>
+                                                <div className="progress-text">{progress < 0 ? 'Queued' : (progress >= 99 ? 'Complete' : 'Uploading')}</div>
                                             </div>
                                         </div>
                                     ))}
