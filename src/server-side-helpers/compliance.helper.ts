@@ -58,7 +58,31 @@ export async function reviewPhotos(imageFiles: { imageFile: File, s3Path: string
 
             const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
 
+            // Write original buffer first
             await fs.promises.writeFile(tempFilePath, imageBuffer);
+
+            // Try to normalize image to a clean JPEG to avoid libvips SOS errors
+            try {
+                let processedImage = await sharp(imageBuffer, { failOnError: false, limitInputPixels: false })
+                    .rotate()
+                    .jpeg({ quality: 90, progressive: true, mozjpeg: true })
+                    .toBuffer();
+
+                await fs.promises.writeFile(tempFilePath, processedImage);
+            } catch (sharpError) {
+                try {
+                    const processedFallback = await sharp(imageBuffer, { failOnError: false })
+                        .png()
+                        .jpeg({ quality: 90, progressive: true })
+                        .toBuffer();
+                    await fs.promises.writeFile(tempFilePath, processedFallback);
+                } catch (fallbackError) {
+                    // Mark as rejected due to corruption and skip further processing
+                    allPhotosWithFilePath.push({ tempFilePath, s3Path, imageFile, isRejected: true, messages: ['Photo appears to be corrupted or unreadable'] });
+                    continue;
+                }
+            }
+
             allPhotosWithFilePath.push({ tempFilePath, s3Path, imageFile });
 
         } catch (e) {
@@ -70,6 +94,13 @@ export async function reviewPhotos(imageFiles: { imageFile: File, s3Path: string
 
     // Send each image to the external review service
     for (const photoWithFilePath of allPhotosWithFilePath) {
+        // If pre-marked as rejected (e.g., unreadable/corrupted), skip external checks
+        if (photoWithFilePath.isRejected) {
+            fs.unlink(photoWithFilePath.tempFilePath, (err) => {
+                if (err) console.error('Failed to delete temp file:', err);
+            });
+            continue;
+        }
         const isDupedImageResult = await isImageDuplicated(photoWithFilePath.tempFilePath, tempFilePaths);
 
         if (isDupedImageResult.error) {
@@ -511,8 +542,7 @@ async function isImageDuplicated(tempFilePath: string, allTempImagePaths: string
  */
 async function loadImageData(filePath: string): Promise<ImageData> {
     const STANDARD_SIZE = 256;
-
-    const image = sharp(filePath);
+    const image = sharp(filePath, { failOnError: false, limitInputPixels: false });
     const { data, info } = await image
         .resize(STANDARD_SIZE, STANDARD_SIZE, { fit: 'fill' })
         .raw()
