@@ -234,7 +234,7 @@ export function PhotosStep({
                         return prevState.map(p => {
                             const r = chunkResults.find(cr => cr.s3Path === p.s3Path);
                             if (r && r.review) {
-                                return { ...p, status: !r.review.isRejected ? 'Approved' : 'Photo Not Approved: ' + (r.review.messages || []).join(', ') };
+                                return { ...p, status: !r.review.isRejected ? 'Approved' : (r.review.messages || []).join(', ') };
                             }
 
                             return p;
