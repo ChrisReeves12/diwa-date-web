@@ -17,7 +17,6 @@ export interface PhotoWithUrl {
   path: string;
   caption?: string;
   isHidden: boolean;
-  isUnderReview?: boolean;
   isRejected?: boolean;
   messages?: string[];
   sortOrder: number;

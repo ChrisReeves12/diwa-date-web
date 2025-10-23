@@ -153,7 +153,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
 
         // Review photos (only for 'image' or 'full' review types)
         let reviewPhotosResult = null;
-        if ((reviewType === 'image' || reviewType === 'full') && (user.photos || []).filter(p => p.isUnderReview).length > 0) {
+        if ((reviewType === 'image' || reviewType === 'full') && (user.photos || []).length > 0) {
             reviewPhotosResult = await this.reviewPhotos(user.photos!);
         }
 
@@ -205,7 +205,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             const freshUser = await getUser(userId);
             if (freshUser && freshUser.photos && freshUser.photos.length > 0) {
                 const validPhotos = freshUser.photos.filter(photo =>
-                    !photo.isRejected && !photo.isUnderReview
+                    !photo.isRejected
                 );
 
                 // Ensure mainPhoto matches the first valid photo
@@ -381,7 +381,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
      * @param allUserPhotos
      */
     async reviewPhotos(allUserPhotos: UserPhoto[]) {
-        // Download images from S3 that are in review
+        // Download images from S3
         const s3Helper = new S3Helper();
 
         const reviewPhotosWithFilePath: { tempFilePath: string, photo: UserPhoto }[] = [];
@@ -400,9 +400,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
                 await fs.promises.writeFile(tempFilePath, imageBuffer);
                 allPhotosWithFilePath.push({ tempFilePath, photo });
 
-                if (photo.isUnderReview) {
-                    reviewPhotosWithFilePath.push({ tempFilePath, photo });
-                }
+                reviewPhotosWithFilePath.push({ tempFilePath, photo });
             } catch (e) {
                 return { error: `Failed to download or write temp file for: ${photo.path}`, success: false };
             }
@@ -460,7 +458,6 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
 
             // Image should be approved if no issues found
             if (!summary.analysis.messages || summary.analysis.messages.length === 0) {
-                photoWithFilePath.photo.isUnderReview = false;
                 photoWithFilePath.photo.isRejected = false;
                 continue;
             }

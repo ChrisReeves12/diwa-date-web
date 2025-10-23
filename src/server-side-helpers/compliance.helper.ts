@@ -170,8 +170,7 @@ export async function reviewPhotos(imageFiles: { imageFile: File, s3Path: string
                 return {
                     ...s, ...{
                         isRejected: photoWithFilePath.isRejected,
-                        messages: photoWithFilePath.messages || [],
-                        isUnderReview: photoWithFilePath.isRejected
+                        messages: photoWithFilePath.messages || []
                     }
                 }
             }
@@ -184,14 +183,14 @@ export async function reviewPhotos(imageFiles: { imageFile: File, s3Path: string
         });
     }
 
-    const mainPhoto = storedPhotos.find(p => !p.isUnderReview && !p.isRejected);
+    const mainPhoto = storedPhotos.find(p => !p.isRejected);
 
     await prismaWrite.users.update({
         where: { id: userId },
         data: {
             mainPhoto: mainPhoto?.path,
             photos: storedPhotos as any,
-            numOfPhotos: storedPhotos.filter(p => !p.isUnderReview && !p.isRejected).length,
+            numOfPhotos: storedPhotos.filter(p => !p.isRejected).length,
             updatedAt: new Date()
         }
     });

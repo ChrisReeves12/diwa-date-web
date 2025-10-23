@@ -755,9 +755,9 @@ export function getPublicUserDetails(user: Pick<User, "mainPhoto" | "photos"> & 
         publicMainPhoto: user.mainPhoto && user.photos ? appendMediaRootToImageUrl(user.mainPhoto) : undefined,
         mainPhotoCroppedImageData: user.mainPhoto && user.photos ?
             getMainCroppedImageData({ photos: user.photos, mainPhoto: user.mainPhoto }) : undefined,
-        photos: user.photos?.length ? user.photos.filter(p => !p.isUnderReview) : [],
+        photos: user.photos?.length ? user.photos.filter(p => !p.isRejected) : [],
         publicPhotos: user.photos?.length ?
-            user.photos.filter(p => !p.isUnderReview)
+            user.photos.filter(p => !p.isRejected)
                 .map((p: any) => appendMediaRootToImage(p)) : []
     };
 }

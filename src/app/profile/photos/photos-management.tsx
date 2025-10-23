@@ -53,7 +53,7 @@ function SortablePhotoItem({ photoWithUrl, onClick, onDelete, photoReviews }: {
     return (
         <div ref={setNodeRef}
             style={style}
-            className={"photo-grid-item" + (photoWithUrl.isRejected ? " rejected" : "") + (photoWithUrl.isUnderReview && !photoWithUrl.isRejected ? " under-review" : "")}
+            className={"photo-grid-item" + (photoWithUrl.isRejected ? " rejected" : "")}
             onClick={photoWithUrl.isRejected ? undefined : onClick}
             {...attributes}
             {...listeners}>
@@ -152,14 +152,12 @@ export function PhotosManagement() {
                     if (approvedPhotoPaths.includes(photo.path)) {
                         return {
                             ...photo,
-                            isUnderReview: false,
                             isRejected: false
                         };
                     } else if (rejectedPhotoPaths.includes(photo.path)) {
                         const rejectedPhoto = rejectedPhotos.find((rp: any) => rp.path === photo.path);
                         return {
                             ...photo,
-                            isUnderReview: rejectedPhoto?.isUnderReview,
                             isRejected: true,
                             messages: rejectedPhoto?.messages || []
                         };
@@ -192,10 +190,8 @@ export function PhotosManagement() {
             const result = await getUserPhotos();
             setPhotos(result.photos);
             setPhotoReviews((result.photos || []).map(p => {
-                let status = 'Checking photo...';
-                if (p.isRejected || !p.isUnderReview) {
-                    status = p.isRejected ? (p.messages || []).join(', ') : 'Approved';
-                }
+                const status = Array.isArray(p.messages) && p.messages.length > 0 && p.isRejected ?
+                    (p.messages || []).join(', ') : 'Approved';
 
                 return {
                     s3Path: p.path,
@@ -231,9 +227,9 @@ export function PhotosManagement() {
                         clearTimeout(sortTimeoutRef.current);
                     }
 
-                    // Check if the first photo is under review or rejected, and re-sort if needed
-                    if (sortedPhotos[0].isUnderReview || sortedPhotos[0].isRejected) {
-                        const firstApprovedIndex = sortedPhotos.findIndex(photo => !photo.isUnderReview && !photo.isRejected);
+                    // Ensure the first photo is not rejected; if so, move first non-rejected to front
+                    if (sortedPhotos[0].isRejected) {
+                        const firstApprovedIndex = sortedPhotos.findIndex(photo => !photo.isRejected);
 
                         if (firstApprovedIndex > 0) {
                             const firstApprovedPhoto = sortedPhotos[firstApprovedIndex];

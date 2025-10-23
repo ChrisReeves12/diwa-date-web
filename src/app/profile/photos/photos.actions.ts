@@ -25,7 +25,7 @@ function cleanImagePath(imagePath?: string): string | undefined {
 
 // Helper function to clean photo paths before database storage
 function cleanPhotoForStorage(photo: PhotoWithUrl): UserPhoto {
-  let photoCopy = {...photo};
+  let photoCopy = { ...photo };
   delete photoCopy.url;
 
   return {
@@ -56,9 +56,9 @@ export async function updatePhotoSortOrder(photos: PhotoWithUrl[]) {
     photos[i].sortOrder = i;
   }
 
-  // Set the first photo as the main photo
-  const mainPhoto = photos.filter(p => !p.isUnderReview).length > 0 && photos[0].path
-      ? cleanImagePath(photos[0].path) : undefined;
+  // Set the main photo to the first non-rejected photo
+  const firstNonRejected = photos.find(p => !p.isRejected);
+  const mainPhoto = firstNonRejected?.path ? cleanImagePath(firstNonRejected.path) : undefined;
 
   await prismaWrite.$executeRaw`
     UPDATE users 
@@ -68,7 +68,7 @@ export async function updatePhotoSortOrder(photos: PhotoWithUrl[]) {
     WHERE id = ${currentUser.id}
   `;
 
-  return {success: true};
+  return { success: true };
 }
 
 /**
@@ -85,14 +85,14 @@ export async function getUserPhotos() {
 
     // Generate URLs for each photo
     const photosWithUrls = photos
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map((photo) => {
-            return {
-              ...photo,
-              croppedImageUrl: appendMediaRootToImageUrl(photo.croppedImageData?.croppedImagePath),
-              url: appendMediaRootToImageUrl(photo.path)
-            };
-        });
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((photo) => {
+        return {
+          ...photo,
+          croppedImageUrl: appendMediaRootToImageUrl(photo.croppedImageData?.croppedImagePath),
+          url: appendMediaRootToImageUrl(photo.path)
+        };
+      });
 
     return {
       photos: photosWithUrls,
@@ -264,7 +264,6 @@ export async function uploadPhoto(formData: FormData) {
       sortOrder: (currentUser.photos as any[])?.length || 0,
       caption: undefined,
       croppedImageData: undefined,
-      isUnderReview: true,
       isHidden: false,
       uploadedAt: new Date().toISOString(),
     };
@@ -277,7 +276,7 @@ export async function uploadPhoto(formData: FormData) {
     await prismaWrite.$executeRaw`
       UPDATE users 
       SET "photos" = ${JSON.stringify(updatedPhotos)}::jsonb,
-          "numOfPhotos" = ${updatedPhotos.filter(p => !p.isUnderReview).length},
+          "numOfPhotos" = ${updatedPhotos.filter(p => !p.isRejected).length},
           "updatedAt" = ${new Date()}
       WHERE id = ${currentUser.id}`;
 
@@ -341,24 +340,24 @@ export async function deletePhoto(photoPath: string) {
     const currentMainPhotoCleanPath = cleanImagePath(currentUser.mainPhoto) || currentUser.mainPhoto;
 
     if (currentMainPhotoCleanPath === deletedPhotoCleanPath) {
-      const firstNonReviewImageIdx = reorderedPhotos.findIndex(p => !p.isUnderReview);
-      if (firstNonReviewImageIdx > 0) {
-        reorderedPhotos[firstNonReviewImageIdx].sortOrder = 0;
-        reorderedPhotos[0].sortOrder = firstNonReviewImageIdx;
+      const firstNonRejectedIdx = reorderedPhotos.findIndex(p => !p.isRejected);
+      if (firstNonRejectedIdx > 0) {
+        reorderedPhotos[firstNonRejectedIdx].sortOrder = 0;
+        reorderedPhotos[0].sortOrder = firstNonRejectedIdx;
 
         reorderedPhotos.sort((a, b) => a.sortOrder - b.sortOrder);
       }
 
-      // The main photo was deleted, set the new first photo as main photo
-      newMainPhoto = reorderedPhotos.length > 0 && !reorderedPhotos[0].isUnderReview ?
-          cleanImagePath(reorderedPhotos[0].path) || reorderedPhotos[0].path : undefined;
+      // The main photo was deleted, set the new first non-rejected photo as main photo
+      newMainPhoto = reorderedPhotos.length > 0 && !reorderedPhotos[0].isRejected ?
+        cleanImagePath(reorderedPhotos[0].path) || reorderedPhotos[0].path : undefined;
     }
 
     // Update database
     await prismaWrite.$executeRaw`
       UPDATE users 
       SET "photos" = ${JSON.stringify(reorderedPhotos)}::jsonb,
-          "numOfPhotos" = ${reorderedPhotos.filter(p => !p.isUnderReview).length},
+          "numOfPhotos" = ${reorderedPhotos.filter(p => !p.isRejected).length},
           "mainPhoto" = ${newMainPhoto},
           "updatedAt" = ${new Date()}
       WHERE id = ${currentUser.id}`;
@@ -376,7 +375,7 @@ export async function deletePhoto(photoPath: string) {
 /**
  * Review uploaded photos for compliance
  */
-export async function doPhotoReview(imageFiles: {imageFile: File, s3Path: string}[], userId: number) {
+export async function doPhotoReview(imageFiles: { imageFile: File, s3Path: string }[], userId: number) {
   try {
     const currentUser = await getCurrentUser(await cookies(), false);
     if (!currentUser) {

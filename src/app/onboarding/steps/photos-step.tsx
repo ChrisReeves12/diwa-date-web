@@ -48,10 +48,8 @@ export function PhotosStep({
             const result = await getUserPhotos();
             setPhotos(result.photos);
             setPhotoReviews((result.photos || []).map(p => {
-                let status = 'Checking photo...';
-                if (p.isRejected || !p.isUnderReview) {
-                    status = p.isRejected ? `Photo Not Approved: ${(p.messages || []).join(', ')}` : 'Approved';
-                }
+                const status = Array.isArray(p.messages) && p.messages.length > 0 && p.isRejected ?
+                    (p.messages || []).join(', ') : 'Approved';
 
                 return {
                     s3Path: p.path,
@@ -59,7 +57,7 @@ export function PhotosStep({
                 }
             }));
 
-            setValidPhotoCount((result.photos || []).filter(p => !p.isUnderReview && !p.isRejected).length);
+            setValidPhotoCount((result.photos || []).filter(p => !p.isRejected).length);
 
             return result.photos;
         } catch (err) {
