@@ -8,7 +8,7 @@ import { showAlert } from '@/util';
 import { CircularProgress } from "@mui/material";
 import { TimesIcon } from "react-line-awesome";
 import { IoIosImages } from "react-icons/io";
-import { doPhotoReview } from "@/app/onboarding/wizard-actions";
+// Removed server action doPhotoReview in favor of API call
 import { User } from "@/types";
 
 interface PhotosStepProps {
@@ -29,7 +29,7 @@ export function PhotosStep({
     const [isUploading, setIsUploading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
-    const [photoReviews, setPhotoReviews] = useState<{s3Path: string, status: string}[]>([]);
+    const [photoReviews, setPhotoReviews] = useState<{ s3Path: string, status: string }[]>([]);
     const [validPhotoCount, setValidPhotoCount] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -76,7 +76,7 @@ export function PhotosStep({
 
         // Validate files
         const validFiles: File[] = [];
-        const filesToReview: {imageFile: File, s3Path: string}[] = [];
+        const filesToReview: { imageFile: File, s3Path: string }[] = [];
         const maxSize = 10 * 1024 * 1024; // 10MB
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
@@ -125,7 +125,7 @@ export function PhotosStep({
 
                 if (response.success) {
                     setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
-                    filesToReview.push({imageFile: file, s3Path: response.photo.path});
+                    filesToReview.push({ imageFile: file, s3Path: response.photo.path });
                     return response.photo;
                 }
 
@@ -172,24 +172,51 @@ export function PhotosStep({
         // Check photos for approval
         if (!hasError && filesToReview.length > 0) {
             setPhotoReviews(prevState => {
-                return [...prevState, ...filesToReview.map(p => ({s3Path: p.s3Path, status: 'Checking photo...'}))];
+                return [...prevState, ...filesToReview.map(p => ({ s3Path: p.s3Path, status: 'Checking photo...' }))];
             });
 
-            const reviewResults = await doPhotoReview(filesToReview, currentUser.id);
+            try {
+                const formData = new FormData();
+                for (const f of filesToReview) {
+                    formData.append('files', f.imageFile);
+                    formData.append('s3Paths', f.s3Path);
+                }
 
-            setPhotoReviews(prevState => {
-                return prevState.map(p => {
-                    const photoReview = (reviewResults.photos || []).find(v => v.s3Path === p.s3Path);
-                    if (photoReview) {
-                        return {...p, ...{status: !photoReview.isRejected ? 'Approved' : 'Photo Not Approved: ' + (photoReview.messages || []).join(', ')}};
-                    }
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
 
-                    return p;
+                const response = await fetch('/api/photos/review', {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal
                 });
-            });
 
-            setValidPhotoCount(prevState =>
-                prevState + (reviewResults.photos || []).filter(p => !p.isRejected).length);
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to review photos');
+                }
+
+                const reviewResults = await response.json();
+
+                setPhotoReviews(prevState => {
+                    return prevState.map(p => {
+                        const photoReview = (reviewResults.photos || []).find((v: any) => v.s3Path === p.s3Path);
+                        if (photoReview) {
+                            return { ...p, ...{ status: !photoReview.isRejected ? 'Approved' : 'Photo Not Approved: ' + (photoReview.messages || []).join(', ') } };
+                        }
+
+                        return p;
+                    });
+                });
+
+                setValidPhotoCount(prevState =>
+                    prevState + (reviewResults.photos || []).filter((p: any) => !p.isRejected).length);
+            } catch (error) {
+                console.error('Photo review error:', error);
+                showAlert('Photos uploaded but review failed. Please try again.');
+            }
         }
     };
 
@@ -263,7 +290,7 @@ export function PhotosStep({
                                                         </div>}
                                                     <div
                                                         className={`photo-display ${photoBeingReviewed?.status?.includes('Checking') ? 'approval-in-progress' : ''}`}
-                                                        style={{ backgroundImage: `url('${photo.croppedImageUrl || photo.url}')`}}
+                                                        style={{ backgroundImage: `url('${photo.croppedImageUrl || photo.url}')` }}
                                                     />
                                                     <button
                                                         onClick={() => handleDeletePhoto(photo.path)}

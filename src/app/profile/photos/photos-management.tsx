@@ -3,7 +3,7 @@
 import './photos-management.scss';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PhotoWithUrl } from '@/types/upload-progress.interface';
-import { getUserPhotos, saveCropData, uploadPhoto, deletePhoto, updatePhotoSortOrder, doPhotoReview } from './photos.actions';
+import { getUserPhotos, saveCropData, uploadPhoto, deletePhoto, updatePhotoSortOrder } from './photos.actions';
 import { showAlert } from '@/util';
 import { Button, CircularProgress } from "@mui/material";
 import { InfoCircleIcon, SaveIcon, TimesIcon, RedoIcon, EyeIcon } from "react-line-awesome";
@@ -30,7 +30,7 @@ function SortablePhotoItem({ photoWithUrl, onClick, onDelete, photoReviews }: {
     photoWithUrl: PhotoWithUrl,
     onClick: (e: React.MouseEvent) => void,
     onDelete: (e: React.MouseEvent) => void,
-    photoReviews: {s3Path: string, status: string}[]
+    photoReviews: { s3Path: string, status: string }[]
 }) {
     const {
         attributes,
@@ -111,7 +111,7 @@ export function PhotosManagement() {
     const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
     const [isDeleting, setIsDeleting] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
-    const [photoReviews, setPhotoReviews] = useState<{s3Path: string, status: string}[]>([]);
+    const [photoReviews, setPhotoReviews] = useState<{ s3Path: string, status: string }[]>([]);
     const imageRef = useRef<HTMLImageElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const { on, isConnected } = useWebSocket();
@@ -689,7 +689,7 @@ export function PhotosManagement() {
 
         let hasError = false;
         let successfulUploads = [];
-        const filesToReview: {imageFile: File, s3Path: string}[] = [];
+        const filesToReview: { imageFile: File, s3Path: string }[] = [];
 
         try {
             const uploadedPhotos = await Promise.all(uploadPromises);
@@ -701,7 +701,7 @@ export function PhotosManagement() {
                     const file = validFiles[i];
                     const uploadedPhoto = successfulUploads[i];
                     if (uploadedPhoto) {
-                        filesToReview.push({imageFile: file, s3Path: uploadedPhoto.path});
+                        filesToReview.push({ imageFile: file, s3Path: uploadedPhoto.path });
                     }
                 }
 
@@ -721,17 +721,39 @@ export function PhotosManagement() {
         // Check photos for approval
         if (!hasError && filesToReview.length > 0) {
             setPhotoReviews(prevState => {
-                return [...prevState, ...filesToReview.map(p => ({s3Path: p.s3Path, status: 'Checking photo...'}))];
+                return [...prevState, ...filesToReview.map(p => ({ s3Path: p.s3Path, status: 'Checking photo...' }))];
             });
 
             try {
-                const reviewResults = await doPhotoReview(filesToReview, currentUser!.id);
+                const formData = new FormData();
+                for (const f of filesToReview) {
+                    formData.append('files', f.imageFile);
+                    formData.append('s3Paths', f.s3Path);
+                }
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
+
+                const response = await fetch('/api/photos/review', {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to review photos');
+                }
+
+                const reviewResults = await response.json();
 
                 setPhotoReviews(prevState => {
                     return prevState.map(p => {
                         const photoReview = (reviewResults.photos || []).find((v: any) => v.s3Path === p.s3Path);
                         if (photoReview) {
-                            return {...p, ...{status: !photoReview.isRejected ? 'Approved' : 'Photo Not Approved: ' + (photoReview.messages || []).join(', ')}};
+                            return { ...p, ...{ status: !photoReview.isRejected ? 'Approved' : 'Photo Not Approved: ' + (photoReview.messages || []).join(', ') } };
                         }
 
                         return p;
@@ -797,7 +819,7 @@ export function PhotosManagement() {
                                     {Object.entries(uploadProgress).map(([fileName, progress]) => (
                                         <div key={fileName} className="file-progress">
                                             <div className="spinner-container">
-                                                <CircularProgress size={20} color="inherit"/>
+                                                <CircularProgress size={20} color="inherit" />
                                             </div>
                                             <div className="file-info-container">
                                                 <div className="file-name">{fileName}</div>
