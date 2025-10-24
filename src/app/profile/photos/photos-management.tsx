@@ -27,6 +27,13 @@ import { useWebSocket } from '@/hooks/use-websocket';
 import { useCurrentUser } from '@/common/context/current-user-context';
 import _ from 'lodash';
 
+// Ensure rejected photos are always last while preserving relative order
+function moveRejectedToEnd(list: PhotoWithUrl[]): PhotoWithUrl[] {
+    const approved = list.filter(p => !p.isRejected);
+    const rejected = list.filter(p => p.isRejected);
+    return [...approved, ...rejected];
+}
+
 function SortablePhotoItem({ photoWithUrl, onClick, onDelete, photoReviews }: {
     photoWithUrl: PhotoWithUrl,
     onClick: (e: React.MouseEvent) => void,
@@ -64,7 +71,7 @@ function SortablePhotoItem({ photoWithUrl, onClick, onDelete, photoReviews }: {
                     <CircularProgress size={50} />
                 </div>}
             <div
-                className={`photo-display-container ${photoBeingReviewed?.status?.includes('Checking') ? 'approval-in-progress' : ''}`}
+                className={`photo-display-container ${isQueuedOrChecking ? 'approval-in-progress' : ''}`}
                 style={{ backgroundImage: `url('${photoWithUrl.croppedImageUrl || photoWithUrl.url}')` }}
             ></div>
             {isQueuedOrChecking ? (
@@ -105,6 +112,8 @@ interface CropArea {
 
 export function PhotosManagement() {
     const MAX_PHOTOS = 10;
+    const REVIEW_GROUP_SIZE = 8;
+    const UPLOAD_GROUP_SIZE = 5;
     const [photos, setPhotos] = useState<PhotoWithUrl[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [imageBeingEdited, setImageBeingEdited] = useState<PhotoWithUrl | undefined>();
@@ -136,7 +145,7 @@ export function PhotosManagement() {
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                delay: 100,
+                delay: 250,
                 tolerance: 5,
             },
         }),
@@ -165,7 +174,7 @@ export function PhotosManagement() {
             const rejectedPhotoPaths = rejectedPhotos.map((photo: any) => photo.path);
 
             setPhotos(prevPhotos =>
-                prevPhotos.map(photo => {
+                moveRejectedToEnd(prevPhotos.map(photo => {
                     if (approvedPhotoPaths.includes(photo.path)) {
                         return {
                             ...photo,
@@ -181,7 +190,7 @@ export function PhotosManagement() {
                     }
 
                     return photo;
-                })
+                }))
             );
 
             if (data.noticeType === 'account:photosNotApproved') {
@@ -205,7 +214,7 @@ export function PhotosManagement() {
         try {
             setIsLoading(true);
             const result = await getUserPhotos();
-            setPhotos(result.photos);
+            setPhotos(moveRejectedToEnd(result.photos));
             setPhotoReviews((result.photos || []).map(p => {
                 const status = Array.isArray(p.messages) && p.messages.length > 0 && p.isRejected ?
                     (p.messages || []).join(', ') : 'Approved';
@@ -215,6 +224,8 @@ export function PhotosManagement() {
                     status
                 }
             }));
+
+            window.dispatchEvent(new CustomEvent('refresh-user-profile-main-photo'));
         } catch (err) {
             showAlert('An error occurred while loading photos. Please try again later.');
             console.error('Load photos error:', err);
@@ -237,22 +248,11 @@ export function PhotosManagement() {
                     return aPhotos;
                 }
 
-                let sortedPhotos = arrayMove(aPhotos, oldIndex, newIndex);
+                let sortedPhotos = moveRejectedToEnd(arrayMove(aPhotos, oldIndex, newIndex));
 
                 if (!isSorting && !isDeleting && !isUploading && !isResizing) {
                     if (sortTimeoutRef.current) {
                         clearTimeout(sortTimeoutRef.current);
-                    }
-
-                    // Ensure the first photo is not rejected; if so, move first non-rejected to front
-                    if (sortedPhotos[0].isRejected) {
-                        const firstApprovedIndex = sortedPhotos.findIndex(photo => !photo.isRejected);
-
-                        if (firstApprovedIndex > 0) {
-                            const firstApprovedPhoto = sortedPhotos[firstApprovedIndex];
-                            sortedPhotos.splice(firstApprovedIndex, 1);
-                            sortedPhotos.unshift(firstApprovedPhoto);
-                        }
                     }
 
                     // Set new timeout and store the reference
@@ -691,7 +691,7 @@ export function PhotosManagement() {
         const filesToReview: { imageFile: File, s3Path: string }[] = [];
 
         try {
-            const chunks = _.chunk(validFiles, 3);
+            const chunks = _.chunk(validFiles, UPLOAD_GROUP_SIZE);
             for (const chunk of chunks) {
                 const uploadChunkPromises = chunk.map(async (file) => {
                     try {
@@ -734,7 +734,6 @@ export function PhotosManagement() {
 
             if (successfulCount > 0) {
                 await loadPhotos();
-                window.dispatchEvent(new CustomEvent('refresh-user-profile-main-photo'));
             }
         } catch (error) {
             hasError = true;
@@ -763,7 +762,7 @@ export function PhotosManagement() {
             });
 
             try {
-                const chunks = _.chunk(filesToReview, 3);
+                const chunks = _.chunk(filesToReview, REVIEW_GROUP_SIZE);
 
                 for (const chunk of chunks) {
                     // Mark current chunk as checking
@@ -812,7 +811,7 @@ export function PhotosManagement() {
                         return prevState.map(p => {
                             const r = chunkResults.find(cr => cr.s3Path === p.s3Path);
                             if (r && r.review) {
-                                return { ...p, status: !r.review.isRejected ? 'Approved' : 'Photo Not Approved: ' + (r.review.messages || []).join(', ') };
+                                return { ...p, status: !r.review.isRejected ? 'Approved' : (r.review.messages || []).join(', ') };
                             }
 
                             return p;

@@ -3,12 +3,17 @@
 .photos-management {
 
   .approval-status {
-    font-size: 13px;
-    max-width: 160px;
     text-align: center;
+    font-size: 11px;
+    max-width: 80px;
     margin: 0 auto;
     padding-top: 10px;
     color: #565656cc;
+
+    @include globals.media-min('screens.lg') {
+      font-size: 13px;
+      max-width: 160px;
+    }
 
     @include globals.dark-mode {
       color: #878787;
@@ -58,11 +63,19 @@
           position: absolute;
           left: 50%;
           top: 50%;
-          transform: translate(-50%, -50%);
+          transform: translate(-50%, -80%);
           z-index: 100;
+
+          @include globals.media-min('screens.md') {
+            transform: translate(-50%, -50%);
+          }
         }
 
         &.rejected {
+          .photo-display-container {
+            opacity: 0.6;
+          }
+
           .rejection-messages {
             padding-top: 6px;
             font-size: 13px;
@@ -103,12 +116,6 @@
           }
         }
 
-        &.under-review {
-          .photo-display-container {
-            opacity: 0.6;
-          }
-        }
-
         .photo-display-container {
           width: 25vw;
           height: 25vw;
@@ -117,6 +124,10 @@
           border-radius: 8%;
           background-size: cover;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+
+          &.approval-in-progress {
+            opacity: 0.6;
+          }
         }
 
         .under-review-label {

@@ -119,243 +119,27 @@ export async function reviewPhotos(imageFiles: { imageFile: File, s3Path: string
         }
 
         // Make a call to SightEngine for further image analysis
-        // const data = new FormData();
-        // data.append('media', fs.createReadStream(photoWithFilePath.tempFilePath));
-        // data.append('models', SIGHTENGINE_MODELS.join(','));
-        // data.append('api_user', process.env.SIGHTENGINE_API_USER as string);
-        // data.append('api_secret', process.env.SIGHTENGINE_API_SECRET as string);
-        //
-        // const response = await axiosInstance
-        //     .post('https://api.sightengine.com/1.0/check.json', data, {
-        //         headers: data.getHeaders(),
-        //         validateStatus: () => true
-        //     });
-        //
-        // if (response.status !== 200) {
-        //     return {
-        //         error: `External review service returned status ${response.status}`,
-        //         success: false
-        //     };
-        // }
+        const data = new FormData();
+        data.append('media', fs.createReadStream(photoWithFilePath.tempFilePath));
+        data.append('models', SIGHTENGINE_MODELS.join(','));
+        data.append('api_user', process.env.SIGHTENGINE_API_USER as string);
+        data.append('api_secret', process.env.SIGHTENGINE_API_SECRET as string);
 
-        const response = {
-            data: {
-                "status": "success",
-                "request": {
-                    "id": "req_jqLQIdznQFU9p6f86OnGj",
-                    "timestamp": 1761097372.214911,
-                    "operations": 13
-                },
-                "nudity": {
-                    "sexual_activity": 0.001,
-                    "sexual_display": 0.001,
-                    "erotica": 0.001,
-                    "very_suggestive": 0.001,
-                    "suggestive": 0.001,
-                    "mildly_suggestive": 0.001,
-                    "suggestive_classes": {
-                        "bikini": 0.001,
-                        "cleavage": 0.001,
-                        "cleavage_categories": {
-                            "very_revealing": 0.001,
-                            "revealing": 0.001,
-                            "none": 0.99
-                        },
-                        "lingerie": 0.001,
-                        "male_chest": 0.001,
-                        "male_chest_categories": {
-                            "very_revealing": 0.001,
-                            "revealing": 0.001,
-                            "slightly_revealing": 0.001,
-                            "none": 0.99
-                        },
-                        "male_underwear": 0.001,
-                        "miniskirt": 0.001,
-                        "minishort": 0.001,
-                        "nudity_art": 0.001,
-                        "schematic": 0.001,
-                        "sextoy": 0.001,
-                        "suggestive_focus": 0.001,
-                        "suggestive_pose": 0.001,
-                        "swimwear_male": 0.001,
-                        "swimwear_one_piece": 0.001,
-                        "visibly_undressed": 0.001,
-                        "other": 0.001
-                    },
-                    "none": 0.99,
-                    "context": {
-                        "sea_lake_pool": 0.001,
-                        "outdoor_other": 0.01,
-                        "indoor_other": 0.99
-                    }
-                },
-                "weapon": {
-                    "classes": {
-                        "firearm": 0.001,
-                        "firearm_gesture": 0.001,
-                        "firearm_toy": 0.001,
-                        "knife": 0.001
-                    },
-                    "firearm_type": {
-                        "animated": 0.001
-                    },
-                    "firearm_action": {
-                        "aiming_threat": 0.001,
-                        "aiming_camera": 0.001,
-                        "aiming_safe": 0.001,
-                        "in_hand_not_aiming": 0.001,
-                        "worn_not_in_hand": 0.001,
-                        "not_worn": 0.001
-                    }
-                },
-                "recreational_drug": {
-                    "prob": 0.001,
-                    "classes": {
-                        "cannabis": 0.001,
-                        "cannabis_logo_only": 0.001,
-                        "cannabis_plant": 0.001,
-                        "cannabis_drug": 0.001,
-                        "recreational_drugs_not_cannabis": 0.001
-                    }
-                },
-                "medical": {
-                    "prob": 0.001,
-                    "classes": {
-                        "pills": 0.001,
-                        "paraphernalia": 0.001
-                    }
-                },
-                "type": {
-                    "photo": 0.99,
-                    "illustration": 0.001,
-                    "ai_generated": ((Math.floor(Math.random() * 10) % 2) === 0) ? 0.01 : 0.99
-                },
-                "offensive": {
-                    "nazi": 0.001,
-                    "asian_swastika": 0.001,
-                    "confederate": 0.001,
-                    "supremacist": 0.001,
-                    "terrorist": 0.001,
-                    "middle_finger": 0.001
-                },
-                "faces": [
-                    {
-                        "x1": 0.252,
-                        "y1": 0.22,
-                        "x2": 0.626,
-                        "y2": 0.983,
-                        "features": {
-                            "left_eye": {
-                                "x": 0.5547,
-                                "y": 0.564
-                            },
-                            "right_eye": {
-                                "x": 0.396,
-                                "y": 0.527
-                            },
-                            "nose_tip": {
-                                "x": 0.4787,
-                                "y": 0.722
-                            },
-                            "left_mouth_corner": {
-                                "x": 0.5067,
-                                "y": 0.843
-                            },
-                            "right_mouth_corner": {
-                                "x": 0.3793,
-                                "y": 0.816
-                            }
-                        },
-                        "attributes": {
-                            "minor": 0.03,
-                            "sunglasses": 0.05
-                        }
-                    }
-                ],
-                "scam": {
-                    "prob": 0.08
-                },
-                "text": {
-                    "profanity": [],
-                    "personal": [],
-                    "link": [],
-                    "social": [],
-                    "extremism": [],
-                    "medical": [],
-                    "drug": [],
-                    "weapon": [],
-                    "content-trade": [],
-                    "money-transaction": [],
-                    "spam": [],
-                    "violence": [],
-                    "self-harm": [],
-                    "has_artificial": 0.001,
-                    "has_natural": 0.001
-                },
-                "gore": {
-                    "prob": 0.001,
-                    "classes": {
-                        "very_bloody": 0.001,
-                        "slightly_bloody": 0.001,
-                        "body_organ": 0.001,
-                        "serious_injury": 0.001,
-                        "superficial_injury": 0.001,
-                        "corpse": 0.001,
-                        "skull": 0.001,
-                        "unconscious": 0.001,
-                        "body_waste": 0.001,
-                        "other": 0.001
-                    },
-                    "type": {
-                        "animated": 0.001,
-                        "fake": 0.001,
-                        "real": 0.001
-                    }
-                },
-                "qr": {
-                    "personal": [],
-                    "link": [],
-                    "social": [],
-                    "spam": [],
-                    "profanity": [],
-                    "blacklist": []
-                },
-                "tobacco": {
-                    "prob": 0.001,
-                    "classes": {
-                        "regular_tobacco": 0.001,
-                        "ambiguous_tobacco": 0.001
-                    }
-                },
-                "violence": {
-                    "prob": 0.001,
-                    "classes": {
-                        "physical_violence": 0.001,
-                        "firearm_threat": 0.001,
-                        "combat_sport": 0.001
-                    }
-                },
-                "self-harm": {
-                    "prob": 0.001,
-                    "type": {
-                        "real": 0.001,
-                        "fake": 0.001,
-                        "animated": 0.001
-                    }
-                },
-                "gambling": {
-                    "prob": 0.001
-                },
-                "media": {
-                    "id": "med_jqLQ5rfIxh8XMzoJy7Sc2",
-                    "uri": "temp-img-9ea8b5ea-2360-4be5-91ed-e0489b83f79c.jpg"
-                }
-            }
-        };
+        const response = await axiosInstance
+            .post('https://api.sightengine.com/1.0/check.json', data, {
+                headers: data.getHeaders(),
+                validateStatus: () => true
+            });
 
-        await new Promise((res) => setTimeout(() => res(true), 9000));
+        if (response.status !== 200) {
+            return {
+                error: `External review service returned status ${response.status}`,
+                success: false
+            };
+        }
 
         const summary = summarizeImageAnalysis(response.data);
+
         if (!summary.success || !summary.analysis) {
             console.error(summary.error);
             return {

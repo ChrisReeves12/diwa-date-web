@@ -12,6 +12,13 @@ import { IoIosImages } from "react-icons/io";
 import { User } from "@/types";
 import _ from 'lodash';
 
+// Ensure rejected photos are always last while preserving relative order
+function moveRejectedToEnd(list: PhotoWithUrl[]): PhotoWithUrl[] {
+    const approved = list.filter(p => !p.isRejected);
+    const rejected = list.filter(p => p.isRejected);
+    return [...approved, ...rejected];
+}
+
 interface PhotosStepProps {
     data: WizardData;
     updateData: (field: keyof WizardData, value: any) => void;
@@ -25,6 +32,8 @@ export function PhotosStep({
 }: PhotosStepProps) {
     const MIN_PHOTOS = 3;
     const MAX_PHOTOS = 10;
+    const REVIEW_GROUP_SIZE = 8;
+    const UPLOAD_GROUP_SIZE = 5;
     const [photos, setPhotos] = useState<PhotoWithUrl[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
@@ -47,7 +56,7 @@ export function PhotosStep({
         try {
             setIsLoading(true);
             const result = await getUserPhotos();
-            setPhotos(result.photos);
+            setPhotos(moveRejectedToEnd(result.photos));
             setPhotoReviews((result.photos || []).map(p => {
                 const status = Array.isArray(p.messages) && p.messages.length > 0 && p.isRejected ?
                     (p.messages || []).join(', ') : 'Approved';
@@ -125,7 +134,7 @@ export function PhotosStep({
         let successfulCount = 0;
 
         try {
-            const chunks = _.chunk(validFiles, 3);
+            const chunks = _.chunk(validFiles, UPLOAD_GROUP_SIZE);
             for (const chunk of chunks) {
                 const uploadChunkPromises = chunk.map(async (file) => {
                     try {
@@ -196,7 +205,7 @@ export function PhotosStep({
             });
 
             try {
-                const chunks = _.chunk(filesToReview, 3);
+                const chunks = _.chunk(filesToReview, REVIEW_GROUP_SIZE);
 
                 for (const chunk of chunks) {
                     // Mark current chunk as checking
@@ -255,6 +264,8 @@ export function PhotosStep({
                     setValidPhotoCount(prevState =>
                         prevState + chunkResults.filter(r => r.review && !r.review.isRejected).length);
                 }
+                // Reload photos to get updated status from database
+                await loadPhotos();
             } catch (error) {
                 console.error('Photo review error:', error);
                 showAlert('Photos uploaded but review failed. Please try again.');
@@ -294,11 +305,11 @@ export function PhotosStep({
 
     const photosNeeded = Math.max(0, MIN_PHOTOS - validPhotoCount);
     const isCheckingPhotos = photoReviews.some(p => p.status.includes('Checking'));
-    let uploadButtonLabel = 'Upload Photos';
+    let uploadButtonLabel = 'Add Photos';
     if (isUploading) {
-        uploadButtonLabel = 'Uploading Photos'
+        uploadButtonLabel = 'Uploading Photos...'
     } else if (isCheckingPhotos) {
-        uploadButtonLabel = 'Checking Photos'
+        uploadButtonLabel = 'Checking Photos...'
     }
 
     return (
@@ -336,6 +347,7 @@ export function PhotosStep({
                                         const photoBeingReviewed = photoReviews
                                             .find(p => p.s3Path === photo.path);
                                         const isQueuedOrChecking = !!photoBeingReviewed && (photoBeingReviewed.status.includes('Queued') || photoBeingReviewed.status.includes('Checking'));
+                                        const isRejectedUi = !!photo.isRejected || (!!photoBeingReviewed && !isQueuedOrChecking && photoBeingReviewed.status !== 'Approved');
 
                                         return (
                                             <div className='photo-item-container'>
@@ -345,7 +357,7 @@ export function PhotosStep({
                                                             <CircularProgress size={50} />
                                                         </div>}
                                                     <div
-                                                        className={`photo-display ${photoBeingReviewed?.status?.includes('Checking') ? 'approval-in-progress' : ''}`}
+                                                        className={`photo-display ${isQueuedOrChecking ? 'approval-in-progress' : ''} ${isRejectedUi ? 'rejected' : ''}`}
                                                         style={{ backgroundImage: `url('${photo.croppedImageUrl || photo.url}')` }}
                                                     />
                                                     {isQueuedOrChecking ? (
