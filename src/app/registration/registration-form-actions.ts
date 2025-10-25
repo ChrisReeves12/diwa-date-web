@@ -69,7 +69,7 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
       seekingNumOfPhotos: businessConfig.defaults.numOfPhotos,
       seekingMaxDistance: businessConfig.defaults.maxDistance,
       seekingMinHeight: businessConfig.defaults.minHeight,
-      seekingDistanceOrigin: SearchFromOrigin.CurrentLocation,
+      seekingDistanceOrigin: SearchFromOrigin.AllLocations,
       seekingMaxHeight: businessConfig.defaults.maxHeight,
       seekingMinAge: businessConfig.defaults.minAge,
       seekingMaxAge: businessConfig.defaults.maxAge,

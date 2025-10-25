@@ -64,7 +64,7 @@ export async function searchUsers(currentUser: Omit<User, 'password'>, params: {
         countrySearchClause = `AND U."country" IN (${currentUser.seekingCountries.map(c => `'${c}'`).join(',')})`;
     }
 
-    if (!countrySearchClause) {
+    if (!countrySearchClause && currentUser.seekingDistanceOrigin !== SearchFromOrigin.AllLocations) {
         countrySearchClause = `AND U."country" = '${currentUser.country}'`;
     }
 

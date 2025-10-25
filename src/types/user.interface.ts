@@ -5,6 +5,7 @@ import { SubscriptionPlanEnrollment } from './subscription-plan-enrollment.inter
 import { CroppedImageData } from './cropped-image-data.interface';
 
 export enum SearchFromOrigin {
+  AllLocations = 'all',
   CurrentLocation = 'currentLocation',
   SingleLocation = 'singleLocation',
   MultipleCountries = 'multipleCountries'

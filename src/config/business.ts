@@ -33,6 +33,7 @@ export const businessConfig = {
         },
 
         searchFromLocationTypes: {
+            all: 'All Locations',
             currentLocation: 'Current Location',
             singleLocation: 'Single Location',
             multipleCountries: 'Multiple Countries'
