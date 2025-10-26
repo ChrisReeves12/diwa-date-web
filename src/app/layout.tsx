@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "@/styles/globals.scss";
 import GlobalAlertProvider from "@/common/alert-dialog/global-alert-provider";
 import { CookieConsentProvider } from '@/common/cookie-consent/cookie-consent-provider';
@@ -32,6 +33,23 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css"
         />
+        {/* Google Tag Manager - Only load in production */}
+        {process.env.NEXT_PUBLIC_ENV === 'production' && (
+          <>
+            <Script
+              src="https://www.googletagmanager.com/gtag/js?id=AW-11218713754"
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'AW-11218713754');
+              `}
+            </Script>
+          </>
+        )}
       </head>
       <body>
         <DynamicThemeProvider>
