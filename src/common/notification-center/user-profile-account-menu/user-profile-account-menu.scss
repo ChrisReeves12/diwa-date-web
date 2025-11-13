@@ -1,0 +1,261 @@
+@use '../../../styles/globals.scss' as globals;
+
+.user-profile-account-menu-container {
+  width: 280px;
+  padding: 15px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  color: #000000;
+  position: relative;
+
+  @media (max-width: 768px) {
+    width: calc(100% - 32px);
+    height: calc(100vh - 32px);
+    margin: 16px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  @include globals.dark-mode {
+    background-color: globals.$dark-background-color;
+    border: 1px solid #eaeaea;
+    color: #ffffff;
+  }
+
+  .close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: globals.$primary-blue;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+    z-index: 1;
+
+    @include globals.dark-mode {
+      color: #ffffff;
+    }
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+
+      @include globals.dark-mode {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    i {
+      font-size: 24px;
+    }
+  }
+
+  .profile-photo-name-section {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #eaeaea;
+
+    a {
+      margin-right: 12px;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+      border-radius: 50%;
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+
+    .name-online-status-section {
+      padding-left: 8px;
+
+      .deactivated-notice {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 6px;
+
+        .label {
+          font-size: 11px;
+
+          a {
+            color: globals.$primary-blue;
+
+            svg {
+              font-size: 10px;
+            }
+
+            @include globals.dark-mode {
+              color: globals.$primary-blue-dark;
+            }
+          }
+        }
+      }
+
+      h5 {
+        margin: 0 0 5px 0;
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .online-status {
+        display: flex;
+        align-items: center;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        font-size: 14px;
+
+        .online-lamp-section {
+          display: flex;
+          align-items: center;
+
+          .online-lamp {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+
+            &.online {
+              background-color: #4CAF50;
+            }
+
+            &.away {
+              background-color: #FFC107;
+            }
+
+            &.offline {
+              background-color: #9E9E9E;
+            }
+          }
+
+          .online-status-label {
+            color: #666;
+
+            @include globals.dark-mode {
+              color: #ffffff;
+            }
+          }
+        }
+
+        .online-status-selector {
+          margin-left: 5px;
+
+          i {
+            font-size: 12px;
+            color: #999;
+          }
+        }
+      }
+    }
+  }
+
+  .profile-menu-section {
+    padding-top: 8px;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eaeaea;
+
+    @media (max-width: 768px) {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      padding: 3px 0;
+      color: #333;
+      text-decoration: none;
+      transition: color 0.2s ease;
+
+      @include globals.dark-mode {
+        color: #ffffff;
+      }
+
+      &:hover {
+        color: globals.$primary-blue;
+
+        @include globals.dark-mode {
+          color: globals.$primary-blue-dark;
+        }
+      }
+
+      .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        margin-right: 12px;
+
+        img {
+          width: 24px;
+          height: 24px;
+        }
+      }
+
+      .label {
+        font-size: 16px;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .sign-out-button-section {
+    button {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      font-weight: bold;
+      color: globals.$primary-blue;
+      justify-content: center;
+      padding: 13px;
+      border: 1px solid #cccccc;
+      background: none;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+
+      @include globals.dark-mode {
+        color: #ffffff;
+      }
+
+      &:hover {
+        opacity: 0.8;
+      }
+
+      .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        margin-right: 10px;
+
+        img {
+          width: 20px;
+          height: 20px;
+        }
+      }
+
+      .label {
+        font-size: 14px;
+        font-weight: bold;
+      }
+    }
+  }
+}

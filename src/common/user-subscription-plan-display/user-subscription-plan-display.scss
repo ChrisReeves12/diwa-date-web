@@ -1,0 +1,45 @@
+@use '../../styles/globals' as globals;
+
+.subscription-plan-display-container {
+  display: none;
+
+  @include globals.dark-mode {
+    color: #ffffff;
+  }
+
+  @include globals.media-min('screens.md') {
+    display: flex;
+    font-size: 17px;
+    padding-top: 58px;
+  }
+
+  .label {
+    margin-right: 8px;
+  }
+
+  .subscription-level {
+    color: globals.$primary-blue;
+    font-weight: bold;
+    text-align: center;
+    width: 100%;
+
+    .upgrade-link {
+      margin-left: 10px;
+      padding: 4px 12px;
+      border-radius: 3px;
+      color: white;
+      background-color: globals.$primary-blue;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    @include globals.dark-mode {
+      color: globals.$primary-blue-dark;
+    }
+
+    @include globals.media-min('screens.sm') {
+      text-align: left;
+      width: auto;
+    }
+  }
+}

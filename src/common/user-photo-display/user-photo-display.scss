@@ -1,0 +1,22 @@
+@use '../../styles/globals' as globals;
+
+.user-photo-display-container {
+  display: inline-block;
+
+  .profile-image-container {
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+
+    @include globals.dark-mode {
+      border: 1px solid #7b7b7b;
+    }
+
+    img {
+      height: 100%;
+      object-position: center;
+    }
+  }
+}

@@ -1,0 +1,28 @@
+@use '@/styles/globals' as globals;
+
+.community-guidelines-container {
+    padding: 2rem 1rem;
+    max-width: 800px;
+    margin: 0 auto;
+    min-height: 90vh;
+
+    h1 {
+        font-family: "Nunito Sans", sans-serif;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: globals.$primary-blue;
+
+        @include globals.dark-mode {
+            color: globals.$primary-blue-dark;
+        }
+    }
+
+    p {
+        font-family: "Nunito Sans", sans-serif;
+        color: #666;
+
+        @include globals.dark-mode {
+            color: #ffffff;
+        }
+    }
+}

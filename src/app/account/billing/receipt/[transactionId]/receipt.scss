@@ -1,0 +1,327 @@
+@use '@/styles/globals' as globals;
+
+.receipt-container {
+    max-width: 600px;
+    margin: 2rem auto;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+    padding: 2.5rem;
+    font-family: globals.$default-font;
+    color: #1f2937;
+
+    @include globals.dark-mode {
+        background: #1f2937;
+        color: #f9fafb;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    @include globals.media-min('screens.sm') {
+        padding: 3rem;
+    }
+
+    h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: globals.$slate;
+        margin: 0 0 1.5rem 0;
+        text-align: center;
+        letter-spacing: -0.025em;
+
+        @include globals.dark-mode {
+            color: #ffffff;
+        }
+    }
+
+    h2 {
+        font-size: 1rem;
+        font-weight: normal;
+        color: globals.$slate;
+        margin: -18px 0 0 0;
+        text-align: center;
+        letter-spacing: -0.025em;
+
+        @include globals.dark-mode {
+            color: #ffffff;
+        }
+    }
+
+    hr {
+        border: none;
+        border-top: 2px solid #f3f4f6;
+        margin: 1.5rem 0;
+
+        @include globals.dark-mode {
+            border-top-color: #374151;
+        }
+    }
+
+    .receipt-info {
+        margin-bottom: 2rem;
+
+        h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: globals.$slate;
+            margin: 0 0 1rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+
+            @include globals.dark-mode {
+                color: #ffffff;
+            }
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f9fafb;
+
+            @include globals.dark-mode {
+                border-bottom-color: #374151;
+            }
+
+            &:last-child {
+                border-bottom: none;
+            }
+
+            .info-label {
+                font-size: 0.875rem;
+                color: #6b7280;
+                font-weight: 500;
+
+                @include globals.dark-mode {
+                    color: #9ca3af;
+                }
+            }
+
+            .info-value {
+                font-size: 0.875rem;
+                color: #1f2937;
+                font-weight: 600;
+                text-align: right;
+
+                @include globals.dark-mode {
+                    color: #f9fafb;
+                }
+            }
+        }
+    }
+
+    .transaction-details {
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+
+        @include globals.dark-mode {
+            background: #374151;
+        }
+
+        h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: globals.$slate;
+            margin: 0 0 1.5rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+
+            @include globals.dark-mode {
+                color: #ffffff;
+            }
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px dashed #e5e7eb;
+
+            @include globals.dark-mode {
+                border-bottom-color: #4b5563;
+            }
+
+            .item-details {
+                flex: 1;
+
+                .item-name {
+                    font-size: 1rem;
+                    font-weight: 600;
+                    color: #1f2937;
+                    margin-bottom: 0.25rem;
+
+                    @include globals.dark-mode {
+                        color: #f9fafb;
+                    }
+                }
+            }
+
+            .item-price {
+                text-align: right;
+                margin-left: 2rem;
+
+                .label {
+                    font-size: 0.75rem;
+                    color: #6b7280;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    margin-bottom: 0.25rem;
+
+                    @include globals.dark-mode {
+                        color: #9ca3af;
+                    }
+                }
+
+                .amount {
+                    font-size: 1.25rem;
+                    font-weight: 700;
+                    color: globals.$primary-blue;
+
+                    @include globals.dark-mode {
+                        color: globals.$primary-blue-dark;
+                    }
+                }
+            }
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 0;
+            border-top: 2px solid globals.$primary-blue;
+            margin-top: 1.5rem;
+
+            @include globals.dark-mode {
+                border-color: globals.$primary-blue-dark;
+            }
+
+            .total-label {
+                font-size: 1.125rem;
+                font-weight: 600;
+                color: globals.$slate;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+
+                @include globals.dark-mode {
+                    color: #ffffff;
+                }
+            }
+
+            .total-amount {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: globals.$primary-blue;
+
+                @include globals.dark-mode {
+                    color: globals.$primary-blue-dark;
+                }
+            }
+        }
+
+        .payment-method {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+
+            @include globals.dark-mode {
+                border-top-color: #4b5563;
+            }
+
+            h4 {
+                font-size: 0.875rem;
+                font-weight: 600;
+                color: #6b7280;
+                margin: 0 0 0.5rem 0;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+
+                @include globals.dark-mode {
+                    color: #9ca3af;
+                }
+            }
+
+            p {
+                font-size: 0.875rem;
+                color: #1f2937;
+                margin: 0;
+
+                @include globals.dark-mode {
+                    color: #f9fafb;
+                }
+            }
+        }
+    }
+}
+
+// Print styles
+@media print {
+    .receipt-container {
+        box-shadow: none;
+        max-width: 100%;
+        margin: 0;
+        padding: 1rem;
+    }
+
+    .transaction-details {
+        background: #f9fafb !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    @include globals.dark-mode {
+        .receipt-container {
+            background: #ffffff !important;
+            color: #000000 !important;
+            box-shadow: none;
+        }
+
+        .transaction-details {
+            background: #f9fafb !important;
+        }
+
+        hr {
+            border-top-color: #f3f4f6 !important;
+        }
+
+        .info-row {
+            border-bottom-color: #f9fafb !important;
+
+            .info-label {
+                color: #6b7280 !important;
+            }
+
+            .info-value {
+                color: #1f2937 !important;
+            }
+        }
+
+        .item-row {
+            border-bottom-color: #e5e7eb !important;
+
+            .item-name {
+                color: #1f2937 !important;
+            }
+
+            .label {
+                color: #6b7280 !important;
+            }
+        }
+
+        .payment-method {
+            border-top-color: #e5e7eb !important;
+
+            h4 {
+                color: #6b7280 !important;
+            }
+
+            p {
+                color: #1f2937 !important;
+            }
+        }
+    }
+}

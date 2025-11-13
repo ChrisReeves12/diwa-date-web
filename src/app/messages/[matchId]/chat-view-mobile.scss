@@ -1,0 +1,161 @@
+@use '../../../styles/globals.scss' as globals;
+
+.chat-view-mobile-container {
+  margin-top: 11px;
+
+  .message-input-area {
+    padding: 10px;
+
+    .input-container {
+      padding: 0;
+      align-items: center;
+
+      .send-button {
+        width: 36px;
+        height: 36px;
+      }
+
+      .message-input {
+        border-radius: 5px;
+        font-size: 16px;
+        padding: 8px;
+      }
+    }
+  }
+
+  .chat-view-header {
+    position: fixed;
+    z-index: 8;
+    top: 105px;
+    width: 100%;
+    padding: 8px 3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    border-bottom: 1px solid #cdcdcd;
+    box-shadow: 1px 0 6px rgba(0, 0, 0, 0.5);
+
+    .typing-indicator {
+      .typing-dots {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+        align-items: center;
+        height: 20px;
+        position: absolute;
+        right: 40px;
+        top: 35%;
+        scale: 0.8;
+        opacity: 0.5;
+
+        @include globals.dark-mode {
+          opacity: 1;
+        }
+      }
+    }
+
+
+    @include globals.dark-mode {
+      background: #222222;
+    }
+
+    .back-button-container {
+      width: 10vw;
+      display: flex;
+      justify-content: center;
+      margin-left: 5px;
+
+      a {
+        font-size: 30px;
+        -webkit-appearance: none;
+        appearance: none;
+        padding: 0;
+        margin: 0;
+        color: globals.$primary-blue;
+
+        @include globals.dark-mode {
+          color: #ffffff;
+        }
+      }
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+
+      .user-details {
+        margin-left: 12px;
+
+        .user-name {
+          font-size: 16px;
+          font-weight: 600;
+          color: globals.$primary-blue;
+          margin-bottom: 4px;
+
+          @include globals.dark-mode {
+            color: #ffffff;
+          }
+        }
+
+        .online-status {
+          display: flex;
+          align-items: center;
+
+          .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+
+            &.online {
+              background-color: #22c55e;
+            }
+
+            &.offline {
+              background-color: #9ca3af;
+            }
+          }
+
+          .status-text {
+            font-size: 13px;
+            color: #6b7280;
+
+            @include globals.dark-mode {
+              color: #9ca3af;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .message-list {
+    padding-top: 118px;
+    max-height: inherit;
+    background-color: transparent;
+
+    .message-bubble {
+      max-width: inherit;
+    }
+
+    .date-label {
+      background-color: #bfe2ff;
+      color: #47a1ee;
+    }
+
+    .messages-loading {
+      position: absolute;
+      left: 50%;
+      bottom: 10%;
+      transform: translateX(-50%);
+    }
+  }
+
+  .textarea-container {
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+    z-index: 8;
+  }
+}

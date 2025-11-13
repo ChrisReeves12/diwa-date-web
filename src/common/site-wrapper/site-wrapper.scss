@@ -1,0 +1,88 @@
+@use '../../styles/globals' as globals;
+
+.site-wrapper {
+  height: 100%;
+  padding-top: 54px;
+
+  footer {
+    color: white;
+    background: #6389aa;
+    min-height: 250px;
+    position: relative;
+    padding-bottom: 30px;
+    border-top: 2px solid #ffffff;
+
+    @include globals.dark-mode {
+      background: #213549;
+    }
+
+    @include globals.media-min('screens.md') {
+      padding-bottom: 45px;
+    }
+
+    .links-container {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 10px 20px 0 15px;
+
+      @include globals.media-min('screens.md') {
+        justify-content: flex-start;
+        padding: 10px 20px 0 33px;
+        gap: 100px;
+      }
+
+      .links-section {
+        ul {
+          list-style: none;
+          padding: 0;
+          margin: 8px 0 0 0;
+
+          li {
+            padding: 3px 0;
+
+            a {
+              color: #ffffff;
+            }
+          }
+        }
+
+        h4 {
+          margin: 0;
+          font-size: 16px;
+          color: #ccedff;;
+        }
+      }
+    }
+
+    .copyright-container {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.2);
+      font-size: 12px;
+      padding: 8px 0;
+      text-align: center;
+    }
+
+    .logo-container {
+      padding-left: 15px;
+      width: 130px;
+      padding-top: 15px;
+
+      @include globals.media-min('screens.md') {
+        padding-left: 30px;
+        width: 150px;
+        padding-top: 22px;
+      }
+
+      a {
+        img {
+          max-width: 100%;
+          max-height: 100%;
+        }
+      }
+    }
+  }
+}

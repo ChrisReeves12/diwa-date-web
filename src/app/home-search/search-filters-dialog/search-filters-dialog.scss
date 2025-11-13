@@ -1,0 +1,279 @@
+@use '../../../styles/globals.scss' as globals;
+
+.filters-dialog-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  .title-section {
+    border-bottom: 1px solid globals.$primary-blue;
+    font-size: 13px;
+    color: globals.$primary-blue;
+    padding-left: 1.3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    min-height: 50px;
+
+    .close-button-container {
+      padding-right: 12px;
+
+      button {
+        i {
+          font-size: 30px;
+          color: #a6a6a6;
+        }
+      }
+    }
+  }
+
+  .dialog-body {
+    margin: 1.3rem;
+    overflow-y: auto;
+    flex-grow: 1;
+    height: calc(100% - 50px);
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 20px;
+
+    .input-container {
+      padding-bottom: 1.6rem;
+      max-width: 50vw;
+
+      select {
+        @include globals.underlined-select;
+      }
+
+      .inline-form-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        .photo-count {
+          width: 3.5rem;
+        }
+
+        .location-button {
+          margin-left: 8px;
+          background-color: globals.$primary-blue;
+          color: #fff;
+          border: none;
+          padding: 0.2rem 0.5rem;
+          cursor: pointer;
+        }
+      }
+
+      .input-container {
+        &.order-by-container {
+          padding-bottom: 0;
+          max-width: 170px;
+        }
+
+        select {
+          border: none;
+          border-bottom: 1px solid #ccc;
+          padding: 5px 0;
+          width: 100%;
+          background-color: transparent;
+          font-size: 16px;
+
+          &:focus {
+            outline: none;
+            border-bottom-color: #4a90e2;
+          }
+
+          &.underlined-select {
+            border: none;
+            border-bottom: 1px solid #ccc;
+            padding: 8px 0;
+            width: 100%;
+            background-color: transparent;
+            font-size: 16px;
+            appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right center;
+
+            &:focus {
+              outline: none;
+              border-bottom-color: #4a90e2;
+            }
+          }
+        }
+      }
+
+      .location-input-container {
+        position: relative;
+
+        .locality-search {
+          flex: 1;
+          padding: 0.5rem;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          font-size: 14px;
+
+          @include globals.dark-mode {
+            background-color: #333;
+            color: #fff;
+            border-color: #555;
+          }
+        }
+      }
+
+      label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 0.2rem;
+        font-size: 15px;
+      }
+
+      .location-info {
+        padding-top: 0.4rem;
+        font-size: 14px;
+        color: #7f7f7f;
+      }
+
+      .inline-checkboxes {
+        display: flex;
+        flex-wrap: wrap;
+        width: 80vw;
+        margin-left: -12px;
+
+        @include globals.media-min('screens.md') {
+          width: 100%;
+        }
+
+        .MuiFormControlLabel-root {
+          margin: 0;
+          width: auto;
+          min-width: 100px;
+          margin-right: 10px;
+          margin-bottom: 5px;
+        }
+      }
+
+      .vertical-checkboxes {
+        display: flex;
+        flex-direction: column;
+
+        .MuiFormControlLabel-root {
+          margin: 0;
+          margin-bottom: 5px;
+        }
+      }
+    }
+
+    .row-container {
+      margin-bottom: 1.6rem;
+
+      @include globals.media-min('screens.md') {
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .column {
+        padding-bottom: 30px;
+
+        @include globals.media-min('screens.md') {
+          width: 30%;
+          padding-bottom: inherit;
+        }
+
+        &:last-child {
+          padding-bottom: 0;
+        }
+
+        label {
+          display: block;
+          font-weight: bold;
+          margin-bottom: 0.2rem;
+        }
+      }
+    }
+
+    .premium-notification-banner {
+      background-color: #f0f8ff;
+      border: 1px solid #4a90e2;
+      border-radius: 4px;
+      padding: 1rem;
+      margin-bottom: 1.6rem;
+
+      @include globals.dark-mode {
+        background-color: #2b2b2b;
+        border: 1px solid #616161;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-bottom: 1.6rem;
+      }
+
+      p {
+        margin: 0 0 0.5rem 0;
+        color: #333;
+        font-size: 14px;
+
+        @include globals.dark-mode {
+          color: #b1b1b1;
+        }
+      }
+
+      .upgrade-link {
+        color: globals.$primary-blue;
+        text-decoration: none;
+        font-weight: bold;
+
+        @include globals.dark-mode {
+          color: globals.$primary-blue-dark;
+        }
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+
+    .premium-search-filters {
+      .MuiCheckbox-root.Mui-disabled {
+        opacity: 0.5;
+      }
+
+      .MuiFormControlLabel-root.Mui-disabled {
+        opacity: 0.6;
+
+        .MuiFormControlLabel-label {
+          color: #999;
+        }
+      }
+    }
+
+  }
+
+  .button-container {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-top: 1px solid #bfbfbf;
+
+    .apply-button,
+    .cancel-button {
+      padding: 0.6rem 2rem;
+      font-size: 16px;
+      margin-right: 1rem;
+      border-radius: 4px;
+    }
+
+    .apply-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .cancel-button {
+      background-color: #ababab;
+      color: #fff;
+
+      @include globals.dark-mode {
+        background-color: #5b5b5b;
+      }
+    }
+  }
+}

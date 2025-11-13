@@ -1,0 +1,54 @@
+@use '../../styles/globals' as globals;
+
+.tab-bar-container {
+  display: flex;
+  border-bottom: 1px solid globals.$primary-blue;
+
+  @include globals.dark-mode() {
+    border-bottom-color: globals.$primary-blue-dark;
+  }
+
+  .tab {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 12px 30px 12px 8px;
+    gap: 8px;
+
+    @include globals.media-min('screens.md') {
+      padding: 24px 40px 24px 0;
+    }
+
+    .label,
+    i,
+    svg {
+      color: #000000;
+
+      @include globals.dark-mode() {
+        color: #ffffff;
+      }
+    }
+
+    &.selected {
+      border-bottom: 3px solid globals.$primary-blue;
+
+      .label,
+      i,
+      svg {
+        color: globals.$primary-blue;
+
+        @include globals.dark-mode() {
+          color: #ffffff;
+        }
+      }
+    }
+
+    .label {
+      font-size: 17px;
+    }
+
+    i {
+      font-size: 23px;
+    }
+  }
+}

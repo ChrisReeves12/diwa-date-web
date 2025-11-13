@@ -1,0 +1,1 @@
+../../../types/rabbitmq.types.ts

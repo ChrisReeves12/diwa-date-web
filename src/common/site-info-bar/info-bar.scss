@@ -1,0 +1,100 @@
+@use '@/styles/globals' as globals;
+
+.site-info-bar {
+    width: 100%;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    padding: 16px 0;
+    position: sticky;
+    z-index: 100;
+    top: 54px;
+
+    @include globals.media-min('screens.md') {
+        top: 69px;
+    }
+
+    .info-bar-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 10px;
+        display: flex;
+        font-size: 12px;
+        align-items: center;
+        height: 72px;
+
+        @include globals.media-min('screens.md') {
+            padding: 0 20px;
+            font-size: 15px;
+            justify-content: center;
+            height: inherit;
+        }
+
+        .action-button {
+            background-color: #49b1f4;
+            color: #ffffff;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            padding: 8px 10px;
+            transition: background-color 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            line-height: 1;
+            max-width: 75vw;
+
+            @include globals.media-min('screens.md') {
+                margin-left: 12px;
+                padding: 10px 16px;
+            }
+
+            &:hover {
+                background-color: #2196f3;
+            }
+
+            &:active {
+                background-color: #1976d2;
+            }
+
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+        }
+
+        p {
+            margin: 0;
+            line-height: 1.5;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+
+            @include globals.media-min('screens.md') {
+                text-align: center;
+            }
+
+            svg {
+                flex-shrink: 0;
+                font-size: 18px;
+                color: #49b1f4;
+            }
+        }
+    }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+    .site-info-bar {
+        background-color: #2b2f33;
+        border-bottom-color: #495057;
+
+        .info-bar-content {
+            p {
+                color: #adb5bd;
+            }
+        }
+    }
+}

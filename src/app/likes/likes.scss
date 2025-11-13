@@ -1,0 +1,144 @@
+@use '../../styles/globals.scss' as globals;
+
+.likes-view-container {
+  position: relative;
+
+  .center-screen-loader-container {
+    position: fixed;
+    left: 50%;
+    top: 350px;
+    transform: translateX(-50%);
+  }
+
+  .likes-filters-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 15px;
+    background-color: globals.$light-background-color;
+    border-bottom: 1px solid #bfbfbf;
+    position: sticky;
+    z-index: 5;
+    top: 116px;
+
+    @include globals.media-min('screens.md') {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #ffffff;
+      gap: 0;
+
+      @include globals.dark-mode {
+        background-color: globals.$dark-background-color;
+        color: #ffffff;
+      }
+    }
+
+    .filter-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+
+      @include globals.media-min('screens.md') {
+        width: auto;
+      }
+
+      .age-order-by-container {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+
+        @include globals.media-min('screens.md') {
+          flex-direction: row;
+          gap: 20px;
+          align-items: center;
+          width: auto;
+        }
+
+        .filter {
+          width: 100%;
+
+          @include globals.media-min('screens.md') {
+            width: auto;
+          }
+        }
+      }
+
+      .filter {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+
+        label {
+          font-weight: bold;
+          padding-bottom: 0.4rem;
+          display: block;
+          font-size: 15px;
+        }
+
+        .input-container {
+          display: flex;
+          min-width: 150px;
+        }
+
+        select.order-by {
+          @include globals.underlined-select();
+        }
+      }
+    }
+
+    .paginator-section {
+      display: flex;
+      width: 100%;
+      justify-content: center;
+      margin-top: 10px;
+
+      @include globals.media-min('screens.md') {
+        width: auto;
+        justify-content: flex-end;
+        margin-top: 0;
+      }
+    }
+  }
+
+  .user-likes-listing-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 8px;
+    padding-top: 64px;
+
+    @include globals.media-min('screens.md') {
+      padding: 0;
+    }
+
+    .no-likes-notice {
+      padding-top: 30px;
+      text-align: center;
+      width: 100%;
+      color: #9ca3af;
+      font-size: 16px;
+      font-style: italic;
+    }
+  }
+
+  .bottom-paginator-section {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    margin-bottom: 40px;
+  }
+
+  .likes-loading-container {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+}

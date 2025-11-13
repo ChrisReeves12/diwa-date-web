@@ -1,0 +1,338 @@
+// Global variables
+$light-background-color: #ffffff;
+$dark-background-color: #181818;
+$primary-blue: #0092e4;
+$primary-blue-dark: #5ab8ff;
+$primary-purple: #7f43fa;
+$teal: #1ca9d6;
+$slate: #2d4154;
+$top-bar-height: 68px;
+$error-color-light: #c30000;
+$error-color-dark: #ff4848;
+$default-font: "Nunito Sans", sans-serif;
+
+// Tailwind-friendly breakpoint mixins
+@mixin media-min($breakpoint) {
+  @if $breakpoint =='screens.sm' {
+    @media (min-width: 640px) {
+      @content;
+    }
+  }
+
+  @else if $breakpoint =='screens.md' {
+    @media (min-width: 768px) {
+      @content;
+    }
+  }
+
+  @else if $breakpoint =='screens.lg' {
+    @media (min-width: 1024px) {
+      @content;
+    }
+  }
+
+  @else if $breakpoint =='screens.xl' {
+    @media (min-width: 1280px) {
+      @content;
+    }
+  }
+
+  @else if $breakpoint =='screens.2xl' {
+    @media (min-width: 1536px) {
+      @content;
+    }
+  }
+}
+
+@mixin underlined-input {
+  outline-width: 0;
+  border: none;
+  background-color: transparent;
+  border-bottom: 1px solid #000000;
+  font-size: 16px;
+  color: #000000;
+
+  @media (prefers-color-scheme: dark) {
+    color: #ffffff;
+    border-bottom-color: #ffffff;
+  }
+}
+
+@mixin underlined-select {
+  padding-bottom: 3px;
+  padding-right: 10px;
+  cursor: pointer;
+  @include underlined-input;
+}
+
+@mixin dark-mode {
+  @media (prefers-color-scheme: dark) {
+    @content;
+  }
+}
+
+body {
+  padding: 0;
+  margin: 0;
+  font-family: $default-font;
+  background-color: $light-background-color;
+  color: #000000;
+
+  @include dark-mode {
+    color: #ffffff;
+  }
+
+  input {
+    color: #000000;
+
+    @include dark-mode {
+      color: #ffffff;
+    }
+  }
+
+  .modal-background {
+    background-color: #ffffff;
+    color: #000000;
+
+    @include dark-mode {
+      background-color: #212121;
+      color: #ffffff;
+    }
+  }
+
+  &.messages {
+    background-color: #ebf6ff;
+
+    @include dark-mode {
+      background-color: $dark-background-color;
+    }
+
+    @include media-min('screens.md') {
+      background-color: $light-background-color;
+
+      @include dark-mode {
+        background-color: $dark-background-color;
+      }
+    }
+  }
+
+  @include dark-mode {
+    background-color: $dark-background-color;
+  }
+}
+
+// Alternate content between light and dark modes
+.light-dark {
+  .dark {
+    display: none;
+  }
+
+  @include dark-mode {
+    .dark {
+      display: inherit;
+    }
+
+    .light {
+      display: none;
+    }
+  }
+}
+
+button {
+  cursor: pointer;
+  appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: none;
+}
+
+.container {
+  margin: 0 auto;
+
+  @include media-min('screens.sm') {
+    max-width: 640px;
+  }
+
+  @include media-min('screens.md') {
+    max-width: 768px;
+  }
+
+  @include media-min('screens.lg') {
+    max-width: 1024px;
+  }
+
+  @include media-min('screens.xl') {
+    max-width: 1280px;
+  }
+
+  @include media-min('screens.2xl') {
+    max-width: 1536px;
+  }
+}
+
+a {
+  text-decoration: none;
+}
+
+.btn-primary {
+  color: white;
+  background-color: $primary-blue;
+  padding: 8px 15px;
+  cursor: pointer;
+  font-size: 16px;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.input-container {
+  label {
+    display: block;
+    font-size: 14px;
+  }
+
+  .error-message {
+    font-size: 13px;
+    color: $error-color-light;
+    padding-top: 8px;
+
+    @include dark-mode() {
+      color: $error-color-dark;
+    }
+  }
+
+  input[type='text'],
+  input[type='email'],
+  input[type='date'],
+  input[type='password'] {
+    border: 0;
+    outline-width: 0;
+    background-color: transparent;
+    padding-bottom: 8px;
+    font-size: 16px;
+    appearance: none;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    border-radius: 0;
+    border-bottom: 1px solid #ccc;
+    width: 100%;
+    display: block;
+  }
+
+  &.error {
+    label {
+      color: $error-color-light;
+
+      @include dark-mode() {
+        color: $error-color-dark;
+      }
+    }
+
+    input[type='text'],
+    input[type='email'],
+    input[type='date'],
+    input[type='password'] {
+      border-bottom-color: $error-color-light;
+
+      @include dark-mode() {
+        border-bottom-color: $error-color-dark;
+      }
+    }
+  }
+
+}
+
+// Password input wrapper styling
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  input {
+    flex: 1;
+    padding-right: 40px;
+  }
+
+  .password-toggle {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    color: #666;
+
+    @include dark-mode() {
+      color: #ccc;
+    }
+
+    &:hover {
+      color: $primary-blue;
+    }
+
+    i {
+      font-size: 18px;
+    }
+  }
+}
+
+
+
+// Button variants
+.btn-danger {
+  color: white;
+  background-color: #d32f2f;
+  padding: 8px 15px;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 4px;
+
+  &:hover {
+    background-color: #b71c1c;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.btn-primary {
+  border-radius: 4px;
+
+  &:hover {
+    background-color: #0077cc;
+  }
+}
+
+.btn-secondary {
+  color: #666;
+  background-color: #f5f5f5;
+  padding: 8px 15px;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+
+  @include dark-mode() {
+    color: #ccc;
+    background-color: #333;
+    border-color: #555;
+  }
+
+  &:hover {
+    background-color: #e0e0e0;
+
+    @include dark-mode() {
+      background-color: #444;
+    }
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}

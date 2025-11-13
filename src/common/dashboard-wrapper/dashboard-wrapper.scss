@@ -1,0 +1,38 @@
+@use '../../styles/globals' as globals;
+
+.dashboard-wrapper-container {
+  .container {
+    .subscription-plan-display-container {
+      margin-bottom: 20px;
+    }
+
+    .dashboard-content-section {
+      .tab-bar-container {
+        position: fixed;
+        top: 54px;
+        background-color: white;
+        z-index: 10;
+        width: 100%;
+
+        @include globals.media-min('screens.md') {
+          top: 64px;
+          position: sticky;
+        }
+
+        @include globals.dark-mode() {
+          background-color: globals.$dark-background-color;
+        }
+      }
+    }
+  }
+}
+
+.info-bar-shown {
+  .tab-bar-container {
+    top: 158px !important;
+
+    @include globals.media-min('screens.md') {
+      top: 134px !important;
+    }
+  }
+}

@@ -1,0 +1,180 @@
+@use '@/styles/globals' as globals;
+
+.conversation-list-container {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+
+    .refresh-indicator {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        z-index: 10;
+        border-bottom: 1px solid #eee;
+
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        span {
+            font-size: 14px;
+            color: #666;
+        }
+    }
+
+    .conversations-list {
+        height: 100%;
+        overflow-y: auto;
+        transition: opacity 0.2s ease;
+        padding-top: 62px;
+
+        @include globals.media-min('screens.md') {
+            padding-top: inherit;
+        }
+
+        &.refreshing {
+            opacity: 0.7;
+        }
+    }
+
+    .no-conversations {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 20px;
+
+        p {
+            color: #9ca3af;
+            font-size: 16px;
+            font-style: italic;
+            text-align: center;
+            margin: 0;
+        }
+    }
+
+    .conversation-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+        text-decoration: none;
+
+        @include globals.dark-mode {
+            color: #ffffff;
+        }
+
+        .conversation-link {
+            display: flex;
+            transition: background-color 0.2s ease;
+            flex: 1;
+            color: inherit;
+            max-width: 70%;
+
+            .profile-container {
+                position: relative;
+                margin-right: 15px;
+
+                .unread-message-indicator {
+                    position: absolute;
+                    top: -2px;
+                    right: -2px;
+                    width: 10px;
+                    height: 10px;
+                    background-color: #3498db;
+                    border-radius: 50%;
+                    border: 2px solid white;
+                    z-index: 1;
+                }
+
+                .online-lamp {
+                    width: 12px;
+                    height: 12px;
+                    background-color: #4CAF50;
+                    border-radius: 50%;
+                    border: 2px solid white;
+                    position: absolute;
+                    bottom: 0;
+                    right: 0;
+                    z-index: 1;
+                }
+            }
+
+            .user-info-section {
+                flex: 1;
+                min-width: 0;
+
+                &.unread {
+                    font-weight: 600;
+                }
+
+                .user-name {
+                    font-size: 16px;
+                    margin-bottom: 4px;
+                }
+
+                .last-message {
+                    color: #666;
+                    font-size: 14px;
+                    margin-bottom: 4px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+
+                    @include globals.dark-mode {
+                        color: #c3c3c3;
+                    }
+                }
+
+                .last-sent {
+                    color: #999;
+                    font-size: 12px;
+
+                    @include  globals.dark-mode {
+                        color: #ffffff;
+                    }
+                }
+            }
+        }
+
+        .controls-container {
+            button {
+                display: flex;
+                align-items: center;
+                color: globals.$error-color-light;
+
+                @include globals.dark-mode {
+                    color: globals.$error-color-dark;
+                }
+
+                i {
+                    font-size: 24px;
+                    padding-right: 5px;
+                }
+            }
+        }
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}

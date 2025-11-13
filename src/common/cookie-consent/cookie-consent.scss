@@ -1,0 +1,156 @@
+@import '../../styles/globals.scss';
+
+.cookie-consent-popup {
+    position: fixed !important;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 600px;
+    margin: 0 auto;
+    border-radius: 12px !important;
+
+    @include media-min('screens.md') {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 500px;
+    }
+
+    @include media-min('screens.lg') {
+        bottom: 30px;
+        max-width: 600px;
+    }
+
+    // Dark mode support
+    @include dark-mode {
+        background-color: $dark-background-color;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+}
+
+.cookie-consent-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    @include media-min('screens.sm') {
+        padding: 24px;
+        gap: 20px;
+    }
+
+    @include media-min('screens.md') {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 24px;
+    }
+}
+
+.cookie-consent-text {
+    flex: 1;
+}
+
+.cookie-consent-title {
+    font-weight: 600 !important;
+    margin-bottom: 8px !important;
+    color: inherit;
+
+    @include dark-mode {
+        color: #ffffff !important;
+    }
+}
+
+.cookie-consent-description {
+    line-height: 1.5 !important;
+    color: rgba(0, 0, 0, 0.7);
+
+    @include dark-mode {
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+}
+
+.cookie-consent-actions {
+    display: flex;
+    gap: 12px;
+    flex-direction: column;
+
+    @include media-min('screens.sm') {
+        flex-direction: row;
+        gap: 16px;
+    }
+
+    @include media-min('screens.md') {
+        flex-direction: column;
+        min-width: 140px;
+        gap: 12px;
+    }
+}
+
+.cookie-consent-decline {
+    border-color: rgba(0, 0, 0, 0.3) !important;
+    color: rgba(0, 0, 0, 0.7) !important;
+
+    &:hover {
+        border-color: rgba(0, 0, 0, 0.5) !important;
+        background-color: rgba(0, 0, 0, 0.04) !important;
+    }
+
+    @include dark-mode {
+        border-color: rgba(255, 255, 255, 0.3) !important;
+        color: rgba(255, 255, 255, 0.8) !important;
+
+        &:hover {
+            border-color: rgba(255, 255, 255, 0.5) !important;
+            background-color: rgba(255, 255, 255, 0.08) !important;
+        }
+    }
+}
+
+.cookie-consent-accept {
+    background-color: $primary-blue !important;
+
+    &:hover {
+        background-color: darken($primary-blue, 8%) !important;
+    }
+
+    @include dark-mode {
+        background-color: $primary-blue-dark !important;
+
+        &:hover {
+            background-color: lighten($primary-blue-dark, 8%) !important;
+        }
+    }
+}
+
+// Ensure popup is above everything else
+.cookie-consent-popup {
+    z-index: 10000 !important;
+}
+
+// Animation support for slide transition
+.MuiSlide-root {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+// Mobile optimizations
+@media (max-width: 640px) {
+    .cookie-consent-popup {
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        border-radius: 8px !important;
+    }
+
+    .cookie-consent-content {
+        padding: 16px;
+    }
+
+    .cookie-consent-actions {
+        .MuiButton-root {
+            font-size: 0.875rem;
+            padding: 8px 16px;
+        }
+    }
+}

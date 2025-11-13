@@ -1,0 +1,66 @@
+services:
+  # Node.js Application Container
+  app:
+    image: node:latest
+    container_name: diwa-date-app
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      # Container-specific overrides for database connectivity
+      - DATABASE_URL=postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@diwa-date-db:5432/diwa_date
+      - NODE_ENV=production
+    command: >
+      bash -c "
+        npm install --include=dev &&
+        CI=true npm run build &&
+        npm run start
+      "
+    depends_on:
+      diwa-date-db:
+        condition: service_healthy
+    networks:
+      - diwa-network
+    restart: unless-stopped
+
+  # PostgreSQL with PostGIS Container
+  diwa-date-db:
+    image: postgis/postgis:17-3.4
+    container_name: diwa-date-db
+    environment:
+      - POSTGRES_DB=diwa_date
+      - POSTGRES_USER=${POSTGRES_USERNAME}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USERNAME} -d diwa_date"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - diwa-network
+    restart: unless-stopped
+
+# Named Volumes for Data Persistence
+volumes:
+  postgres_data:
+    driver: local
+
+# Custom Network
+networks:
+  diwa-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

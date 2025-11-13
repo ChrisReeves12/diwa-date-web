@@ -1,0 +1,13 @@
+{
+    "mcpServers": {
+        "diwa-date-mcp": {
+            "command": "node",
+            "args": [
+                "/Users/chrisreeves/Development/diwa-date-mcp/build/index.js"
+            ],
+            "env": {
+                "DATABASE_URL": "postgresql://diwadateadmin:Password1!@localhost:5432/diwa_date"
+            }
+        }
+    }
+}

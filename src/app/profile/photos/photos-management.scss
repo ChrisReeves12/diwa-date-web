@@ -1,0 +1,585 @@
+@use '@/styles/globals' as globals;
+
+.photos-management {
+
+  .approval-status {
+    text-align: center;
+    font-size: 11px;
+    max-width: 80px;
+    margin: 0 auto;
+    padding-top: 10px;
+    color: #565656cc;
+
+    @include globals.media-min('screens.lg') {
+      font-size: 13px;
+      max-width: 160px;
+    }
+
+    @include globals.dark-mode {
+      color: #878787;
+    }
+  }
+
+  .no-photos-caption {
+    text-align: center;
+  }
+
+  .loader-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50vh;
+  }
+
+  .photo-grid-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-width: 90%;
+    margin: 0 auto;
+
+    @include globals.media-min('screens.md') {
+      margin: inherit;
+      max-width: inherit;
+    }
+
+    .photo-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6vw;
+
+      @include globals.media-min('screens.md') {
+        gap: 45px;
+        justify-content: center;
+      }
+
+      .photo-grid-item {
+        position: relative;
+        margin-bottom: 6px;
+        touch-action: none;
+        cursor: pointer;
+
+        .circle-loader-container {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -80%);
+          z-index: 100;
+
+          @include globals.media-min('screens.md') {
+            transform: translate(-50%, -50%);
+          }
+        }
+
+        &.rejected {
+          .photo-display-container {
+            opacity: 0.6;
+          }
+
+          .rejection-messages {
+            padding-top: 6px;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 25vw;
+            max-width: 200px;
+
+            .rejection-message {
+              text-align: center;
+            }
+          }
+        }
+
+        .under-review-label {
+          font-size: 12px;
+        }
+
+        .delete-button {
+          position: absolute;
+          border-radius: 50%;
+          right: -12px;
+          z-index: 10;
+          top: -8px;
+          border: 1px solid #bfbfbf;
+          padding: 3px;
+
+          i {
+            font-size: 18px;
+          }
+
+          background-color: globals.$light-background-color;
+
+          @include globals.dark-mode {
+            background-color: #555555;;
+            color: #ffffff;
+          }
+        }
+
+        .photo-display-container {
+          width: 25vw;
+          height: 25vw;
+          max-width: 200px;
+          max-height: 200px;
+          border-radius: 8%;
+          background-size: cover;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+
+          &.approval-in-progress {
+            opacity: 0.6;
+          }
+        }
+
+        .under-review-label {
+          font-size: 12px;
+          text-align: center;
+          padding-top: 8px;
+          color: #818181;
+          font-style: italic;
+        }
+      }
+    }
+  }
+
+  .upload-controls-container {
+    margin-top: 12px;
+    padding-left: 16px;
+    padding-right: 16px;
+    text-align: center;
+
+    .drag-instructions {
+      padding-bottom: 8px;
+      font-size: 14px;
+      color: #676767;
+
+      @include globals.dark-mode {
+        color: #b7b7b7;
+      }
+    }
+
+    .upload-progress {
+      padding-bottom: 12px;
+
+      .upload-status {
+        font-size: 14px;
+        font-weight: 500;
+        color: globals.$primary-blue;
+        margin-bottom: 8px;
+        text-align: center;
+        max-width: 500px;
+
+        @include globals.media-min('screens.md') {
+          text-align: center;
+          margin: 0 auto 10px;
+        }
+
+        @include globals.dark-mode {
+          color: globals.$primary-blue-dark;
+        }
+      }
+
+      .file-progress {
+        margin-bottom: 8px;
+        padding: 8px;
+        background-color: #f5f5f5;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        @include globals.media-min('screens.md') {
+          width: 300px;
+          margin: 0 auto 12px;
+        }
+
+        @include globals.dark-mode {
+          background-color: #333;
+        }
+
+        .file-info-container {
+          .file-name {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+
+            @include globals.dark-mode {
+              color: #aaa;
+            }
+          }
+
+          .progress-text {
+            font-size: 11px;
+            color: #666;
+            text-align: left;
+
+            @include globals.dark-mode {
+              color: #aaa;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .photo-editing-container {
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-bottom: 12px;
+
+    h4 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .back-button-container {
+      margin-bottom: 12px;
+      margin-top: -14px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #bfbfbf;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      color: #000000;
+
+      @include globals.dark-mode {
+        color: #ffffff;
+      }
+
+      @include globals.media-min('screens.md') {
+        justify-content: left;
+        gap: 16px;
+      }
+
+      button {
+        display: flex;
+        align-items: center;
+        transition: opacity 0.2s ease;
+        color: #000000;
+
+        @include globals.dark-mode {
+          color: #ffffff;
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .label {
+          font-size: 14px;
+          padding-left: 7px;
+        }
+
+        i {
+          display: block;
+          font-size: 24px;
+        }
+      }
+    }
+
+    .caption-section {
+      margin-bottom: 12px;
+
+      label {
+        display: block;
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 4px;
+        font-weight: 500;
+
+        @include globals.dark-mode {
+          color: #d2d2d2;
+        }
+      }
+
+      input {
+        width: 100%;
+        padding: 8px 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        outline: none;
+        box-sizing: border-box;
+        transition: opacity 0.2s ease;
+
+        &:focus {
+          border-color: globals.$primary-blue;
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          background-color: #f5f5f5;
+        }
+
+        @include globals.dark-mode {
+          background-color: #333;
+          border-color: #555;
+          color: #fff;
+          border-color: #bfbfbf;
+
+          &:focus {
+            border-color: globals.$primary-blue-dark;
+          }
+
+          &:disabled {
+            background-color: #2a2a2a;
+            opacity: 0.6;
+          }
+        }
+      }
+    }
+
+    .photo-crop-container {
+      background-color: #000000;
+      margin-bottom: 16px;
+      width: 100%;
+      height: 40vh;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      transition: opacity 0.2s ease;
+
+      @include globals.media-min('screens.md') {
+        height: 50vh;
+      }
+
+      @include globals.dark-mode {
+        border: 1px solid #757575;
+      }
+
+      &.saving {
+        opacity: 0.7;
+        pointer-events: none;
+
+        &::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(255, 255, 255, 0.8);
+          z-index: 10;
+
+          @include globals.dark-mode {
+            background-color: rgba(0, 0, 0, 0.8);
+          }
+        }
+      }
+
+      @include globals.dark-mode {
+        background-color: #2a2a2a;
+      }
+
+      img {
+        position: relative;
+        z-index: 1;
+      }
+
+      .crop-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 2;
+        pointer-events: none;
+
+        .crop-dark {
+          position: absolute;
+          background-color: rgba(0, 0, 0, 0.4);
+          pointer-events: none;
+        }
+
+        .crop-area {
+          position: absolute;
+          border: 2px solid #fff;
+          box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+          cursor: move;
+          pointer-events: auto;
+          touch-action: none;
+
+          .crop-handle {
+            position: absolute;
+            background-color: #fff;
+            border: 2px solid #333;
+            pointer-events: auto;
+
+            &.corner {
+              width: 20px;
+              height: 20px;
+              border-radius: 50%;
+
+              &.nw {
+                top: -10px;
+                left: -10px;
+                cursor: nw-resize;
+              }
+
+              &.ne {
+                top: -10px;
+                right: -10px;
+                cursor: ne-resize;
+              }
+
+              &.sw {
+                bottom: -10px;
+                left: -10px;
+                cursor: sw-resize;
+              }
+
+              &.se {
+                bottom: -10px;
+                right: -10px;
+                cursor: se-resize;
+              }
+            }
+          }
+
+          .crop-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+
+            .grid-line {
+              position: absolute;
+              background-color: rgba(255, 255, 255, 0.3);
+
+              &.horizontal {
+                left: 0;
+                right: 0;
+                height: 1px;
+              }
+
+              &.vertical {
+                top: 0;
+                bottom: 0;
+                width: 1px;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .crop-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 12px;
+
+      .reset-button, .preview-button {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        color: white;
+        transition: all 0.2s ease;
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        i {
+          font-size: 18px;
+        }
+      }
+
+      .reset-button {
+        background-color: #a1a1a1;
+
+        @include globals.dark-mode {
+          background-color: #858585;
+        }
+      }
+
+      .preview-button {
+        background-color: globals.$primary-blue;
+      }
+    }
+
+  }
+
+  // Image Viewer Overlay for Preview
+  .image-viewer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    .image-viewer-content {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+
+      .image-viewer-image-wrapper {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        max-width: 90%;
+        max-height: 90%;
+
+        .image-viewer-image-container {
+          position: relative;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          max-width: 100%;
+          max-height: 100%;
+
+          .image-viewer-image {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+          }
+        }
+
+        .image-viewer-caption {
+          background-color: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 12px 16px;
+          border-radius: 6px;
+          margin-top: 12px;
+          font-size: 14px;
+          text-align: center;
+          max-width: 400px;
+          line-height: 1.4;
+
+          @include globals.dark-mode {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+          }
+        }
+      }
+    }
+  }
+}

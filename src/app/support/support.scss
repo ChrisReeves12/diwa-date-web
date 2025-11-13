@@ -1,0 +1,285 @@
+@use '@/styles/globals' as globals;
+
+.support-container {
+    padding: 2rem 1rem;
+    max-width: 800px;
+    margin: 0 auto;
+    min-height: 90vh;
+
+    h1 {
+        font-family: globals.$default-font;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: globals.$primary-blue;
+
+        @include globals.dark-mode {
+            color: globals.$primary-blue-dark;
+        }
+    }
+
+    p {
+        font-family: globals.$default-font;
+        color: #666;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+
+        @include globals.dark-mode {
+            color: #ffffff;
+        }
+    }
+
+    // Success alert styles (matching personal-information-form)
+    .success-alert {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+        display: flex;
+        justify-content: space-between;
+
+        @include globals.dark-mode {
+            background: #155724;
+            border-color: #28a745;
+        }
+
+        &.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .success-alert-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            .success-icon {
+                color: #28a745;
+                margin-right: 0.5rem;
+                flex-shrink: 0;
+
+                @include globals.dark-mode {
+                    color: #c3e6cb;
+                }
+            }
+
+            .success-message-text {
+                font-size: 0.9rem;
+                color: #155724;
+                margin: 0;
+                flex-grow: 1;
+
+                @include globals.dark-mode {
+                    color: #c3e6cb;
+                }
+            }
+        }
+
+        .success-close-btn {
+            background: none;
+            border: none;
+            color: #155724;
+            cursor: pointer;
+            padding: 0.25rem;
+            margin-left: 0.5rem;
+            border-radius: 3px;
+            flex-shrink: 0;
+
+            @include globals.dark-mode {
+                color: #c3e6cb;
+            }
+
+            &:hover {
+                background-color: rgba(21, 87, 36, 0.1);
+
+                @include globals.dark-mode {
+                    background-color: rgba(195, 230, 203, 0.1);
+                }
+            }
+        }
+    }
+
+    .support-form-section {
+        margin-top: 1.5rem;
+
+        p {
+            padding-top: 0;
+            margin-top: 0;
+        }
+
+        .additional-links-section {
+            padding-bottom: 30px;
+
+            h3 {
+                margin-top: 0;
+                margin-bottom: 0;
+                padding-bottom: 5px;
+                font-size: 17px;
+            }
+
+            ul {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+
+                li {
+                    a {
+                        color: globals.$primary-blue;
+                        text-decoration: none;
+                    }
+                }
+            }
+        }
+
+        .support-form {
+            .form-section {
+                margin-bottom: 2rem;
+
+                .input-container {
+                    margin-bottom: 1.5rem;
+
+                    label {
+                        display: block;
+                        font-size: 14px;
+                        margin-bottom: 0.5rem;
+                        font-weight: 500;
+                        color: #333;
+
+                        @include globals.dark-mode {
+                            color: #ffffff;
+                        }
+                    }
+
+                    select {
+                        border: none;
+                        outline-width: 0;
+                        background-color: transparent;
+                        padding-bottom: 8px;
+                        font-size: 15px;
+                        border-bottom: 1px solid #ccc;
+                        width: 100%;
+                        display: block;
+                        font-family: globals.$default-font;
+                        color: #000000;
+
+                        @include globals.dark-mode {
+                            color: #ffffff;
+                            border-bottom-color: #666;
+                        }
+
+                        &:focus {
+                            border-bottom-color: globals.$primary-blue;
+                        }
+
+                        &.error {
+                            border-bottom-color: globals.$error-color-light;
+
+                            @include globals.dark-mode {
+                                border-bottom-color: globals.$error-color-dark;
+                            }
+                        }
+                    }
+
+                    textarea {
+                        box-sizing: border-box;
+                        border: 1px solid #ccc;
+                        outline-width: 0;
+                        background-color: transparent;
+                        padding: 12px;
+                        font-size: 15px;
+                        width: 100%;
+                        display: block;
+                        font-family: globals.$default-font;
+                        border-radius: 4px;
+                        resize: vertical;
+                        min-height: 120px;
+                        color: #000000;
+
+                        @include globals.dark-mode {
+                            color: #ffffff;
+                            border-color: #666;
+                            background-color: transparent;
+                        }
+
+                        &:focus {
+                            border-color: globals.$primary-blue;
+                        }
+
+                        &.error {
+                            border-color: globals.$error-color-light;
+
+                            @include globals.dark-mode {
+                                border-color: globals.$error-color-dark;
+                            }
+                        }
+
+                        &::placeholder {
+                            color: #999;
+
+                            @include globals.dark-mode {
+                                color: #888;
+                            }
+                        }
+                    }
+
+                    .character-counter {
+                        font-size: 12px;
+                        color: #666;
+                        text-align: right;
+                        margin-top: 0.5rem;
+
+                        @include globals.dark-mode {
+                            color: #999;
+                        }
+
+                        .min-warning {
+                            color: globals.$error-color-light;
+
+                            @include globals.dark-mode {
+                                color: globals.$error-color-dark;
+                            }
+                        }
+                    }
+
+                    &.error {
+                        label {
+                            color: globals.$error-color-light;
+
+                            @include globals.dark-mode {
+                                color: globals.$error-color-dark;
+                            }
+                        }
+                    }
+
+                    .error-message {
+                        font-size: 13px;
+                        color: globals.$error-color-light;
+                        padding-top: 8px;
+
+                        @include globals.dark-mode {
+                            color: globals.$error-color-dark;
+                        }
+                    }
+                }
+
+                .form-actions {
+                    display: flex;
+                    justify-content: flex-start;
+                    margin-top: 2rem;
+
+                    .btn-primary {
+                        padding: 12px 24px;
+                        font-size: 16px;
+                        font-weight: 500;
+                        border: none;
+                        outline: none;
+                    }
+                }
+            }
+        }
+    }
+}

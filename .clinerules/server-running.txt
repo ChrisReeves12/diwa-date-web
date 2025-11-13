@@ -1,0 +1,1 @@
+Do not start the server with "npm run dev" or anything like that, because the server will already be running.

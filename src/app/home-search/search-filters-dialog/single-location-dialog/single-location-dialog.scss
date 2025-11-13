@@ -1,0 +1,112 @@
+@use '../../../../styles/globals.scss' as globals;
+
+.search-from-location-container-modal {
+  .title-section {
+    border-bottom: 1px solid globals.$primary-blue;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    h2 {
+      font-size: 18px;
+      font-weight: bold;
+      color: globals.$primary-blue;
+      padding-left: 1rem;
+    }
+
+    .close-button-container {
+      padding-right: 12px;
+
+      i {
+        font-size: 26px;
+        color: #878787;
+
+        @include globals.dark-mode() {
+          color: #ffffff;
+        }
+      }
+    }
+  }
+
+  .body-section {
+    padding: 0.8rem;
+
+    @include globals.media-min('screens.md') {
+      padding: 1.4rem;
+    }
+
+    .form-section {
+      max-width: 95%;
+      margin: 0 auto;
+
+      @include globals.media-min('screens.md') {
+        max-width: 70%;
+      }
+
+      .inline-form-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+
+        .location-search-container {
+          flex: 1;
+        }
+
+        button.all-localities {
+          background-color: globals.$primary-purple;
+          color: #fff;
+          border: none;
+          padding: 0.5rem 0.5rem;
+          cursor: pointer;
+          width: 50px;
+        }
+      }
+
+      .input-container {
+        padding-bottom: 1.5rem;
+
+        &.max-distance-container {
+          padding-top: 12px;
+          padding-bottom: 10px;
+
+          select {
+            padding-bottom: 10px;
+            width: 100%;
+            @include globals.underlined-select();
+          }
+        }
+
+        &.country {
+          input {
+            border: 0;
+          }
+        }
+
+        label {
+          display: block;
+          font-weight: bold;
+          padding-bottom: 0.5rem;
+        }
+
+        .confirm-button {
+          margin-top: 15px;
+          background-color: globals.$primary-blue;
+          color: #fff;
+          border: none;
+          padding: 0.5rem 0.5rem;
+          cursor: pointer;
+          width: 100%;
+
+          &:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+
+            @include globals.dark-mode {
+              background-color: #555;
+            }
+          }
+        }
+      }
+    }
+  }
+}

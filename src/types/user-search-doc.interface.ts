@@ -1,0 +1,55 @@
+import { UserPhoto } from "@/types/user-photo.type";
+
+export interface UserSearchDoc {
+    id: number;
+    display_name: string;
+    first_name: string;
+    last_name: string;
+    main_photo?: string;
+    photos?: UserPhoto[];
+    number_of_photos: number;
+    height: number;
+    last_active_at?: string;
+    created_at: string;
+    suspended_at?: string;
+    email_verified_at?: string;
+    date_of_birth: string;
+    marital_status?: string;
+    body_type?: string;
+    seeking_num_of_photos?: number;
+    seeking_min_height?: number;
+    seeking_max_height?: number;
+    seeking_min_age?: number;
+    seeking_max_age?: number;
+    seeking_max_distance?: number;
+    blocked_user_ids: number[];
+    gender: string;
+    smoking?: string;
+    drinking?: string;
+    wants_children?: string;
+    education?: string;
+    has_children?: string;
+    country: string;
+    location_name: string;
+    location_coordinates: {
+        lat: number;
+        lon: number;
+    };
+    ethnicities?: string[];
+    religions?: string[];
+    languages?: string[];
+    interests?: string[];
+    seekingGender?: string;
+    ethnic_preferences?: string[];
+    religious_preferences?: string[];
+    education_preferences?: string[];
+    body_type_preferences?: string[];
+    has_children_preferences?: string[];
+    wants_children_preferences?: string[];
+    interest_preferences?: string[];
+    language_preferences?: string[];
+    seeking_countries?: string[];
+    marital_status_preferences?: string[];
+    drinking_preferences?: string[];
+    smoking_preferences?: string[];
+}

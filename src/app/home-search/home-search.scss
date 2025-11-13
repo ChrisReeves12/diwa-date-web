@@ -1,0 +1,174 @@
+@use '../../styles/globals.scss' as globals;
+
+.home-search-container {
+  .search-filters-section {
+    border-bottom: 1px solid #bfbfbf;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #ffffff;
+    position: fixed;
+    z-index: 5;
+    top: 105px;
+    padding-right: 10px;
+    width: 100%;
+
+    @include globals.media-min('screens.md') {
+      position: sticky;
+      top: 139px;
+      padding-right: 8px;
+    }
+
+    @include globals.dark-mode {
+      color: white;
+      border-bottom-color: #ffffff;
+      background-color: globals.$dark-background-color;
+    }
+
+    .filter-section {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding-bottom: 0.8rem;
+      padding-top: 0.8rem;
+
+      .age-order-by-container {
+        display: none;
+        gap: 1.8rem;
+
+        @include globals.media-min('screens.md') {
+          display: flex;
+        }
+
+        .filter {
+          label {
+            font-weight: bold;
+            padding-bottom: 0.4rem;
+            display: block;
+            font-size: 15px;
+          }
+
+          .input-container {
+            select {
+              @include globals.underlined-select;
+            }
+          }
+        }
+      }
+
+      .search-filters-button {
+        color: globals.$primary-blue;
+        font-weight: bold;
+        font-size: 14px;
+        width: 68px;
+
+        @include globals.dark-mode {
+          color: globals.$primary-blue-dark;
+        }
+      }
+    }
+
+    .paginator-section {
+      padding-bottom: 0.8rem;
+      padding-top: 0.8rem;
+      padding-right: 6px;
+
+      @include globals.media-min('screens.md') {
+        padding-right: inherit;
+      }
+
+      .paginator-container {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+
+        @include globals.media-min('screens.md') {
+          gap: 12px;
+        }
+
+        .previous-button,
+        .next-button {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 8px;
+          ;
+          border: 1px solid globals.$primary-blue;
+          background-color: white;
+          color: globals.$primary-blue;
+          border-radius: 6px;
+          font-weight: 500;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+
+          @include globals.media-min('screens.md') {
+            padding: 8px 16px;
+          }
+
+          @include globals.dark-mode {
+            border-color: globals.$primary-blue-dark;
+            background-color: globals.$dark-background-color;
+            color: globals.$primary-blue-dark;
+          }
+
+          &:hover {
+            background-color: globals.$primary-blue;
+            color: white;
+
+            @include globals.dark-mode {
+              background-color: globals.$primary-blue-dark;
+              color: white;
+            }
+          }
+
+          &:active {
+            transform: translateY(1px);
+          }
+
+          span {
+            white-space: nowrap;
+          }
+
+          svg {
+            font-size: 16px;
+          }
+        }
+      }
+    }
+  }
+
+  .search-results-section {
+    padding-top: 124px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 8px;
+    padding-left: 8px;
+
+    @include globals.media-min('screens.md') {
+      padding-top: 10px;
+      padding-right: 0;
+      padding-left: 0;
+    }
+
+    @include globals.media-min('screens.lg') {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .center-screen-loader-container {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+  }
+}
+
+.info-bar-shown {
+  .search-filters-section {
+    top: 209px !important;
+  }
+}

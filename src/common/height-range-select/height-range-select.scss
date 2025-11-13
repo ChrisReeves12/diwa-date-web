@@ -1,0 +1,24 @@
+@use '../../styles/globals' as globals;
+
+.height-range-select-container {
+  display: flex;
+  align-items: center;
+
+  .from-label {
+    margin-right: 0.8rem;
+    display: none;
+
+    @include globals.media-min('screens.md') {
+      display: block;
+    }
+  }
+
+  .to-label {
+    margin: 0 0.5rem;
+  }
+
+  select {
+    width: 8.5rem;
+    @include globals.underlined-select;
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(find:*)",
+      "Bash(rm:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run dev:*)",
+      "Bash(cp:*)",
+      "Bash(npm start)",
+      "Bash(npx prisma:*)",
+      "WebFetch(domain:www.ups.com)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "mcp__diwa-date-mcp__describe-db-table",
+      "mcp__diwa-date-mcp__execute-query",
+      "Bash(npm install:*)",
+      "Bash(cat:*)",
+      "mcp__diwa-date-mcp__list-db-tables",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(npm run start:*)",
+      "Bash(git rm:*)",
+      "Bash(grep:*)",
+      "Bash(docker run:*)",
+      "mcp__playwright__playwright_click",
+      "mcp__playwright__playwright_screenshot",
+      "mcp__playwright__playwright_fill",
+      "mcp__playwright__playwright_get_visible_html",
+      "mcp__playwright__playwright_evaluate",
+      "mcp__playwright__playwright_console_logs",
+      "mcp__playwright__playwright_navigate",
+      "mcp__playwright__playwright_close",
+      "Bash(echo:*)",
+      "Bash(npm run cli:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": false
+}

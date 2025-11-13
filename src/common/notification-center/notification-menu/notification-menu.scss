@@ -1,0 +1,263 @@
+@use '../../../styles/globals.scss' as globals;
+
+.notification-menu-container {
+  background-color: globals.$light-background-color;
+  color: #000000;
+  min-height: 100%;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    width: calc(100% - 32px);
+    height: calc(100vh - 32px);
+    margin: 16px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  @include globals.dark-mode {
+    background-color: #1b222d;
+    color: #ffffff;
+    border: 1px solid #eaeaea;
+  }
+
+  .header-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 8px 12px;
+    gap: 10px;
+    border-bottom: 1px solid globals.$primary-blue;
+    position: relative;
+
+    @include globals.dark-mode {
+      border-bottom-color: #ffffff;
+    }
+
+    .close-button {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: globals.$primary-blue;
+      border-radius: 50%;
+      transition: background-color 0.2s ease;
+
+      @include globals.dark-mode {
+        color: #ffffff;
+      }
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+
+        @include globals.dark-mode {
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+      }
+
+      i {
+        font-size: 24px;
+      }
+    }
+
+    .title-img-container {
+      $notification-title-img-size: 24px;
+      width: $notification-title-img-size;
+      height: $notification-title-img-size;
+
+      img {
+        max-width: 100%;
+        max-height: 100%;
+      }
+    }
+
+    .title {
+      font-size: 16px;
+      font-weight: 500;
+      color: globals.$primary-blue;
+      line-height: 20px;
+      transform: translateY(3px);
+
+      @include globals.dark-mode {
+        color: #ffffff;
+      }
+    }
+  }
+
+  .list-item-container {
+    flex: 1;
+    overflow-y: auto;
+
+    @media (max-width: 768px) {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .empty-notifications {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+      text-align: center;
+      min-width: 350px;
+
+      @media (max-width: 768px) {
+        min-width: calc(100% - 32px);
+      }
+
+      .empty-notifications-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+
+        svg {
+          color: globals.$primary-blue;
+          opacity: 0.6;
+
+          @include globals.dark-mode {
+            color: #ffffff;
+            opacity: 0.7;
+          }
+        }
+
+        .empty-message {
+          color: #666666;
+          font-size: 14px;
+          font-weight: 400;
+          line-height: 20px;
+          max-width: 200px;
+
+          @include globals.dark-mode {
+            color: #cccccc;
+          }
+        }
+      }
+    }
+
+    .notification-list-item {
+      display: flex;
+      font-size: 14px;
+      gap: 10px;
+      padding: 10px;
+      border-bottom: 1px solid #bfbfbf;
+      min-width: 350px;
+
+      @media (max-width: 768px) {
+        min-width: calc(100% - 32px);
+      }
+
+      @include globals.dark-mode {
+        border-bottom-color: #516a96;
+      }
+
+      &:last-of-type {
+        border-bottom: none;
+      }
+
+      .info-button-container {
+        flex: 1;
+        gap: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        &.notifications {
+          display: block;
+        }
+
+        .info-section {
+          max-width: 190px;
+          color: #000000;
+
+          &.notification {
+            max-width: inherit;
+          }
+
+          @include globals.dark-mode {
+            color: #ffffff;
+          }
+
+          .name-section {
+            font-weight: bold;
+          }
+
+          .received-at-message {
+            color: globals.$primary-blue;
+            font-style: italic;
+            font-size: 13px;
+
+            @include globals.dark-mode {
+              color: globals.$primary-blue-dark;
+            }
+          }
+        }
+
+        .button-section {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding-right: 10px;
+
+          .num-of-messages {
+            background-color: globals.$primary-blue;
+            color: #ffffff;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            font-weight: bold;
+            align-items: center;
+            justify-content: center;
+
+            @include globals.dark-mode() {
+              background-color: globals.$primary-blue-dark;
+            }
+          }
+
+          button {
+            border-radius: 50%;
+            $notification-list-item-btn-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            width: $notification-list-item-btn-size;
+            height: $notification-list-item-btn-size;
+
+            i {
+              font-size: 18px;
+            }
+
+            &.like {
+              background-color: globals.$primary-blue;
+              color: #ffffff;
+
+              @include globals.dark-mode {
+                background-color: globals.$primary-blue-dark;
+              }
+            }
+
+            &.pass {
+              background-color: #b4b4b4;
+              color: #ffffff;
+
+              @include globals.dark-mode {
+                background-color: #7d7d7d;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
