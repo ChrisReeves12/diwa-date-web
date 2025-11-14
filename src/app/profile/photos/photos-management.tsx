@@ -3,7 +3,14 @@
 import './photos-management.scss';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PhotoWithUrl } from '@/types/upload-progress.interface';
-import { getUserPhotos, saveCropData, uploadPhoto, deletePhoto, updatePhotoSortOrder } from './photos.actions';
+import {
+    getUserPhotos,
+    saveCropData,
+    uploadPhoto,
+    deletePhoto,
+    updatePhotoSortOrder,
+    resolveAndUpdateMainPhoto
+} from './photos.actions';
 import { showAlert } from '@/util';
 import { Button, CircularProgress, Tooltip } from "@mui/material";
 import { InfoCircleIcon, SaveIcon, TimesIcon, RedoIcon, EyeIcon } from "react-line-awesome";
@@ -690,60 +697,60 @@ export function PhotosManagement() {
         let successfulCount = 0;
         const filesToReview: { imageFile: File, s3Path: string }[] = [];
 
-        try {
-            const chunks = _.chunk(validFiles, UPLOAD_GROUP_SIZE);
-            for (const chunk of chunks) {
-                const uploadChunkPromises = chunk.map(async (file) => {
-                    try {
-                        setUploadProgress(prev => ({...prev, [file.name]: 0}));
+        const chunks = _.chunk(validFiles, UPLOAD_GROUP_SIZE);
+        for (const chunk of chunks) {
+            const uploadChunkPromises = chunk.map(async (file) => {
+                try {
+                    setUploadProgress(prev => ({...prev, [file.name]: 0}));
 
-                        const formData = new FormData();
-                        formData.append('file', file);
+                    const formData = new FormData();
+                    formData.append('file', file);
 
-                        const response = await uploadPhoto(formData);
+                    const response = await uploadPhoto(formData);
 
-                        if (response.success) {
-                            setUploadProgress(prev => ({...prev, [file.name]: 100}));
-                            filesToReview.push({imageFile: file, s3Path: response.photo.path});
-                            successfulCount += 1;
-                            return response.photo;
-                        }
-
-                        throw new Error(response.message || 'Upload failed');
-                    } catch (error) {
-                        console.error(`Upload error for ${file.name}:`, error);
-
-                        let errorMessage = `Failed to upload ${file.name}.`;
-                        if (error instanceof Error) {
-                            if (error.message.includes('corrupted') || error.message.includes('Invalid SOS')) {
-                                errorMessage = `${file.name} appears to be corrupted. Try taking the photo again.`;
-                            } else if (error.message.includes('too large')) {
-                                errorMessage = `${file.name} is too large. Please use a smaller image.`;
-                            } else if (error.message.includes('Invalid file type')) {
-                                errorMessage = `${file.name} is not a supported format.`;
-                            }
-                        }
-
-                        showAlert(errorMessage);
-                        return null;
+                    if (response.success) {
+                        setUploadProgress(prev => ({...prev, [file.name]: 100}));
+                        filesToReview.push({imageFile: file, s3Path: response.photo.path});
+                        successfulCount += 1;
+                        return response.photo;
                     }
-                });
 
-                await Promise.all(uploadChunkPromises);
-            }
+                    throw new Error(response.message || 'Upload failed');
+                } catch (error) {
+                    console.error(`Upload error for ${file.name}:`, error);
 
-            if (successfulCount > 0) {
-                await loadPhotos();
-            }
-        } catch (error) {
-            hasError = true;
-            console.error('Upload process error:', error);
-            showAlert('An error occurred during upload. Please try again.');
-        } finally {
-            setIsUploading(false);
-            setUploadProgress({});
-            event.target.value = ''; // Reset file input
+                    let errorMessage = `Failed to upload ${file.name}.`;
+                    if (error instanceof Error) {
+                        if (error.message.includes('corrupted') || error.message.includes('Invalid SOS')) {
+                            errorMessage = `${file.name} appears to be corrupted. Try taking the photo again.`;
+                        } else if (error.message.includes('too large')) {
+                            errorMessage = `${file.name} is too large. Please use a smaller image.`;
+                        } else if (error.message.includes('Invalid file type')) {
+                            errorMessage = `${file.name} is not a supported format.`;
+                        }
+                    }
+
+                    showAlert(errorMessage);
+                    return null;
+                }
+            });
+
+            await Promise.all(uploadChunkPromises);
         }
+
+        if (successfulCount > 0) {
+            const mainPhotoUpdateRes = await resolveAndUpdateMainPhoto();
+            if (mainPhotoUpdateRes.error) {
+                console.error(mainPhotoUpdateRes.error);
+                showAlert('An error occurred while updating your main photo. Please update your main photo in your Profile settings', 'Photo Upload Error');
+            }
+
+            await loadPhotos();
+        }
+
+        setIsUploading(false);
+        setUploadProgress({});
+        event.target.value = ''; // Reset file input
 
         // Check photos for approval
         if (!hasError && filesToReview.length > 0) {

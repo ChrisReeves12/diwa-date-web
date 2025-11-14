@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { PhotoWithUrl } from "@/types/upload-progress.interface";
 import { S3Helper } from "../../../server-side-helpers/s3.helper";
 import { reviewPhotos } from "@/server-side-helpers/compliance.helper";
+import { logError } from "@/server-side-helpers/logging.helpers";
 
 // Helper function to remove media root from URL if present
 function cleanImagePath(imagePath?: string): string | undefined {
@@ -179,6 +180,37 @@ export async function saveCropData(photoPath: string, cropData: CropData, captio
     console.error('Save crop data error:', error);
     throw new Error(`Failed to save crop data: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
+}
+
+/**
+ * Updates the main photo for the current user.
+ */
+export async function resolveAndUpdateMainPhoto() {
+    try {
+        const currentUser = await getCurrentUser(await cookies(), false);
+        if (!currentUser) {
+            throw new Error('User not found');
+        }
+
+        const photos = currentUser.photos as unknown as UserPhoto[] || [];
+        if (photos.length > 0) {
+            const mainPhoto = photos.find(p => !p.isRejected);
+
+            await prismaWrite.users.update({
+                where: { id: currentUser.id },
+                data: {
+                    mainPhoto: mainPhoto?.path || null,
+                    updatedAt: new Date(),
+                    numOfPhotos: photos.filter(p => !p.isRejected).length
+                }
+            });
+        }
+
+        return {success: true};
+    } catch (error: any) {
+        logError(error);
+        return {success: false, error: error.message};
+    }
 }
 
 /**
