@@ -32,7 +32,7 @@ export function PhotosStep({
 }: PhotosStepProps) {
     const MIN_PHOTOS = 3;
     const MAX_PHOTOS = 10;
-    const REVIEW_GROUP_SIZE = 8;
+    const REVIEW_GROUP_SIZE = 5;
     const UPLOAD_GROUP_SIZE = 5;
     const [photos, setPhotos] = useState<PhotoWithUrl[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -235,49 +235,52 @@ export function PhotosStep({
                             }
                             return Array.from(byPath.values());
                         });
-                        const reviewPromises = chunk.map(async (f) => {
-                            const formData = new FormData();
-                            formData.append('files', f.imageFile);
-                            formData.append('s3Paths', f.s3Path);
 
-                            const controller = new AbortController();
-                            const timeoutId = setTimeout(() => controller.abort(), 30000);
+                        const formData = new FormData();
+                        for (const { imageFile, s3Path } of chunk) {
+                            formData.append('files', imageFile);
+                            formData.append('s3Paths', s3Path);
+                        }
 
-                            try {
-                                const response = await fetch('/api/photos/review', {
-                                    method: 'POST',
-                                    body: formData,
-                                    signal: controller.signal
-                                });
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-                                if (!response.ok) {
-                                    const err = await response.json().catch(() => ({}));
-                                    throw new Error(err.error || 'Failed to review photo');
-                                }
-
-                                const reviewResults = await response.json();
-                                return { s3Path: f.s3Path, review: (reviewResults.photos || [])[0] };
-                            } finally {
-                                clearTimeout(timeoutId);
-                            }
-                        });
-
-                        const chunkResults: { s3Path: string, review: any }[] = await Promise.all(reviewPromises);
-
-                        setPhotoReviews(prevState => {
-                            return prevState.map(p => {
-                                const r = chunkResults.find(cr => cr.s3Path === p.s3Path);
-                                if (r && r.review) {
-                                    return { ...p, status: !r.review.isRejected ? 'Approved' : (r.review.messages || []).join(', ') };
-                                }
-
-                                return p;
+                        try {
+                            const response = await fetch('/api/photos/review', {
+                                method: 'POST',
+                                body: formData,
+                                signal: controller.signal
                             });
-                        });
 
-                        setValidPhotoCount(prevState =>
-                            prevState + chunkResults.filter(r => r.review && !r.review.isRejected).length);
+                            if (!response.ok) {
+                                const err = await response.json().catch(() => ({}));
+                                throw new Error(err.error || 'Failed to review photos');
+                            }
+
+                            const reviewResults = await response.json();
+                            setPhotoReviews(prevState => {
+                                return prevState.map(p => {
+                                    const r = (reviewResults.photos || []).find((res: any) => res.s3Path === p.s3Path);
+                                    if (r) {
+                                        return { ...p, status: !r.isRejected ? 'Approved' : (r.messages || []).join(', ') };
+                                    }
+                                    return p;
+                                });
+                            });
+                        } finally {
+                            // Ensure all photos are out of checking/queued status
+                            setPhotoReviews(prevState => {
+                                return prevState.map(p => {
+                                    if (p.status.includes('Checking') || p.status.includes('Queued')) {
+                                        return { ...p, status: '' };
+                                    }
+                                    return p;
+                                });
+                            });
+                            clearTimeout(timeoutId);
+                        }
                     }
+
                     // Reload photos to get updated status from database
                     await loadPhotos();
                 } catch (error) {
