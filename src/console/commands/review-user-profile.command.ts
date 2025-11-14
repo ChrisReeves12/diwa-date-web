@@ -17,7 +17,7 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
             [
                 {
                     option: '-u, --user-id <userId>',
-                    description: 'ID of the user to review',
+                    description: 'ID(s) of the user(s) to review (comma-delimited for multiple users)',
                     required: false
                 }
             ]
@@ -31,29 +31,36 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
     async handle(prog: Command): Promise<number> {
         const options = prog.opts();
 
-        // Handle single user review
         if (options.userId) {
-            const userId = parseInt(options.userId, 10);
+            const userIdStrings = options.userId.split(',');
+            let hasErrors = false;
 
-            if (isNaN(userId)) {
-                console.error('Invalid user ID provided.');
-                return 1;
+            for (const userIdStr of userIdStrings) {
+                const userId = parseInt(userIdStr.trim(), 10);
+
+                if (isNaN(userId)) {
+                    console.error(`Invalid user ID provided: ${userIdStr.trim()}`);
+                    hasErrors = true;
+                    continue;
+                }
+
+                console.log(`Reviewing user ${userId}...`);
+                const result = await this.reviewUser(userId);
+
+                if (result?.error) {
+                    console.error(`Error reviewing user ${userId}: ${result.error}`);
+                    Sentry.logger.error('Error during user review:', { userId, error: result.error });
+                    // Continue to next user instead of failing completely
+                } else {
+                    console.log(`Successfully reviewed user ${userId}`);
+                }
             }
 
-            // For single user review, we'll do a full review
-            const result = await this.reviewUser(userId);
-
-            if (result?.error) {
-                console.error(result.error);
-                Sentry.logger.error('Error during user reviews polling job:', { error: result.error });
-                return 1;
-            }
-
-            return 0;
+            return hasErrors ? 1 : 0;
         }
 
         // Batch processing via userReviews has been removed.
-        console.error('Please provide a --user-id to review a specific user.');
+        console.error('Please provide a --user-id to review user(s).');
         return 1;
     }
 
@@ -64,7 +71,8 @@ export default class ReviewUserProfileCommand extends ConsoleCommand {
     async reviewUser(userId: number) {
         const user = await getUser(userId);
         if (!user) {
-            return { error: 'User not found', success: false };
+            console.log(`User ${userId} not found, skipping...`);
+            return { error: null, success: true };
         }
 
         if (user.suspendedAt) {
