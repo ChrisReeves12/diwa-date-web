@@ -1,365 +1,591 @@
-# DIWA Date Web - Repository Overview
+# DIWA Date Web Application
 
-## Project Summary
+A comprehensive dating web application built with Next.js 15, featuring real-time messaging, user matching, subscription management, and multi-datacenter support.
 
-**DIWA Date Web** is a Next.js-based dating application with a comprehensive feature set including user profiles, messaging, image uploads, and community interactions. The project is built with modern web technologies and follows a monolithic architecture with clear separation between frontend components, backend API routes, and shared utilities.
+## Table of Contents
 
-- **Repository**: https://github.com/ChrisReeves12/diwa-date-web
-- **Tech Stack**: Next.js 15, React 19, TypeScript, Prisma, PostgreSQL
-- **Package Manager**: npm
-- **Node Version**: Requires Node 18+
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Architecture](#architecture)
+- [Core Features](#core-features)
+- [Development](#development)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Documentation](#documentation)
+
+## Overview
+
+DIWA Date is a modern dating platform that provides users with location-based matching, real-time messaging, photo management, and subscription-based premium features. The application is designed with scalability in mind, supporting multi-datacenter deployment with centralized WebSocket and messaging infrastructure.
+
+**Version:** 0.1.0
+
+## Tech Stack
+
+### Frontend
+- **Next.js 15.3.2** - React framework with App Router
+- **React 19** - UI library
+- **Material-UI (MUI) 6.4.8** - Component library
+- **Emotion** - CSS-in-JS styling
+- **Sass 1.86.0** - Additional styling with SCSS modules
+- **Tailwind CSS 4** - Utility-first CSS framework
+- **Socket.io Client** - Real-time WebSocket communication
+- **React Icons & Line Awesome** - Icon libraries
+
+### Backend & Infrastructure
+- **Node.js** - Runtime environment
+- **Next.js API Routes** - Backend API endpoints
+- **PostgreSQL** - Primary database with PostGIS for geolocation
+- **Prisma 6.5.0** - ORM with read/write replica support
+- **Redis (ioredis)** - Session storage and caching
+- **RabbitMQ (amqplib)** - Message queue for notifications
+- **Socket.io** - WebSocket server for real-time features
+
+### Cloud Services & APIs
+- **AWS S3** - Photo storage with presigned URLs
+- **Mailgun** - Email delivery service
+- **OpenAI API** - AI-powered content moderation
+- **Google Maps API** - Location services and geocoding
+- **IP2Location** - Geolocation from IP addresses
+- **PayPal API** - Payment processing
+- **Sentry** - Error tracking and monitoring
+
+### Development & Testing
+- **TypeScript 5** - Type safety
+- **Jest 30** - Unit testing
+- **Playwright 1.53** - E2E testing
+- **Testing Library** - React component testing
+- **ESLint 9** - Code quality and linting
+- **tsx & ts-node** - TypeScript execution
+- **Commander.js** - CLI tool framework
+
+### Additional Tools
+- **Winston** - Structured logging
+- **bcryptjs** - Password hashing
+- **jsonwebtoken** - Authentication tokens
+- **Sharp** - Image processing
+- **ssim.js** - Image similarity detection
+- **Moment.js** - Date/time manipulation
+- **RxJS** - Reactive programming utilities
 
 ## Project Structure
 
 ```
 diwa-date-web/
 ├── src/
-│   ├── app/                          # Next.js app directory (pages and layouts)
-│   │   ├── api/                      # API routes
-│   │   ├── account/                  # Account management pages
-│   │   ├── login/                    # Authentication
-│   │   ├── registration/             # User registration
-│   │   ├── profile/                  # User profile pages
-│   │   ├── home-search/              # Search and discovery
-│   │   ├── messages/                 # Messaging system
-│   │   ├── likes/                    # Likes/matches functionality
-│   │   ├── onboarding/               # User onboarding flow
-│   │   ├── upgrade/                  # Premium features
-│   │   ├── guest-home/               # Public landing page
-│   │   ├── support/                  # Help/support pages
-│   │   ├── privacy-policy/           # Legal pages
-│   │   ├── terms-of-service/         # Legal pages
-│   │   └── community-guidelines/     # Legal pages
-│   ├── common/                       # Shared components
-│   │   ├── site-top-bar/            # Navigation bar component
-│   │   └── context/                 # React context providers
-│   ├── server-side-helpers/         # Server-side utilities (Prisma, auth, etc.)
-│   ├── lib/                         # Utility libraries
-│   ├── utils/                       # Helper functions
-│   ├── hooks/                       # Custom React hooks
-│   ├── types/                       # TypeScript type definitions
-│   ├── styles/                      # Global and SCSS stylesheets
-│   ├── content/                     # Static content
-│   ├── config/                      # Configuration files
-│   ├── console/                     # CLI commands for administrative tasks
-│   │   ├── cli.ts                   # CLI entry point
-│   │   ├── commands/                # Console command implementations
-│   │   └── jobs/                    # Scheduled job implementations
-│   └── __test-utils__/              # Testing utilities and mocks
+│   ├── app/                      # Next.js App Router pages
+│   │   ├── api/                  # API routes
+│   │   │   ├── auth/            # Authentication endpoints
+│   │   │   ├── photos/          # Photo management endpoints
+│   │   │   ├── test/            # Testing utilities
+│   │   │   └── user/            # User data endpoints
+│   │   ├── account/             # Account management pages
+│   │   ├── auth/                # Authentication pages
+│   │   ├── guest-home/          # Landing page for guests
+│   │   ├── home-search/         # User search interface
+│   │   ├── likes/               # Likes management
+│   │   ├── login/               # Login page
+│   │   ├── messages/            # Messaging interface
+│   │   ├── onboarding/          # New user onboarding wizard
+│   │   ├── profile/             # User profile management
+│   │   ├── registration/        # User registration flow
+│   │   ├── support/             # Support center
+│   │   ├── upgrade/             # Premium subscription pages
+│   │   └── user/                # User profile views
+│   │
+│   ├── common/                   # Shared components
+│   │   ├── context/             # React Context providers
+│   │   ├── server-actions/      # Server-side actions
+│   │   ├── dashboard-wrapper/   # Layout wrapper
+│   │   ├── notification-center/ # Notification system
+│   │   ├── site-top-bar/        # Navigation bar
+│   │   └── [other-components]/  # Reusable UI components
+│   │
+│   ├── console/                  # CLI tools
+│   │   ├── commands/            # Console command implementations
+│   │   ├── jobs/                # Background job scripts
+│   │   └── cli.ts               # CLI entry point
+│   │
+│   ├── server-side-helpers/      # Server-side utilities
+│   │   ├── __tests__/           # Server-side tests
+│   │   ├── billing.helpers.ts
+│   │   ├── cache.helpers.ts
+│   │   ├── compliance.helper.ts
+│   │   ├── cookie.helpers.ts
+│   │   ├── logging.helpers.ts
+│   │   ├── mail.helper.ts
+│   │   ├── messages.helpers.ts
+│   │   ├── notification.helper.ts
+│   │   ├── notification-emitter.helper.ts
+│   │   ├── paypal.helpers.ts
+│   │   ├── s3.helper.ts
+│   │   ├── session.helpers.ts
+│   │   ├── session-db.helpers.ts
+│   │   ├── time.helpers.ts
+│   │   ├── two-factor.helpers.ts
+│   │   └── user.helpers.ts
+│   │
+│   ├── lib/                      # Core library integrations
+│   │   ├── image-processing.ts  # Sharp image utilities
+│   │   ├── postgres.ts          # PostgreSQL connection
+│   │   ├── prisma.ts            # Prisma client setup
+│   │   ├── rabbitmq.ts          # RabbitMQ connection
+│   │   └── s3.ts                # AWS S3 client
+│   │
+│   ├── hooks/                    # React custom hooks
+│   │   ├── use-browser-notifications.ts
+│   │   ├── use-fallback-image.ts
+│   │   ├── use-websocket.ts
+│   │   └── use-window-width.ts
+│   │
+│   ├── types/                    # TypeScript type definitions
+│   │   ├── auth-response.interface.ts
+│   │   ├── notification-center-data.interface.ts
+│   │   ├── search-parameters.interface.ts
+│   │   ├── session.type.ts
+│   │   ├── user-photo.type.ts
+│   │   ├── user-preview.interface.ts
+│   │   └── [other-types]/
+│   │
+│   ├── config/                   # Configuration files
+│   │   └── countries.ts
+│   │
+│   ├── content/                  # Static content/copy
+│   │   ├── guest-home-content.ts
+│   │   ├── login-content.ts
+│   │   └── registration-content.ts
+│   │
+│   ├── helpers/                  # Client-side helper functions
+│   │   └── user.helpers.ts
+│   │
+│   ├── utils/                    # Utility functions
+│   │   └── postal-code-utils.ts
+│   │
+│   ├── styles/                   # Global styles
+│   │   └── globals.scss
+│   │
+│   ├── theme/                    # MUI theme configuration
+│   │   └── theme.ts
+│   │
+│   ├── __test-utils__/          # Testing utilities
+│   │   └── mocks/
+│   │
+│   ├── instrumentation.ts       # Server instrumentation
+│   └── instrumentation-client.ts # Client instrumentation
+│
 ├── prisma/
-│   ├── schema.prisma                # Database schema
-│   └── migrations/                  # Database migrations
-├── docs/                            # Project documentation
-├── playwright.config.ts             # E2E testing configuration
-├── next.config.ts                   # Next.js configuration
-├── tsconfig.json                    # TypeScript configuration
-├── jest.config.js                   # Jest testing configuration
-└── package.json                     # Dependencies and scripts
+│   └── schema.prisma            # Database schema
+│
+├── docs/                        # Documentation
+│   ├── console-command-creation.md
+│   ├── database-operations.md
+│   ├── multi-datacenter-deployment.md
+│   └── help-center-dev.md
+│
+├── e2e/                         # End-to-end tests
+│
+├── public/                      # Static assets
+│
+├── .env                         # Environment variables (local)
+├── env.example                  # Environment template
+├── package.json                 # Dependencies and scripts
+├── tsconfig.json                # TypeScript configuration
+├── tsconfig.cli.json            # CLI TypeScript config
+├── tsconfig.server.json         # Server TypeScript config
+├── next.config.ts               # Next.js configuration
+├── playwright.config.ts         # Playwright configuration
+├── jest.config.js               # Jest configuration
+└── CLAUDE.md                    # AI assistant instructions
 ```
 
-## Key Features
-
-### Core Functionality
-- **User Authentication**: Login, registration, JWT-based sessions
-- **User Profiles**: Profile creation, editing, image uploads
-- **Search & Discovery**: User search with filtering
-- **Messaging**: Real-time chat between users (Socket.io)
-- **Likes/Matching**: Like system and match discovery
-- **Image Management**: Upload, process, and serve user images (AWS S3 integration)
-- **Premium Tier**: Upgrade system for additional features
-- **Onboarding**: Multi-step user onboarding flow
-
-### Technical Features
-- **Real-time Updates**: Socket.io for live messaging and notifications
-- **Image Processing**: Sharp for image optimization
-- **Cloud Storage**: AWS S3 integration for image storage
-- **Error Tracking**: Sentry integration for monitoring
-- **Email**: Mailgun integration for transactional emails
-- **Database**: PostgreSQL with Prisma ORM
-- **Caching**: Redis for session and cache management
-- **Task Queue**: RabbitMQ/AMQP for background jobs
-- **Logging**: Winston for structured logging
-
-## Development Setup
+## Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- PostgreSQL database
-- Redis instance
-- AWS S3 credentials
-- Mailgun account (optional)
-- Google Maps API key (optional)
-- OpenAI API key (optional)
+
+- Node.js 20 or higher
+- PostgreSQL 14+ with PostGIS extension
+- Redis server
+- RabbitMQ server
+- AWS S3 bucket
+- Required API keys (see Environment Variables)
 
 ### Installation
 
-1. Clone the repository
+1. **Clone the repository:**
    ```bash
-   git clone https://github.com/ChrisReeves12/diwa-date-web.git
+   git clone <repository-url>
    cd diwa-date-web
    ```
 
-2. Install dependencies
+2. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. Set up environment variables
+3. **Set up environment variables:**
    ```bash
-   cp .env.example .env
+   cp env.example .env
    ```
 
-   Configure the following in `.env`:
-   - Database credentials (PostgreSQL)
+   Edit `.env` and configure all required variables:
+   - Database credentials
+   - Redis connection
    - AWS S3 configuration
-   - Email service settings (Mailgun)
+   - Email service (Mailgun)
    - API keys (OpenAI, Google Maps, IP2Location)
-   - Redis connection details
-   - JWT secrets
-   - Session configuration
+   - PayPal credentials
+   - JWT secret
 
-4. Set up the database
+4. **Set up the database:**
+
+   The project uses Prisma but does **not** use Prisma migrations. Update the database schema directly using SQL or MCP tools.
+
+5. **Run the development server:**
    ```bash
-   npm run prisma migrate deploy
-   # or update schema directly using MCP tools
+   npm run dev
    ```
 
-### Running the Development Server
+6. **Open your browser:**
+
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+### Alternative Development Modes
 
 ```bash
-# Standard development server
-npm run dev
-
-# With Turbopack (faster builds)
+# Development with Turbopack (faster)
 npm run dev:turbo
 
-# Debug mode (inspect on 0.0.0.0:9230)
+# Development with debugging enabled
 npm run dev-debug
 ```
 
-The application will be available at `http://localhost:3000`
+## Architecture
 
-## Available Scripts
+### Database Architecture
 
-### Development & Building
-- `npm run dev` - Start development server
-- `npm run dev:turbo` - Start with Turbopack
-- `npm run dev-debug` - Start with Node debugger
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
+- **Primary Database:** PostgreSQL with PostGIS for geolocation queries
+- **Read/Write Separation:** Uses `prismaWrite` and `prismaRead` for master/replica pattern
+- **Session Storage:** Redis for fast session lookups
+- **Caching:** Redis for application-level caching
 
-### Testing
-- `npm test` - Run Jest unit tests
-- `npm run test:watch` - Run tests in watch mode
-- `npm run test:coverage` - Generate coverage report
-- `npm run test:e2e` - Run Playwright E2E tests (serial)
-- `npm run test:e2e:parallel` - Run Playwright E2E tests (parallel)
-- `npm run test:e2e:ui` - Run E2E tests with UI
-- `npm run test:e2e:headed` - Run E2E tests in headed mode
-- `npm run test:e2e:debug` - Debug E2E tests
-- `npm run test:e2e:report` - View E2E test report
+### Real-Time Architecture
 
-### Console Commands
-- `npm run cli` - List all available CLI commands
-- `npm run cli [command]` - Execute specific command
-- `npm run cli:build` - Build CLI commands
+```
+┌─────────────┐
+│  NextJS App │
+│   (Client)  │
+└──────┬──────┘
+       │ WebSocket
+       ▼
+┌─────────────┐      ┌──────────┐
+│ Socket.io   │◄────►│ RabbitMQ │
+│   Server    │      │  Queue   │
+└──────┬──────┘      └──────────┘
+       │
+       ▼
+┌─────────────┐
+│    Redis    │
+│  (Sessions) │
+└─────────────┘
+```
 
-### Background Jobs
-- `npm run job:user-reviews` - Poll user reviews table
+- **WebSocket Server:** Standalone Socket.io server for real-time messaging
+- **Message Queue:** RabbitMQ handles notification distribution
+- **Session Management:** Redis stores user sessions across instances
 
-## Important Development Guidelines
+### Multi-Datacenter Support
 
-### Database Updates
-- **No Prisma migrations** are used in this project
-- When updating the database schema:
-  1. Update `prisma/schema.prisma`
-  2. Also update the database directly using MCP tools
-  3. Run `npx prisma generate` to update client types
+The application supports deployment across multiple datacenters with:
+- Centralized WebSocket server
+- Shared RabbitMQ for message queuing
+- Shared Redis for session storage
+- Regional NextJS instances for low latency
 
-### Query Guidelines
-- Surround all field names with double quotes in raw queries to preserve camelCase
-- Always use `prismaRead` for read operations (uses read replica)
-- Always use `prismaWrite` for write operations (uses master database)
+See [docs/multi-datacenter-deployment.md](docs/multi-datacenter-deployment.md) for details.
 
-### Styling Guidelines
-- Always include `@use '@/styles/globals' as globals;` at the top of SCSS files
-- Use `globals` breakpoint helpers for responsive design (mobile-first approach)
-- Use `@include globals.dark-mode` for dark mode styling
-- Default styling assumes mobile devices, add desktop styles with media queries
+## Core Features
 
-### Path Aliases
-The project uses TypeScript path aliases for cleaner imports:
-- `@/*` → `./src/*`
+### User Management
+- Email/password registration with verification
+- Google OAuth integration
+- Two-factor authentication
+- Password reset functionality
+- User profile management with photos
+- Location-based user data with PostGIS
 
-Example: `import Component from '@/common/site-top-bar'`
+### Matching System
+- Location-based user search with radius filtering
+- Advanced search filters (age, height, preferences)
+- Like/pass system
+- Mutual match detection
+- Block/mute functionality
+- User reporting system
 
-## Technology Stack
+### Messaging
+- Real-time chat with Socket.io
+- Message read receipts
+- Typing indicators
+- Notification system for new messages
+- Conversation management
 
-### Frontend
-- **Framework**: Next.js 15.3.2
-- **UI Library**: React 19
-- **Styling**: SASS/SCSS with Tailwind CSS 4
-- **Component Libraries**: Material-UI (MUI), React Icons
-- **State Management**: React Context
-- **Date Picker**: MUI X Date Pickers
+### Photo Management
+- AWS S3 photo upload with presigned URLs
+- Image processing with Sharp
+- Photo ordering/reordering
+- Caption support
+- Image similarity detection (SSIM)
+- AI-powered content moderation
 
-### Backend
-- **Runtime**: Node.js
-- **ORM**: Prisma 6.5.0
-- **Database**: PostgreSQL
-- **API Communication**: Axios
-- **Real-time**: Socket.io 4.8.1
-- **Task Queue**: RabbitMQ (amqplib)
-- **Caching**: Redis (ioredis)
-- **Email**: Mailgun
+### Subscription System
+- Multiple subscription tiers
+- PayPal payment integration
+- Billing information management
+- Subscription lifecycle management
+- Premium feature gating
+- Auto-renewal handling
 
-### Cloud & Services
-- **Cloud Storage**: AWS S3 (image uploads)
-- **Image Processing**: Sharp
-- **Error Tracking**: Sentry
-- **Logging**: Winston
-- **Auth**: JWT (jsonwebtoken), bcryptjs
+### Notifications
+- In-app notification center
+- Browser push notifications
+- Email notifications via Mailgun
+- Real-time notification delivery via WebSocket
 
-### Development & Testing
-- **Language**: TypeScript 5
-- **Testing**: Jest 30, Playwright 1.53
-- **Linting**: ESLint 9
-- **CLI**: Commander.js
-- **Build Tools**: TSC, tsc-alias
-- **Code Generation**: Prisma client generation
+### Security & Compliance
+- bcrypt password hashing
+- JWT session tokens
+- CSRF protection
+- Rate limiting
+- IP-based geolocation
+- Cookie consent management
+- User reporting and moderation
 
-## Console Commands
+## Development
 
-The project includes a CLI for administrative tasks. Commands are organized by category:
+### NPM Scripts
 
 ```bash
-npm run cli [command:action] [options]
+# Development
+npm run dev              # Start Next.js dev server
+npm run dev:turbo        # Start with Turbopack
+npm run dev-debug        # Start with Node debugger
+
+# Building
+npm run build            # Build for production
+npm start                # Start production server
+
+# Testing
+npm test                 # Run Jest unit tests
+npm run test:watch       # Watch mode for tests
+npm run test:coverage    # Generate coverage report
+npm run test:e2e         # Run Playwright E2E tests
+npm run test:e2e:ui      # E2E tests with UI
+npm run test:e2e:debug   # Debug E2E tests
+
+# CLI Tools
+npm run cli              # Run console commands
+npm run cli:build        # Build CLI tools
+
+# Background Jobs
+npm run job:user-reviews # Poll user reviews table
+
+# Code Quality
+npm run lint             # Run ESLint
 ```
 
-### Creating New Commands
+### Console Commands
 
-1. Create command file in `src/console/commands/` following pattern: `[action]-[entity].command.ts`
-2. Extend `ConsoleCommand` base class
-3. Register in `src/console/cli.ts`
+The project includes a CLI tool system for administrative tasks:
 
-Example:
-```typescript
-export default class YourCommand extends ConsoleCommand {
-    constructor() {
-        super('entity:action', 'Description', [
-            { option: '-r, --required <value>', description: 'Required option', required: true }
-        ]);
-    }
+```bash
+# List all available commands
+npm run cli
 
-    async handle(prog: Command): Promise<number> {
-        // Implementation
-        return 0; // Success
-    }
-}
+# Example: Suspend a user
+npm run cli users:suspend --userId 123
+
+# Example: Seed test users
+npm run cli users:seed --count 100
 ```
 
-See `docs/console-command-creation.md` for detailed guide.
+See [docs/console-command-creation.md](docs/console-command-creation.md) for creating new commands.
 
-## Database Schema
+### Styling Guidelines
 
-The application uses Prisma with PostgreSQL. Key entities include:
-- **Users**: Core user profile data
-- **Profiles**: Extended user profile information
-- **Images**: User-uploaded images
-- **Messages**: Chat messages between users
-- **Matches/Likes**: User interaction data
-- **Subscriptions**: Premium tier data
+- **SCSS Modules:** Use SCSS with the module pattern
+- **Globals Import:** Always import globals in SCSS files:
+  ```scss
+  @use '@/styles/globals' as globals;
+  ```
+- **Responsive Design:** Mobile-first approach with breakpoint helpers
+- **Dark Mode:** Use `@include globals.dark-mode` for dark mode styles
+- **Material-UI:** Emotion-based styling for MUI components
 
-The schema is defined in `prisma/schema.prisma` (460 lines).
+### Database Guidelines
 
-## Project Statistics
+- **No Prisma Migrations:** Update schema directly in PostgreSQL
+- **Raw Queries:** Always use double quotes around field names to preserve camelCase
+- **Read/Write Separation:** Use `prismaRead` for reads, `prismaWrite` for writes
+- **Transactions:** Use `$transaction()` for operations requiring consistency
 
-- **TypeScript Files**: 222 files (`.ts` and `.tsx`)
-- **Database Schema**: 460 lines (Prisma)
-- **Documentation**: guides for console commands, database operations, deployment, help center
+See [docs/database-operations.md](docs/database-operations.md) for detailed database patterns.
 
-## API Structure
+## Testing
 
-API routes follow Next.js app router conventions:
-- `src/app/api/[route]/route.ts` - API endpoints
-- Standard REST conventions for CRUD operations
-- Integration with Prisma for data access
-- Error handling with Sentry monitoring
+### Unit Testing (Jest)
 
-## Notable Dependencies
+```bash
+npm test                 # Run all tests
+npm run test:watch       # Watch mode
+npm run test:coverage    # Coverage report
+```
 
-- `@prisma/client` - Database ORM
-- `@sentry/nextjs` - Error tracking
-- `socket.io` / `socket.io-client` - Real-time communication
-- `axios` - HTTP client
-- `ioredis` - Redis client
-- `amqplib` - RabbitMQ client
-- `mailgun.js` - Email service
-- `sharp` - Image processing
-- `bcryptjs` - Password hashing
-- `jsonwebtoken` - JWT handling
-- `winston` - Logging
+Test files are located in:
+- `src/**/__tests__/` - Component and helper tests
+- Jest configuration: `jest.config.js`
 
-## Git Repository
+### E2E Testing (Playwright)
 
-- **Remote**: git@github.com:ChrisReeves12/diwa-date-web.git
-- **Current Branch**: master
-- **Recent Commits**:
-  - `2ca585a` - Fixed sorting logic error
-  - `8f3d128` - Added custom retargeting ad
-  - `84ae49b` - Added conversion API for Meta
-  - `360e371` - Updates
-  - `7023e98` - Added FB pixel again
+```bash
+npm run test:e2e         # Run E2E tests (single worker)
+npm run test:e2e:parallel # Run with parallel workers
+npm run test:e2e:ui      # Interactive UI mode
+npm run test:e2e:headed  # Run with browser visible
+npm run test:e2e:debug   # Debug mode
+npm run test:e2e:report  # View test report
+```
 
-## Documentation
+E2E tests located in: `e2e/`
 
-Key documentation files in `docs/`:
-- `console-command-creation.md` - Guide for creating CLI commands
-- `database-operations.md` - Database operations guide
-- `multi-datacenter-deployment.md` - Deployment documentation
-- `help-center-dev.md` - Help center development
+Configuration: `playwright.config.ts`
 
-## Code Quality
+### Test Utilities
 
-- **Linting**: ESLint with Next.js config
-- **Type Safety**: Strict TypeScript mode enabled
-- **Testing**: Jest for unit tests, Playwright for E2E tests
-- **Source Maps**: Enabled for debugging
-- **Error Tracking**: Sentry for production monitoring
-
-## Environment Configuration
-
-The project uses environment variables for configuration. Key variables:
-- Database credentials and connection strings
-- AWS S3 configuration
-- Email service (Mailgun) API keys
-- External API keys (OpenAI, Google Maps, IP2Location)
-- Redis connection details
-- JWT and session secrets
-- Feature flags
-- Development settings
-
-See `.env` file or create from `.env.example` template.
+- **Test User Creation:** `src/app/api/test/create-user/route.ts`
+- **Test Cleanup:** `src/app/api/test/cleanup/route.ts`
+- **Database Utilities:** `e2e/utils/test-db.ts`
+- **Mocks:** `src/__test-utils__/mocks/`
 
 ## Deployment
 
-The application is configured for deployment with:
-- Next.js build optimization
-- Sentry error tracking integration
-- Support for multi-datacenter deployment (documented in `docs/`)
-- Environment-based configuration
-- Production and development modes
+### Environment Configuration
 
-## Performance Considerations
+Required environment variables (see `env.example` for complete list):
 
-- Uses Turbopack for faster development builds
-- Image optimization with Sharp
-- Code splitting and bundling optimization
-- Redis caching for frequently accessed data
-- Read replica database for scaling read operations
+**Core:**
+- `PORT` - Application port (default: 3000)
+- `NEXT_PUBLIC_BASE_URL` - Application base URL
+- `NEXT_PUBLIC_WEBSOCKET_URL` - WebSocket server URL
+
+**Database:**
+- `DATABASE_URL` - PostgreSQL connection string
+
+**Redis:**
+- `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`
+
+**AWS:**
+- `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET_NAME`
+
+**Email:**
+- `MAILGUN_API_KEY`, `MAILGUN_DOMAIN`, `MAILGUN_FROM_EMAIL`
+
+**APIs:**
+- `OPENAI_API_KEY`
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
+- `IP2LOCATION_KEY`
+- `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`
+
+**Authentication:**
+- `JWT_SECRET`
+- `SESSION_COOKIE_NAME`
+
+### Production Build
+
+```bash
+# Build the application
+npm run build
+
+# Start production server
+npm start
+```
+
+### Multi-Datacenter Deployment
+
+For deploying across multiple datacenters:
+
+1. Deploy centralized Redis, RabbitMQ, and WebSocket servers
+2. Deploy NextJS instances in each datacenter
+3. Configure load balancer for WebSocket sticky sessions
+4. Set up monitoring and health checks
+
+See [docs/multi-datacenter-deployment.md](docs/multi-datacenter-deployment.md) for complete guide.
+
+### Monitoring
+
+- **Error Tracking:** Sentry integration for server and edge runtime
+- **Logging:** Winston structured logging
+- **Health Checks:** WebSocket server health endpoint
+- **Metrics:** Monitor WebSocket connections, message queues, database performance
+
+## Documentation
+
+Additional documentation available in the `docs/` directory:
+
+- **[Console Command Creation](docs/console-command-creation.md)** - Guide for creating CLI tools
+- **[Database Operations](docs/database-operations.md)** - Database patterns and operations reference
+- **[Multi-Datacenter Deployment](docs/multi-datacenter-deployment.md)** - Deployment architecture guide
+- **[Help Center Development](docs/help-center-dev.md)** - Help center implementation guide
+
+### Key Code References
+
+- **User Authentication:** `src/app/login/login.actions.ts:1`, `src/app/registration/registration-form-actions.ts:1`
+- **Messaging System:** `src/server-side-helpers/messages.helpers.ts:1`
+- **Notifications:** `src/server-side-helpers/notification-emitter.helper.ts:1`
+- **Photo Upload:** `src/app/api/photos/upload/route.ts:1`
+- **Subscription Management:** `src/app/account/billing/billing.actions.ts:1`
+- **WebSocket Integration:** `src/hooks/use-websocket.ts:1`
+
+## Database Schema
+
+The application uses PostgreSQL with the following main tables:
+
+- `users` - User accounts and profiles
+- `userMatches` - Mutual matches between users
+- `messages` - Chat messages
+- `notifications` - User notifications
+- `blockedUsers` - User block relationships
+- `mutedUsers` - User mute relationships
+- `userReports` - User reports for moderation
+- `subscriptionPlanEnrollments` - Premium subscriptions
+- `billingInformationEntries` - Billing data
+- `paymentTransactions` - Payment history
+- `cachedLocations` - Location cache with PostGIS data
+
+Schema file: `prisma/schema.prisma`
+
+## Contributing
+
+When contributing to this project:
+
+1. Follow the existing code patterns
+2. Use TypeScript for type safety
+3. Write tests for new features
+4. Update documentation as needed
+5. Follow the styling guidelines in CLAUDE.md
+6. Use the console command system for CLI tools
+
+## License
+
+Private/Proprietary
+
+## Support
+
+For questions or issues, refer to:
+- Internal documentation in `docs/`
+- CLAUDE.md for AI assistant guidelines
+- Project issue tracker
 
 ---
 
-**Last Updated**: November 12, 2025
-**Repository Status**: Active Development
+**Last Updated:** November 13, 2025
+**Repository Status:** Active Development

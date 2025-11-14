@@ -8,6 +8,9 @@ import ssim from 'ssim.js';
 import sharp from 'sharp';
 import { ImageAnalysisSummary } from "@/types/image-analysis.types";
 import { prismaRead, prismaWrite } from "@/lib/prisma";
+import { S3Helper } from "@/server-side-helpers/s3.helper";
+import { log } from "@/server-side-helpers/logging.helpers";
+import _ from "lodash";
 
 const axiosInstance = axios.create({
     httpAgent: new http.Agent({ keepAlive: true, maxSockets: 100 }),
@@ -34,6 +37,52 @@ const SIGHTENGINE_MODELS = [
     'gambling'
 ];
 
+type PhotoWithTempPath = {
+    tempFilePath: string,
+    s3Path: string,
+    imageFile: File,
+    isRejected?: boolean,
+    messages?: string[],
+    hadProcessingError?: boolean
+};
+
+/**
+ * Represents a photo with its temporary file path and metadata during the review process.
+ * @property {string} tempFilePath - The file system path to the temporary image file
+ * @property {string} s3Path - The S3 bucket path where the image is or will be stored
+ * @property {File} imageFile - The File object for the image
+ * @property {boolean} [isRejected] - Whether the photo has been rejected during review
+ * @property {string[]} [messages] - Array of rejection or status messages
+ * @property {boolean} [hadProcessingError] - Whether an error occurred during image processing
+ */
+async function saveImageBufferAsFile(tempFilePath: string, imageBuffer: Buffer<ArrayBufferLike>) {
+    await fs.promises.writeFile(tempFilePath, imageBuffer);
+
+    // Try to normalize the image to a clean JPEG to avoid libvips SOS errors
+    try {
+        let processedImage = await sharp(imageBuffer, {failOnError: false, limitInputPixels: false})
+            .rotate()
+            .jpeg({quality: 90, progressive: true, mozjpeg: true})
+            .toBuffer();
+
+        await fs.promises.writeFile(tempFilePath, processedImage);
+    } catch (sharpError) {
+        try {
+            const processedFallback = await sharp(imageBuffer, {failOnError: false})
+                .png()
+                .jpeg({quality: 90, progressive: true})
+                .toBuffer();
+            await fs.promises.writeFile(tempFilePath, processedFallback);
+        } catch (fallbackError) {
+            log(`Had an error processing image with Sharp.`);
+            console.error(fallbackError);
+            return false;
+        }
+    }
+
+    return true;
+}
+
 /**
  * Review user photos
  * @param imageFiles
@@ -41,162 +90,174 @@ const SIGHTENGINE_MODELS = [
  * @param onImageReviewed
  */
 export async function reviewPhotos(imageFiles: { imageFile: File, s3Path: string }[], userId: number, onImageReviewed?: (imageFile: File) => null) {
-    const allPhotosWithFilePath: { tempFilePath: string, s3Path: string, imageFile: File, isRejected?: boolean, messages?: string[] }[] = [];
+    let photosBeingReviewedWithPath: PhotoWithTempPath[] = [];
+    let promises = [];
 
     const dbResult = await prismaRead.users.findUnique({
         select: { photos: true },
         where: { id: userId }
-    })
-
-    let storedPhotos = dbResult?.photos as unknown as UserPhoto[] || [];
+    });
 
     for (const { imageFile, s3Path } of imageFiles) {
-        try {
-            // Save images to temp files
-            const fileExt = imageFile.name.split('.').pop();
-            const tempFilePath = `/tmp/temp-img-${uuidv4()}.${fileExt}`;
-
-            const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
-
-            // Write original buffer first
-            await fs.promises.writeFile(tempFilePath, imageBuffer);
-
-            // Try to normalize image to a clean JPEG to avoid libvips SOS errors
+        promises.push(new Promise<PhotoWithTempPath>(async (resolve, reject) => {
             try {
-                let processedImage = await sharp(imageBuffer, { failOnError: false, limitInputPixels: false })
-                    .rotate()
-                    .jpeg({ quality: 90, progressive: true, mozjpeg: true })
-                    .toBuffer();
+                // Save images to temp files
+                const fileExt = imageFile.name.split('.').pop();
+                const tempFilePath = `/tmp/temp-img-${uuidv4()}.${fileExt}`;
 
-                await fs.promises.writeFile(tempFilePath, processedImage);
-            } catch (sharpError) {
-                try {
-                    const processedFallback = await sharp(imageBuffer, { failOnError: false })
-                        .png()
-                        .jpeg({ quality: 90, progressive: true })
-                        .toBuffer();
-                    await fs.promises.writeFile(tempFilePath, processedFallback);
-                } catch (fallbackError) {
-                    // Mark as rejected due to corruption and skip further processing
-                    allPhotosWithFilePath.push({ tempFilePath, s3Path, imageFile, isRejected: true, messages: ['Photo appears to be corrupted or unreadable'] });
-                    continue;
-                }
+                const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
+
+                const success = await saveImageBufferAsFile(tempFilePath, imageBuffer);
+                return resolve({ tempFilePath, s3Path, imageFile, hadProcessingError: !success });
+            } catch (e) {
+                return reject({ error: `Failed to download or write temp file for: ${imageFile.name}`, success: false });
             }
-
-            allPhotosWithFilePath.push({ tempFilePath, s3Path, imageFile });
-
-        } catch (e) {
-            return { error: `Failed to download or write temp file for: ${imageFile.name}`, success: false };
-        }
+        }));
     }
 
-    const tempFilePaths = allPhotosWithFilePath.map(p => p.tempFilePath);
+    try {
+        photosBeingReviewedWithPath = await Promise.all(promises);
+    } catch (e: any) {
+        return e as {error: string, success: false};
+    }
+
+    // Pull other stored photos (filtering out the photos we are reviewing) from S3 and save
+    const storedPhotosDictionary: Record<string, UserPhoto> = (dbResult?.photos as unknown as UserPhoto[] || []).reduce((agg, curr) => {
+        return {...agg, ...{ [curr.path]: curr }};
+    }, {});
+
+    const otherStoredPhotos = Object.values(storedPhotosDictionary).filter(p =>
+        imageFiles.every(i => i.s3Path !== p.path));
+
+    const s3Helper = new S3Helper();
+    promises = [];
+    for (const otherStoredPhoto of otherStoredPhotos) {
+        promises.push(new Promise<PhotoWithTempPath>(async (resolve) => {
+            const imageBuffer = await s3Helper.downloadImage(otherStoredPhoto.path);
+
+            if (imageBuffer) {
+                const fileExt = otherStoredPhoto.path.split('.').pop();
+                const tempFilePath = `/tmp/temp-img-${uuidv4()}.${fileExt}`;
+
+                const success = await saveImageBufferAsFile(tempFilePath, imageBuffer);
+                return resolve({
+                    tempFilePath,
+                    s3Path: otherStoredPhoto.path,
+                    imageFile: new File([imageBuffer], otherStoredPhoto.path, { type: `image/${fileExt}` }),
+                    hadProcessingError: !success
+                });
+            }
+        }));
+    }
+
+    const otherStoredPhotosWithPath = await Promise.all(promises);
 
     // Send each image to the external review service
-    for (const photoWithFilePath of allPhotosWithFilePath) {
-        // If pre-marked as rejected (e.g., unreadable/corrupted), skip external checks
-        if (photoWithFilePath.isRejected) {
-            fs.unlink(photoWithFilePath.tempFilePath, (err) => {
-                if (err) console.error('Failed to delete temp file:', err);
-            });
-            continue;
-        }
-        const isDupedImageResult = await isImageDuplicated(photoWithFilePath.tempFilePath, tempFilePaths);
+    promises = [];
+    for (const photoBeingReviewed of photosBeingReviewedWithPath) {
+        promises.push(new Promise<PhotoWithTempPath>(async (resolve) => {
+            if (photoBeingReviewed.hadProcessingError) {
+                return resolve(photoBeingReviewed);
+            }
 
-        if (isDupedImageResult.error) {
-            return { error: isDupedImageResult.error, success: false };
-        }
+            if (otherStoredPhotosWithPath.length > 0) {
+                const isDupedImageResult = await isImageDuplicated(photoBeingReviewed.tempFilePath,
+                    [...photosBeingReviewedWithPath, ...otherStoredPhotosWithPath]
+                        .filter(p => !p.hadProcessingError)
+                        .map(p => p.tempFilePath));
 
-        if (isDupedImageResult.isDuplicate) {
-            photoWithFilePath.isRejected = true;
-            photoWithFilePath.messages = ['Photo appears to be a duplicate of another photo'];
+                if (isDupedImageResult.error) {
+                    log(`An error occurred while checking for duplicate image - User ${userId} | ${photoBeingReviewed.tempFilePath}`);
+                } else if (isDupedImageResult.isDuplicate) {
+                    photoBeingReviewed.isRejected = true;
+                    photoBeingReviewed.messages = ['Photo appears to be a duplicate of another photo'];
 
-            fs.unlink(photoWithFilePath.tempFilePath, (err) => {
-                if (err) console.error('Failed to delete temp file:', err);
-            });
-
-            continue;
-        }
-
-        // Make a call to SightEngine for further image analysis
-        const data = new FormData();
-        data.append('media', fs.createReadStream(photoWithFilePath.tempFilePath));
-        data.append('models', SIGHTENGINE_MODELS.join(','));
-        data.append('api_user', process.env.SIGHTENGINE_API_USER as string);
-        data.append('api_secret', process.env.SIGHTENGINE_API_SECRET as string);
-
-        const response = await axiosInstance
-            .post('https://api.sightengine.com/1.0/check.json', data, {
-                headers: data.getHeaders(),
-                validateStatus: () => true
-            });
-
-        if (response.status !== 200) {
-            return {
-                error: `External review service returned status ${response.status}`,
-                success: false
-            };
-        }
-
-        const summary = summarizeImageAnalysis(response.data);
-
-        if (!summary.success || !summary.analysis) {
-            console.error(summary.error);
-            return {
-                error: `Failed to summarize image analysis for ${photoWithFilePath.imageFile.name}`,
-                success: false
-            };
-        }
-
-        // Image should be approved if no issues found
-        if (!summary.analysis.messages || summary.analysis.messages.length === 0) {
-            photoWithFilePath.isRejected = false;
-            continue;
-        }
-
-        // Add issues for review
-        photoWithFilePath.isRejected = true;
-        photoWithFilePath.messages = summary.analysis.messages;
-
-        if (onImageReviewed) {
-            onImageReviewed(photoWithFilePath.imageFile);
-        }
-    }
-
-    for (const photoWithFilePath of allPhotosWithFilePath) {
-
-        // Update stored photos
-        storedPhotos = storedPhotos.map(s => {
-            if (s.path === photoWithFilePath.s3Path) {
-                return {
-                    ...s, ...{
-                        isRejected: photoWithFilePath.isRejected,
-                        messages: photoWithFilePath.messages || []
-                    }
+                    return resolve(photoBeingReviewed);
                 }
             }
 
-            return s;
-        });
+            // Make a call to SightEngine for further image analysis
+            const data = new FormData();
+            data.append('media', fs.createReadStream(photoBeingReviewed.tempFilePath));
+            data.append('models', SIGHTENGINE_MODELS.join(','));
+            data.append('api_user', process.env.SIGHTENGINE_API_USER as string);
+            data.append('api_secret', process.env.SIGHTENGINE_API_SECRET as string);
 
-        fs.unlink(photoWithFilePath.tempFilePath, (err) => {
-            if (err) console.error('Failed to delete temp file:', err);
+            const response = await axiosInstance
+                .post('https://api.sightengine.com/1.0/check.json', data, {
+                    headers: data.getHeaders(),
+                    validateStatus: () => true
+                });
+
+            if (response.status !== 200) {
+                photoBeingReviewed.hadProcessingError = true;
+            }
+
+            photoBeingReviewed.isRejected = false;
+            photoBeingReviewed.messages = [];
+
+            if (!photoBeingReviewed.hadProcessingError) {
+                const summary = summarizeImageAnalysis(response.data);
+
+                // Image didn't pass review
+                if (Array.isArray(summary.messages) && summary.messages.length > 0) {
+                    photoBeingReviewed.isRejected = true;
+                    photoBeingReviewed.messages = summary.messages;
+                }
+            }
+
+            return resolve(photoBeingReviewed)
+        }));
+    }
+
+    photosBeingReviewedWithPath = await Promise.all(promises);
+
+    // Clean up temp photos
+    for (const photoWithPath of [...otherStoredPhotosWithPath, ...photosBeingReviewedWithPath]) {
+        fs.access(photoWithPath.tempFilePath, fs.constants.F_OK, (err) => {
+            if (!err) {
+                fs.unlink(photoWithPath.tempFilePath, (err) => {
+                    if (err) console.error('Failed to delete temp file:', err);
+                });
+            }
         });
     }
 
-    const mainPhoto = storedPhotos.find(p => !p.isRejected);
+    // Update stored photos
+    const updatedPhotos = [
+        ...otherStoredPhotos,
+        ...photosBeingReviewedWithPath.map((p, idx) => {
+            const storedPhoto = _.get(storedPhotosDictionary, p.s3Path, {
+                path: p.s3Path,
+                sortOrder: idx,
+                uploadedAt: new Date()
+            });
 
-    await prismaWrite.users.update({
+            return {
+                ...storedPhoto,
+                ...{
+                    messages: p.messages || [],
+                    isRejected: p.isRejected,
+                }
+            };
+        })
+    ];
+
+    const mainPhoto = updatedPhotos.find(p => !p.isRejected);
+
+    prismaWrite.users.update({
         where: { id: userId },
         data: {
             mainPhoto: mainPhoto?.path,
-            photos: storedPhotos as any,
-            numOfPhotos: storedPhotos.filter(p => !p.isRejected).length,
+            photos: updatedPhotos as any,
+            numOfPhotos: updatedPhotos.filter(p => !p.isRejected).length,
             updatedAt: new Date()
         }
+    }).catch(error => {
+        console.error(`An error occurred while saving photo review result for user: ${userId}`, error);
     });
 
-    return { error: null, success: true, photos: allPhotosWithFilePath };
+    return { error: null, success: true, photos: photosBeingReviewedWithPath };
 }
 
 /**
@@ -205,10 +266,6 @@ export async function reviewPhotos(imageFiles: { imageFile: File, s3Path: string
  */
 function summarizeImageAnalysis(data: any) {
     const analysisReport: any = {};
-
-    if (data.status !== 'success') {
-        return { error: 'Image analysis failed', success: false };
-    }
 
     // Process nudity analysis
     if (data.nudity) {
@@ -417,11 +474,11 @@ function summarizeImageAnalysis(data: any) {
     if (data.type) {
         analysisReport.aiGenerated = {
             raw: data.type,
-            isAIGenerated: data.type.ai_generated >= 0.98
+            isAIGenerated: data.type.ai_generated >= 0.85
         };
 
         if (analysisReport.aiGenerated.isAIGenerated) {
-            analysisReport.messages = [...(analysisReport.messages || []), 'Photo appears to be AI-generated'];
+            analysisReport.messages = [...(analysisReport.messages || []), 'Photo appears to be heavily edited or AI-generated'];
         }
     }
 
@@ -501,10 +558,7 @@ function summarizeImageAnalysis(data: any) {
         }
     }
 
-    return {
-        error: null, success: true,
-        analysis: analysisReport as ImageAnalysisSummary
-    };
+    return analysisReport as ImageAnalysisSummary;
 }
 
 /**
@@ -523,7 +577,7 @@ async function isImageDuplicated(tempFilePath: string, allTempImagePaths: string
             const img2 = await loadImageData(otherTempFilePath);
 
             const result = ssim(img1, img2);
-            if (result.mssim >= 0.95) {
+            if (result.mssim >= 0.5) {
                 return { error: null, success: true, isDuplicate: true };
             }
         }

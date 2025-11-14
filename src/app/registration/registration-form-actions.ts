@@ -79,6 +79,11 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
       ? require('crypto').randomBytes(32).toString('hex')
       : userData.password;
 
+    let emailVerifiedAt = undefined;
+    if ((process.env.AUTO_EMAIL_VERIFY || '').toLowerCase() === 'true' || authMethod === 'google') {
+        emailVerifiedAt = new Date();
+    }
+
     // Prepare user data for database storage
     const createData = {
       firstName: userData.firstName,
@@ -103,16 +108,15 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
       longitude: userData.location.coordinates?.longitude ?? null,
       locationName: userData.location.name,
       locationViewport: userData.location.viewport,
-      emailVerifiedAt: new Date(),
+      emailVerifiedAt: emailVerifiedAt,
       country: userData.country,
       height: businessConfig.defaults.minHeight,
       updatedAt: new Date(),
       lastActiveAt: new Date(),
       googleId: googleId || null,
-      // emailVerifiedAt: authMethod === 'google' ? new Date() : null
     };
 
-    // Store user in database with geoPoint
+    // Store user in the database with geoPoint
     const newUserResult = await prismaWrite.$queryRaw<{ id: number }[]>`
       INSERT INTO users (
         "firstName", "lastName", "email", "password", "displayName", "dateOfBirth",

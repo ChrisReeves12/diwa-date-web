@@ -371,20 +371,3 @@ export async function deletePhoto(photoPath: string) {
     throw new Error(`Failed to delete photo: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
-
-/**
- * Review uploaded photos for compliance
- */
-export async function doPhotoReview(imageFiles: { imageFile: File, s3Path: string }[], userId: number) {
-  try {
-    const currentUser = await getCurrentUser(await cookies(), false);
-    if (!currentUser) {
-      throw new Error('User not found');
-    }
-
-    return await reviewPhotos(imageFiles, userId);
-  } catch (error) {
-    console.error('Photo review error:', error);
-    throw new Error(`Failed to review photos: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}

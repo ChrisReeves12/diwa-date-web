@@ -196,7 +196,7 @@ async function sendEmailSparkPost(to: string[], subject: string, content: string
 
         const data = await response.json();
 
-        if (!response.ok) {
+        if (!response.ok && (data?.results?.total_accepted_recipients ?? 0) === 0) {
             throw new Error(`SparkPost API error: ${response.status} - ${JSON.stringify(data)}`);
         }
 

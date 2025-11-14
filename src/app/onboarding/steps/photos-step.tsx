@@ -190,85 +190,100 @@ export function PhotosStep({
 
         // Check photos for approval
         if (!hasError && filesToReview.length > 0) {
-            // Mark all as queued first (dedupe by s3Path)
-            setPhotoReviews(prevState => {
-                const byPath = new Map(prevState.map(p => [p.s3Path, p]));
-                for (const f of filesToReview) {
-                    const existing = byPath.get(f.s3Path);
-                    if (existing) {
-                        byPath.set(f.s3Path, { ...existing, status: 'Queued for review...' });
-                    } else {
-                        byPath.set(f.s3Path, { s3Path: f.s3Path, status: 'Queued for review...' });
+            // Check if image verification should be bypassed
+            if (process.env.NEXT_PUBLIC_BYPASS_IMAGE_VERIFICATION === 'true') {
+                // Mark all photos as approved immediately
+                setPhotoReviews(prevState => {
+                    const byPath = new Map(prevState.map(p => [p.s3Path, p]));
+                    for (const f of filesToReview) {
+                        byPath.set(f.s3Path, { s3Path: f.s3Path, status: 'Approved' });
                     }
-                }
-                return Array.from(byPath.values());
-            });
+                    return Array.from(byPath.values());
+                });
 
-            try {
-                const chunks = _.chunk(filesToReview, REVIEW_GROUP_SIZE);
-
-                for (const chunk of chunks) {
-                    // Mark current chunk as checking
-                    setPhotoReviews(prevState => {
-                        const byPath = new Map(prevState.map(p => [p.s3Path, p]));
-                        for (const f of chunk) {
-                            const existing = byPath.get(f.s3Path);
-                            if (existing) {
-                                byPath.set(f.s3Path, { ...existing, status: 'Checking photo...' });
-                            } else {
-                                byPath.set(f.s3Path, { s3Path: f.s3Path, status: 'Checking photo...' });
-                            }
-                        }
-                        return Array.from(byPath.values());
-                    });
-                    const reviewPromises = chunk.map(async (f) => {
-                        const formData = new FormData();
-                        formData.append('files', f.imageFile);
-                        formData.append('s3Paths', f.s3Path);
-
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-                        try {
-                            const response = await fetch('/api/photos/review', {
-                                method: 'POST',
-                                body: formData,
-                                signal: controller.signal
-                            });
-
-                            if (!response.ok) {
-                                const err = await response.json().catch(() => ({}));
-                                throw new Error(err.error || 'Failed to review photo');
-                            }
-
-                            const reviewResults = await response.json();
-                            return { s3Path: f.s3Path, review: (reviewResults.photos || [])[0] };
-                        } finally {
-                            clearTimeout(timeoutId);
-                        }
-                    });
-
-                    const chunkResults: { s3Path: string, review: any }[] = await Promise.all(reviewPromises);
-
-                    setPhotoReviews(prevState => {
-                        return prevState.map(p => {
-                            const r = chunkResults.find(cr => cr.s3Path === p.s3Path);
-                            if (r && r.review) {
-                                return { ...p, status: !r.review.isRejected ? 'Approved' : (r.review.messages || []).join(', ') };
-                            }
-
-                            return p;
-                        });
-                    });
-
-                    setValidPhotoCount(prevState =>
-                        prevState + chunkResults.filter(r => r.review && !r.review.isRejected).length);
-                }
-                // Reload photos to get updated status from database
+                setValidPhotoCount(prevState => prevState + filesToReview.length);
                 await loadPhotos();
-            } catch (error) {
-                console.error('Photo review error:', error);
-                showAlert('Photos uploaded but review failed. Please try again.');
+            } else {
+                // Mark all as queued first (dedupe by s3Path)
+                setPhotoReviews(prevState => {
+                    const byPath = new Map(prevState.map(p => [p.s3Path, p]));
+                    for (const f of filesToReview) {
+                        const existing = byPath.get(f.s3Path);
+                        if (existing) {
+                            byPath.set(f.s3Path, { ...existing, status: 'Queued for review...' });
+                        } else {
+                            byPath.set(f.s3Path, { s3Path: f.s3Path, status: 'Queued for review...' });
+                        }
+                    }
+                    return Array.from(byPath.values());
+                });
+
+                try {
+                    const chunks = _.chunk(filesToReview, REVIEW_GROUP_SIZE);
+
+                    for (const chunk of chunks) {
+                        // Mark current chunk as checking
+                        setPhotoReviews(prevState => {
+                            const byPath = new Map(prevState.map(p => [p.s3Path, p]));
+                            for (const f of chunk) {
+                                const existing = byPath.get(f.s3Path);
+                                if (existing) {
+                                    byPath.set(f.s3Path, { ...existing, status: 'Checking photo...' });
+                                } else {
+                                    byPath.set(f.s3Path, { s3Path: f.s3Path, status: 'Checking photo...' });
+                                }
+                            }
+                            return Array.from(byPath.values());
+                        });
+                        const reviewPromises = chunk.map(async (f) => {
+                            const formData = new FormData();
+                            formData.append('files', f.imageFile);
+                            formData.append('s3Paths', f.s3Path);
+
+                            const controller = new AbortController();
+                            const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+                            try {
+                                const response = await fetch('/api/photos/review', {
+                                    method: 'POST',
+                                    body: formData,
+                                    signal: controller.signal
+                                });
+
+                                if (!response.ok) {
+                                    const err = await response.json().catch(() => ({}));
+                                    throw new Error(err.error || 'Failed to review photo');
+                                }
+
+                                const reviewResults = await response.json();
+                                return { s3Path: f.s3Path, review: (reviewResults.photos || [])[0] };
+                            } finally {
+                                clearTimeout(timeoutId);
+                            }
+                        });
+
+                        const chunkResults: { s3Path: string, review: any }[] = await Promise.all(reviewPromises);
+
+                        setPhotoReviews(prevState => {
+                            return prevState.map(p => {
+                                const r = chunkResults.find(cr => cr.s3Path === p.s3Path);
+                                if (r && r.review) {
+                                    return { ...p, status: !r.review.isRejected ? 'Approved' : (r.review.messages || []).join(', ') };
+                                }
+
+                                return p;
+                            });
+                        });
+
+                        setValidPhotoCount(prevState =>
+                            prevState + chunkResults.filter(r => r.review && !r.review.isRejected).length);
+                    }
+                    // Reload photos to get updated status from database
+                    await loadPhotos();
+                } catch (error) {
+                    console.error('Photo review error:', error);
+                    showAlert('Photos uploaded but review failed. Please try again.');
+                }
             }
         }
     };

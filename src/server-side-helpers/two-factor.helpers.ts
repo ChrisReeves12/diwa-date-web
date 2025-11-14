@@ -235,13 +235,13 @@ export async function canRequestNewCode(userId: number) {
 export async function generateAndSendTwoFactorCode(userId: number, isDeletionVerification = false) {
     try {
         // Check cooldown period
-        const canRequest = await canRequestNewCode(userId);
-        if (!canRequest.canRequest) {
+        const canRequestResponse = await canRequestNewCode(userId);
+        if (!canRequestResponse.canRequest) {
             return {
                 success: false,
-                error: canRequest.error,
+                error: canRequestResponse.error,
                 errorCode: 'COOLDOWN_ACTIVE',
-                remainingSeconds: canRequest.remainingSeconds
+                remainingSeconds: canRequestResponse.remainingSeconds
             };
         }
 
@@ -283,8 +283,6 @@ export async function generateAndSendTwoFactorCode(userId: number, isDeletionVer
             };
         }
 
-        log(`${isDeletionVerification ? '2FA' : 'Account deletion'} code generated and sent for user ${userId}`, 'info');
-
         return {
             success: true,
             message: 'Verification code sent to your email',
@@ -292,7 +290,7 @@ export async function generateAndSendTwoFactorCode(userId: number, isDeletionVer
         };
 
     } catch (error: any) {
-        log(`Error generating and sending ${isDeletionVerification ? '2FA' : 'Account deletion'} code`, 'error');
+        log(`Error generating and sending ${isDeletionVerification ? 'Account deletion' : '2FA'} code`, 'error');
         logError(error);
         return {
             success: false,

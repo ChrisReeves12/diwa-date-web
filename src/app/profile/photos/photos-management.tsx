@@ -34,7 +34,7 @@ function moveRejectedToEnd(list: PhotoWithUrl[]): PhotoWithUrl[] {
     return [...approved, ...rejected];
 }
 
-function SortablePhotoItem({ photoWithUrl, onClick, onDelete, photoReviews }: {
+function SortablePhotoItem({photoWithUrl, onClick, onDelete, photoReviews}: {
     photoWithUrl: PhotoWithUrl,
     onClick: (e: React.MouseEvent) => void,
     onDelete: (e: React.MouseEvent) => void,
@@ -61,18 +61,18 @@ function SortablePhotoItem({ photoWithUrl, onClick, onDelete, photoReviews }: {
 
     return (
         <div ref={setNodeRef}
-            style={style}
-            className={"photo-grid-item" + (photoWithUrl.isRejected ? " rejected" : "")}
-            onClick={photoWithUrl.isRejected ? undefined : onClick}
-            {...attributes}
-            {...listeners}>
+             style={style}
+             className={"photo-grid-item" + (photoWithUrl.isRejected ? " rejected" : "")}
+             onClick={photoWithUrl.isRejected ? undefined : onClick}
+             {...attributes}
+             {...listeners}>
             {photoBeingReviewed?.status?.includes('Checking') &&
                 <div className="circle-loader-container">
-                    <CircularProgress size={50} />
+                    <CircularProgress size={50}/>
                 </div>}
             <div
                 className={`photo-display-container ${isQueuedOrChecking ? 'approval-in-progress' : ''}`}
-                style={{ backgroundImage: `url('${photoWithUrl.croppedImageUrl || photoWithUrl.url}')` }}
+                style={{backgroundImage: `url('${photoWithUrl.croppedImageUrl || photoWithUrl.url}')`}}
             ></div>
             {isQueuedOrChecking ? (
                 <Tooltip title="This photo is queued or being reviewed and cannot be deleted.">
@@ -83,7 +83,7 @@ function SortablePhotoItem({ photoWithUrl, onClick, onDelete, photoReviews }: {
 
                             onDelete(e);
                         }} className="delete-button" disabled={true}>
-                            <TimesIcon />
+                            <TimesIcon/>
                         </button>
                     </span>
                 </Tooltip>
@@ -94,7 +94,7 @@ function SortablePhotoItem({ photoWithUrl, onClick, onDelete, photoReviews }: {
 
                     onDelete(e);
                 }} className="delete-button">
-                    <TimesIcon />
+                    <TimesIcon/>
                 </button>
             )}
             {!!photoBeingReviewed && photoBeingReviewed.status !== 'Approved' &&
@@ -112,7 +112,7 @@ interface CropArea {
 
 export function PhotosManagement() {
     const MAX_PHOTOS = 10;
-    const REVIEW_GROUP_SIZE = 8;
+    const REVIEW_GROUP_SIZE = 5;
     const UPLOAD_GROUP_SIZE = 5;
     const [photos, setPhotos] = useState<PhotoWithUrl[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -123,14 +123,14 @@ export function PhotosManagement() {
     const currentUser = useCurrentUser();
 
     // Cropping state
-    const [cropArea, setCropArea] = useState<CropArea>({ x: 0, y: 0, width: 200, height: 200 });
+    const [cropArea, setCropArea] = useState<CropArea>({x: 0, y: 0, width: 200, height: 200});
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
     const [isSorting, setIsSorting] = useState(false);
-    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [dragStart, setDragStart] = useState({x: 0, y: 0});
     const [resizeHandle, setResizeHandle] = useState('');
-    const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
-    const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 });
+    const [imageSize, setImageSize] = useState({width: 0, height: 0});
+    const [imageOffset, setImageOffset] = useState({x: 0, y: 0});
     const [captionText, setCaptionText] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -140,7 +140,7 @@ export function PhotosManagement() {
     const [photoReviews, setPhotoReviews] = useState<{ s3Path: string, status: string }[]>([]);
     const imageRef = useRef<HTMLImageElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const { on, isConnected } = useWebSocket();
+    const {on, isConnected} = useWebSocket();
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -235,7 +235,7 @@ export function PhotosManagement() {
     };
 
     const handleDragEnd = (e: any) => {
-        const { active, over } = e;
+        const {active, over} = e;
 
         if (active.id !== over.id) {
             setPhotos((aPhotos) => {
@@ -343,8 +343,8 @@ export function PhotosManagement() {
         const offsetX = (containerWidth - displayWidth) / 2;
         const offsetY = (containerHeight - displayHeight) / 2;
 
-        setImageSize({ width: displayWidth, height: displayHeight });
-        setImageOffset({ x: offsetX, y: offsetY });
+        setImageSize({width: displayWidth, height: displayHeight});
+        setImageOffset({x: offsetX, y: offsetY});
 
         // Initialize crop area
         if (imageBeingEdited?.croppedImageData) {
@@ -391,7 +391,7 @@ export function PhotosManagement() {
             setIsDragging(true);
         }
 
-        setDragStart({ x: x - cropArea.x, y: y - cropArea.y });
+        setDragStart({x: x - cropArea.x, y: y - cropArea.y});
     }, [cropArea]);
 
     const handlePointerMove = useCallback((e: React.PointerEvent) => {
@@ -408,10 +408,10 @@ export function PhotosManagement() {
             const newX = Math.max(imageOffset.x, Math.min(x - dragStart.x, imageOffset.x + imageSize.width - cropArea.width));
             const newY = Math.max(imageOffset.y, Math.min(y - dragStart.y, imageOffset.y + imageSize.height - cropArea.height));
 
-            setCropArea(prev => ({ ...prev, x: newX, y: newY }));
+            setCropArea(prev => ({...prev, x: newX, y: newY}));
         } else if (isResizing) {
             // Resize crop area
-            const newCropArea = { ...cropArea };
+            const newCropArea = {...cropArea};
             const minSize = 50;
 
             switch (resizeHandle) {
@@ -490,23 +490,23 @@ export function PhotosManagement() {
                 // Update local state to show crop has been applied
                 setPhotos(prevPhotos =>
                     prevPhotos.map(photo => {
-                        if (photo.path === imageBeingEdited.path)
-                            return {
-                                ...photo,
-                                croppedImageData: {
-                                    x: result.cropData.x,
-                                    y: result.cropData.y,
-                                    width: result.cropData.width,
-                                    height: result.cropData.height,
-                                    croppedImagePath: result.croppedImageUrl!
-                                },
-                                caption: captionText,
-                                croppedImageUrl: croppedImageUrlWithCacheBust,
+                            if (photo.path === imageBeingEdited.path)
+                                return {
+                                    ...photo,
+                                    croppedImageData: {
+                                        x: result.cropData.x,
+                                        y: result.cropData.y,
+                                        width: result.cropData.width,
+                                        height: result.cropData.height,
+                                        croppedImagePath: result.croppedImageUrl!
+                                    },
+                                    caption: captionText,
+                                    croppedImageUrl: croppedImageUrlWithCacheBust,
+                                }
+                            else {
+                                return photo;
                             }
-                        else {
-                            return photo;
                         }
-                    }
                     )
                 );
 
@@ -525,9 +525,9 @@ export function PhotosManagement() {
 
     const handleCancelEdit = () => {
         setImageBeingEdited(undefined);
-        setCropArea({ x: 0, y: 0, width: 200, height: 200 });
-        setImageOffset({ x: 0, y: 0 });
-        setImageSize({ width: 0, height: 0 });
+        setCropArea({x: 0, y: 0, width: 200, height: 200});
+        setImageOffset({x: 0, y: 0});
+        setImageSize({width: 0, height: 0});
         setCaptionText('');
     };
 
@@ -680,7 +680,7 @@ export function PhotosManagement() {
         setIsUploading(true);
         // Pre-populate progress entries for all files as queued
         setUploadProgress(prev => {
-            const next = { ...prev } as { [key: string]: number };
+            const next = {...prev} as { [key: string]: number };
             for (const file of validFiles) {
                 if (next[file.name] === undefined) next[file.name] = -1; // -1 indicates queued
             }
@@ -695,7 +695,7 @@ export function PhotosManagement() {
             for (const chunk of chunks) {
                 const uploadChunkPromises = chunk.map(async (file) => {
                     try {
-                        setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
+                        setUploadProgress(prev => ({...prev, [file.name]: 0}));
 
                         const formData = new FormData();
                         formData.append('file', file);
@@ -703,8 +703,8 @@ export function PhotosManagement() {
                         const response = await uploadPhoto(formData);
 
                         if (response.success) {
-                            setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
-                            filesToReview.push({ imageFile: file, s3Path: response.photo.path });
+                            setUploadProgress(prev => ({...prev, [file.name]: 100}));
+                            filesToReview.push({imageFile: file, s3Path: response.photo.path});
                             successfulCount += 1;
                             return response.photo;
                         }
@@ -747,44 +747,58 @@ export function PhotosManagement() {
 
         // Check photos for approval
         if (!hasError && filesToReview.length > 0) {
-            // Mark all as queued first
-            setPhotoReviews(prevState => {
-                const byPath = new Map(prevState.map(p => [p.s3Path, p]));
-                for (const f of filesToReview) {
-                    const existing = byPath.get(f.s3Path);
-                    if (existing) {
-                        byPath.set(f.s3Path, { ...existing, status: 'Queued for review...' });
-                    } else {
-                        byPath.set(f.s3Path, { s3Path: f.s3Path, status: 'Queued for review...' });
+            if (process.env.NEXT_PUBLIC_BYPASS_IMAGE_VERIFICATION === 'true') {
+                setPhotoReviews(prevState => {
+                    const byPath = new Map(prevState.map(p => [p.s3Path, p]));
+                    for (const f of filesToReview) {
+                        byPath.set(f.s3Path, {s3Path: f.s3Path, status: 'Approved'});
                     }
-                }
-                return Array.from(byPath.values());
-            });
+                    return Array.from(byPath.values());
+                });
 
-            try {
-                const chunks = _.chunk(filesToReview, REVIEW_GROUP_SIZE);
-
-                for (const chunk of chunks) {
-                    // Mark current chunk as checking
-                    setPhotoReviews(prevState => {
-                        const byPath = new Map(prevState.map(p => [p.s3Path, p]));
-                        for (const f of chunk) {
-                            const existing = byPath.get(f.s3Path);
-                            if (existing) {
-                                byPath.set(f.s3Path, { ...existing, status: 'Checking photo...' });
-                            } else {
-                                byPath.set(f.s3Path, { s3Path: f.s3Path, status: 'Checking photo...' });
-                            }
+                await loadPhotos();
+            } else {
+                // Mark all as queued first
+                setPhotoReviews(prevState => {
+                    const byPath = new Map(prevState.map(p => [p.s3Path, p]));
+                    for (const f of filesToReview) {
+                        const existing = byPath.get(f.s3Path);
+                        if (existing) {
+                            byPath.set(f.s3Path, {...existing, status: 'Queued for review...'});
+                        } else {
+                            byPath.set(f.s3Path, {s3Path: f.s3Path, status: 'Queued for review...'});
                         }
-                        return Array.from(byPath.values());
-                    });
-                    const reviewPromises = chunk.map(async (f) => {
+                    }
+                    return Array.from(byPath.values());
+                });
+
+                try {
+                    const chunks = _.chunk(filesToReview, REVIEW_GROUP_SIZE);
+
+                    for (const chunk of chunks) {
+                        // Mark current chunk as checking
+                        setPhotoReviews(prevState => {
+                            const byPath = new Map(prevState.map(p => [p.s3Path, p]));
+                            for (const f of chunk) {
+                                const existing = byPath.get(f.s3Path);
+                                if (existing) {
+                                    byPath.set(f.s3Path, {...existing, status: 'Checking photo...'});
+                                } else {
+                                    byPath.set(f.s3Path, {s3Path: f.s3Path, status: 'Checking photo...'});
+                                }
+                            }
+
+                            return Array.from(byPath.values());
+                        });
+
                         const formData = new FormData();
-                        formData.append('files', f.imageFile);
-                        formData.append('s3Paths', f.s3Path);
+                        for (const {imageFile, s3Path} of chunk) {
+                            formData.append('files', imageFile);
+                            formData.append('s3Paths', s3Path);
+                        }
 
                         const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 30000);
+                        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
                         try {
                             const response = await fetch('/api/photos/review', {
@@ -795,35 +809,47 @@ export function PhotosManagement() {
 
                             if (!response.ok) {
                                 const err = await response.json().catch(() => ({}));
-                                throw new Error(err.error || 'Failed to review photo');
+                                throw new Error(err.error || 'Failed to review photos');
                             }
 
                             const reviewResults = await response.json();
-                            return { s3Path: f.s3Path, review: (reviewResults.photos || [])[0] };
+                            setPhotoReviews(prevState => {
+                                return prevState.map(p => {
+                                    const r = reviewResults.photos.find((r: any) => r.s3Path === p.s3Path);
+                                    if (r) {
+                                        return {
+                                            ...p,
+                                            status: !r.isRejected ? 'Approved' : (r.messages || []).join(', ')
+                                        };
+                                    }
+
+                                    return p;
+                                });
+                            });
                         } finally {
+                            // Ensure all photos are out of checking/queued status
+                            setPhotoReviews(prevState => {
+                                return prevState.map(p => {
+                                    if (p.status.includes('Checking') || p.status.includes('Queued')) {
+                                        return {
+                                            ...p,
+                                            status: ''
+                                        };
+                                    }
+                                    return p;
+                                });
+                            });
+
                             clearTimeout(timeoutId);
                         }
-                    });
+                    }
 
-                    const chunkResults: { s3Path: string, review: any }[] = await Promise.all(reviewPromises);
-
-                    setPhotoReviews(prevState => {
-                        return prevState.map(p => {
-                            const r = chunkResults.find(cr => cr.s3Path === p.s3Path);
-                            if (r && r.review) {
-                                return { ...p, status: !r.review.isRejected ? 'Approved' : (r.review.messages || []).join(', ') };
-                            }
-
-                            return p;
-                        });
-                    });
+                    // Reload photos to get updated status from database
+                    await loadPhotos();
+                } catch (error) {
+                    console.error('Photo review error:', error);
+                    showAlert('Photos uploaded but review failed. Please try again.');
                 }
-
-                // Reload photos to get updated status from database
-                await loadPhotos();
-            } catch (error) {
-                console.error('Photo review error:', error);
-                showAlert('Photos uploaded but review failed. Please try again.');
             }
         }
     };
@@ -832,12 +858,12 @@ export function PhotosManagement() {
         <>
             <div className="photos-management">
                 {isLoading && <div className="loader-container">
-                    <CircularProgress />
+                    <CircularProgress/>
                 </div>}
                 {!isLoading && !imageBeingEdited &&
                     <>
                         {photos.length === 0 &&
-                            <div className="no-photos-caption"><InfoCircleIcon /> You have no uploaded photos.</div>}
+                            <div className="no-photos-caption"><InfoCircleIcon/> You have no uploaded photos.</div>}
                         {photos.length > 0 &&
                             <div className="photo-grid-container">
                                 <DndContext
@@ -863,7 +889,7 @@ export function PhotosManagement() {
                         <div className="upload-controls-container">
                             <input
                                 multiple={true}
-                                style={{ display: 'none' }}
+                                style={{display: 'none'}}
                                 ref={fileInputRef}
                                 type="file"
                                 accept="image/*"
@@ -878,11 +904,12 @@ export function PhotosManagement() {
                                     {Object.entries(uploadProgress).map(([fileName, progress]) => (
                                         <div key={fileName} className="file-progress">
                                             <div className="spinner-container">
-                                                <CircularProgress size={20} color="inherit" />
+                                                <CircularProgress size={20} color="inherit"/>
                                             </div>
                                             <div className="file-info-container">
                                                 <div className="file-name">{fileName}</div>
-                                                <div className="progress-text">{progress < 0 ? 'Queued' : (progress >= 99 ? 'Complete' : 'Uploading')}</div>
+                                                <div
+                                                    className="progress-text">{progress < 0 ? 'Queued' : (progress >= 99 ? 'Complete' : 'Uploading')}</div>
                                             </div>
                                         </div>
                                     ))}
@@ -893,7 +920,7 @@ export function PhotosManagement() {
                                     variant="contained"
                                     type="button"
                                     disabled={isUploading || isCheckingPhotos}
-                                    startIcon={isUploading ? <CircularProgress size={16} color="inherit" /> : undefined}
+                                    startIcon={isUploading ? <CircularProgress size={16} color="inherit"/> : undefined}
                                 >
                                     {uploadButtonLabel}
                                 </Button>}
@@ -904,11 +931,11 @@ export function PhotosManagement() {
                 {!isLoading && !!imageBeingEdited && <div className="photo-editing-container">
                     <div className="back-button-container">
                         <button className="back-button" onClick={handleCancelEdit} disabled={isSaving}>
-                            <TimesIcon />
+                            <TimesIcon/>
                             <div className="label">Cancel</div>
                         </button>
                         <button className="save-button" onClick={handleSaveCrop} disabled={isSaving}>
-                            {isSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                            {isSaving ? <CircularProgress size={16} color="inherit"/> : <SaveIcon/>}
                             <div className="label">{isSaving ? 'Saving...' : 'Save'}</div>
                         </button>
                     </div>
@@ -952,25 +979,25 @@ export function PhotosManagement() {
                                 left: 0,
                                 right: 0,
                                 height: cropArea.y
-                            }} />
+                            }}/>
                             <div className="crop-dark" style={{
                                 top: cropArea.y + cropArea.height,
                                 left: 0,
                                 right: 0,
                                 bottom: 0
-                            }} />
+                            }}/>
                             <div className="crop-dark" style={{
                                 top: cropArea.y,
                                 left: 0,
                                 width: cropArea.x,
                                 height: cropArea.height
-                            }} />
+                            }}/>
                             <div className="crop-dark" style={{
                                 top: cropArea.y,
                                 left: cropArea.x + cropArea.width,
                                 right: 0,
                                 height: cropArea.height
-                            }} />
+                            }}/>
 
                             {/* Crop area with handles */}
                             <div
@@ -986,27 +1013,27 @@ export function PhotosManagement() {
                             >
                                 {/* Corner handles */}
                                 <div className="crop-handle corner nw"
-                                    onPointerDown={(e) => handlePointerDown(e, 'nw')} />
+                                     onPointerDown={(e) => handlePointerDown(e, 'nw')}/>
                                 <div className="crop-handle corner ne"
-                                    onPointerDown={(e) => handlePointerDown(e, 'ne')} />
+                                     onPointerDown={(e) => handlePointerDown(e, 'ne')}/>
                                 <div className="crop-handle corner sw"
-                                    onPointerDown={(e) => handlePointerDown(e, 'sw')} />
+                                     onPointerDown={(e) => handlePointerDown(e, 'sw')}/>
                                 <div className="crop-handle corner se"
-                                    onPointerDown={(e) => handlePointerDown(e, 'se')} />
+                                     onPointerDown={(e) => handlePointerDown(e, 'se')}/>
 
                                 {/* Grid lines */}
                                 <div className="crop-grid">
-                                    <div className="grid-line horizontal" style={{ top: '33.33%' }} />
-                                    <div className="grid-line horizontal" style={{ top: '66.66%' }} />
-                                    <div className="grid-line vertical" style={{ left: '33.33%' }} />
-                                    <div className="grid-line vertical" style={{ left: '66.66%' }} />
+                                    <div className="grid-line horizontal" style={{top: '33.33%'}}/>
+                                    <div className="grid-line horizontal" style={{top: '66.66%'}}/>
+                                    <div className="grid-line vertical" style={{left: '33.33%'}}/>
+                                    <div className="grid-line vertical" style={{left: '66.66%'}}/>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div className="crop-actions">
                         <button disabled={isSaving} className="preview-button" onClick={handlePreview}>
-                            <EyeIcon /> Preview
+                            <EyeIcon/> Preview
                         </button>
                         {/* <button className="reset-button" onClick={resetCrop} disabled={isSaving}>
                             <RedoIcon/> Reset Crop
@@ -1034,7 +1061,7 @@ export function PhotosManagement() {
                         color="error"
                         variant="contained"
                         disabled={isDeleting}
-                        startIcon={isDeleting ? <CircularProgress size={16} color="inherit" /> : undefined}
+                        startIcon={isDeleting ? <CircularProgress size={16} color="inherit"/> : undefined}
                     >
                         {isDeleting ? 'Deleting...' : 'Delete'}
                     </Button>

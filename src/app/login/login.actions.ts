@@ -1,12 +1,9 @@
-import { userBrowsers } from './../../../node_modules/.prisma/client/index.d';
 'use server';
 
 import { cookies, headers } from 'next/headers';
 import { authenticateUser, completeTwoFactorAuth } from '@/server-side-helpers/user.helpers';
 import { generateAndSendTwoFactorCode } from '@/server-side-helpers/two-factor.helpers';
 import { logError } from '@/server-side-helpers/logging.helpers';
-import { AuthResponse } from '@/types/auth-response.interface';
-import { redirect } from 'next/navigation';
 import { getIPGeolocation } from '@/server-side-helpers/session-db.helpers';
 import { prismaRead, prismaWrite } from '@/lib/prisma';
 
