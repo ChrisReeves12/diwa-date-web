@@ -1129,7 +1129,7 @@ export async function muteUserById(userId: number, recipientUserId: number): Pro
  */
 export async function getBlockedUsers(userId: number): Promise<UserPreview[]> {
     const results = await pgDbReadPool.query(`
-        SELECT 
+        SELECT
             U."id",
             U."displayName",
             U."gender",
@@ -1147,7 +1147,7 @@ export async function getBlockedUsers(userId: number): Promise<UserPreview[]> {
             BU."createdAt" AS "blockedAt",
             Calculate_Age(U."dateOfBirth") AS "age"
         FROM "blockedUsers" BU
-        INNER JOIN "users" U ON U."id" = BU."blockedUserId"
+        INNER JOIN "users" U ON U."id" = BU."blockedUserId" AND U."suspendedAt" IS NULL
         WHERE BU."userId" = $1
         ORDER BY BU."createdAt" DESC
     `, [userId]);
@@ -1204,7 +1204,7 @@ export async function getUserLikes(
     }
 
     const results = await pgDbReadPool.query<DbLike>(`
-        SELECT 
+        SELECT
             U."id",
             U."displayName",
             U."gender",
@@ -1224,17 +1224,17 @@ export async function getUserLikes(
             UM."createdAt" AS "receivedLikeAt",
             Calculate_Age(U."dateOfBirth") AS "age"
         FROM "userMatches" UM
-        INNER JOIN "users" U ON U."id" = UM."userId"
-        WHERE UM."recipientId" = $1 
+        INNER JOIN "users" U ON U."id" = UM."userId" AND U."suspendedAt" IS NULL
+        WHERE UM."recipientId" = $1
           AND UM."status" = 'pending'
           AND U."id" NOT IN (
-              SELECT MU."recipientId" 
-              FROM "mutedUsers" MU 
+              SELECT MU."recipientId"
+              FROM "mutedUsers" MU
               WHERE MU."userId" = $1
           )
           AND U."id" NOT IN (
-              SELECT BU."userId" 
-              FROM "blockedUsers" BU 
+              SELECT BU."userId"
+              FROM "blockedUsers" BU
               WHERE BU."blockedUserId" = $1
           )
         ORDER BY ${orderByClause}

@@ -220,7 +220,7 @@ export async function getReceivedMessages(user: User): Promise<NotificationRecei
 }
 
 /**
- * Count all pending matches received by the user, excluding those from muted or blocked users.
+ * Count all pending matches received by the user, excluding those from muted, blocked, or suspended users.
  * @param user The recipient user.
  * @returns A promise that resolves to the total count of pending matches after filtering.
  */
@@ -251,6 +251,9 @@ export async function countAllPendingMatches(user: User): Promise<number> {
             status: 'pending',
             userId: {
                 notIn: excludedUserIds.length > 0 ? excludedUserIds : undefined
+            },
+            users_userMatches_userIdTousers: {
+                suspendedAt: null
             }
         }
     });

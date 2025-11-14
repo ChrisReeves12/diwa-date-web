@@ -54,8 +54,8 @@ export async function getConversationsFromMatches(userId: number): Promise<Conve
                 UM."createdAt",
                 CASE WHEN UM."userId" = ${userId} THEN UM."recipientId" ELSE UM."userId" END AS "otherUserId"
             FROM "userMatches" UM
-                INNER JOIN "users" R ON R."id" = UM."recipientId"
-                INNER JOIN "users" U ON U."id" = UM."userId"
+                INNER JOIN "users" R ON R."id" = UM."recipientId" AND R."suspendedAt" IS NULL
+                INNER JOIN "users" U ON U."id" = UM."userId" AND U."suspendedAt" IS NULL
             WHERE (UM."recipientId" = ${userId} OR UM."userId" = ${userId}) AND UM."status" = 'matched'),
 
         ConversationsWithMessages AS (
@@ -78,7 +78,7 @@ export async function getConversationsFromMatches(userId: number): Promise<Conve
                 U."hideOnlineStatus",
                 U."lastActiveAt"
             FROM MatchesWithUserIds MW
-                INNER JOIN "users" U ON U."id" = MW."otherUserId"
+                INNER JOIN "users" U ON U."id" = MW."otherUserId" AND U."suspendedAt" IS NULL
                 LEFT JOIN "messages" M ON M."matchId" = MW."id")
 
         SELECT * FROM ConversationsWithMessages WHERE "rowNum" = 1 ORDER BY "matchUpdatedAtTimestamp" DESC`;
