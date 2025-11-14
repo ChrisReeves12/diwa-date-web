@@ -60,7 +60,7 @@ async function saveImageBufferAsFile(tempFilePath: string, imageBuffer: Buffer<A
 
     // Try to normalize the image to a clean JPEG to avoid libvips SOS errors
     try {
-        let processedImage = await sharp(imageBuffer, {failOnError: false, limitInputPixels: false})
+        const processedImage = await sharp(imageBuffer, {failOnError: false, limitInputPixels: false})
             .rotate()
             .jpeg({quality: 90, progressive: true, mozjpeg: true})
             .toBuffer();
@@ -87,9 +87,10 @@ async function saveImageBufferAsFile(tempFilePath: string, imageBuffer: Buffer<A
  * Review user photos
  * @param imageFiles
  * @param userId
- * @param onImageReviewed
+ * @param evaluateImagesInPlace
  */
-export async function reviewPhotos(imageFiles: { imageFile: File, s3Path: string }[], userId: number, onImageReviewed?: (imageFile: File) => null) {
+export async function reviewPhotos(imageFiles: { imageFile: File, s3Path: string }[],
+                                   userId: number, evaluateImagesInPlace = false) {
     let photosBeingReviewedWithPath: PhotoWithTempPath[] = [];
     let promises = [];
 
@@ -160,7 +161,7 @@ export async function reviewPhotos(imageFiles: { imageFile: File, s3Path: string
                 return resolve(photoBeingReviewed);
             }
 
-            if (otherStoredPhotosWithPath.length > 0) {
+            if ([...photosBeingReviewedWithPath, ...otherStoredPhotosWithPath].length > 0) {
                 const isDupedImageResult = await isImageDuplicated(photoBeingReviewed.tempFilePath,
                     [...photosBeingReviewedWithPath, ...otherStoredPhotosWithPath]
                         .filter(p => !p.hadProcessingError)
@@ -170,7 +171,7 @@ export async function reviewPhotos(imageFiles: { imageFile: File, s3Path: string
                     log(`An error occurred while checking for duplicate image - User ${userId} | ${photoBeingReviewed.tempFilePath}`);
                 } else if (isDupedImageResult.isDuplicate) {
                     photoBeingReviewed.isRejected = true;
-                    photoBeingReviewed.messages = ['Photo appears to be a duplicate of another photo'];
+                    photoBeingReviewed.messages = ['Photo appears to be a duplicate of another photo of yours'];
 
                     return resolve(photoBeingReviewed);
                 }
@@ -245,10 +246,10 @@ export async function reviewPhotos(imageFiles: { imageFile: File, s3Path: string
 
     const mainPhoto = updatedPhotos.find(p => !p.isRejected);
 
-    prismaWrite.users.update({
+    await prismaWrite.users.update({
         where: { id: userId },
         data: {
-            mainPhoto: mainPhoto?.path,
+            mainPhoto: mainPhoto?.path || null,
             photos: updatedPhotos as any,
             numOfPhotos: updatedPhotos.filter(p => !p.isRejected).length,
             updatedAt: new Date()
