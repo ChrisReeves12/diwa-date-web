@@ -1,6 +1,7 @@
 import * as crypto from 'crypto';
 import { logError } from './logging.helpers';
 import * as Sentry from "@sentry/nextjs";
+import _ from 'lodash';
 
 interface UserData {
     email?: string;
@@ -55,6 +56,66 @@ function hashValue(value: string | undefined): string | undefined {
 
     // Return SHA256 hash
     return crypto.createHash('sha256').update(normalized).digest('hex');
+}
+
+/**
+ * Sends a conversion event to TikTok Event API
+ */
+export async function sendTikTokConversionEvent(
+    eventName: string,
+    userData: UserData
+) {
+    // Only send events in production
+    if (process.env.NODE_ENV !== 'production') {
+        console.log('TikTok Event API: Skipping event in non-production environment:', eventName);
+        return false;
+    }
+
+    const hashFields = ['email', 'phone', 'external_id']
+    const data: Record<string, any> = {
+        event: eventName,
+        eventTime: Math.floor(Date.now() / 1000),
+        user: {}
+    };
+
+    _.toPairs(userData).forEach(([key, val]) => {
+        if (typeof val !== undefined && val !== null) {
+            data.user[key] = hashFields.includes(key) ? hashValue(val) : val;
+        }
+    })
+
+    try {
+        const response = await fetch('https://business-api.tiktok.com/open_api/v1.3/event/track/', {
+            method: 'POST',
+            headers: {
+                'Access-Token': process.env.TIKTOK_EVENTS_API_KEY as string,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                event_source: 'web',
+                event_source_id: process.env.TIKTOK_PIXEL_ID,
+                data: [data]
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(`TikTok Event API error: ${JSON.stringify(result)}`);
+        }
+
+        console.log('TikTok Event API event sent successfully:', eventName, result);
+        return true;
+    } catch (error: any) {
+        logError(error, `Failed to send TikTok Event API event: ${eventName}`);
+        Sentry.captureException(error, {
+            tags: {
+                event_name: eventName,
+                integration: 'tiktok_event_api'
+            }
+        });
+        return false;
+    }
 }
 
 /**
@@ -214,8 +275,11 @@ export async function trackMetaLead(userData: UserData, eventSourceUrl?: string,
 /**
  * Track a CompleteRegistration event
  */
-export async function trackMetaCompleteRegistration(userData: UserData, eventSourceUrl?: string, eventId?: string): Promise<boolean> {
-    return sendMetaConversionEvent('CompleteRegistration', userData, undefined, eventSourceUrl, eventId);
+export async function trackCompleteRegistration(userData: UserData, eventSourceUrl?: string, eventId?: string): Promise<boolean[]> {
+    return Promise.all([
+        sendMetaConversionEvent('CompleteRegistration', userData, undefined, eventSourceUrl, eventId),
+        sendTikTokConversionEvent('CompleteRegistration', userData)
+    ]);
 }
 
 /**

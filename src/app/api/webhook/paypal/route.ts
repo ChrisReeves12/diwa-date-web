@@ -1,6 +1,6 @@
 import pgDbWritePool, { pgDbReadPool } from '@/lib/postgres';
 import { NextRequest, NextResponse } from 'next/server';
-import { trackMetaPurchase } from '@/server-side-helpers/meta-conversion.helpers';
+import { trackMetaPurchase } from '@/server-side-helpers/ad-platform-conversion.helpers';
 import * as Sentry from "@sentry/nextjs";
 
 export async function POST(request: NextRequest) {

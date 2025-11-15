@@ -9,7 +9,7 @@ import { pgDbReadPool, pgDbWritePool } from '@/lib/postgres';
 import { createSession } from '@/server-side-helpers/session.helpers';
 import { businessConfig } from "@/config/business";
 import { logError } from '@/server-side-helpers/logging.helpers';
-import { trackMetaCompleteRegistration } from '@/server-side-helpers/meta-conversion.helpers';
+import { trackCompleteRegistration } from '@/server-side-helpers/ad-platform-conversion.helpers';
 import * as Sentry from "@sentry/nextjs";
 
 interface RegistrationResult {
@@ -280,7 +280,7 @@ export async function registerAction(formData: FormData): Promise<RegistrationRe
             // Get event ID for deduplication with Meta Pixel
             const metaEventId = formData.get('metaEventId') as string || undefined;
 
-            await trackMetaCompleteRegistration({
+            await trackCompleteRegistration({
                 email: createData.email,
                 firstName: createData.firstName,
                 lastName: createData.lastName,
