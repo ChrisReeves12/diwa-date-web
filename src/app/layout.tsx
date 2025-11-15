@@ -34,7 +34,7 @@ export default function RootLayout({
           href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css"
         />
         {/* Google Tag Manager - Only load in production */}
-        {process.env.NEXT_PUBLIC_ENV === 'production' && (
+        {process.env.NODE_ENV === 'production' && (
           <>
             <Script
               src="https://www.googletagmanager.com/gtag/js?id=AW-11218713754"
@@ -51,7 +51,7 @@ export default function RootLayout({
           </>
         )}
         {/* Meta Pixel Code - Only load in production */}
-        {process.env.NEXT_PUBLIC_ENV === 'production' && !!process.env.NEXT_META_DATASET_ID && (
+        {process.env.NODE_ENV === 'production' && !!process.env.META_DATASET_ID && (
           <>
             <Script id="meta-pixel" strategy="afterInteractive">
               {`
@@ -63,16 +63,30 @@ export default function RootLayout({
                 t.src=v;s=b.getElementsByTagName(e)[0];
                 s.parentNode.insertBefore(t,s)}(window, document,'script',
                 'https://connect.facebook.net/en_US/fbevents.js');
-                fbq('init', '${process.env.NEXT_META_DATASET_ID}');
+                fbq('init', '${process.env.META_DATASET_ID}');
                 fbq('track', 'PageView');
               `}
             </Script>
             <noscript>
               <img height="1" width="1" style={{display: 'none'}}
-                src={`https://www.facebook.com/tr?id=${process.env.NEXT_META_DATASET_ID}&ev=PageView&noscript=1`}
+                src={`https://www.facebook.com/tr?id=${process.env.META_DATASET_ID}&ev=PageView&noscript=1`}
               />
             </noscript>
           </>
+        )}
+        {/* TikTok Pixel Code - Only load in production */}
+        {process.env.NODE_ENV === 'production' && !!process.env.TIKTOK_PIXEL_ID && (
+          <Script id="tiktok-pixel" strategy="afterInteractive">
+            {`
+              !function (w, d, t) {
+                w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(
+                var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script")
+                ;n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
+                ttq.load('${process.env.TIKTOK_PIXEL_ID}');
+                ttq.page();
+              }(window, document, 'ttq');
+            `}
+          </Script>
         )}
       </head>
       <body>

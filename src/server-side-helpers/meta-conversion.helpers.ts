@@ -74,7 +74,7 @@ export async function sendMetaConversionEvent(
     }
 
     // Check if Meta Conversion API is configured
-    const pixelId = process.env.NEXT_META_DATASET_ID;
+    const pixelId = process.env.META_DATASET_ID;
     const accessToken = process.env.META_CONVERSION_API_ACCESS_TOKEN;
 
     if (!pixelId || !accessToken) {
