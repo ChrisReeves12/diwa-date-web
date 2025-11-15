@@ -74,7 +74,7 @@ export async function sendTikTokConversionEvent(
     const hashFields = ['email', 'phone', 'external_id']
     const data: Record<string, any> = {
         event: eventName,
-        eventTime: Math.floor(Date.now() / 1000),
+        event_time: Math.floor(Date.now() / 1000),
         user: {}
     };
 
