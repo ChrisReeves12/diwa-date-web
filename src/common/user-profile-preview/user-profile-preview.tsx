@@ -258,8 +258,8 @@ export default function UserProfilePreview({ userPreview, type, onCallToRefresh,
                         {type === 'like' && (
                             <div className="info-line received-on"><strong>Received:</strong> {userPreview.receivedLikeHumanized}</div>
                         )}
-                        <div className="info-line last-active"><strong>Last
-                            Active:</strong> {userPreview.lastActiveHumanized}</div>
+                        {/*<div className="info-line last-active"><strong>Last*/}
+                        {/*    Active:</strong> {userPreview.lastActiveHumanized}</div>*/}
                         {userPreview.theyLikedMe && (
                             <div className="info-line they-liked-me">
                                 <HeartIcon style={{ marginRight: '4px' }} />

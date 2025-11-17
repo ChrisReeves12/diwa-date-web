@@ -526,7 +526,7 @@ export default function UserProfile({ userProfileDetail, currentUser }: UserProf
                                                 <div className="value">{userProfile.wantsChildrenLabel}</div>
                                             </div>
                                             <div className="basic-info-line">
-                                                <div className="label">Last Active:</div>
+                                                {/*<div className="label">Last Active:</div>*/}
                                                 <div className="value">{userProfile.lastActiveHumanized}</div>
                                             </div>
                                         </div>
